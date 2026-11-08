@@ -17,6 +17,11 @@ window.LIBRARY = {
     { f: "2026-11-08-github-pages", date: "2026-11-08", cat: "tech",
       title: "用 GitHub Pages 发布静态网页",
       desc: "免费账户怎么把一个文件夹变成随时能打开的网址；本地正常、上线 404 的常见原因；一台电脑上用两个 GitHub 账号推送。",
-      tags: ["GitHub", "Git", "SSH"] }
+      tags: ["GitHub", "Git", "SSH"] },
+    // 版式样板：hidden 的不进首页列表和翻页，从首页页脚进入；f 可以不带日期
+    { f: "style-guide", date: "2026-11-08", cat: "tech", hidden: true,
+      title: "版式样板",
+      desc: "阅读库每篇文章能用的全部组件，各给一个例子；新文章只从这里挑组件，版面不用再调。",
+      tags: ["样板"] }
   ]
 };

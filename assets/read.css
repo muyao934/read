@@ -88,6 +88,7 @@ html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
 body {
   margin: 0; background: var(--paper); color: var(--ink);
   font: 16px/1.75 var(--serif); font-feature-settings: "palt" 0;
+  overflow-wrap: break-word;   /* 标题、正文里的长英文单词和网址放不下时才断行，手机上不撑宽页面；不影响表格的最小宽度 */
 }
 /* 全站文字都用衬线（2026-11-06 用户要求，按 claude.ai），代码、地址、哈希用等宽 --mono；表单控件默认不继承字体，这里统一继承 */
 button, input, select, textarea { font-family: inherit; }

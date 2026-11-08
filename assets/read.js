@@ -38,8 +38,8 @@
   // read.js 在 data.js 之前加载，所以等 DOMContentLoaded 时再读 window.LIBRARY
   var LIB = { cats: [], topics: [], notes: [] };
   function catOf(id) { for (var i = 0; i < LIB.cats.length; i++) if (LIB.cats[i].id === id) return LIB.cats[i]; return null; }
-  // 新的在前；同一天按标题排
-  function sorted() { return LIB.notes.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.title.localeCompare(b.title, "zh"); }); }
+  // 新的在前；同一天按标题排。hidden: true 的（版式样板）不进首页列表和翻页
+  function sorted() { return LIB.notes.filter(function (n) { return !n.hidden; }).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : a.title.localeCompare(b.title, "zh"); }); }
 
   // ---------- 首页 ----------
   function initHome() {
@@ -88,7 +88,8 @@
         a.appendChild(m);
         li.appendChild(a); list.appendChild(li); shown++;
       });
-      count.textContent = "共 " + LIB.notes.length + " 篇" + (shown === LIB.notes.length ? "" : "，显示 " + shown + " 篇");
+      var total = sorted().length;
+      count.textContent = "共 " + total + " 篇" + (shown === total ? "" : "，显示 " + shown + " 篇");
       if (!shown) list.appendChild(el("li", "lib-empty", "没有符合条件的文章。"));
     }
     render();
@@ -97,9 +98,9 @@
   // ---------- 文章页 ----------
   function initNote() {
     var f = decodeURIComponent(location.pathname.split("/").pop().replace(/\.html$/, ""));
-    var all = sorted(), i = -1;
-    for (var k = 0; k < all.length; k++) if (all[k].f === f) i = k;
-    var n = all[i];
+    var n = null, all = sorted();
+    LIB.notes.forEach(function (x) { if (x.f === f) n = x; });
+    var i = all.indexOf(n);   // hidden 的不在 all 里，i 是 -1，不显示翻页
     if (n) {
       var c = catOf(n.cat);
       if (c) document.body.classList.add("tinted", "tint-" + c.tint);
@@ -112,7 +113,7 @@
       var pager = document.querySelector("[data-slot=pager]");
       if (pager) {
         // all 是新的在前：上一篇是更早的，下一篇是更新的
-        var prev = all[i + 1], next = all[i - 1];
+        var prev = i < 0 ? null : all[i + 1], next = i < 1 ? null : all[i - 1];
         if (prev) pager.appendChild(pageLink(prev, "上一篇（更早）", "prev"));
         if (next) pager.appendChild(pageLink(next, "下一篇（更新）", "next"));
         if (!prev && !next) pager.hidden = true;
