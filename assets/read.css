@@ -238,9 +238,10 @@ code, .addr {
 .diagram tspan.m { font-family: var(--mono); font-size: 12.5px; }
 
 /* ---------- 流程块（纯 HTML，窄屏自动换行） ---------- */
-.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px 30px; margin: 20px 0 24px; padding: 0; list-style: none; }
+/* 流程块始终排一行、各项等宽（2026-11-08：换行时行尾箭头会指向空处并伸出正文栏 21px，iPad 竖屏、iPhone 横屏都会遇到）；640px 以下竖排；最多 5 项，check_notes.js 会查 */
+.flow { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 10px 30px; margin: 20px 0 24px; padding: 0; list-style: none; }
 .flow > li {
-  position: relative; flex: 1 1 150px; margin: 0; padding: 10px 12px; font-size: 14px; line-height: 1.6;
+  position: relative; flex: 1 1 0; min-width: 0; margin: 0; padding: 10px 12px; font-size: 14px; line-height: 1.6;
   background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius);
 }
 .flow > li:not(:last-child)::after {
