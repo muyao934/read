@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>区块链诈骗与骗局</title>
+<meta name="description" content="区块链和加密资产领域的诈骗：庞氏与传销、跑路与拉盘、杀猪盘与冒充、钓鱼与授权盗币。每一篇写清楚骗术怎样运作、钱去了哪里、之后怎样了。">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="assets/sc.css">
+<script src="../shared/base.js"></script>
+<script src="assets/data.js"></script>
+<script src="../hacks/assets/data.js"></script>
+<script src="assets/page.js"></script>
+<script src="assets/index.js" defer></script>
+</head>
+<body class="sc-home">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="index.html">区块链诈骗与骗局</a>
+  <span class="tb-r"><a class="tb-up" href="../index.html">总览</a><span data-slot="theme"></span></span>
+</div></header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>区块链诈骗与骗局<span class="yr">受害者自己转出的钱</span></h1>
+    <p class="lede">这里收录区块链和加密资产领域的诈骗，分为庞氏与传销、跑路与拉盘、杀猪盘与冒充、钓鱼与授权盗币四类，目前已收录 <span data-slot="count">0</span> 篇。黑客攻击和盗币见<a href="../hacks/index.html">区块链被盗事件编年史</a>，平台崩盘和监管见<a href="../milestones/index.html">区块链大事记</a>。</p>
+    <div class="seismo" id="lanes"><div class="tip" hidden aria-live="polite"></div></div>
+    <p class="seismo-cap">每一行是一类骗局，横轴是时间，每个点是一篇。红点的金额是受害者的损失；其他点的金额是扣押、没收或罚款，不是损失。悬停或用方向键查看，点击打开详情。</p>
+  </section>
+
+  <section class="sec" id="cats">
+    <h2>四类骗局</h2>
+    <p class="intro">四类都按深度版写，每篇核对至少六个独立来源。</p>
+    <div id="cat-list"></div>
+  </section>
+
+  <section class="sec" id="method">
+    <h2>收录与口径</h2>
+    <div class="method">
+      <div>
+        <h3>和被盗事件编年史的分工</h3>
+        <p>看转账是谁签的。受害者自己转的账、自己签的授权，算诈骗，写在这里；攻击者拿到私钥或账户控制权后自己转走的，算被盗，写在被盗事件编年史。被骗说出助记词、被骗装了远程控制软件的社工案，钱是攻击者转走的，所以写在被盗站，例如<a href="../hacks/events/2026-hw-wallet-scam.html">冒充硬件钱包客服骗走 2.82 亿美元</a>。</p>
+        <h3>和区块链大事记的分工</h3>
+        <p>看是不是一开始就是骗局。从第一天起就靠后来者的钱支付收益的资金盘写在这里；原本正常经营、后来挪用客户资产暴雷的平台写在大事记的崩盘类，例如 FTX。</p>
+      </div>
+      <div>
+        <h3>规模数字</h3>
+        <p>诈骗的金额多半只有检方、法院或调查机构的估计，受害者自报的数字常常偏高或偏低。每篇顶部写明口径，不同来源差别大时，详情页逐一列出。受害者被骗走的钱算损失，事后追回的也算；扣押、没收和罚款的金额不算损失。不同事件的口径不同，不加总，也不互相比较。</p>
+        <h3>来源与时效</h3>
+        <p>优先使用起诉书、判决书、监管机构和执法机构的公告，再用调查报道和链上分析机构的报告交叉核对。指控写明是谁指控的，没有定罪的不写成事实。资料截至 2026 年 11 月，仍在审理的案件会标出。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>资料来自各篇末尾列出的公开来源。如有出入，以详情页中引用的原始资料为准。</p>
+  <p data-slot="updated"></p>
+</div></footer>
+</body>
+</html>

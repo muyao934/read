@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitget 被盗 3.875 亿美元｜区块链被盗事件编年史</title>
+<meta name="description" content="2026 年 9 月 Bitget 热钱包与温钱包被盗约 3.88 亿美元的经过：第三方安全产品的零日漏洞、伪造的提币指令如何被交易所自己的签名服务放行、朝鲜归因的依据、保护基金赔付与洗钱进展。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2026-bitget">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2026 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Bitget 被盗 3.875 亿美元</h1>
+    <p class="lede">2026 年 9 月 24 日，攻击者在不到三小时里从 Bitget 的热钱包和温钱包转走约 3.88 亿美元，涉及 11 条链。攻击者没有拿到任何私钥：他们先攻破 Bitget 使用的第三方安全产品，再进入生产环境的钱包服务器伪造提币指令，交易所自己的签名服务把这些指令当作正常提币签了名。在一个多月后的币安事件之前，这是 2026 年金额最大的盗币案。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">交易所的一笔提币要依次经过风控核验、生成提币记录、签名服务签名，最后广播上链。签名服务掌握热钱包和温钱包的私钥，但它只看请求是不是来自内部系统。攻击者利用一款第三方安全产品的零日漏洞进入 Bitget 内网，横向移动到生产环境的钱包任务服务器，在上面放了一个定制的提币工具。这个工具能伪造风控参数、直接构造提币请求，签名服务照常为它们签了名<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</p>
+        <p>第一笔未授权转账发生在 9 月 24 日 18:31（UTC）。约 2 小时 52 分钟里，12 个热、温钱包地址转出约 3.88 亿美元的 XRP、ETH、USDT、ZEC、TRX 等资产<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。Bitget 的对账系统在 34 分钟后发现异常，签名服务在 21:44 被关闭<a class="ref" href="#s2">[2]</a>。私钥和冷钱包都没有被攻破。</p>
+        <p>Bitget 用用户保护基金承担了全部损失，基金从 4.64 亿美元以上降到 2 亿美元以下，一周内用自有资金补回到 3 亿美元以上；提币在 9 月 28 日至 10 月 2 日间分批恢复<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。CEO Gracy Chen 称 IP 地址和行为特征指向朝鲜黑客团伙，Chainalysis 随后把攻击归于朝鲜相关行为者<a class="ref" href="#s4">[4]</a><a class="ref" href="#s14">[14]</a>。Mandiant 和 SlowMist 的报告没有点名攻击团伙，截至 2026 年 10 月底，本站没有查到执法机构的公开认定。到 10 月 2 日，只有约 110 万美元被冻结<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Bitget 是一家中心化交易所，按 Bloomberg 引用的 DefiLlama 数据，事发时它可追踪的储备约 57 亿美元<a class="ref" href="#s11">[11]</a>。它设有用户保护基金，事发前持有约 5,500 枚 BTC，价值超过 4.64 亿美元，用于在平台出事时赔付用户<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>交易所的热钱包和温钱包要随时响应用户提币，私钥必须在线，所以通常放在单独部署的签名服务里，由 HSM 或 MPC 节点保管，只接受内部系统发来的签名请求。冷钱包则离线保存，需要人工流程才能动用。Bitget 这次被盗的全部是热钱包和温钱包，所有链上的冷钱包都没有受到影响<a class="ref" href="#s2">[2]</a>。</p>
+        <p>2026 年此前已有两起被归因于朝鲜的大案：4 月的 <a href="2026-drift-protocol.html">Drift</a> 和 <a href="2026-kelpdao.html">KelpDAO</a>，各被盗约 2.8 亿至 2.9 亿美元<a class="ref" href="#s4">[4]</a>。往前一年，朝鲜相关黑客在 2025 年盗取了超过 20 亿美元，其中 14.6 亿美元来自 <a href="2025-bybit.html">Bybit</a><a class="ref" href="#s21">[21]</a>。Bybit 被盗后，Bitget 曾无息、无抵押借给 Bybit 4 万枚 ETH 应对挤兑，三天后收回<a class="ref" href="#s20">[20]</a>。这一次轮到 Bitget，Bybit CEO Ben Zhou 主动提出协助，并推荐用 Bybit 的 LazarusBounty 平台追踪赃款<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与各方响应</span><span>其他事件</span></p>
+        <p>时间均为 UTC。9 月 24 日的分钟级时刻来自 Bitget 的官方时间线<a class="ref" href="#s2">[2]</a>。</p>
+        <ol class="timeline">
+          <li class="atk key"><time>2026-08-31</time><div class="ev">SlowMist 在日志里找到的最早恶意活动：攻击者利用一款第三方安全产品（报告称为 Product A）中一个服务的零日漏洞取得立足点<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2026-08-31 之后</time><div class="ev">攻击者在安全设备 B 上部署 web shell 并建立 C2 连接，由此横向进入 Bitget 生产环境的钱包任务服务器，放下恶意程序包和定制提币工具。报告没有给出这几步的具体日期<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="atk"><time>2026-09-23</time><div class="ev">SlowMist 记录，另外两个节点上出现了类似的隐藏脚本活动，分别在 9 月 23 日和 25 日<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk key"><time>2026-09-24 18:31</time><div class="ev">第一笔未授权转账从部分热、温钱包发出<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2026-09-24 19:05</time><div class="ev">对账系统发现大额差异，风控自动拦截提币请求；19:14 启动最高级别应急响应，19:40 开始遏制<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2026-09-24 20:40</time><div class="ev">由于还不能排除私钥泄露，Bitget 把资金转入冷钱包<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2026-09-24 21:23</time><div class="ev">SlowMist 记录的攻击者地址最后一笔入账，整个转账序列历时约 2 小时 52 分钟<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def key"><time>2026-09-24 21:44</time><div class="ev">包括签名服务在内的钱包提币服务全部关闭<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2026-09-25</time><div class="ev">08:43 确定根因，13:42 报告执法机构<a class="ref" href="#s2">[2]</a>。Gracy Chen 称私钥泄露已被排除、损失 3.516 亿美元、保护基金可全额覆盖<a class="ref" href="#s3">[3]</a>；同日把损失上调到 3.875 亿美元，补计了 Zcash 和 Tron 上的资产，并称 IP 地址与行为特征指向朝鲜团伙<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2026-09-26</time><div class="ev">Circle 与 Tether 已冻结约 31.8 万美元稳定币<a class="ref" href="#s13">[13]</a>。Gracy Chen 公开要求 THORChain 拒绝为攻击者地址提供服务<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def key"><time>2026-09-28</time><div class="ev">BTC 提币 08:00 恢复，到 09:00 已处理 9,585 笔、共约 4,098 BTC<a class="ref" href="#s12">[12]</a>。ZachXBT 公布洗钱线索：华人非法团伙在为疑似朝鲜的攻击者洗钱，部分资金进入 Wasabi<a class="ref" href="#s12">[12]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2026-09-29</time><div class="ev">按 DefiLlama 数据，Bitget 在 24 小时内净流出约 4.63 亿美元，是其追踪储备证明四年来最大的单日净流出<a class="ref" href="#s11">[11]</a>。ETH 提币恢复；第 47 次储备证明显示 19 种资产整体储备率 131%<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2026-09-30</time><div class="ev">Mandiant 与 SlowMist 的独立调查报告公开：两款第三方安全产品被攻破，其中一款有零日漏洞，均未点名攻击团伙<a class="ref" href="#s7">[7]</a><a class="ref" href="#s10">[10]</a>。USDT 提币恢复，保护基金补回到 3 亿美元以上<a class="ref" href="#s2">[2]</a>。约 2,746 枚 ZEC 被转进 Zcash 的屏蔽池 Ironwood<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2026-10-01</time><div class="ev">Chainalysis 发布报告，把攻击归于朝鲜相关行为者，称朝鲜 2026 年盗取总额因此超过 10 亿美元<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def key"><time>2026-10-02</time><div class="ev">其他币种、法币和 C2C 恢复，分批恢复完成<a class="ref" href="#s2">[2]</a>。Gracy Chen 对 CNBC 说，冻结的只有约 110 万美元，“不指望能追回多少”<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>2026-10-15 至 10-23</time><div class="ev">Arkham 追踪到攻击者地址向新地址转出 7,801 万美元；10 月 23 日剩余的标记持仓约 2.425 亿美元，其中 2,960 枚 BTC<a class="ref" href="#s16">[16]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次没有可供引用的漏洞代码：零日漏洞所在的产品没有公开，攻击者的工具也只在取证报告里被概括描述。下面按公开报告讲清楚攻击打穿了哪几层，以及为什么不需要私钥。</p>
+        <h3>一笔提币要经过哪些环节</h3>
+        <p>交易所内部的提币流水线大致是：用户发起提币请求；风控系统核验额度、收款地址和账户行为；通过后生成一条提币记录；钱包任务服务器把待处理的提币交给签名服务；签名服务用热钱包或温钱包的私钥签名，广播上链。这是行业通行的结构，各家细节不同，Bitget 没有公开自己的具体架构。</p>
+        <p>这条流水线的安全假设是：只有通过风控的请求才会变成提币记录，签名服务只为提币记录签名。签名服务一般不会再独立核验“这笔提币是不是用户发起的、风控是不是真的通过了”，它信任上游系统。Halborn 的总结是：交易只有在签名之后才不可篡改、可被认证；在签名之前伪造它，就能在不碰私钥的情况下偷走资产<a class="ref" href="#s6">[6]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 372" role="img" aria-labelledby="bitget-pipe-t bitget-pipe-d">
+            <title id="bitget-pipe-t">Bitget 的提币流水线与攻击者的注入点</title>
+            <desc id="bitget-pipe-d">上排是交易所通用的提币流水线：用户提币请求、风控核验、生成提币记录、签名服务、广播上链。中排是攻击路径：第三方安全产品 A 的零日漏洞，安全设备 B 上的 web shell 和 C2 连接，再横向进入钱包任务服务器，部署定制提币工具，伪造风控参数后直接构造提币请求，在生成提币记录这一步进入流水线，跳过了风控。签名服务照常签名，资产转到攻击者地址。下排是三道本可以拦住攻击的防线：隔离安全设备、签名端独立核验、限额与熔断。</desc>
+            <defs>
+              <marker id="bitget-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bitget-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="20" y="22">正常的提币流水线</text>
+            <rect class="d-box" x="20" y="34" width="120" height="84" rx="4"/>
+            <text class="d-t b" x="80" y="58" text-anchor="middle">用户提币请求</text>
+            <text class="d-t s" x="80" y="82" text-anchor="middle">前端或 API 发起</text>
+            <line class="d-line" x1="140" y1="76" x2="168" y2="76" marker-end="url(#bitget-ah)"/>
+            <rect class="d-box doubt" x="170" y="34" width="120" height="84" rx="4"/>
+            <text class="d-t b" x="230" y="58" text-anchor="middle">风控核验</text>
+            <text class="d-t s" x="230" y="82" text-anchor="middle">额度、地址、行为</text>
+            <text class="d-t s atk" x="230" y="104" text-anchor="middle">被绕过</text>
+            <line class="d-line" x1="290" y1="76" x2="318" y2="76" marker-end="url(#bitget-ah)"/>
+            <rect class="d-box" x="320" y="34" width="120" height="84" rx="4"/>
+            <text class="d-t b" x="380" y="58" text-anchor="middle">生成提币记录</text>
+            <text class="d-t s" x="380" y="82" text-anchor="middle">进入待签队列</text>
+            <text class="d-t s atk" x="380" y="104" text-anchor="middle">伪造指令由此进入</text>
+            <line class="d-line" x1="440" y1="76" x2="468" y2="76" marker-end="url(#bitget-ah)"/>
+            <rect class="d-box" x="470" y="34" width="120" height="84" rx="4"/>
+            <text class="d-t b" x="530" y="58" text-anchor="middle">签名服务</text>
+            <text class="d-t s" x="530" y="82" text-anchor="middle">热、温钱包私钥</text>
+            <text class="d-t s atk" x="530" y="104" text-anchor="middle">照常签名</text>
+            <line class="d-line" x1="590" y1="76" x2="618" y2="76" marker-end="url(#bitget-ah)"/>
+            <rect class="d-box" x="620" y="34" width="120" height="84" rx="4"/>
+            <text class="d-t b" x="680" y="58" text-anchor="middle">广播上链</text>
+            <text class="d-t s" x="680" y="82" text-anchor="middle">资产转出</text>
+            <text class="d-t s atk" x="680" y="104" text-anchor="middle">到攻击者地址</text>
+            <text class="d-t b atk" x="20" y="152">攻击路径（据 Mandiant、SlowMist 报告）</text>
+            <line class="d-line atk" x1="380" y1="164" x2="380" y2="122" marker-end="url(#bitget-ah-atk)"/>
+            <text class="d-t s atk halo" x="392" y="148">直接构造提币请求</text>
+            <rect class="d-box atk" x="20" y="164" width="125" height="76" rx="4"/>
+            <text class="d-t b" x="82" y="188" text-anchor="middle">安全产品 A</text>
+            <text class="d-t s" x="82" y="210" text-anchor="middle">零日漏洞</text>
+            <text class="d-t s" x="82" y="228" text-anchor="middle">读出数据库密码</text>
+            <line class="d-line atk dash" x1="145" y1="202" x2="163" y2="202" marker-end="url(#bitget-ah-atk)"/>
+            <rect class="d-box atk" x="165" y="164" width="125" height="76" rx="4"/>
+            <text class="d-t b" x="227" y="188" text-anchor="middle">安全设备 B</text>
+            <text class="d-t s" x="227" y="210" text-anchor="middle">部署 web shell</text>
+            <text class="d-t s" x="227" y="228" text-anchor="middle">建立 C2 连接</text>
+            <line class="d-line atk" x1="290" y1="202" x2="303" y2="202" marker-end="url(#bitget-ah-atk)"/>
+            <rect class="d-box atk" x="305" y="164" width="150" height="76" rx="4"/>
+            <text class="d-t b" x="380" y="188" text-anchor="middle">钱包任务服务器</text>
+            <text class="d-t s" x="380" y="210" text-anchor="middle">定制提币工具</text>
+            <text class="d-t s" x="380" y="228" text-anchor="middle">伪造风控参数</text>
+            <text class="d-t b def" x="20" y="272">本可以拦住的地方</text>
+            <rect class="d-box def" x="20" y="284" width="230" height="76" rx="4"/>
+            <text class="d-t b" x="135" y="308" text-anchor="middle">隔离安全设备</text>
+            <text class="d-t s" x="135" y="330" text-anchor="middle">管理面单独成网</text>
+            <text class="d-t s" x="135" y="348" text-anchor="middle">不能直达钱包服务器</text>
+            <rect class="d-box def" x="265" y="284" width="230" height="76" rx="4"/>
+            <text class="d-t b" x="380" y="308" text-anchor="middle">签名端独立核验</text>
+            <text class="d-t s" x="380" y="330" text-anchor="middle">核对用户签名与风控凭证</text>
+            <text class="d-t s" x="380" y="348" text-anchor="middle">不只看“来自内部”</text>
+            <rect class="d-box def" x="510" y="284" width="230" height="76" rx="4"/>
+            <text class="d-t b" x="625" y="308" text-anchor="middle">限额与熔断</text>
+            <text class="d-t s" x="625" y="330" text-anchor="middle">热钱包按小时设上限</text>
+            <text class="d-t s" x="625" y="348" text-anchor="middle">对账异常即停签名</text>
+          </svg>
+          </div>
+          <figcaption>图 1：提币流水线和攻击者的注入点。上排是通用的交易所提币流程；中排是取证报告描述的攻击路径，安全产品 A 到设备 B 的具体路径报告没有说明，用虚线表示。伪造的指令跳过风控，在“生成提币记录”这一步进入流水线，之后的签名服务照常签名。下排是本站根据公开报告整理的防线。</figcaption>
+        </figure>
+        <h3>攻击者打穿了哪几层</h3>
+        <p>按 Mandiant 和 SlowMist 的报告以及 Bitget 的说明<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>：</p>
+        <ul>
+          <li>安全产品 A：一个服务存在零日漏洞。攻击者在节点上运行隐藏脚本，读出保存在环境变量里的数据库密码，连上了数据库。</li>
+          <li>安全设备 A 和 B：攻击者取得了两台设备的特权访问，在 B 上部署 web shell、建立 C2 连接，把它当作跳板。</li>
+          <li>钱包任务服务器：攻击者从 B 横向移动到生产环境的钱包任务服务器，部署恶意程序包和一个定制的提币工具。</li>
+          <li>提币流程：这个工具能伪造风控参数、构造提币请求、调用提币流程，还能尝试直接修改钱包数据库里的提币记录。按 Bitget 的说法，伪造的指令在提币记录生成之前就绕过了风控核验，被当作正常提币处理，攻击者事后删除了相关痕迹。</li>
+        </ul>
+        <p>Gracy Chen 用银行打比方：这就像伪造的取款单交给了银行自己的柜台去办理<a class="ref" href="#s3">[3]</a>。柜员按规矩办事，取款单在进柜台之前就被换掉了。</p>
+        <div class="note warn">
+          <span class="h">被攻破的是“安全产品”</span>
+          <p>零日漏洞出在 Bitget 采购的第三方安全产品里。这类设备为了监控和防护，通常部署在网络的关键位置，并拥有较高权限；它被攻破，攻击者就同时得到了位置和权限。Bitget 没有公开这两款产品的厂商和型号，Gracy Chen 以避免给其他用户带来额外风险为由拒绝透露<a class="ref" href="#s9">[9]</a>，外界因此无法判断同一个漏洞是否还影响其他公司。</p>
+        </div>
+        <h3>和 Bybit 的对照</h3>
+        <div class="compare">
+          <div>
+            <h4>Bybit（2025）：人签名</h4>
+            <p>被篡改的是签名人看的网页。签名人按网页显示签了名，硬件钱包没有给出能独立核对的信息。</p>
+          </div>
+          <div>
+            <h4>Bitget（2026）：机器签名</h4>
+            <p>被篡改的是送进签名服务的提币指令。签名服务按流程签了名，它不独立核验指令的来源。</p>
+          </div>
+        </div>
+        <p>两起事件里，签名的一方都忠实执行了收到的东西，私钥都没有泄露。2024 年的 <a href="2024-dmm-bitcoin.html">DMM Bitcoin</a> 也属于这一类：攻击者用假编程测试攻破钱包服务商 Ginco 的一名员工，借一笔伪造的交易转走 4,502.9 枚 BTC<a class="ref" href="#s22">[22]</a>。</p>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面的步骤来自 Bitget 的官方时间线、Mandiant 与 SlowMist 的报告和链上分析机构的统计<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s13">[13]</a>。两份报告都没有公开完整细节，攻击者删除了部分痕迹，SlowMist 是从被删除的文件里恢复出那个提币工具的。</p>
+        <ol class="steps">
+          <li><b>取得立足点（8 月 31 日）</b>利用第三方安全产品中一个服务的零日漏洞，在节点上运行隐藏脚本，读出数据库密码。</li>
+          <li><b>潜伏与横向移动</b>在安全设备 B 上部署 web shell、建立 C2 连接，从这里进入生产环境的钱包任务服务器，部署恶意程序包和定制提币工具。从最早的恶意活动到动手，中间约三周半。</li>
+          <li><b>注入伪造提币（9 月 24 日 18:31 起）</b>定制工具伪造风控参数、构造提币请求，签名服务为它们签名。12 个热、温钱包地址陆续向攻击者地址转出资产。最早的两笔入账很小：Tron 上 93 TRX，11 秒后以太坊上 0.84 ETH。</li>
+          <li><b>BTC 的尝试失败</b>SlowMist 记录，两笔伪造的 BTC 提币单进入了处理流程但返回错误，攻击者查看日志和状态后又重试。Bitget 公布的被盗资产里没有 BTC<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>快速换币</b>资产主要转到以太坊、XRP Ledger、Zcash 和 Tron 四个网络。可被发行方冻结的稳定币很快在 DEX 上换成了 ETH，其中一个钱包用 1,967 万美元的 USDT0 买入 7,111 枚 ETH<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>停止与清理</b>攻击者地址的最后一笔入账约在 21:23；伪造指令相关的痕迹被删除。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">发现之后，为什么转账又持续了两个多小时</span>
+          <p>Bitget 的对账系统在 19:05 发现差异，风控“自动拦截了提币请求”；但按 SlowMist 的记录，攻击者地址的入账一直持续到约 21:23，签名服务直到 21:44 才关闭<a class="ref" href="#s2">[2]</a><a class="ref" href="#s8">[8]</a>。公开资料没有解释这段时间里的转出走的是哪条路径。一种可能是攻击者的工具不经过被拦截的提币请求入口，但这只是推测，要等更完整的技术报告。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>损失口径改过几次。Decrypt 记录，最初的统计约为 1.83 亿美元，随后是 3.516 亿美元<a class="ref" href="#s5">[5]</a>；9 月 25 日，Bitget 补计了 Zcash 和 Tron 上漏算的资产，上调到 3.875 亿美元，并说明这不代表遏制后又有新的被盗<a class="ref" href="#s16">[16]</a>。官方页面最终写的是“约 3.88 亿美元”，涉及 12 个热、温钱包地址和 11 条链<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>网络</th><th class="n">占比</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>以太坊</td><td class="n">49.7%</td><td>含 ETH 及换成 ETH 的稳定币等；Halborn 估计约 1 亿美元代币被换成 ETH，另有约 8,500 万美元原本就是 ETH<a class="ref" href="#s6">[6]</a></td></tr>
+              <tr><td>XRP Ledger</td><td class="n">40.8%</td><td>单笔最大的一块，约 1.03 亿枚 XRP，约 1.57 亿美元<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>Zcash</td><td class="n">7.6%</td><td>约 1.89 万枚 ZEC，约 2,800 万美元<a class="ref" href="#s17">[17]</a></td></tr>
+              <tr><td>Tron</td><td class="n">1.8%</td><td>Halborn 估计约 700 万美元 TRX 未兑换<a class="ref" href="#s6">[6]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">占比来自 Chainalysis：被盗资产在约 3 小时内经 23 笔转账离开 Bitget，落到这四个网络上<a class="ref" href="#s13">[13]</a>。Bitget 官方列出的 11 条链还包括 Arbitrum、Optimism、Base、BSC、Avalanche、Algorand、Celestia<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>洗钱路径</h3>
+        <ol class="flow">
+          <li class="atk"><b>稳定币换 ETH</b>在 DEX 上迅速兑换，避开发行方冻结</li>
+          <li class="atk"><b>跨链换成 BTC</b>XRP 经跨链流动性协议换出比特币；也走了 THORChain、Chainflip</li>
+          <li class="atk"><b>隐匿</b>部分 ZEC 进入屏蔽池；部分 BTC 进入 Wasabi 和 CoinJoin</li>
+          <li class="doubt"><b>仍在转移</b>10 月 23 日剩余标记持仓约 2.425 亿美元，大部分是 BTC</li>
+        </ol>
+        <p>Chainalysis 记录，攻击者把 XRP 推进一个跨链流动性协议，从另一头取出比特币，约一天半里有数千万美元走了这条路<a class="ref" href="#s14">[14]</a>。ZachXBT 发现约 101.5 枚 BTC 经 THORChain 转出，另有 2,763 万枚 XRP（约 4,300 万美元）正被换成比特币<a class="ref" href="#s12">[12]</a>。他还指认了五个洗钱者化名，称其中一人此前参与过 KelpDAO 赃款的清洗，一些洗钱者甚至在公开的 Discord 和 Telegram 频道里求助；他同时说明，这些证据不能独立证明攻击者本人是朝鲜人<a class="ref" href="#s15">[15]</a>。</p>
+        <p>9 月 30 日，约 2,746 枚 ZEC（约 390 万美元）分三笔转进 Zcash 的屏蔽池 Ironwood，约占被盗 ZEC 的 15%；进入屏蔽池后，发送方、接收方和金额都不再公开<a class="ref" href="#s17">[17]</a>。Arkham 统计，10 月 15 日至 23 日，攻击者地址向新地址转出 7,801 万美元；到 10 月 23 日，剩余的标记持仓约 2.425 亿美元，其中 2,960 枚 BTC<a class="ref" href="#s16">[16]</a>。按这组数字，大部分被盗资产已换成比特币，仍留在被标记的地址里；新转出的资金去了交易所、混币器还是场外渠道，Arkham 没有确认。</p>
+        <h3>冻结与拦截</h3>
+        <ul>
+          <li>Circle 与 Tether 在 9 月 26 日前冻结约 31.8 万美元 USDC 和 USDT<a class="ref" href="#s13">[13]</a>。</li>
+          <li>NEAR Intents 拦截了超过 5,000 万美元与 Bitget 有关的兑换尝试，冻结约 50.3 万美元；Chainflip 的一个 broker 拒绝了一笔交易<a class="ref" href="#s8">[8]</a>。THORChain 照常处理<a class="ref" href="#s14">[14]</a>，Bitget 曾公开要求它拒绝为攻击者地址服务<a class="ref" href="#s18">[18]</a>。</li>
+          <li>截至 10 月 2 日，Bitget 方面冻结的总额约 110 万美元，不到被盗金额的 0.3%；Gracy Chen 说这些资产“不一定已经回到交易所”<a class="ref" href="#s10">[10]</a>。</li>
+        </ul>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>挤兑与储备</h3>
+        <p>按 Bloomberg 引用的 DefiLlama 数据，事发后 24 小时 Bitget 净流出约 4.63 亿美元，是 DefiLlama 追踪储备证明四年来最大的单日净流出，超过其约 57 亿美元储备的一成<a class="ref" href="#s11">[11]</a>。BTC 提币 9 月 28 日恢复后，一小时内处理了 9,585 笔、约 4,098 BTC；DefiLlama 显示 Bitget 可追踪的 BTC 余额从 35,412 枚降到约 30,770 枚<a class="ref" href="#s12">[12]</a>。这部分是用户提走的币，不是被盗资产。9 月 29 日的储备证明显示，19 种资产的整体储备率为 131%，每种都高于 100%<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>保护基金是一次性的缓冲</h3>
+        <p>这一次事件就把保护基金从 4.64 亿美元以上用到了 2 亿美元以下。Bitget 一周内用自有资金补回到 3 亿美元以上（约 3,705 BTC），仍比事发前少约三分之一<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。如果短期内再发生同等规模的事件，基金不够覆盖。官方页面的常见问题里仍写着“5,500 BTC、超过 4.64 亿美元”，和同一页面上的 3,705 BTC 对不上，应该是事发前的旧数字<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>朝鲜的 2026 年账本</h3>
+        <p>Chainalysis 认为这次攻击让朝鲜相关团伙 2026 年的盗取总额超过了 10 亿美元<a class="ref" href="#s13">[13]</a>。按本站收录的事件，Bitget 当时是 2026 年金额最大的一起，一个多月后被 <a href="2026-binance.html">币安事件</a> 超过。</p>
+        <h3>归因到哪一步</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>谁</th><th>怎么说</th><th>依据</th></tr></thead>
+            <tbody>
+              <tr><td>Bitget CEO Gracy Chen</td><td>与朝鲜相关的黑客团伙有关</td><td>IP 地址、行为模式和链上特征；IP 与某个朝鲜团伙常用的 VPN 吻合。她也说“还要等更多细节”<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>Chainalysis</td><td>归于朝鲜相关行为者</td><td>基于与 Bitget 和执法机构的追踪合作，未公开详细推理<a class="ref" href="#s14">[14]</a></td></tr>
+              <tr><td>Elliptic</td><td>指向朝鲜，可能性大</td><td>据 Decrypt 转述，未经确认<a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><td>Mandiant、SlowMist</td><td>没有点名攻击团伙</td><td>两份取证报告<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>ZachXBT</td><td>洗钱者是华人非法团伙</td><td>手法和多起 TraderTraitor 案件相似，但不能独立证明攻击者是朝鲜人<a class="ref" href="#s15">[15]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Bitget 在 9 月 25 日向执法机构报告了此事<a class="ref" href="#s2">[2]</a>。截至 2026 年 10 月 31 日，本站没有查到 FBI 或其他执法机构的公开认定，所以本页写作“疑似朝鲜”。这和 Bybit 一案不同，那一次 FBI 在事发五天后就做了正式认定。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>赔付与恢复提币</h3>
+        <p>Bitget 用用户保护基金承担了全部损失，用户账户余额不受影响。Gracy Chen 说，基金是“用 Bitget 自己的资本”补回的<a class="ref" href="#s9">[9]</a>。提币按资产分四批恢复，时间都是 08:00（UTC）<a class="ref" href="#s1">[1]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>日期</th><th>恢复的提币</th></tr></thead>
+            <tbody>
+              <tr><td>9 月 28 日</td><td>BTC</td></tr>
+              <tr><td>9 月 29 日</td><td>ETH（以太坊、BSC、Arbitrum、Base、Optimism）</td></tr>
+              <tr><td>9 月 30 日</td><td>USDT（以太坊、BSC、Solana、Tron）</td></tr>
+              <tr><td>10 月 2 日</td><td>其他币种、法币和 C2C</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>调查与悬赏</h3>
+        <p>Bitget 请 Mandiant 和 SlowMist 做独立调查，两份报告在 9 月 30 日公开，并通知了执法机构和金融情报单位<a class="ref" href="#s2">[2]</a>。报告用 Product A、设备 A 和 B 指代涉事产品，没有写出厂商<a class="ref" href="#s7">[7]</a>。Bitget 推出追回悬赏：给协助冻结的平台 5%，追回后再给 5%<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>；并把 Bybit 的 LazarusBounty 作为额外的追回渠道<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>整改</h3>
+        <p>按 Bitget 公布的措施<a class="ref" href="#s2">[2]</a>：</p>
+        <ul>
+          <li>隔离受影响系统，修复底层漏洞；</li>
+          <li>重置内部凭证，收紧高敏感权限；关键操作改为多人审批；</li>
+          <li>通知第三方厂商，停用受影响的功能；</li>
+          <li>加强提币核验和异常监控，加强对第三方安全产品的评估。</li>
+        </ul>
+        <p>Gracy Chen 对 CNBC 说：“交易所有责任展示自己如何保护用户，尤其是在出事的时候。”<a class="ref" href="#s9">[9]</a></p>
+        <h3>截至 2026 年 10 月底</h3>
+        <p>提币已全部恢复，Bitget 称遏制之后没有新的未授权转账<a class="ref" href="#s16">[16]</a>。攻击者仍持有约 2.4 亿美元、以 BTC 为主的资产，并在 10 月中下旬继续向新地址转移<a class="ref" href="#s16">[16]</a>。厂商名称、完整技术报告和执法机构的认定都还没有公开。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <p>下表按攻击路径整理每一环可以加的检查。“这次发生了什么”来自取证报告，“可以加的检查”是本站根据通用安全实践和 Bitget 自己的整改措施整理的，不是报告原文。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>环节</th><th>这次发生了什么</th><th>可以加的检查</th></tr></thead>
+            <tbody>
+              <tr><td>第三方安全产品</td><td>零日漏洞成了入口，设备本身有高权限</td><td>管理面放进单独网络；按最小权限给它访问生产系统的能力</td></tr>
+              <tr><td>凭证保存</td><td>数据库密码保存在环境变量里，被直接读出</td><td>用密钥管理服务下发短时效凭证；对异常读取告警</td></tr>
+              <tr><td>横向移动</td><td>从安全设备跳到了生产钱包服务器</td><td>钱包服务器只接受白名单来源的连接；新进程、新文件告警</td></tr>
+              <tr><td>签名前核验</td><td>签名服务只看请求来自内部</td><td>签名端逐笔核对用户侧签名、风控签发的凭证和账本记录</td></tr>
+              <tr><td>止血</td><td>对账在 34 分钟后发现异常，转出又持续约两小时</td><td>对账异常直接触发签名熔断，而不只是拦截新的请求</td></tr>
+              <tr><td>热钱包敞口</td><td>不到 3 小时从热、温钱包转走约 3.88 亿美元</td><td>按小时、按资产设转出上限；超限必须人工复核</td></tr>
+              <tr><td>取证</td><td>攻击者删除了痕迹</td><td>日志实时写到不可改写的外部存储</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>安全产品也是供应链。它被攻破时，攻击者拿到的是你给它的位置和权限。</li>
+            <li>签名服务是最后一道检查，它能拦住什么，取决于它能看到什么。只核对“请求来自内部”，等于把全部安全押在内网不被攻破上。</li>
+            <li>热钱包的转出上限决定了一次事故的上限。保护基金的规模，应当和热、温钱包的最大敞口相匹配。</li>
+            <li>从发现异常到停止签名，这段时间决定了损失规模，止血流程需要事先演练。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">和 Bybit 放在一起看</span>
+          <p>Bybit 的签名人信任网页，Bitget 的签名服务信任内网。两起事件都没有丢私钥，丢的是签名之前最后一道独立核验。设计签名流程时要问：签名之前最后一次检查由谁来做，它依据的信息是否可能被同一个攻击者篡改。</p>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Bitget，《Bitget Security Incident (September 2026): Hack Timeline, Impact, and Latest Official Updates》，官方事件页，2026-10-13 更新。<a href="https://www.bitget.com/campaigns/bitget-security-incident-2026">bitget.com</a></li>
+          <li id="s2">Bitget Academy，《Bitget Hack Explained: Timeline, Impact and Security Response》，2026-09-27 起持续更新。<a href="https://www.bitget.com/academy/bitget-security-incident-what-happened-timeline-impact-response">bitget.com</a></li>
+          <li id="s3">CoinDesk，《Bitget's $352 million hack happened via spoofed transfers, not private keys, CEO Gracy Chen says》，2026-09-25。<a href="https://www.coindesk.com/markets/2026/09/25/bitget-s-usd351-million-hack-happened-via-spoofed-transfers-not-private-keys-ceo-gray-chen-says">coindesk.com</a></li>
+          <li id="s4">The Record，《Crypto CEO accuses North Korea of stealing $387 million from Bitget platform》，2026-09-25。<a href="https://therecord.media/crypto-ceo-accuses-north-korea-of-387-million-theft">therecord.media</a></li>
+          <li id="s5">Decrypt，《Bitget Hack Losses Climb to $387M: Here’s What Happened, and Why North Korea Is a Suspect》，2026-09-25。<a href="https://decrypt.co/379350/bitget-hack-387m-what-happened-why-north-korea-suspect">decrypt.co</a></li>
+          <li id="s6">Halborn，《Explained: The Bitget Hack (September 2026)》，2026-09-28。<a href="https://www.halborn.com/blog/post/explained-the-bitget-hack-september-2026">halborn.com</a></li>
+          <li id="s7">BleepingComputer，《Bitget hacked via zero-day in third-party security products》，2026-09-30（摘录 Mandiant 与 SlowMist 报告）。<a href="https://www.bleepingcomputer.com/news/security/bitget-hacked-via-zero-day-in-third-party-security-products/">bleepingcomputer.com</a></li>
+          <li id="s8">Abdelaziz Fathi，《SlowMist Traces Bitget $388M Hack to Aug. 31 Zero-Day》，FinanceFeeds，2026-09-30。<a href="https://financefeeds.com/bitget-hacker-used-custom-withdrawal-tool-to-steal-388m-across-blockchains/">financefeeds.com</a></li>
+          <li id="s9">CNBC，《Bitget 'not expecting to recover a lot' from $388 million hack, CEO tells CNBC》，2026-10-02。<a href="https://www.cnbc.com/2026/10/02/bitget-crypto-stolen-hack-recovery.html">cnbc.com</a></li>
+          <li id="s10">Cris Tolomia，《Bitget freezes $1.1M of $388M stolen in crypto hack》，Quartz（Yahoo Finance 转载），2026-10-02。<a href="https://finance.yahoo.com/markets/crypto/articles/bitget-freezes-1-1m-388m-124239744.html">finance.yahoo.com</a></li>
+          <li id="s11">Bloomberg，《Crypto Hack Spurs $463 Million in Customer Outflows at Bitget》，2026-09-29（Claims Journal 转载）。<a href="https://www.claimsjournal.com/news/national/2026/09/29/340433.htm">claimsjournal.com</a></li>
+          <li id="s12">CryptoSlate，《Nearly 5,000 BTC leaves Bitget as hackers begin laundering $387 million haul》，2026-09-28。<a href="https://cryptoslate.com/nearly-5000-btc-leaves-bitget-as-hackers-begin-laundering-387-million-haul/">cryptoslate.com</a></li>
+          <li id="s13">crypto.news，《Chainalysis AI traces $387M Bitget hack in under 10 minutes》，2026-10-03。<a href="https://crypto.news/chainalysis-ai-traces-bitget-hack-in-10-minutes/">crypto.news</a></li>
+          <li id="s14">Decrypt，《Chainalysis Used AI to Trace the $387M Bitget Hack Back to North Korea》，2026-10-03。<a href="https://decrypt.co/380005/chainalysis-ai-87m-bitget-hack-north-korea">decrypt.co</a></li>
+          <li id="s15">Decrypt，《$387M Bitget Hack Trail Leads to Public Discords and a Launderer From the $292M Kelp DAO Exploit》，2026-09-29（Yahoo Finance 转载）。<a href="https://finance.yahoo.com/markets/crypto/articles/387m-bitget-hack-trail-leads-121038471.html">finance.yahoo.com</a></li>
+          <li id="s16">crypto.news，《Bitget hacker moves $19.48 million in 52 transfers, Arkham says》，2026-10-24。<a href="https://crypto.news/bitget-hacker-moves-19-million-52-transfers/">crypto.news</a></li>
+          <li id="s17">CryptoTicker，《Zcash: 2,746 ZEC from Bitget Hack Shielded in Ironwood》，2026-09-30。<a href="https://cryptoticker.io/en/zcash-ironwood-pool-bitget-hack-funds-shielded/">cryptoticker.io</a></li>
+          <li id="s18">Cryptonews.net，《Bitget formally asks THORChain to refuse service to attacker addresses》，2026-09-26。<a href="https://cryptonews.net/news/security/33501712/">cryptonews.net</a></li>
+          <li id="s19">Decrypt，《Near Intents Hacked for $3.8M Days After Denying North Korea-Linked Bitget Hacker》，2026-10-01（Yahoo Finance 转载）。<a href="https://finance.yahoo.com/markets/crypto/articles/near-intents-hacked-3-8m-154327641.html">finance.yahoo.com</a></li>
+          <li id="s20">Cointelegraph，《Bybit repays Bitget’s 40,000 ETH loan after $1.4B hack》，2025-02-25（TradingView 转载）。<a href="https://www.tradingview.com/news/cointelegraph:14a799c98094b:0-bybit-repays-bitget-s-40-000-eth-loan-after-1-4b-hack/">tradingview.com</a></li>
+          <li id="s21">Elliptic，《North Korea's crypto hackers have stolen over $2 billion in 2025》，2025-10-06。<a href="https://www.elliptic.co/insights/north-korea-linked-hackers-have-already-stolen-over-2-billion-in-2025/">elliptic.co</a></li>
+          <li id="s22">Wiz，《TraderTraitor: Deep Dive》，2025-07-28。<a href="https://www.wiz.io/blog/north-korean-tradertraitor-crypto-heist">wiz.io</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

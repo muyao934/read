@@ -1,0 +1,429 @@
+/* 两站共用的样式：区块链被盗事件编年史（hacks/）和区块链大事记（milestones/）都先引入这个文件，再叠加各站自己的样式。
+   内容：颜色和字体变量、深浅色主题、顶栏和版心、详情页的全部组件，以及首页的分区标题、悬停提示框、坐标轴、时代章节和事件行。
+   用色约定：红色只表示"损失 / 攻击方"，蓝色只表示"链接 / 防守 / 追踪"，
+   琥珀色表示"存疑 / 未确认"，绿色表示"已追回"。其余一律用墨色和灰阶。
+   --era / --era-wash 是强调色，由 tint-e1…tint-e6 设置（六色纸色见下面）：没有设置时，用到它的地方退回墨色或不显示。 */
+
+/* 数字用齐线数字：Georgia 只有旧式数字（3、4、5、7、9 下沉，6、8 上伸），SHA256、金额、日期高低不齐。
+   这里只把 0–9 换成本机的 Times New Roman（齐线、等宽），字母和中文仍是 Georgia、宋体。用的是系统字体，不引入字体文件 */
+@font-face { font-family: "Serif Digits"; src: local("Times New Roman"), local("TimesNewRomanPSMT"); unicode-range: U+0030-0039; font-weight: 400; }
+@font-face { font-family: "Serif Digits"; src: local("Times New Roman Bold"), local("TimesNewRomanPS-BoldMT"); unicode-range: U+0030-0039; font-weight: 600 700; }
+
+:root {
+  color-scheme: light;
+  --paper: #f6f7f9;      /* 页面底色 */
+  --sheet: #ffffff;      /* 面板底色 */
+  --ink: #141b26;        /* 正文 */
+  --ink-2: #3d4756;      /* 次要文字 */
+  --ink-3: #5b6574;      /* 弱化文字、坐标轴 */
+  --rule: #d3d9e1;       /* 分隔线 */
+  --rule-2: #e3e7ec;     /* 网格、弱分隔线 */
+  --loss: #b02b28;       /* 损失、攻击方（文字） */
+  --loss-mark: #c8322f;  /* 损失、攻击方（图形） */
+  --loss-wash: #f6e3e1;
+  --trace: #245ea8;      /* 链接、防守方（文字） */
+  --trace-mark: #245ea8; /* 链接、防守方（图形） */
+  --trace-wash: #e2ebf6;
+  --doubt: #9a5c00;      /* 存疑、未确认 */
+  --doubt-wash: #f6ecd9;
+  --ok: #2b7a4b;         /* 已追回 */
+  --ok-wash: #e1f0e6;
+  --code-bg: #e6eaf0;
+  /* 字体按 claude.ai / anthropic.com 的写法：英文先用 Anthropic Serif / Sans / Mono（本机装了才会用上），
+     没有时英文退到 Georgia / system-ui，中文由后面的宋体、苹方等系统字体显示 */
+  --serif: "Anthropic Serif", "Serif Digits", Georgia, "Songti SC", "STSong", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", serif;
+  --sans: "Anthropic Sans", system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
+  --mono: "Anthropic Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #11161d; --sheet: #171d26; --ink: #e6e9ee; --ink-2: #b3bcc9; --ink-3: #8f9aaa;
+    --rule: #2b3442; --rule-2: #222a35;
+    --loss: #ef6b5f; --loss-mark: #e0574c; --loss-wash: #3a2124;
+    --trace: #6fa3e6; --trace-mark: #4d8ad8; --trace-wash: #1c2a3d;
+    --doubt: #e0a54a; --doubt-wash: #33291a; --ok: #5fbf86; --ok-wash: #183026; --code-bg: #1d2430;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #11161d; --sheet: #171d26; --ink: #e6e9ee; --ink-2: #b3bcc9; --ink-3: #8f9aaa;
+  --rule: #2b3442; --rule-2: #222a35;
+  --loss: #ef6b5f; --loss-mark: #e0574c; --loss-wash: #3a2124;
+  --trace: #6fa3e6; --trace-mark: #4d8ad8; --trace-wash: #1c2a3d;
+  --doubt: #e0a54a; --doubt-wash: #33291a; --ok: #5fbf86; --ok-wash: #183026; --code-bg: #1d2430;
+}
+:root {
+  /* 六色纸色（取自彩色纸砖）：橙、黄、粉、紫、蓝、绿。mark 用于线条、色条，wash 用于底色，只用在图形和色块上，不用于文字。
+     被盗站按时代用（e1 = 2010–2015 …），大事记、诈骗站按分类，基础知识按主题，总览页按板块 */
+  --e1: #c8600f; --e1-wash: #fde4cc;   /* 2010–2015 橙 */
+  --e2: #9c7600; --e2-wash: #fbefc0;   /* 2016–2019 黄 */
+  --e3: #d9577a; --e3-wash: #fbdbe4;   /* 2020–2021 粉 */
+  --e4: #8a68cc; --e4-wash: #ebe2f8;   /* 2022 紫 */
+  --e5: #2f86c6; --e5-wash: #d9ebf8;   /* 2023–2024 蓝 */
+  --e6: #4a9a36; --e6-wash: #dff0d6;   /* 2025–2026 绿 */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --e1: #f5994a; --e1-wash: #3b2a1b; --e2: #ecc232; --e2-wash: #363019; --e3: #f088a5; --e3-wash: #3b2229;
+    --e4: #b39be9; --e4-wash: #2c2640; --e5: #62b1e8; --e5-wash: #1a2c3d; --e6: #80c964; --e6-wash: #1f3320;
+  }
+}
+:root[data-theme="dark"] {
+  --e1: #f5994a; --e1-wash: #3b2a1b; --e2: #ecc232; --e2-wash: #363019; --e3: #f088a5; --e3-wash: #3b2229;
+  --e4: #b39be9; --e4-wash: #2c2640; --e5: #62b1e8; --e5-wash: #1a2c3d; --e6: #80c964; --e6-wash: #1f3320;
+}
+/* 着色：元素加上 tint-e1…tint-e6 后，用 var(--era) / var(--era-wash) 取本时代的颜色 */
+.tint-e1 { --era: var(--e1); --era-wash: var(--e1-wash); }
+.tint-e2 { --era: var(--e2); --era-wash: var(--e2-wash); }
+.tint-e3 { --era: var(--e3); --era-wash: var(--e3-wash); }
+.tint-e4 { --era: var(--e4); --era-wash: var(--e4-wash); }
+.tint-e5 { --era: var(--e5); --era-wash: var(--e5-wash); }
+.tint-e6 { --era: var(--e6); --era-wash: var(--e6-wash); }
+/* ---------- 基础 ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 72px; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 16px/1.75 var(--serif); font-feature-settings: "palt" 0;
+}
+/* 全站文字都用衬线（2026-11-06 用户要求，按 claude.ai），代码、地址、哈希用等宽 --mono；表单控件默认不继承字体，这里统一继承 */
+button, input, select, textarea { font-family: inherit; }
+a { color: var(--trace); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+:focus-visible { outline: 2px solid var(--trace); outline-offset: 2px; border-radius: 2px; }
+img, svg { max-width: 100%; }
+/* 版心随屏幕放宽到 1600px，两侧留白随宽度在 48–96px 之间变化（2026-11-06 用户要求从 24–48px 扩大到 2 倍）；四个板块和总览页一致 */
+.wrap { max-width: 1600px; margin: 0 auto; padding: 0 clamp(48px, 6vw, 96px); }
+/* 窗口特别宽时（如 4K 屏选了较高的分辨率），整页按比例放大，内容约占窗口宽度的七到八成。
+   顶栏随之变高，锚点跳转的留白按同样比例加大 */
+@media (min-width: 2400px) { body { zoom: 1.2; } html { scroll-padding-top: 87px; } }
+@media (min-width: 2800px) { body { zoom: 1.35; } html { scroll-padding-top: 98px; } }
+@media (min-width: 3200px) { body { zoom: 1.5; } html { scroll-padding-top: 108px; } }
+@media (min-width: 3600px) { body { zoom: 1.7; } html { scroll-padding-top: 123px; } }
+@media (max-width: 640px) { .wrap { padding: 0 16px; } }
+
+/* ---------- 顶栏 ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 20; background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 52px; }
+.topbar .home { font-family: var(--serif); font-weight: 700; font-size: 17px; color: var(--ink); text-decoration: none; letter-spacing: .02em; }
+.theme-toggle {
+  font: 13px/1 var(--serif); color: var(--ink-2); background: transparent;
+  border: 1px solid var(--rule); border-radius: var(--radius); padding: 7px 10px; cursor: pointer;
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--ink-3); }
+/* 顶栏右侧：回到根目录总览页的链接 + 主题按钮（两站首页用） */
+.tb-r { display: flex; align-items: center; gap: 14px; }
+.tb-up { font-size: 14px; color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+.tb-up:hover { color: var(--ink); text-decoration: underline; }
+
+/* ---------- 详情页：案卷头 ---------- */
+.case-head { padding: 40px 0 8px; }
+.crumbs { font-size: 14px; color: var(--ink-3); margin: 0 0 18px; }
+.crumbs a { color: var(--ink-2); }
+.case-no { font-family: var(--serif); font-size: 15px; color: var(--ink-3); margin: 0 0 6px; }
+.case-head h1 {
+  font-family: var(--serif); font-weight: 700; font-size: clamp(30px, 4.6vw, 46px);
+  line-height: 1.22; letter-spacing: .01em; margin: 0 0 14px; max-width: 20em;
+}
+.case-head .lede { font-size: 18px; line-height: 1.8; color: var(--ink-2); margin: 0; }
+/* ---------- 详情页：案情要素（由 page.js 按 data.js 渲染） ---------- */
+.facts {
+  display: grid; grid-template-columns: minmax(270px, 300px) 1fr; gap: 0;
+  margin: 28px 0 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius);
+}
+.facts-loss { padding: 22px 24px; border-right: 1px solid var(--rule); }
+.facts-loss .k { font-size: 13px; color: var(--ink-3); }
+.facts-loss .v { font-size: 30px; line-height: 1.25; font-weight: 600; color: var(--loss); margin: 4px 0 6px; white-space: nowrap; }
+.facts-loss .sub { font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.facts dl {
+  margin: 0; padding: 18px 24px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 28px;
+}
+.facts dl div { min-width: 0; }
+.facts dt { font-size: 13px; color: var(--ink-3); }
+.facts dd { margin: 0; font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .facts { grid-template-columns: 1fr; }
+  .facts-loss { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .facts dl { grid-template-columns: 1fr; }
+}
+
+/* ---------- 详情页：编年小条（本案在全部事件中的位置） ---------- */
+.strip { margin: 14px 0 0; }
+.strip svg { display: block; width: 100%; height: 44px; overflow: visible; }
+.strip .cap { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+
+/* ---------- 详情页：正文 + 目录 ---------- */
+.case-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 32px; padding: 36px 0 24px; }   /* 目录栏 180px（最长条目约 150px），间距 32px（2026-11-06 用户要求缩小中间空白） */
+.toc { position: sticky; top: 76px; align-self: start; font-size: 14px; }
+.toc p { margin: 0 0 8px; color: var(--ink-3); }
+.toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--rule); }
+.toc a { display: block; padding: 4px 0 4px 14px; margin-left: -1px; color: var(--ink-2); text-decoration: none; border-left: 2px solid transparent; }
+.toc a:hover { color: var(--ink); }
+.toc a.on { color: var(--ink); border-left-color: var(--era, var(--ink)); font-weight: 600; }
+@media (max-width: 960px) {
+  .case-body { grid-template-columns: 1fr; gap: 8px; }
+  .toc { position: static; border-bottom: 1px solid var(--rule); padding-bottom: 12px; }
+  .toc ol { display: flex; flex-wrap: wrap; gap: 4px 2px; border-left: 0; }
+  .toc a { padding: 2px 10px 2px 0; border-left: 0; margin: 0; }
+}
+/* ---------- 正文排版 ---------- */
+.article { min-width: 0; }
+.article > section { margin: 0 0 56px; }
+/* 文字和示意图、表格同宽，占满正文栏，右边对齐（用户 2026-11-04 提出，2026-11-06 起四个板块都这样） */
+.article h2 {
+  font-family: var(--serif); font-weight: 700; font-size: 26px; line-height: 1.35;
+  margin: 0 0 16px; padding-top: 4px;
+}
+.article h3 { font-size: 18px; line-height: 1.5; margin: 28px 0 8px; }
+.article p { margin: 0 0 16px; }
+.article ul, .article ol { margin: 0 0 16px; padding-left: 1.4em; }
+.article li { margin: 0 0 6px; }
+.article strong { font-weight: 600; }
+/* 组件自带缩进和间距；.article ol 的选择器更具体，会把左内边距加回来，这里再压一次 */
+.article .flow, .article .timeline, .article .steps { padding-left: 0; }
+.article .flow > li, .article .steps > li { margin: 0; }
+.article .tldr { font-size: 17px; }
+.loss-text { color: var(--loss); font-weight: 600; }
+.k-num { font-variant-numeric: tabular-nums; }
+code, .addr {
+  font-family: var(--mono); font-size: .88em; background: var(--code-bg);
+  padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere;
+}
+.ref { font-size: 12px; vertical-align: super; line-height: 0; text-decoration: none; margin-left: 1px; }
+.dispute { text-decoration: underline dotted var(--doubt); text-decoration-thickness: 2px; text-underline-offset: 4px; cursor: help; }
+
+/* ---------- 时间线 ---------- */
+.timeline { list-style: none; margin: 8px 0 20px; padding: 0; position: relative; }
+.timeline::before { content: ""; position: absolute; left: 132px; top: 8px; bottom: 8px; width: 1px; background: var(--rule); }
+.timeline li { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 32px; margin: 0 0 16px; position: relative; }
+.timeline time { font-size: 14px; line-height: 1.75; color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: right; }
+.timeline .ev { min-width: 0; }
+.timeline li::after {
+  content: ""; position: absolute; left: 128px; top: 9px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--ink-3); box-shadow: 0 0 0 3px var(--paper);
+}
+.timeline li.atk::after { background: var(--loss-mark); }
+.timeline li.def::after { background: var(--trace-mark); }
+.timeline li.key .ev { font-weight: 600; }
+.tl-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-3); margin: 0 0 12px; }
+.tl-legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--ink-3); }
+.tl-legend .atk::before { background: var(--loss-mark); }
+.tl-legend .def::before { background: var(--trace-mark); }
+@media (max-width: 640px) {
+  .timeline::before { left: 4px; }
+  .timeline li { grid-template-columns: 1fr; gap: 0; padding-left: 22px; }
+  .timeline li::after { left: 0; top: 7px; }
+  .timeline time { text-align: left; }
+}
+
+/* ---------- 攻击步骤 ---------- */
+.steps { list-style: none; counter-reset: step; margin: 8px 0 20px; padding: 0; }
+.steps > li { counter-increment: step; position: relative; padding: 0 0 18px 48px; margin: 0; }
+.steps > li::before {
+  content: counter(step); position: absolute; left: 0; top: 1px; width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--ink-3); font-size: 14px; line-height: 28px; text-align: center; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; background: var(--sheet);
+}
+.steps > li > b:first-child { display: block; font-weight: 600; margin-bottom: 2px; }
+/* ---------- 示意图（内联 SVG） ---------- */
+.diagram { margin: 24px 0 28px; }
+.diagram .scroll {
+  overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 16px;
+}
+.diagram svg { display: block; width: 100%; height: auto; min-width: 600px; font-family: var(--serif); }
+.diagram figcaption { font-size: 14px; line-height: 1.6; color: var(--ink-3); margin-top: 8px; }
+/* SVG 内部语义类：图中只用这些类，不写死颜色，深浅色主题自动适配 */
+.d-box { fill: var(--sheet); stroke: var(--ink-3); stroke-width: 1.2; }
+.d-box.soft { fill: var(--paper); stroke: var(--rule); }
+.d-box.atk { fill: var(--loss-wash); stroke: var(--loss-mark); }
+.d-box.def { fill: var(--trace-wash); stroke: var(--trace-mark); }
+.d-box.ok { fill: var(--ok-wash); stroke: var(--ok); }
+.d-box.doubt { fill: var(--doubt-wash); stroke: var(--doubt); }
+.d-line { stroke: var(--ink-3); stroke-width: 1.4; fill: none; }
+.d-line.atk { stroke: var(--loss-mark); stroke-width: 2; }
+.d-line.def { stroke: var(--trace-mark); stroke-width: 2; }
+.d-line.dash { stroke-dasharray: 5 4; }
+.d-head { fill: var(--ink-3); }
+.d-head.atk { fill: var(--loss-mark); }
+.d-head.def { fill: var(--trace-mark); }
+.d-t { fill: var(--ink); font-size: 14px; }
+.d-t.b { font-weight: 600; }
+.d-t.s { fill: var(--ink-2); font-size: 12.5px; }
+.d-t.m { font-family: var(--mono); font-size: 12.5px; }
+.d-t.atk { fill: var(--loss); }
+.d-t.def { fill: var(--trace); }
+.d-t.halo { paint-order: stroke; stroke: var(--sheet); stroke-width: 5px; stroke-linejoin: round; } /* 文字压在线上时保持可读 */
+.diagram tspan.m { font-family: var(--mono); font-size: 12.5px; }
+
+/* ---------- 流程块（纯 HTML，窄屏自动换行） ---------- */
+.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px 30px; margin: 20px 0 24px; padding: 0; list-style: none; }
+.flow > li {
+  position: relative; flex: 1 1 150px; margin: 0; padding: 10px 12px; font-size: 14px; line-height: 1.6;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius);
+}
+.flow > li:not(:last-child)::after {
+  content: ""; position: absolute; right: -22px; top: 50%; width: 14px; height: 14px; margin-top: -7px;
+  background: var(--ink-3);
+  clip-path: polygon(0 35%, 55% 35%, 55% 10%, 100% 50%, 55% 90%, 55% 65%, 0 65%);
+}
+.flow > li.atk { border-color: var(--loss-mark); background: var(--loss-wash); }
+.flow > li.def { border-color: var(--trace-mark); background: var(--trace-wash); }
+.flow > li.ok { border-color: var(--ok); background: var(--ok-wash); }
+.flow > li.doubt { border-color: var(--doubt); background: var(--doubt-wash); }
+.flow > li b { display: block; font-weight: 600; }
+@media (max-width: 640px) {
+  .flow { flex-direction: column; gap: 22px; }
+  .flow > li { flex: 0 0 auto; }   /* 竖排时 flex-basis 作用在高度上，不重置会把每块都撑到 150px 高 */
+  .flow > li:not(:last-child)::after { right: auto; left: 50%; top: auto; bottom: -19px; margin: 0 0 0 -7px; transform: rotate(90deg); }
+}
+/* ---------- 代码 ---------- */
+pre.code {
+  font-family: var(--mono); font-size: 13px; line-height: 1.65; background: var(--code-bg);
+  border-radius: var(--radius); padding: 14px 16px; margin: 16px 0 6px; overflow-x: auto; tab-size: 4;
+}
+pre.code code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+pre.code .c { color: var(--ink-3); }               /* 注释 */
+pre.code .bad { display: inline-block; min-width: calc(100% + 32px); margin: 0 -16px; padding: 0 16px; background: var(--loss-wash); }
+pre.code .good { display: inline-block; min-width: calc(100% + 32px); margin: 0 -16px; padding: 0 16px; background: var(--ok-wash); }
+.code-cap { font-size: 13px; color: var(--ink-3); margin: 0 0 20px; overflow-wrap: anywhere; }
+
+/* ---------- 提示框 ---------- */
+.note { margin: 20px 0; padding: 12px 16px; border-left: 3px solid var(--ink-3); background: var(--sheet); border-radius: 0 var(--radius) var(--radius) 0; }
+.note > :last-child { margin-bottom: 0; }
+.note .h { display: block; font-weight: 600; margin-bottom: 2px; }
+.note.warn { border-left-color: var(--loss-mark); background: var(--loss-wash); }
+.note.doubt { border-left-color: var(--doubt); background: var(--doubt-wash); }
+.note.lesson { border-left-color: var(--trace-mark); background: var(--trace-wash); }
+
+/* ---------- 表格 ---------- */
+.tbl-wrap { overflow-x: auto; margin: 16px 0 20px; }
+table.data { width: 100%; border-collapse: collapse; font-size: 14.5px; line-height: 1.6; }
+table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.data th { font-weight: 600; color: var(--ink-2); border-bottom-color: var(--ink-3); }
+table.data td.n, table.data th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- 对照、引文、来源 ---------- */
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 16px 0 20px; }
+.compare > div { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 12px 16px; }
+.compare > div > :last-child { margin-bottom: 0; }
+.compare h4 { margin: 0 0 6px; font-size: 15px; }
+@media (max-width: 640px) { .compare { grid-template-columns: 1fr; } }
+blockquote { margin: 20px 0; padding: 2px 0 2px 18px; border-left: 2px solid var(--rule); color: var(--ink-2); }
+blockquote cite { display: block; font-style: normal; font-size: 14px; color: var(--ink-3); margin-top: 6px; }
+ol.sources { font-size: 14.5px; line-height: 1.65; padding-left: 1.6em; }
+ol.sources li { margin-bottom: 8px; overflow-wrap: anywhere; }
+ol.sources .src-note { color: var(--ink-3); }
+
+/* ---------- 翻页、页脚、标签、状态 ---------- */
+.pager { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 24px 0 8px; border-top: 1px solid var(--rule); }
+.pager a { display: block; text-decoration: none; color: var(--ink); padding: 12px 14px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sheet); }
+.pager a:hover { border-color: var(--ink-3); }
+.pager .k { display: block; font-size: 13px; color: var(--ink-3); }
+.pager .next { text-align: right; grid-column: 2; }
+.site-foot { padding: 28px 0 48px; font-size: 13.5px; color: var(--ink-3); }
+.site-foot p { margin: 0 0 6px; }
+.tag { display: inline-block; font-size: 12.5px; line-height: 1.5; padding: 1px 8px; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink-2); white-space: nowrap; }
+/* ========== 首页 ========== */
+.hero { padding: 44px 0 0; }
+.hero h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(34px, 6vw, 60px); line-height: 1.12; letter-spacing: .02em; margin: 0; }
+.hero h1 .yr { display: block; font-size: .42em; font-weight: 400; color: var(--ink-3); letter-spacing: .04em; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.hero .lede { font-size: 18px; line-height: 1.8; color: var(--ink-2); margin: 18px 0 0; }
+
+/* 损失地震图 */
+.seismo { position: relative; margin: 28px 0 0; }
+.seismo svg { display: block; width: 100%; overflow: visible; }
+.seismo:focus-within { outline: none; }
+.seismo svg:focus-visible { outline: 2px solid var(--trace); outline-offset: 6px; border-radius: 2px; }
+.sz-grid { stroke: var(--rule-2); stroke-width: 1; }
+.sz-ax { fill: var(--ink-3); font-size: 12px; font-variant-numeric: tabular-nums; }
+.seismo-cap { font-size: 13.5px; color: var(--ink-3); margin: 8px 0 0; }
+
+/* 提示框（图表悬停） */
+.tip {
+  position: absolute; z-index: 5; pointer-events: none; min-width: 180px; max-width: 280px;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 8px 10px; font-size: 13px; line-height: 1.55; box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+}
+.tip[hidden] { display: none; }
+.tip .tv { font-size: 16px; font-weight: 600; color: var(--ink); }
+.tip .tn { color: var(--ink); }
+.tip .tm { color: var(--ink-3); }
+
+/* 分区标题 */
+.sec { padding: 64px 0 0; }
+.sec > h2 { font-family: var(--serif); font-weight: 700; font-size: 30px; line-height: 1.3; margin: 0 0 8px; }
+.sec > .intro { color: var(--ink-2); margin: 0 0 24px; }
+
+
+/* 编年：时代章节 */
+.era { padding: 36px 0 8px; }
+.era-head { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 8px 40px; margin: 0 0 14px; }
+.era-head .yrs { font-family: var(--serif); font-size: 15px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin: 0; }
+.era-head h3 { font-family: var(--serif); font-weight: 700; font-size: 25px; line-height: 1.35; margin: 2px 0 6px; }
+.era-head .meta { font-size: 13.5px; color: var(--ink-3); margin: 0; }
+.era-head .story { margin: 2px 0 0; color: var(--ink-2); }
+.era-empty { font-size: 14px; color: var(--ink-3); padding: 10px 0 10px 260px; border-top: 1px solid var(--rule); }
+@media (max-width: 860px) { .era-head { grid-template-columns: 1fr; } .era-empty { padding-left: 0; } }
+
+/* 编年：事件行 */
+.ledger { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.ledger > li { border-bottom: 1px solid var(--rule); }
+.row {
+  display: grid; grid-template-columns: 44px 108px minmax(0, 1fr) 190px; gap: 0 16px; align-items: baseline;
+  padding: 14px 18px 14px 0; color: var(--ink); text-decoration: none;   /* 右侧留白和左边编号前的空白一致 */
+}
+.row:hover { background: var(--sheet); }
+.row:hover .r-name { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.r-no { font-family: var(--serif); font-size: 14px; color: var(--ink-3); text-align: right; font-variant-numeric: tabular-nums; }
+.r-date { font-size: 14px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.r-main { min-width: 0; }
+.r-name { display: block; font-size: 17px; font-weight: 600; line-height: 1.5; }
+.r-sum { display: block; font-size: 14.5px; line-height: 1.7; color: var(--ink-2); margin: 3px 0 0; }
+.r-tags { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 8px 0 0; }
+.r-loss { text-align: right; font-size: 16px; font-weight: 600; color: var(--loss); font-variant-numeric: tabular-nums; }
+.r-loss.none { color: var(--ink-3); font-weight: 400; font-size: 14px; }
+.r-loss .st { display: block; margin-top: 4px; font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
+.tag.ms { border-color: var(--ink-3); color: var(--ink); }
+.tag.pv { border-color: var(--doubt); color: var(--doubt); }
+a.tag { text-decoration: none; }
+a.tag:hover { border-color: var(--ink-2); color: var(--ink); }
+@media (max-width: 760px) {
+  .row { grid-template-columns: 34px minmax(0, 1fr); grid-template-areas: "no date" "no main" "no loss"; gap: 2px 12px; padding-right: 6px; }
+  .r-no { grid-area: no; } .r-date { grid-area: date; } .r-main { grid-area: main; }
+  .r-loss { grid-area: loss; text-align: left; margin-top: 6px; }
+  .r-loss .st { display: inline; margin: 0 0 0 8px; }
+}
+
+/* 方法说明 */
+.method { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 40px; }
+.method h3 { font-size: 16px; margin: 0 0 4px; }
+.method p, .method ul { font-size: 15px; color: var(--ink-2); margin: 0 0 18px; }
+.method ul { padding-left: 1.2em; }
+@media (max-width: 760px) { .method { grid-template-columns: 1fr; } }
+
+/* ========== 纸色装饰（由 tint-eN 驱动，四个板块共用） ========== */
+/* 顶栏下沿 3px 纸边：详情页 body 带 tinted tint-eN 时用本页的颜色；各站首页的多色纸边写在各站样式里 */
+.topbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; pointer-events: none; }
+body.tinted .topbar::after { background: var(--era); }
+/* 详情页：案卷号做成纸签 */
+body.tinted .case-no {
+  display: inline-block; padding: 2px 12px; color: var(--ink-2); background: var(--era-wash);
+  border-left: 4px solid var(--era); border-radius: 0 var(--radius) var(--radius) 0; margin-bottom: 12px;
+}
+/* 首页时间轴、泳道：一段底色 + 上沿或左沿色条 */
+.sz-band { fill: var(--era-wash, transparent); opacity: .7; }
+.sz-cap { fill: var(--era, transparent); }
+/* 首页章节（.era）带 tint-eN 时：年份做成纸签，列表上沿用本时代颜色，编号垫一块浅色纸 */
+.era[class*="tint-"] .era-head .yrs {
+  display: inline-block; padding: 2px 12px; color: var(--ink-2); background: var(--era-wash);
+  border-left: 4px solid var(--era); border-radius: 0 var(--radius) var(--radius) 0;
+}
+.era[class*="tint-"] .ledger { border-top: 3px solid var(--era); }
+.era[class*="tint-"] .r-no { justify-self: end; padding: 0 6px; color: var(--ink-2); background: var(--era-wash); border-radius: 3px; }
+.era[class*="tint-"] .row:hover { background: var(--era-wash); }

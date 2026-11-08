@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mt.Gox 破产｜区块链被盗事件编年史</title>
+<meta name="description" content="Mt.Gox 从 2011 年起热钱包私钥被盗、资金被持续转走两年多的经过：wallet.dat 被复制、账目从不对账、“交易延展性”说法被证伪、司法追责与长达十多年的破产分配。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2014-mt-gox">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2014 年　/　交易所的荒野时代</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Mt.Gox 破产</h1>
+    <p class="lede">2014 年 2 月，当时全球最大的比特币交易所 Mt.Gox 先停止提币，随后关站并申请民事再生，称约 85 万枚比特币不见了。事后的调查表明，这些币大部分早在 2011 至 2013 年就丢了：2011 年 9 月热钱包的私钥文件被人复制，此后两年多资金被持续转走，交易所的账目却从未和链上余额核对。债权人等了十年才开始拿回比特币，分配期限现已延至 2027 年 10 月。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Mt.Gox 的崩溃是多起事故累积的结果。2011 年它至少出过四起事故，其中 9 月那一次决定了结局：有人复制了热钱包的 <code>wallet.dat</code>，从此能动用钱包里所有现有地址和预先生成的新地址上的币。交易所继续把这些地址发给用户充值，攻击者则不定期把余额转走。由于没有人把用户账户余额的总和与链上的实际持币做核对，缺口在两年里越滚越大<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <p>2014 年 2 月 7 日 Mt.Gox 暂停提币，三天后把问题归咎于比特币的“交易延展性”。苏黎世联邦理工学院的研究者用一年多的网络监测数据证明，延展性攻击在停止提币之前最多只能解释约 386 枚 BTC 的损失<a class="ref" href="#s13">[13]</a>。2 月 28 日 Mt.Gox 申请民事再生，称约 75 万枚用户的 BTC 和约 10 万枚自有 BTC 下落不明；3 月又在一个旧钱包里找到约 20 万枚，缺口变成约 65 万枚<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <p>美国司法部 2023 年起诉两名俄罗斯人，指控他们 2011 年入侵 Mt.Gox 的服务器并清洗约 64.7 万枚被盗 BTC<a class="ref" href="#s19">[19]</a>。经营者 Mark Karpelès 在日本只被判定篡改数据罪名成立，侵占罪名不成立<a class="ref" href="#s23">[23]</a>。破产管理人 2024 年 7 月开始用比特币和比特币现金还款<a class="ref" href="#s10">[10]</a>；据链上分析公司 Arkham 的统计，截至 2026 年 10 月，管理人的钱包里仍有约 3.4 万枚 BTC<a class="ref" href="#s25">[25]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Mt.Gox 的域名原本是 Jed McCaleb 为《万智牌》线上卡牌交易做的网站，名字是“Magic: The Gathering Online eXchange”的缩写。2010 年 7 月，McCaleb 用这个闲置域名上线了比特币交易所。2011 年 3 月，他把网站卖给住在日本的法国程序员 Mark Karpelès，此后由 Karpelès 的公司经营<a class="ref" href="#s22">[22]</a>。交接过程持续了几个月，McCaleb 陆续移交各种账号和资产<a class="ref" href="#s16">[16]</a>。</p>
+        <p>比特币价格在 2013 年两度暴涨，Mt.Gox 一度处理全球七成以上的比特币交易<a class="ref" href="#s22">[22]</a>。按 WizSec 的了解，它的存储方式是：一个联网的热钱包负责日常提币；冷钱包是预先生成、锁起来的纸钱包，热钱包有盈余时系统自动往冷钱包里存，热钱包不够时由员工手动导入一张纸钱包补充，而冷钱包的余额并没有被持续监控<a class="ref" href="#s14">[14]</a>。用户在交易所里看到的余额，只是 Mt.Gox 自己数据库里的记账。</p>
+        <p>2013 年 6 月，Mt.Gox 暂停了美元提现。为它办理业务的瑞穗银行东京分行从那时起一直要求关闭其账户。7 月 Mt.Gox 宣布“全面恢复”提现，但到 9 月成功到账的美元提现仍然很少<a class="ref" href="#s22">[22]</a>。比特币提币也越来越慢。这些都是倒闭之前就能看到的信号。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方、执法与司法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2011-03-01</time><div class="ev">交接期间，McCaleb 服务器上的热钱包文件被复制，约 8 万枚 BTC 被转到地址 <span class="addr">1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF</span>，至今未动<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="atk"><time>2011-05</time><div class="ev">Karpelès 电脑上一个存有 30 万枚 BTC 的备用钱包被盗，这些币后来被窃贼归还<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="atk"><time>2011-06-19</time><div class="ev">有人登录一个被盗的账户大量卖出，Mt.Gox 上的价格几分钟内从 17 美元跌到几美分，交易随即暂停；用户数据库随后在网上流传<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk key"><time>2011-09-11</time><div class="ev">热钱包的 <code>wallet.dat</code> 再次被盗，这是此后主要损失的起点<a class="ref" href="#s16">[16]</a>。DOJ 起诉书称入侵者“在 2011 年 9 月前后”取得了存放钱包和私钥的服务器的访问权<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="atk"><time>2011 末–2013 中</time><div class="ev">资金被分批转走，2012 至 2013 年出现第二波。到 2013 年年中，靠这些私钥能转出的币几乎为零，累计约 63 万枚<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2013-06-20</time><div class="ev">Mt.Gox 暂停美元提现<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="key"><time>2014-02-07</time><div class="ev">Mt.Gox 宣布暂停所有比特币提币，称系统需要处于“静态”以查清问题，交易照常<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2014-02-10</time><div class="ev">Mt.Gox 发表声明，把提币问题归咎于比特币的“交易延展性”<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="key"><time>2014-02-24</time><div class="ev">Mt.Gox 暂停全部交易，网站随后下线。一份据称是内部危机应对草案的文件流出，称交易所因一起多年未被发现的盗窃损失了 744,408 枚 BTC<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def key"><time>2014-02-28</time><div class="ev">Mt.Gox 向东京地方法院申请民事再生，申报资产约 38.4 亿日元、流动负债约 65 亿日元，约 75 万枚用户 BTC 和约 10 万枚自有 BTC 下落不明，另有约 28 亿日元现金对不上<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2014-03-07</time><div class="ev">Mt.Gox 在一个 2011 年 6 月以前使用的旧格式钱包里找到 199,999.99 枚 BTC，3 月 20 日公告，缺口降为约 65 万枚<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2014-03-26</time><div class="ev">Christian Decker 与 Roger Wattenhofer 发表论文，证明延展性攻击不可能造成这样规模的损失<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2014-04-16</time><div class="ev">东京地方法院驳回民事再生申请，任命小林信明律师为保全管理人<a class="ref" href="#s5">[5]</a>；4 月 24 日法院裁定开始破产程序，小林信明任破产管理人<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2015-04-19</time><div class="ev">东京安全公司 WizSec 发布调查，结论是大部分或全部丢失的币是从 2011 年末开始从热钱包里被逐步偷走的<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2015-08-01</time><div class="ev">日本警方逮捕 Karpelès，怀疑他操纵 Mt.Gox 系统中的账户余额<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="def key"><time>2017-07-25</time><div class="ev">俄罗斯人 Alexander Vinnik 在希腊被捕。美国起诉书称他收取并清洗了 Mt.Gox 被盗的资金<a class="ref" href="#s18">[18]</a>。WizSec 同日公布调查，指认 Vinnik 是主要的洗钱者<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2018-06-22</time><div class="ev">应部分债权人申请，东京地方法院裁定开始民事再生程序，破产程序中止<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2019-03</time><div class="ev">东京地方法院判决 Karpelès 篡改电磁记录罪成立，判处有期徒刑 2 年 6 个月、缓刑 4 年，侵占罪名不成立<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def"><time>2021-11-16</time><div class="ev">再生计划于 10 月 20 日经债权人表决通过并获法院认可，11 月 16 日确定生效<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def key"><time>2023-06-09</time><div class="ev">美国司法部公开起诉书，指控 Alexey Bilyuchenko 与 Aleksandr Verner 入侵 Mt.Gox 并合谋清洗约 64.7 万枚被盗 BTC<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2024-05-03</time><div class="ev">Vinnik 在美国认罪，罪名是合谋洗钱<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def key"><time>2024-07</time><div class="ev">破产管理人通过指定交易所开始用 BTC 和 BCH 向债权人还款<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2025-02-12</time><div class="ev">美国政府宣布以释放 Vinnik 交换被俄罗斯关押的美国教师 Marc Fogel，Vinnik 次日返回俄罗斯<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li><time>2026-02-27</time><div class="ev">Karpelès 向 Bitcoin Core 提交拉取请求，提议用硬分叉追回 2011 年 3 月被盗的约 8 万枚 BTC，提交后很快就被项目的机器人按启发式规则自动关闭<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2026-10-16</time><div class="ev">破产管理人公告：已完成手续的债权人基本还款完毕，仍有大量债权人未完成手续，还款期限由 2026 年 10 月 31 日延至 2027 年 10 月 31 日<a class="ref" href="#s12">[12]</a>。</div></li>
+        </ol>
+        <p>以上日期按事件发生地的公告日期记录，涉及具体时刻的地方在正文另行说明。</p>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>当时的比特币客户端把一个钱包的全部私钥存在一个文件里，就是 <code>wallet.dat</code>。文件里除了已经用过的地址，还有一个“密钥池”：客户端预先生成约 100 个新私钥，以后需要新地址时依次取用<a class="ref" href="#s16">[16]</a>。钱包加密功能直到 2011 年 9 月底的 0.4 版才推出，在那之前，拿到这个文件就等于拿到了钱包里所有的币<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>一次复制，持续两年</h3>
+        <p>WizSec 的结论是，2011 年 9 月 Mt.Gox 热钱包的私钥被盗，方式就是“简单地复制了一份 <code>wallet.dat</code>”<a class="ref" href="#s15">[15]</a>。这份副本的危害不只是当时钱包里的余额：此后用户往副本里任何一个地址充值，攻击者都能把这笔钱转走<a class="ref" href="#s15">[15]</a>。复制出来的钱包还带着同一个密钥池，在一段时间里会和原钱包按同样的顺序取用“新”地址<a class="ref" href="#s16">[16]</a>。交易所照常给用户记账，攻击者手里的副本同样能签名，两边各自花着同一批币。</p>
+        <p>在链上看，被偷的币和交易所自己处理的提现一样，都是从 Mt.Gox 的地址转出去的；区别只在于前者在交易所的数据库里没有对应的提现记录<a class="ref" href="#s14">[14]</a>。WizSec 还发现，两份钱包共用同一个密钥池，攻击者转账时用的找零地址也是 Mt.Gox 的地址。Mt.Gox 的系统把其中一部分误认成用户充值，给若干账户记入了大笔 BTC，账目因此又多出约 4 万枚的缺口，这些币大多被收到的人很快提走了<a class="ref" href="#s15">[15]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 340" role="img" aria-labelledby="gox-mech-t gox-mech-d">
+            <title id="gox-mech-t">一份被复制的 wallet.dat 如何让资金持续流失</title>
+            <desc id="gox-mech-d">用户向 Mt.Gox 发放的地址充值，内部账本照常增加余额。这些地址的私钥也在攻击者 2011 年 9 月复制的 wallet.dat 副本里，攻击者不定期把余额转走，再通过 BTC-e 等交易所洗钱。热钱包不够时，员工从冷钱包导入补充。账本余额之和从未与链上实际持币核对，缺口从 2011 年 8 月起不断扩大。</desc>
+            <defs>
+              <marker id="gox-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="gox-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="20" y="30" width="150" height="56" rx="4"/>
+            <text class="d-t b" x="95" y="53" text-anchor="middle">用户充值</text>
+            <text class="d-t s" x="95" y="73" text-anchor="middle">付到交易所给的地址</text>
+            <rect class="d-box" x="270" y="20" width="220" height="76" rx="4"/>
+            <text class="d-t b" x="380" y="45" text-anchor="middle">Mt.Gox 热钱包</text>
+            <text class="d-t s m" x="380" y="65" text-anchor="middle">wallet.dat</text>
+            <text class="d-t s" x="380" y="84" text-anchor="middle">现有地址 + 预生成的新地址</text>
+            <rect class="d-box atk" x="590" y="30" width="150" height="56" rx="4"/>
+            <text class="d-t b" x="665" y="53" text-anchor="middle">攻击者的副本</text>
+            <text class="d-t s" x="665" y="73" text-anchor="middle">2011-09 复制</text>
+            <rect class="d-box atk" x="590" y="160" width="150" height="56" rx="4"/>
+            <text class="d-t b" x="665" y="183" text-anchor="middle">BTC-e 等交易所</text>
+            <text class="d-t s" x="665" y="203" text-anchor="middle">分批充值后卖出</text>
+            <rect class="d-box" x="270" y="160" width="220" height="56" rx="4"/>
+            <text class="d-t b" x="380" y="183" text-anchor="middle">冷钱包（纸钱包）</text>
+            <text class="d-t s" x="380" y="203" text-anchor="middle">热钱包不够时人工导入</text>
+            <rect class="d-box" x="20" y="160" width="150" height="56" rx="4"/>
+            <text class="d-t b" x="95" y="183" text-anchor="middle">内部账本</text>
+            <text class="d-t s" x="95" y="203" text-anchor="middle">用户余额照常记增</text>
+            <line class="d-line" x1="170" y1="58" x2="268" y2="58" marker-end="url(#gox-ah)"/>
+            <text class="d-t s halo" x="219" y="50" text-anchor="middle">① 充值</text>
+            <line class="d-line atk" x1="490" y1="58" x2="588" y2="58" marker-end="url(#gox-ah-atk)"/>
+            <text class="d-t s atk halo" x="539" y="50" text-anchor="middle">② 转走</text>
+            <line class="d-line atk" x1="665" y1="86" x2="665" y2="158" marker-end="url(#gox-ah-atk)"/>
+            <text class="d-t s atk halo" x="675" y="127">③ 洗钱</text>
+            <line class="d-line" x1="380" y1="160" x2="380" y2="98" marker-end="url(#gox-ah)"/>
+            <text class="d-t s halo" x="390" y="134">人工补充</text>
+            <line class="d-line" x1="95" y1="86" x2="95" y2="158" marker-end="url(#gox-ah)"/>
+            <text class="d-t s halo" x="105" y="127">记入余额</text>
+            <line class="d-line dash" x1="95" y1="216" x2="95" y2="266"/>
+            <line class="d-line dash" x1="380" y1="216" x2="380" y2="266"/>
+            <rect class="d-box doubt" x="20" y="266" width="470" height="58" rx="4"/>
+            <text class="d-t b" x="255" y="290" text-anchor="middle">从未核对：账本余额之和 ≠ 链上实际持币</text>
+            <text class="d-t s" x="255" y="312" text-anchor="middle">缺口 2011 年 8 月已出现，年底达数十万枚</text>
+            <text class="d-t s" x="590" y="240">至 2013 年中</text>
+            <text class="d-t s" x="590" y="258">累计约 63 万枚被转走</text>
+          </svg>
+          </div>
+          <figcaption>图 1：Mt.Gox 主要损失的形成方式，根据 WizSec 2015 年和 2017 年的调查整理。红色是攻击者一侧，黄色是 Mt.Gox 缺失的环节。“冷钱包补进漏水的热钱包”是 WizSec 提出的一种可能，不是已证实的事实。</figcaption>
+        </figure>
+        <h3>没有人对账</h3>
+        <p>这种手法能持续两年，前提是 Mt.Gox 从来没有把“所有用户余额之和”与“链上实际持有的币”放在一起比较。WizSec 根据多次泄露的交易所数据和链上聚类分析，重建了 Mt.Gox 的持币曲线：2011 年 8 月起，应有持币和实际持币之间就出现了差距，到年底已达数十万枚，此后继续扩大；到 2013 年年中，可以动用的币几乎为零<a class="ref" href="#s14">[14]</a>。WizSec 推测，热钱包余额不足时，员工会导入一张纸钱包补充，如果没有对账，他们很可能一直在把冷钱包里的币倒进一个漏水的热钱包，以为这只是充值和提现的正常波动<a class="ref" href="#s14">[14]</a>。报告里专门有一句写给所有交易所的提醒：</p>
+        <blockquote><p>Always. Monitor. Your. Bitcoins.</p><cite>Kim Nilsson，WizSec，《The missing MtGox bitcoins》，2015</cite></blockquote>
+        <p>这里没有用到高深的技术。私钥文件加了密、热钱包只留小额、每天把账本和链上余额核对一次，其中任何一条做到了，损失都会小得多，发现也会早得多。</p>
+        <h3>“交易延展性”说法为什么站不住</h3>
+        <div class="compare">
+          <div>
+            <h4>Mt.Gox 的说法（2014-02-10）</h4>
+            <p>比特币存在“交易延展性”问题：第三方可以在不使签名失效的前提下，改变一笔新交易的哈希。交易所如果只按原始哈希追踪提币，有人就能改掉哈希，让交易所以为提币没有成功，再要求重发。Mt.Gox 称在钱包里发现了“异常活动”，因此暂停提币<a class="ref" href="#s2">[2]</a>。</p>
+          </div>
+          <div>
+            <h4>研究者的数据（2014-03-26）</h4>
+            <p>Decker 和 Wattenhofer 用一年多的网络监测，找出所有“同一笔交易出现多个版本”的情况。2 月 7 日停止提币之前，这类冲突一共只涉及 1,811.58 枚 BTC，其中 78.64% 没有得逞，最多约 386 枚可能被这样偷走。2 月 10 日声明发布后攻击反而猛增，10 日到 11 日就有 25,752 次，研究者认为是声明引来的模仿者<a class="ref" href="#s13">[13]</a>。</p>
+          </div>
+        </div>
+        <p>论文的结论是：即使这 386 枚都是从 Mt.Gox 偷的，Mt.Gox 也还要解释另外 849,600 枚的去向<a class="ref" href="#s13">[13]</a>。延展性本身是真实存在的问题，Mt.Gox 描述的情形在原理上也可能发生，它只是解释不了这么大的损失。一年后 WizSec 的链上调查给出了另一个答案：钱早在 2011 至 2013 年就被直接偷走了<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>Mt.Gox 的损失来自几起相互独立的事件。WizSec 在 2020 年的文章里把它们分开列出<a class="ref" href="#s16">[16]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th>事件</th><th class="n">规模</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td>2011-03-01</td><td>交接期间，McCaleb 服务器上的热钱包文件被复制</td><td class="n">约 8 万枚 BTC</td><td>转入一个地址后至今未动</td></tr>
+              <tr><td>2011-05</td><td>Karpelès 电脑上一个备用钱包被盗</td><td class="n">30 万枚 BTC</td><td>窃贼归还</td></tr>
+              <tr><td>2011-06</td><td>账号被盗用，大量卖单砸穿价格</td><td class="n">约 2,000 枚 BTC</td><td>交易暂停后回滚可疑交易</td></tr>
+              <tr><td>2011-09 至 2013</td><td>热钱包的 <code>wallet.dat</code> 被复制后，资金被持续转出</td><td class="n">60 万枚以上</td><td>大部分经 BTC-e 等交易所卖出</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>2011 年 6 月这一起的说法不一。WizSec 说是有人取得了原所有者 McCaleb 的管理员账号<a class="ref" href="#s16">[16]</a>；当时 Ars Technica 的报道只说网站声明把崩盘归咎于“一个被盗用的用户账户”<a class="ref" href="#s21">[21]</a>；维基百科引用的说法是一名审计员的电脑被入侵，账号被盗用<a class="ref" href="#s22">[22]</a>。</p>
+        <p>决定 Mt.Gox 命运的是第四起。根据已发表的调查和起诉书，它的经过大致如下：</p>
+        <ol class="steps">
+          <li><b>取得私钥文件</b>2011 年 9 月，热钱包的 <code>wallet.dat</code> 被复制<a class="ref" href="#s16">[16]</a>。DOJ 起诉书称，被告和同谋在 2011 年 9 月前后取得了 Mt.Gox 一台服务器的访问权，这台位于日本的服务器存放着客户的钱包和对应的私钥<a class="ref" href="#s19">[19]</a>。具体怎样进入服务器，公开资料没有说明。</li>
+          <li><b>分批转出</b>币被转到 Mt.Gox 以外的新地址，单次常是几百枚，没有对应的提现记录，随后归集到持有几千枚的地址<a class="ref" href="#s14">[14]</a>。</li>
+          <li><b>充值到其他交易所</b>归集后的币每次几百枚地充值到多家交易所，包括 BTC-e、Bitcoinica，也包括 Mt.Gox 自己。WizSec 认为这些币多数直接卖成了现金，而不是为了混淆来源<a class="ref" href="#s14">[14]</a>。</li>
+          <li><b>两个阶段，持续两年</b>第一阶段从 2011 年 9 月开始，2012 至 2013 年又有第二阶段。到 2013 年年中，这批私钥能动用的币基本耗尽，累计约 63 万枚<a class="ref" href="#s15">[15]</a>。</li>
+        </ol>
+        <p>WizSec 指出，按当时的币价，卖掉这些币换到的钱，远少于它们在 2014 年 Mt.Gox 倒闭时的账面价值<a class="ref" href="#s14">[14]</a>。它还认为，这些币是在很长时间里慢慢转出的，当时比特币价格也还没有暴涨，抛售对市场的净影响可能相当有限。</p>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>Mt.Gox 热钱包</b>转出时没有对应的提现记录</li>
+          <li class="atk"><b>攻击者的地址</b>每次几百枚，再归集到持有几千枚的地址</li>
+          <li class="atk"><b>BTC-e 等交易所</b>约 30 万枚进入 BTC-e，其余去了 Bitcoinica、Mt.Gox 自身等</li>
+          <li class="doubt"><b>卖出变现</b>BTC-e 兑换码、经纽约经纪商电汇到离岸账户等；对窃贼的指控尚未经法院审理</li>
+        </ol>
+        <p>WizSec 在 2017 年公布的追踪结果是：被盗的币进入 Vinnik 控制的钱包，再大量转进 BTC-e，其中一部分直接进了 BTC-e 的内部存储而不是普通用户的充值地址，说明 Vinnik 和 BTC-e 关系密切。Bitcoinica、Bitfloor 等其他交易所被盗的币，也经由同一批钱包洗出。WizSec 能指认 Vinnik，是因为一部分币又被充回 Mt.Gox，收款的 Mt.Gox 账户能关联到他在网上用的化名“WME”。WizSec 同时强调，证据指向的是洗钱者，而不是窃贼本人<a class="ref" href="#s15">[15]</a>。</p>
+        <p>DOJ 2023 年的起诉书补上了法币一侧的细节：被告与一家纽约的比特币经纪商签了一份虚假的“广告合同”，2012 年 3 月至 2013 年 4 月间，这家经纪商向被告控制的离岸账户电汇了 660 多万美元，换取在“交易所 1”上的额度；被告通过“交易所 1”清洗了 30 多万枚从 Mt.Gox 偷来的 BTC<a class="ref" href="#s19">[19]</a>。起诉书没有点出这家交易所的名字。</p>
+        <h3>各方给出的数字</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源与时间</th><th class="n">数量</th><th>口径</th></tr></thead>
+            <tbody>
+              <tr><td>Mt.Gox，民事再生申请，2014-02</td><td class="n">约 85 万 BTC</td><td>约 75 万枚用户的币加约 10 万枚自有的币“消失”<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>Mt.Gox，2014-03</td><td class="n">199,999.99 BTC</td><td>在 2011 年 6 月以前使用的旧钱包里找回，缺口降为约 65 万枚<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>WizSec，2015</td><td class="n">30 万至 80 万 BTC</td><td>约 30 万枚可以确认在 2012 年底前被这样转走；放宽识别条件则可达 80 万枚，实际数字在两者之间<a class="ref" href="#s14">[14]</a></td></tr>
+              <tr><td>WizSec，2017</td><td class="n">约 63 万 BTC</td><td>到 2013 年年中，靠被盗私钥转出的总量<a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>美国司法部，2023</td><td class="n">至少约 64.7 万 BTC</td><td>2011 年 9 月至少到 2014 年 5 月间被盗<a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><td>WizSec，2020</td><td class="n">约 8 万 BTC</td><td>2011 年 3 月另一起盗窃，币至今停在同一个地址<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>破产财团，2021</td><td class="n">141,686 BTC</td><td>另有 142,846 BCH 和约 680 亿日元法币<a class="ref" href="#s17">[17]</a></td></tr>
+              <tr><td>Arkham，2026-10</td><td class="n">约 34,388 BTC</td><td>管理人钱包中的剩余比特币<a class="ref" href="#s25">[25]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>折算成美元的损失也有分歧。本站的案情要素沿用常被引用的约 4.7 亿美元；Decker 和 Wattenhofer 用 2 月 7 日 Mt.Gox 上的开盘价每枚 827 美元计算，得到约 <span class="dispute">6.2 亿美元</span><a class="ref" href="#s13">[13]</a>。估值随所取的日期和价格而变，而且都是 2014 年的账面价值，不是窃贼当年卖币实际得到的钱。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>交易所里的余额只是一张欠条</h3>
+        <p>Mt.Gox 的用户以为自己持有比特币，实际上持有的是对 Mt.Gox 的债权。比特币协议本身一切正常，交易所账本背后的币却可以悄无声息地被掏空。Mt.Gox 倒闭时，比特币的价格和使用都还处在早期，它一家交易所就承载了全球大部分交易量，损失因此波及了大量用户。</p>
+        <h3>漫长的潜伏期</h3>
+        <p>从 2011 年 9 月热钱包失守到 2014 年 2 月倒闭，中间隔了两年半。在这段时间里，Mt.Gox 一直照常营业、接受新的充值。资不抵债的交易所继续营业，意味着新充值进来的钱在客观上支撑着老用户的提现。2013 年美元提现停滞、比特币提币变慢，都是能从外部看到的信号。WizSec 认为，Mt.Gox 至少从 2012 年起就已经资不抵债，无论它自己是否知道<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>链上分析能追溯多年</h3>
+        <p>官方起诉之前，独立调查者就已经把案子的主线理清了。WizSec 结合多次泄露的交易所数据和链上聚类分析，识别出 200 多万个 Mt.Gox 地址，重建了交易所的持币曲线，找出被盗的币和洗钱路径，并把结果交给执法部门<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。2017 年 Vinnik 被捕，2023 年美国起诉两名俄罗斯人，这些调查是重要的基础。</p>
+        <h3>延展性问题被正式记录</h3>
+        <p>Mt.Gox 的说法虽然被证伪，但 Decker 和 Wattenhofer 的论文第一次详细描述了交易延展性和由此产生的攻击方式，并指出这是比特币客户端实现时必须考虑的问题<a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Mark Karpelès</h3>
+        <p>2015 年 8 月，日本警方以涉嫌进入 Mt.Gox 系统操纵账户余额为由逮捕 Karpelès。检方以侵占、加重背信等罪名起诉，求刑 10 年，Karpelès 否认全部指控<a class="ref" href="#s23">[23]</a>。2019 年 3 月，东京地方法院只认定一项罪名成立：他篡改数据，把 Mt.Gox 的持有量虚增了约 3,350 万美元，判处有期徒刑 2 年 6 个月、缓刑 4 年；侵占等其他罪名不成立，法院认为他没有恶意<a class="ref" href="#s22">[22]</a><a class="ref" href="#s23">[23]</a>。检方没有就侵占无罪上诉，这部分判决确定。Karpelès 就有罪部分上诉，东京高等法院 2020 年 6 月 11 日驳回，最高法院 2021 年 1 月 27 日驳回上告，判决确定<a class="ref" href="#s24">[24]</a>。他从未被指控盗窃这些比特币。</p>
+        <h3>Vinnik 与 BTC-e</h3>
+        <p>2017 年 7 月 Vinnik 在希腊被捕，美国北加州联邦大陪审团以经营无牌货币服务业务、洗钱等 21 项罪名起诉他和 BTC-e。起诉书称，他从 Mt.Gox 被黑一案中获得资金，并通过 BTC-e 和已关闭的旧金山交易所 Tradehill 清洗；美国财政部金融犯罪执法网络同日对 BTC-e 处以 1.1 亿美元民事罚款，对 Vinnik 本人处以 1,200 万美元<a class="ref" href="#s18">[18]</a>。俄罗斯、法国和美国都要求引渡。他 2020 年 1 月先被引渡到法国，同年 12 月在法国因洗钱被判 5 年；2022 年 8 月从希腊被引渡到美国<a class="ref" href="#s27">[27]</a>。2024 年 5 月 3 日，他在美国认罪，罪名是合谋洗钱<a class="ref" href="#s20">[20]</a>。2025 年 2 月，美国政府释放他，以交换被俄罗斯关押的美国教师 Marc Fogel<a class="ref" href="#s27">[27]</a>。</p>
+        <h3>被起诉的两名俄罗斯人</h3>
+        <p>2023 年 6 月，美国司法部公开纽约南区的起诉书，指控 Alexey Bilyuchenko 和 Aleksandr Verner 在 2011 年 9 月前后非法进入存放 Mt.Gox 钱包的服务器，并合谋清洗约 64.7 万枚被盗的 BTC；北加州的另一份起诉书指控 Bilyuchenko 与 Vinnik 共同经营 BTC-e<a class="ref" href="#s19">[19]</a>。起诉只是指控，二人在被证明有罪之前推定无罪。司法部的公告没有提到二人是否在押。</p>
+        <h3>破产与分配</h3>
+        <p>2014 年 4 月，民事再生被驳回，Mt.Gox 转入破产程序<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。破产程序要求所有债权以日元计价，比特币按当时的汇率每枚 50,058.12 日元折算。此后破产财团手里约 20 万枚 BTC 不断升值，总值最终超过了全部债权，超出的部分将付给股东而不是债权人。为避免这种结果，债权人和管理人推动把破产程序改回民事再生<a class="ref" href="#s17">[17]</a>。</p>
+        <ol class="steps">
+          <li><b>2018 年 6 月 22 日，转回民事再生</b>东京地方法院裁定开始民事再生，破产程序中止<a class="ref" href="#s7">[7]</a>。重新申报时，比特币按每枚 749,318.83 日元计价，比特币现金也纳入分配<a class="ref" href="#s17">[17]</a>。</li>
+          <li><b>2021 年 11 月 16 日，再生计划确定</b>计划草案 2021 年 2 月提交，10 月 20 日经债权人表决通过并获法院认可，11 月 16 日确定生效<a class="ref" href="#s8">[8]</a>。</li>
+          <li><b>2024 年 7 月 5 日，开始用比特币还款</b>管理人此前宣布从 7 月初开始还款，当天通过部分指定交易所向部分债权人支付了 BTC 和 <a href="../../milestones/events/2017-blocksize-war.html">BCH</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</li>
+          <li><b>2025 年 3 月，已向 19,500 多名债权人还款</b>管理人公告，2024 年 7、8 月和 2025 年 1 至 3 月的几轮还款后，已有 19,500 多名债权人收到 BTC 和 BCH<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>2026 年 10 月 16 日，期限第四次延长</b>管理人公告，已完成必要手续、没有遇到问题的债权人基本还款完毕，但仍有许多人未完成手续或在还款中遇到问题，经法院许可把期限从 2026 年 10 月 31 日延至 2027 年 10 月 31 日<a class="ref" href="#s12">[12]</a>。这是 2023 年以来第四次延期一年<a class="ref" href="#s25">[25]</a>。</li>
+        </ol>
+        <h3>8 万枚“沉睡”的币与硬分叉提议</h3>
+        <p>2011 年 3 月被盗的约 8 万枚 BTC 一直停在地址 <span class="addr">1FeexV6bAHb8ybZjqQMjJrcCrHGW9sb6uF</span> 上，有人据此推测窃贼可能已经丢失了私钥<a class="ref" href="#s16">[16]</a>。2026 年 2 月 27 日，Karpelès 向 Bitcoin Core 提交拉取请求，提议加一条共识规则，允许把这个地址上的币花到一个指定的找回地址；规则的激活高度默认设为永不激活，除非社区另行决定<a class="ref" href="#s26">[26]</a>。请求提交后很快就被项目的机器人按启发式规则自动关闭，Pieter Wuille 留言说，如果是认真的，应该到比特币开发者邮件列表讨论<a class="ref" href="#s26">[26]</a>。这项提议和 2010 年的<a href="2010-bitcoin-overflow.html">溢出事件</a>一样涉及修改链上状态，但那次作废的是违反规则凭空产生的币，这次要转移的是一笔按规则存在了十五年的余额。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>每天把“全部用户余额之和”与“链上实际持币”核对一次，差额超过阈值就报警。Mt.Gox 的缺口从 2011 年 8 月就出现了，两年多没有人发现。</li>
+            <li>钱包文件只要可能泄露过，就当作已经泄露：把全部资金转到新生成的私钥，旧地址作废，不再发给用户充值。复制出来的钱包会持续威胁今后的每一笔充值。</li>
+            <li>私钥不要以明文形式放在联网的服务器上；热钱包只留日常所需的小额，从冷钱包补充热钱包要有记录、有第二人复核，补充频率异常时要追问原因。</li>
+            <li>追踪提币是否成功，不要只看交易哈希，要看对应的输入有没有被花掉。延展性可以改变哈希，却改变不了这一点。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户与监管者</span>
+          <ul>
+            <li>放在交易所的币，本质上是对交易所的债权。提现开始变难，往往是最早的信号；Mt.Gox 的美元提现在倒闭前八个月就已停滞。</li>
+            <li>储备证明只能说明某一时刻有这么多币，说明不了这些币够不够还清所有用户，也说明不了之后它们还在不在。2011 年 6 月事件后，Mt.Gox 做过一次 424,242.42424242 枚 BTC 的持币证明<a class="ref" href="#s14">[14]</a>，三个月后主要的盗窃就开始了。冷钱包的说法本身也要能核实：QuadrigaCX 说大部分币在只有创办人能打开的冷钱包里，他死后法院指定的监督人 EY 发现这些冷钱包 2018 年 4 月就已转空<a class="ref" href="#s28">[28]</a>，见大事记的<a href="../../milestones/events/2019-quadrigacx.html">QuadrigaCX 创办人死后客户资金下落不明</a>。</li>
+            <li>交易所倒闭后，破产程序如何给加密资产计价，直接决定债权人能拿回什么。Mt.Gox 的债权人为了不让升值部分落到股东手里，花了四年把破产改回民事再生。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">MtGox，《Statement Regarding BTC Withdrawal Delays》，2014-02-07，Internet Archive 存档。<a href="https://web.archive.org/web/20140209000239/https://www.mtgox.com/press_release_20140207.html">web.archive.org</a></li>
+          <li id="s2">MtGox，2014-02-10 关于交易延展性的声明，Internet Archive 存档。<a href="https://web.archive.org/web/20140211002254/https://www.mtgox.com/press_release_20140210.html">web.archive.org</a></li>
+          <li id="s3">MtGox Co., Ltd.（Mark Karpelès），《Announcement Regarding an Application for Commencement of a Procedure of Civil Rehabilitation》，2014-02-28。<a href="https://www.mtgox.com/img/pdf/20140228-announcement_eng.pdf">mtgox.com</a></li>
+          <li id="s4">MtGox Co., Ltd.，《当社保有ビットコインの残高に関するお知らせ / Announcement regarding the balance of Bitcoin held by the company》，2014-03-20。<a href="https://www.mtgox.com/img/pdf/20140320-btc-announce.pdf">mtgox.com</a></li>
+          <li id="s5">MtGox Co., Ltd.，《民事再生手続開始申立ての棄却、保全管理命令のお知らせ》（含英文摘要），2014-04-16。<a href="https://www.mtgox.com/img/pdf/20140416_001_press_release.pdf">mtgox.com</a></li>
+          <li id="s6">破产管理人小林信明，《Announcement of Commencement of Bankruptcy Proceedings》，2014-04-24。<a href="https://www.mtgox.com/img/pdf/20140424_announce_qa_en.pdf">mtgox.com</a></li>
+          <li id="s7">民事再生管理人小林信明，《Announcement of Commencement of Civil Rehabilitation Proceedings》，2018-06-22（2018-10-26 更新）。<a href="https://www.mtgox.com/img/pdf/20180622_announcement_en.pdf">mtgox.com</a></li>
+          <li id="s8">再生管理人小林信明，《Notice of Confirmation Order of Rehabilitation Plan becoming Final and Binding》，2021-11-16。<a href="https://www.mtgox.com/img/pdf/20211116_announcement_en.pdf">mtgox.com</a></li>
+          <li id="s9">再生管理人小林信明，《Notice regarding Commencement of Repayments in Bitcoin and Bitcoin Cash》，2024-06-24。<a href="https://www.mtgox.com/img/pdf/20240624_announcement_en.pdf">mtgox.com</a></li>
+          <li id="s10">再生管理人小林信明，《Notice regarding Repayment in Bitcoin and Bitcoin Cash》，2024-07-05。<a href="https://www.mtgox.com/img/pdf/20240705_01_announcement_en.pdf">mtgox.com</a></li>
+          <li id="s11">再生管理人小林信明，《Notice regarding Repayment in Bitcoin and Bitcoin Cash through Designated Cryptocurrency Exchange, etc. (6)》，2025-03-27。<a href="https://www.mtgox.com/img/pdf/20250327_50441ef4-dc28-473a-9fd2-495db2da4bbd_announcement_en.pdf">mtgox.com</a></li>
+          <li id="s12">再生管理人小林信明，《Notice Concerning Change of Repayments Deadline》，2026-10-16；历次延期公告见 MtGox 官网首页。<a href="https://www.mtgox.com/img/pdf/20261016_b3a13e0f-55f6-4653-913b-be80762390e8_announcement_en.pdf">mtgox.com</a></li>
+          <li id="s13">Christian Decker、Roger Wattenhofer，《Bitcoin Transaction Malleability and MtGox》，arXiv:1403.6676，2014-03-26。<a href="https://arxiv.org/abs/1403.6676">arxiv.org</a></li>
+          <li id="s14">Kim Nilsson（WizSec），《The missing MtGox bitcoins》，2015-04-19。<a href="https://blog.wizsec.jp/2015/04/the-missing-mtgox-bitcoins.html">blog.wizsec.jp</a></li>
+          <li id="s15">Kim Nilsson（WizSec），《Breaking open the MtGox case, part 1》，2017-07-27。<a href="https://blog.wizsec.jp/2017/07/breaking-open-mtgox-1.html">blog.wizsec.jp</a></li>
+          <li id="s16">Kim Nilsson（WizSec），《The 80,000 stolen MtGox bitcoins》，2020-06-19。<a href="https://blog.wizsec.jp/2020/06/mtgox-march-2011-theft.html">blog.wizsec.jp</a></li>
+          <li id="s17">Kim Nilsson（WizSec），《MtGox payout guide and calculator》，2021-02-09。<a href="https://blog.wizsec.jp/2021/02/mtgox-claim-calculator.html">blog.wizsec.jp</a></li>
+          <li id="s18">美国司法部北加州联邦检察官办公室，《Russian National And Bitcoin Exchange Charged In 21-Count Indictment … Allegedly Laundering Funds From Hack Of Mt. Gox》，2017-07-26。<a href="https://www.justice.gov/usao-ndca/pr/russian-national-and-bitcoin-exchange-charged-21-count-indictment-operating-alleged">justice.gov</a></li>
+          <li id="s19">美国司法部，《Russian Nationals Charged With Hacking One Cryptocurrency Exchange and Illicitly Operating Another》，2023-06-09。<a href="https://www.justice.gov/archives/opa/pr/russian-nationals-charged-hacking-one-cryptocurrency-exchange-and-illicitly-operating-another">justice.gov</a></li>
+          <li id="s20">Nikhilesh De，《BTC-e Operator Alexander Vinnik Pleads Guilty to Money Laundering Conspiracy Charge》，CoinDesk，2024-05-03。<a href="https://www.coindesk.com/policy/2024/05/03/btc-e-operator-alexander-vinnik-pleads-guilty-to-money-laundering-conspiracy-charge">coindesk.com</a></li>
+          <li id="s21">Timothy B. Lee，《Bitcoin prices plummet on hacked exchange》，Ars Technica，2011-06-19。<a href="https://arstechnica.com/tech-policy/2011/06/bitcoin-price-plummets-on-compromised-exchange/">arstechnica.com</a></li>
+          <li id="s22">维基百科，《Mt. Gox》。<a href="https://en.wikipedia.org/wiki/Mt._Gox">en.wikipedia.org</a></li>
+          <li id="s23">维基百科，《Mark Karpelès》。<a href="https://en.wikipedia.org/wiki/Mark_Karpel%C3%A8s">en.wikipedia.org</a></li>
+          <li id="s24">维基百科（日文），《マルク・カルプレス》（控诉与上告结果）。<a href="https://ja.wikipedia.org/wiki/%E3%83%9E%E3%83%AB%E3%82%AF%E3%83%BB%E3%82%AB%E3%83%AB%E3%83%97%E3%83%AC%E3%82%B9">ja.wikipedia.org</a></li>
+          <li id="s25">Decrypt，《Mt. Gox Pushes Repayment Deadline to 2027 With $2.8B in Bitcoin Still to Distribute》，经 Yahoo Finance 转载，2026-10-20。<a href="https://finance.yahoo.com/markets/crypto/articles/mt-gox-pushes-repayment-deadline-105548717.html">finance.yahoo.com</a></li>
+          <li id="s26">MagicalTux（Mark Karpelès），bitcoin/bitcoin 拉取请求 #34695《Allow recovery of MtGox stolen funds (79,956 BTC)》，2026-02-27；另见 Jamie Redman 在 Bitcoin.com News 的报道，2026-02-28。<a href="https://github.com/bitcoin/bitcoin/pull/34695">github.com</a></li>
+          <li id="s27">维基百科，《Alexander Vinnik》。<a href="https://en.wikipedia.org/wiki/Alexander_Vinnik">en.wikipedia.org</a></li>
+          <li id="s28">Ernst &amp; Young Inc.，《Third Report of the Monitor》，2019-03-01（Internet Archive 存档）。<a href="https://web.archive.org/web/20190308155928/https://documentcentre.eycan.com/eycm_library/Quadriga%20Fintech%20Solutions%20Corp/English/1.%20Monitor's%20Reports/4.%20Third%20Report%20of%20the%20Monitor/Third%20Report%20of%20the%20Monitor%20dated%20March%201,%202019.pdf">web.archive.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

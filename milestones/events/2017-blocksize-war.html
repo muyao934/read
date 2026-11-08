@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>比特币区块大小之争（BCH 分叉与 SegWit 激活）｜区块链大事记</title>
+<meta name="description" content="2015 至 2017 年比特币围绕 1 MB 区块上限的争论：硬分叉扩容方案，SegWit 软分叉和 BIP 9 的 95% 门槛，ASICBoost 争议，用户激活的 BIP 148 和纽约协议的 BIP 91，2017 年 8 月 1 日 Bitcoin Cash 分叉，SegWit 生效，以及 SegWit2x 的暂停。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2017-blocksize-war">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2017 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>比特币区块大小之争（BCH 分叉与 SegWit 激活）</h1>
+    <p class="lede">比特币的区块从 2010 年起限定在 1 MB。2015 年到 2017 年，开发者、矿工和公司为怎样扩容争了两年多：一方主张用硬分叉直接提高上限，另一方主张先用 SegWit 软分叉腾出空间。SegWit 的矿工信号长期达不到 95% 的门槛，直到 BIP 91 和用户发起的 BIP 148 要求所有区块都发信号。2017 年 8 月 1 日，主张大区块的一方分叉出上限 8 MB 的 Bitcoin Cash；8 月 24 日，SegWit 在原链上生效。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">区块大小的上限是 2010 年写进比特币代码的，两次相关提交的说明都没有提到它<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。2015 年，开发者 Gavin Andresen 写道，区块平均已经三到四成满，提高上限很紧迫<a class="ref" href="#s22">[22]</a>。此后出现两条路。一条是用硬分叉直接提高上限，有 Bitcoin XT 采用的 BIP 101、BIP 109、Bitcoin Classic 和 Bitcoin Unlimited<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s23">[23]</a>，三个客户端都没有拿到多数算力<a class="ref" href="#s41">[41]</a>。另一条是 Gregory Maxwell 2015 年 12 月提出、五十多位 Bitcoin Core 贡献者联署的路线图：先用 SegWit 软分叉，把签名移出旧规则计算的区块大小<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。</p>
+        <p>SegWit 随 Bitcoin Core 0.13.1 在 2016 年 10 月发布。按 BIP 9 的规则，要在一个 2,016 块的周期里有 95% 的区块发信号才能锁定<a class="ref" href="#s3">[3]</a><a class="ref" href="#s10">[10]</a>。据 SegWit2x 的发起人回忆，到 2017 年 5 月，矿工的支持只有约 30%<a class="ref" href="#s21">[21]</a>。2017 年，一些用户提出 BIP 148，要从 8 月 1 日起拒绝不发 SegWit 信号的区块<a class="ref" href="#s5">[5]</a><a class="ref" href="#s25">[25]</a>；签署纽约协议的矿工和公司用 BIP 91 把门槛降到 80%，它 7 月 23 日在 477,120 号区块生效<a class="ref" href="#s6">[6]</a><a class="ref" href="#s28">[28]</a><a class="ref" href="#s29">[29]</a>。主张大区块的一方准备了按时间触发的硬分叉 UAHF<a class="ref" href="#s16">[16]</a><a class="ref" href="#s17">[17]</a>。</p>
+        <p>8 月 1 日，链在 478,558 号区块之后分开，ViaBTC 当天挖出 Bitcoin Cash 的第一个区块<a class="ref" href="#s30">[30]</a><a class="ref" href="#s40">[40]</a>。原链上，SegWit 8 月 9 日锁定，8 月 24 日在 481,824 号区块生效<a class="ref" href="#s28">[28]</a><a class="ref" href="#s39">[39]</a>。纽约协议的第二步，把上限提到 2 MB 的 SegWit2x，11 月 8 日被发起人暂停<a class="ref" href="#s21">[21]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>1 MB 上限从哪里来</h3>
+        <p>2010 年 7 月 15 日的一次提交在 main.h 里加了常量 <code>MAX_BLOCK_SIZE</code>，值为 1,000,000 字节，矿工打包时跳过会让区块超过这个大小的交易；这次提交的说明只写了修复 OpenSSL 的链接问题、在 Linux 上停用最小化到托盘<a class="ref" href="#s1">[1]</a>。同年 9 月 7 日发布的 0.3.12 版在 <code>AcceptBlock</code> 里加了检查：高度超过 79,400 的区块，大小超过上限就拒绝。这次提交的说明是“清理，捕获一些可恢复的异常后继续”<a class="ref" href="#s2">[2]</a>。在此之前，代码里只有一个 32 MiB 的通用上限 <code>MAX_SIZE</code><a class="ref" href="#s1">[1]</a>。</p>
+<pre class="code"><code><span class="c">// main.h，2010-07-15 加入（a30b56ebe76f）</span>
+static const unsigned int MAX_SIZE = 0x02000000;
+static const unsigned int MAX_BLOCK_SIZE = 1000000;
+
+<span class="c">// main.cpp，BitcoinMiner：打包时跳过会让区块超限的交易（同一次提交）</span>
+unsigned int nTxSize = ::GetSerializeSize(tx, SER_NETWORK);
+if (nBlockSize + nTxSize &gt;= MAX_BLOCK_SIZE - 10000)
+    continue;
+
+<span class="c">// main.cpp，CBlock::AcceptBlock：0.3.12 起拒绝超限区块（8c9479c6bbbc，2010-09-07）</span>
+int nHeight = pindexPrev-&gt;nHeight+1;
+
+// Check size
+if (nHeight &gt; 79400 &amp;&amp; ::GetSerializeSize(*this, SER_NETWORK) &gt; MAX_BLOCK_SIZE)
+    return error("AcceptBlock() : over size limit");</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin 提交 a30b56ebe76f 和 8c9479c6bbbc，节选，缩进有调整。英文注释为原文，中文注释为本站所加。</p>
+        <p>两次提交都没有说明为什么是 1 MB。维基百科写道，这是中本聪 2010 年加的临时反 DoS 措施<a class="ref" href="#s42">[42]</a>；开发者 Mike Hearn 2016 年把它称为“很久以前作为临时补丁加上的、完全人为的容量上限”<a class="ref" href="#s23">[23]</a>。《纽约时报》2017 年写道，比特币这样去中心化的开源技术没有一组领导者，也没有所有者，很难治理<a class="ref" href="#s34">[34]</a>。</p>
+        <h3>两种看法</h3>
+        <p>主张提高上限的一方看重手续费和确认时间。Andresen 2015 年 5 月写道，交易是平稳产生的，区块却是随机挖出的，区块越接近满，等待确认的交易越容易积压，确认越不可靠<a class="ref" href="#s22">[22]</a>。Hearn 2016 年 1 月写道，区块链已经满了，付给矿工的手续费常常比信用卡还贵<a class="ref" href="#s23">[23]</a>。</p>
+        <p>另一方看重去中心化。Maxwell 在路线图里写道：“以现有的技术，规模和去中心化之间有根本的取舍。系统太贵，人们会被迫信任第三方，不再自己执行系统的规则。”<a class="ref" href="#s13">[13]</a>《纽约时报》概括 Bitcoin Core 开发者的看法：区块越大，个人越难处理区块，少数公司越容易控制网络；Blockstream 的 Samson Mow 说，那会破坏比特币开放、无需许可的精神<a class="ref" href="#s34">[34]</a>。Bitmain 2017 年反驳说，它不认为去中心化意味着 1 MB 的上限，也不认为有责任为了让树莓派能跑全节点而压住区块大小，让一笔交易的手续费高过多数发展中国家一天的收入<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>硬分叉方案</h3>
+        <p>2015 年到 2017 年出现的几个主要方案：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>方案</th><th>做法</th><th>激活条件和结果</th></tr></thead>
+          <tbody>
+            <tr><td>BIP 101（Andresen，2015 年 6 月），Bitcoin XT 采用</td><td>硬分叉。上限 2016 年 1 月起为 8 MB，每两年翻倍，到 2036 年为止</td><td>连续 1,000 个区块里有 750 个发信号，再过两周生效<a class="ref" href="#s7">[7]</a>。截至 2016 年 1 月 11 日，只有约 10% 的区块由 XT 签名<a class="ref" href="#s24">[24]</a></td></tr>
+            <tr><td>BIP 109（Andresen，2016 年 1 月）</td><td>硬分叉。一次提到 2 MB，另限签名操作数和签名哈希的数据量</td><td>1,000 个区块里有 750 个发信号，再等 28 天<a class="ref" href="#s8">[8]</a>。没有激活，BIP 状态为 Closed</td></tr>
+            <tr><td>Bitcoin Classic</td><td>头 8 个月主张一次提到 2 MB，2016 年 11 月改为把上限交给矿工和节点决定</td><td>没有拿到多数算力<a class="ref" href="#s41">[41]</a></td></tr>
+            <tr><td>Bitcoin Unlimited</td><td>用户发信号表达自己接受的上限，节点跟随工作量最大的链，不论区块多大</td><td>没有拿到多数算力<a class="ref" href="#s41">[41]</a><a class="ref" href="#s42">[42]</a></td></tr>
+            <tr><td>UAHF（Bitmain，2017 年 6 月），后来的 Bitcoin Cash</td><td>硬分叉。分叉后第一个区块必须大于 1 MB，上限至少 8 MB</td><td>按时间触发：链的中位时间到 2017 年 8 月 1 日 12:20 UTC<a class="ref" href="#s17">[17]</a></td></tr>
+          </tbody>
+        </table></div>
+        <h3>争论变成冲突</h3>
+        <p>XT 发布后，争论激化。De Filippi 和 Loveluck 2016 年的论文写道，冲突在有些情况下发展到 XT 的支持者在最流行的比特币网站上被审查和封禁，几位表态支持 XT 的网站运营者遭到 DDoS 攻击；Coinbase 宣布试用 XT 之后，被从 Bitcoin.org 上移除<a class="ref" href="#s24">[24]</a>。Hearn 2016 年 1 月宣布不再参与比特币开发，卖掉了全部比特币<a class="ref" href="#s23">[23]</a>。《纽约时报》2017 年写道，争论变成了针对双方领头人的谩骂和黑客攻击，一些知名开发者因此离开<a class="ref" href="#s34">[34]</a>。</p>
+        <h3>香港圆桌会议</h3>
+        <p>2016 年 2 月 21 日，一些矿工、公司和 Bitcoin Core 贡献者在香港数码港达成共识：SegWit 作为软分叉继续开发，预计两个月内发布；与会的 Core 贡献者在 SegWit 发布后三个月内拿出硬分叉的实现，把非见证数据提到约 2 MB、总大小不超过 4 MB，得到整个社区广泛支持才采用；签署方在可预见的将来只运行与 Bitcoin Core 兼容的共识系统。文件估计，社区强力支持的话，硬分叉约在 2017 年 7 月激活<a class="ref" href="#s19">[19]</a>。Bitmain 2017 年 4 月说，SegWit 没有上线，是因为香港协议写明的条件没有满足<a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>加粗的条目是链上规则真正改变、或链真正分开的时刻，其余是提案、声明和报道。</p>
+        <ol class="timeline">
+          <li><time>2010-07-15</time><div class="ev">代码里加入 1 MB 的常量 <code>MAX_BLOCK_SIZE</code>，矿工打包时用它限制区块大小<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="key"><time>2010-09-07</time><div class="ev">0.3.12 版发布，高度 79,400 以后超过 1 MB 的区块会被拒绝<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2015-05-04</time><div class="ev">Andresen 撰文说提高上限很紧迫<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2015-06-22</time><div class="ev">BIP 101 编号：上限从 8 MB 起，每两年翻倍<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2015-08</time><div class="ev">Bitcoin XT 发布，采用 BIP 101，受到媒体广泛报道<a class="ref" href="#s41">[41]</a>。</div></li>
+          <li><time>2015-10-04</time><div class="ev">BIP 9 编号：用区块版本号的不同位，同时部署多个软分叉<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2015-12-07</time><div class="ev">Maxwell 在邮件列表提出扩容路线图，先做 SegWit 软分叉<a class="ref" href="#s13">[13]</a>；21 日五十多位 Core 贡献者联署支持，BIP 141 同日编号<a class="ref" href="#s4">[4]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2016-01-14</time><div class="ev">Hearn 宣布不再参与比特币开发<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2016-01-28</time><div class="ev">BIP 109 编号：一次提到 2 MB<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2016-02-21</time><div class="ev">香港圆桌会议：先发布 SegWit，与会的 Core 贡献者随后拿出约 2 MB 的硬分叉方案<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2016-10-27</time><div class="ev">Bitcoin Core 0.13.1 发布，带 SegWit 的激活参数<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2016-11-15</time><div class="ev">SegWit 的 BIP 9 部署开始统计信号，期限一年<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2017-03-12</time><div class="ev">BIP 148 编号：8 月 1 日起拒绝不发 SegWit 信号的区块<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2017-04-05 至 07</time><div class="ev">Maxwell 提出抑制隐蔽 ASICBoost 的草案<a class="ref" href="#s14">[14]</a>；Bitmain 回应说从没在主网用过 ASICBoost<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2017-05-23</time><div class="ev">DCG 公布纽约协议：以 80% 的门槛激活 SegWit，六个月内硬分叉到 2 MB；签署方称代表 83.28% 的算力<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2017-06-14</time><div class="ev">Bitmain 公布针对 BIP 148 的 UAHF 应急计划<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2017-07-21</time><div class="ev">CoinDesk 报道 BIP 91 已锁定<a class="ref" href="#s29">[29]</a>；这一周比特币涨了约五成<a class="ref" href="#s35">[35]</a>。</div></li>
+          <li class="key"><time>2017-07-23</time><div class="ev">BIP 91 在 477,120 号区块生效，开始拒绝不发 SegWit 信号的区块<a class="ref" href="#s28">[28]</a><a class="ref" href="#s29">[29]</a>。</div></li>
+          <li><time>2017-07-24</time><div class="ev">UAHF 规范 1.6 版定下分叉时间：8 月 1 日 12:20 UTC<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2017-07-25</time><div class="ev">《纽约时报》报道，一批主要在亚洲的投资者和创业者计划下周推出 Bitcoin Cash<a class="ref" href="#s34">[34]</a>。</div></li>
+          <li class="key"><time>2017-08-01</time><div class="ev">BIP 148 在 478,479 号区块生效<a class="ref" href="#s28">[28]</a>。链在 478,558 号区块之后分开，ViaBTC 挖出 Bitcoin Cash 的第一个区块 478,559<a class="ref" href="#s30">[30]</a><a class="ref" href="#s40">[40]</a>。</div></li>
+          <li><time>2017-08-09</time><div class="ev">477,792 至 479,807 号区块全部发出 SegWit 信号，SegWit 锁定<a class="ref" href="#s39">[39]</a>。</div></li>
+          <li class="key"><time>2017-08-24</time><div class="ev">SegWit 在 481,824 号区块生效<a class="ref" href="#s28">[28]</a><a class="ref" href="#s39">[39]</a>。</div></li>
+          <li><time>2017-11-08</time><div class="ev">SegWit2x 的发起人暂停 2 MB 硬分叉<a class="ref" href="#s21">[21]</a>；比特币当天创下 7,879 美元的新高<a class="ref" href="#s37">[37]</a>。</div></li>
+          <li class="key"><time>2017-11-13</time><div class="ev">Bitcoin Cash 硬分叉，更换难度调整算法<a class="ref" href="#s32">[32]</a><a class="ref" href="#s40">[40]</a>。</div></li>
+          <li><time>2017-11-17</time><div class="ev">仍运行 SegWit2x 软件的节点停在 494,782 号区块<a class="ref" href="#s33">[33]</a>。</div></li>
+          <li><time>2017-12-19</time><div class="ev">Coinbase 上线 Bitcoin Cash<a class="ref" href="#s40">[40]</a>。</div></li>
+          <li class="key"><time>2018-11-15</time><div class="ev">Bitcoin Cash 在 556,766 号区块再次分裂，分出 Bitcoin SV<a class="ref" href="#s38">[38]</a><a class="ref" href="#s41">[41]</a>。</div></li>
+          <li class="key"><time>2021-11</time><div class="ev">Taproot 用 Speedy Trial 激活，在 709,632 号区块生效<a class="ref" href="#s26">[26]</a><a class="ref" href="#s27">[27]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>这一节依次讲软分叉和硬分叉、SegWit、BIP 9、ASICBoost，以及信号上不去时，BIP 148、BIP 91 和 UAHF 各自怎样改变结果。</p>
+        <h3>软分叉和硬分叉</h3>
+        <p>规则变严是软分叉：新规则下有效的区块，旧节点也认为有效，没升级的节点仍跟着同一条链。被盗站<a href="../../hacks/events/2010-bitcoin-overflow.html">比特币价值溢出漏洞</a>那一篇写过一个例子：2010 年 8 月的修复版 0.3.10 收紧了交易规则，属于软分叉。同一年加上的 1 MB 上限也是收紧规则<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>，要提高它，就得放宽规则。规则变宽是硬分叉：新规则允许的区块，旧节点会拒绝。只要有人不升级，又有人产出这样的区块，链就会分成两条。2013 年 3 月就意外出过一次这样的分裂：一个区块 0.8 版的节点能处理，一部分旧版本的节点却拒绝了它<a class="ref" href="#s43">[43]</a>，经过见<a href="2013-bitcoin-fork.html">比特币 2013 年 3 月链分叉</a>。BIP 141 把 SegWit 标为软分叉，BIP 101 和 BIP 109 标为硬分叉<a class="ref" href="#s4">[4]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。UAHF 的规范要求分叉后的第一个区块必须大于 1 MB，理由是让新链和原来的 1 MB 链强制分开，也防止新链被原链重组掉<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>SegWit：把签名移出旧节点看到的区块</h3>
+        <p>软分叉不能让旧节点看到超过 1 MB 的区块。SegWit 的办法是把签名等“见证”数据从交易原来的格式里分出去。BIP 141 定义了两种大小：base size 是去掉见证数据、按原来格式序列化的大小，也就是旧节点看到的大小；total size 包括见证数据。新规则是区块权重不超过 4,000,000，权重等于 base size 乘 3 再加 total size<a class="ref" href="#s4">[4]</a>。0.13.1 的发布公告换了一种等价的说法：见证数据每字节算 1 个权重单位，其他数据每字节算 4 个<a class="ref" href="#s10">[10]</a>。</p>
+        <p>没有见证数据时，权重的上限正好对应 1 MB；见证数据越多，区块的总大小可以越大。Bitcoin Core 的说明写道，SegWit 把区块大小的上限提到接近 4 MB，加上权重的限制，有效的上限更接近 1.6 到 2 MB<a class="ref" href="#s11">[11]</a>。源码里两个上限同时存在<a class="ref" href="#s9">[9]</a>：</p>
+<pre class="code"><code><span class="c">// src/consensus/consensus.h（v0.13.1）</span>
+/** The maximum allowed weight for a block, see BIP 141 (network rule) */
+static const unsigned int MAX_BLOCK_WEIGHT = 4000000;
+/** The maximum allowed size for a block excluding witness data, in bytes (network rule) */
+static const unsigned int MAX_BLOCK_BASE_SIZE = 1000000;</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin v0.13.1，src/consensus/consensus.h，节选。</p>
+        <p>SegWit 还修复了交易延展性。原来交易 ID 的计算包括签名，任何人都能对交易做一些不改变含义的小改动，让交易 ID 变掉。签名移进见证部分后，不再参与交易 ID 的计算。BIP 141 写道，这样就能在不信任对方的情况下，构造依赖未确认交易的一串交易<a class="ref" href="#s4">[4]</a><a class="ref" href="#s11">[11]</a>。Maxwell 的路线图把支付通道这类办法列为下一步：靠巧妙的智能合约提高容量，不靠增加带宽，有可能同时做到很高的容量和很高的去中心化<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>BIP 9：用版本号里的一位发信号</h3>
+        <p>每个软分叉在区块头的版本号里占一位，矿工把这一位设为 1，表示愿意并且能够执行新规则<a class="ref" href="#s10">[10]</a>。节点在每个 2,016 块的难度调整周期结束时统计一次，部署的状态这样变化<a class="ref" href="#s3">[3]</a>：</p>
+        <ol class="flow">
+          <li><b>DEFINED</b>还没到开始时间。</li>
+          <li><b>STARTED</b>过了开始时间，开始统计信号。</li>
+          <li><b>LOCKED_IN</b>一个周期里至少 1,916 个区块（95%）发信号。</li>
+          <li><b>ACTIVE</b>锁定后再过一个周期，新规则生效。</li>
+        </ol>
+        <p>到了超时时间还没锁定，就进入 FAILED。SegWit 用第 1 位，2016 年 11 月 15 日开始，2017 年 11 月 15 日超时<a class="ref" href="#s4">[4]</a><a class="ref" href="#s9">[9]</a>：</p>
+<pre class="code"><code><span class="c">// src/chainparams.cpp，CMainParams（v0.13.1）</span>
+consensus.nRuleChangeActivationThreshold = 1916; // 95% of 2016
+consensus.nMinerConfirmationWindow = 2016; // nPowTargetTimespan / nPowTargetSpacing
+<span class="c">// ……</span>
+// Deployment of SegWit (BIP141, BIP143, and BIP147)
+consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
+// November 15th, 2016.
+consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1479168000;
+// November 15th, 2017.
+consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1510704000;</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin v0.13.1，src/chainparams.cpp，节选。英文注释为原文，行尾的日期注释移到了上一行，缩进有调整。</p>
+        <p>95% 的门槛同时是否决的门槛：只要超过 5% 的算力不发信号，SegWit 就锁定不了。Bitcoin Optech 写道，SegWit 发布后，少数矿工很快开始发信号，支持的高点却远低于 95%<a class="ref" href="#s25">[25]</a>。</p>
+        <h3>ASICBoost：一项挖矿优化和 SegWit 的冲突</h3>
+        <p>2017 年 4 月 5 日，Maxwell 在 bitcoin-dev 邮件列表上发了一份 BIP 草案。他写道，比特币的工作量证明函数有一处设计疏忽，矿工可以借此省下最多 30% 的电费，考虑到实现上的开销，更可能是约 20%；Timo Hanke 和 Sergio Demian Lerner 声称对这种做法持有专利，以 ASICBOOST 的名义出售授权。利用方式有公开和隐蔽两种。Maxwell 说，他在讲解怎样抑制隐蔽的方式时，发现自己描述的几乎就是 SegWit 的承诺结构；隐蔽方式最好的实现办法，和几乎所有扩展交易能力的办法都严重不兼容，这种不兼容“可以在很大程度上解释”挖矿生态里一些参与者令人费解的行为。他还写道，对一家大厂商的挖矿芯片做逆向工程，发现它有一项没有公开的能力，可以利用这种做法；按 50% 的算力获得 30% 的电费优势估算，每年的收益最多约 1 亿美元。邮件没有点名厂商<a class="ref" href="#s14">[14]</a>。</p>
+        <p>4 月 7 日，Bitmain 发文，标题称这些说法是“抹黑”。文章说，Bitmain 的芯片和其他一些厂商的一样，有支持 ASICBOOST 的电路，它在中国持有 ASICBOOST 的专利，但只在测试网上试过，从没在主网上用；Maxwell 的计算不对，这种方法在生产环境里不实用；ASICBOOST 不妨碍它支持 SegWit<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>BIP 148 和 BIP 91：把信号变成强制要求</h3>
+        <p>2017 年 3 月，署名 Shaolin Fry 的 BIP 148 提出：不改 SegWit 本身，只给已有的 BIP 9 部署加一个日期。按中位时间，从 2017 年 8 月 1 日到 11 月 15 日，只要 SegWit 还没锁定，所有区块都必须发 SegWit 的信号，不发的拒绝。它援引的先例是 2012 年 P2SH 按预定日期启用<a class="ref" href="#s5">[5]</a>。参考实现的核心是这几行：</p>
+<pre class="code"><code><span class="c">// bip-0148.mediawiki，参考实现（节选）</span>
+// BIP148 mandatory segwit signalling.
+int64_t nMedianTimePast = pindex-&gt;GetMedianTimePast();
+<span class="c">// 中位时间在 2017-08-01 至 2017-11-15 之间，且 SegWit 还没锁定、没生效</span>
+if ( (nMedianTimePast &gt;= 1501545600) &amp;&amp;
+     (nMedianTimePast &lt;= 1510704000) &amp;&amp;
+     (!IsWitnessLockedIn(pindex-&gt;pprev, chainparams.GetConsensus()) &amp;&amp;
+      !IsWitnessEnabled(pindex-&gt;pprev, chainparams.GetConsensus())) )
+{
+    bool fVersionBits = (pindex-&gt;nVersion &amp; VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS;
+    bool fSegbit = (pindex-&gt;nVersion &amp;
+        VersionBitsMask(chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT)) != 0;
+    <span class="c">// 没有发 SegWit 信号的区块一律拒绝</span>
+    if (!(fVersionBits &amp;&amp; fSegbit)) {
+        return state.DoS(0,
+            error("ConnectBlock(): relayed block must signal for segwit, please upgrade"),
+            REJECT_INVALID, "bad-no-segwit");
+    }
+}</code></pre>
+        <p class="code-cap">出处：bitcoin/bips，bip-0148.mediawiki 的参考实现，节选。删去了行尾的英文注释，换行有调整，中文注释为本站所加。</p>
+        <p>矿工不配合时，这条规则有风险。Bitcoin Optech 写道，网络上会同时有三类节点：没升级的、只执行 BIP 9 和 SegWit 的、执行 BIP 148 的。看矿工和多数用户怎么选，执行和不执行 BIP 148 的用户都可能收到对方认为无效的币；只有所有用户执行同样的规则，或者多数算力遵守 BIP 148，才是安全的<a class="ref" href="#s25">[25]</a>。Bitmain 则说，UASF 的用意是对多数经济活动所在的链发动 51% 攻击，它把这种攻击叫做“Wipe Out”<a class="ref" href="#s16">[16]</a>。</p>
+        <p>BIP 91 由 James Hilliard 在 2017 年 5 月提出，名为 segsignal，本身也是一个 BIP 9 部署：用第 4 位，统计周期缩短到 336 个区块，门槛 80%（269 个）。它生效后的规则和 BIP 148 一样，区块必须发 SegWit 的第 1 位信号，否则拒绝；SegWit 锁定、生效或失败后自动停止。BIP 91 写道，这让矿工的简单多数可以在不到 95% 算力的情况下协调激活现有的 SegWit 部署<a class="ref" href="#s6">[6]</a>。Bitcoin Optech 写道，这样激活 SegWit，能和支持 BIP 148 的节点保持共识<a class="ref" href="#s25">[25]</a>。CoinDesk 称它是一种“协调机制”：其他矿池要么跟上，要么损失挖矿奖励<a class="ref" href="#s29">[29]</a>。</p>
+        <h3>UAHF：只按时间触发的硬分叉</h3>
+        <p>2017 年 6 月 14 日，Bitmain 公布 UAHF（用户激活的硬分叉），作为针对 BIP 148 的应急计划：如果 BIP 148 造成链分裂，它会用自己的一部分算力挖一条硬分叉的链，在 BIP 148 的分叉点之后至少挖 72 小时<a class="ref" href="#s16">[16]</a>。7 月 24 日定稿的技术规范 1.6 版规定<a class="ref" href="#s17">[17]</a>：</p>
+        <ul>
+          <li>链尖的中位时间到达 1501590000（2017 年 8 月 1 日 12:20 UTC）后，下一个区块是分叉区块，必须大于 1 MB；</li>
+          <li>节点启动时，区块上限至少设为 8 MB；</li>
+          <li>分叉后，交易必须在签名哈希类型里带上 SIGHASH_FORKID，并用修改过的 BIP 143 算法签名，防止原链的交易在新链上被重放；</li>
+          <li>链尖的中位时间比 6 个区块之前晚 12 小时以上时，工作量目标放宽 25%，相当于难度降低 20%。</li>
+        </ul>
+        <p>UAHF 不统计算力信号，只看时间。规范说，它受旗日的启发，应矿工的要求从按高度分叉改为按时间分叉；激活时间可以配置，方便适应 UASF 日期的变化<a class="ref" href="#s17">[17]</a>。实现它的 Bitcoin ABC 后来把分叉区块写进了代码，高度是 478,559，默认的区块上限是 8 MB<a class="ref" href="#s18">[18]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <p>SegWit 从 2016 年 11 月开始统计信号，到 2017 年 8 月 24 日生效，用了九个多月。</p>
+        <ol class="steps">
+          <li><b>2016 年 11 月至 2017 年 5 月：信号上不去</b>据 SegWit2x 的发起人回忆，到 2017 年 5 月，矿工的支持只有约 30%<a class="ref" href="#s21">[21]</a>。</li>
+          <li><b>5 月 23 日：纽约协议</b>DCG 公布的扩容协议写道，签署方同意立即支持两项同时部署的升级：以 80% 的门槛、用第 4 位信号激活 SegWit，六个月内硬分叉到 2 MB。到 5 月 25 日，签署方有 22 个国家的 58 家公司，代表 83.28% 的算力、每月 51 亿美元的链上交易额<a class="ref" href="#s20">[20]</a>。Bitmain 说协议是 5 月 24 日在纽约达成的，Bitcoin Core 的代表拒绝了邀请<a class="ref" href="#s16">[16]</a>。</li>
+          <li><b>6 月 14 日：UAHF 应急计划</b>Bitmain 写道，如果纽约协议没能避免链分裂，它就得做好准备，随后公布了上面说的 UAHF<a class="ref" href="#s16">[16]</a>。</li>
+          <li><b>7 月 21 日至 23 日：BIP 91 锁定并生效</b>CoinDesk 报道，同一个统计周期里已有 269 个区块发出 BIP 91 的信号，矿池几乎一致支持；BIP 91 在 477,120 号区块生效<a class="ref" href="#s29">[29]</a>。《华尔街日报》写道，矿工投票之后，比特币周五下午报 2,748 美元，比周日的低点 1,835 美元高 52%<a class="ref" href="#s35">[35]</a>；按这两个价格算，涨幅约为 50%（本站计算）。</li>
+          <li><b>7 月 25 日：Bitcoin Cash 公布</b>《纽约时报》报道，一批主要在亚洲的投资者和创业者宣布下周推出 Bitcoin Cash。投资人 Roger Ver 说分裂会是好事；矿池 ViaBTC 公开支持；Bitmain 只说“不排除”支持<a class="ref" href="#s34">[34]</a>。</li>
+          <li><b>8 月 1 日：链分开</b>BIP 148 在 478,479 号区块生效<a class="ref" href="#s28">[28]</a>。CoinDesk 写道，478,558 号区块是矿工开始尝试分离的地方；上午遇到一些障碍，近六小时后，约美东时间 14:14（18:14 UTC），ViaBTC 挖出 Bitcoin Cash 的第一个区块，含 6,985 笔交易，大小 1.915 MB<a class="ref" href="#s30">[30]</a>。478,558 号以前两条链完全相同，分叉时持有比特币的人，在 Bitcoin Cash 上有同样数量的币<a class="ref" href="#s40">[40]</a>。</li>
+          <li><b>8 月 8 日至 24 日：SegWit 锁定、生效</b>CoinDesk 8 月 8 日预计，当天下午在 479,708 号区块前后达到门槛，到 481,824 号区块才生效<a class="ref" href="#s31">[31]</a>。维基百科写道，477,792 至 479,807 号区块全部发出信号，SegWit 8 月 9 日锁定，8 月 24 日在 481,824 号区块生效<a class="ref" href="#s39">[39]</a>。</li>
+        </ol>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 496" role="img" aria-labelledby="bsw-fork-t bsw-fork-d">
+            <title id="bsw-fork-t">2017 年 7 月至 8 月：SegWit 锁定与 Bitcoin Cash 分叉</title>
+            <desc id="bsw-fork-d">2017 年 7 月 23 日，BIP 91 在 477,120 号区块生效；8 月 1 日，BIP 148 在 478,479 号区块生效，两者都要求区块发 SegWit 信号。478,558 号是两条链共同的最后一个区块。原链上，477,792 至 479,807 号区块全部发信号，SegWit 8 月 9 日锁定，24 日在 481,824 号区块生效，权重上限 400 万。按 UAHF 的规则，ViaBTC 8 月 1 日约 18:14 UTC 挖出 1.915 MB 的 478,559 号区块，Bitcoin Cash 由此分出，上限 8 MB，交易须带 SIGHASH_FORKID。</desc>
+            <defs>
+              <marker id="bsw-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box" x="190" y="20" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="44" text-anchor="middle">7 月 23 日：BIP 91 生效，477,120 号区块</text>
+            <text class="d-t s" x="380" y="65" text-anchor="middle">此后不发 SegWit 信号的区块会被 BIP 91 节点拒绝</text>
+            <rect class="d-box" x="190" y="118" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="142" text-anchor="middle">8 月 1 日：BIP 148 生效，478,479 号区块</text>
+            <text class="d-t s" x="380" y="163" text-anchor="middle">中位时间到 8 月 1 日，规则和 BIP 91 相同</text>
+            <rect class="d-box" x="190" y="216" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="240" text-anchor="middle">478,558 号：两条链共同的最后一个区块</text>
+            <text class="d-t s" x="380" y="261" text-anchor="middle">UAHF 的时间条件满足，下一个区块须大于 1 MB</text>
+            <rect class="d-box" x="40" y="330" width="330" height="100" rx="3"/>
+            <text class="d-t b" x="205" y="354" text-anchor="middle">比特币：原来的规则</text>
+            <text class="d-t s" x="205" y="376" text-anchor="middle">477,792 至 479,807 号区块全部发信号</text>
+            <text class="d-t s" x="205" y="396" text-anchor="middle">8 月 9 日锁定，24 日在 481,824 号生效</text>
+            <text class="d-t s" x="205" y="416" text-anchor="middle">权重上限 400 万，base size 仍不超过 1 MB</text>
+            <rect class="d-box" x="390" y="330" width="330" height="100" rx="3"/>
+            <text class="d-t b" x="555" y="354" text-anchor="middle">Bitcoin Cash：478,559 号区块起</text>
+            <text class="d-t s" x="555" y="376" text-anchor="middle">8 月 1 日约 18:14 UTC，ViaBTC 挖出</text>
+            <text class="d-t s" x="555" y="396" text-anchor="middle">第一个区块 1.915 MB，6,985 笔交易</text>
+            <text class="d-t s" x="555" y="416" text-anchor="middle">上限 8 MB，交易须带 SIGHASH_FORKID</text>
+            <line class="d-line" x1="380" y1="78" x2="380" y2="114" marker-end="url(#bsw-ah)"/>
+            <line class="d-line" x1="380" y1="176" x2="380" y2="212" marker-end="url(#bsw-ah)"/>
+            <line class="d-line" x1="330" y1="274" x2="215" y2="326" marker-end="url(#bsw-ah)"/>
+            <line class="d-line dash" x1="430" y1="274" x2="545" y2="326" marker-end="url(#bsw-ah)"/>
+            <text class="d-t s halo" x="258" y="298" text-anchor="end">原链</text>
+            <text class="d-t s halo" x="502" y="298">UAHF 硬分叉</text>
+            <text class="d-t s" x="380" y="460" text-anchor="middle">478,558 号以前两条链完全相同，分叉时持币的人在两条链上都有币</text>
+            <text class="d-t s" x="380" y="482" text-anchor="middle">BIP 91 和 BIP 148 只强制发信号，SegWit 的新规则 8 月 24 日才生效</text>
+          </svg>
+          </div>
+          <figcaption>2017 年 7 月至 8 月的几个区块高度，纵向距离不按比例，虚线箭头表示 UAHF 硬分叉。BIP 91 据 CoinDesk<a class="ref" href="#s29">[29]</a>，BIP 148 和 SegWit 生效据 BitMEX Research<a class="ref" href="#s28">[28]</a>，分叉和 Bitcoin Cash 的第一个区块据 CoinDesk 和维基百科<a class="ref" href="#s30">[30]</a><a class="ref" href="#s40">[40]</a>，SegWit 锁定据维基百科<a class="ref" href="#s39">[39]</a>，两条链的规则据 BIP 141 和 UAHF 规范<a class="ref" href="#s4">[4]</a><a class="ref" href="#s17">[17]</a>。</figcaption>
+        </figure>
+        <div class="note doubt"><span class="h">BIP 91 在哪个区块生效</span><p>CoinDesk 2017 年 7 月 21 日写道，BIP 91 将在 477,120 号区块生效<a class="ref" href="#s29">[29]</a>；BitMEX Research 的分叉史表格把 BIP 91 记在 2017 年 7 月 23 日、477,800 号区块<a class="ref" href="#s28">[28]</a>。BIP 91 的统计周期是 336 个区块，按 BIP 9 的规则，同一个周期里的区块状态相同，状态只在周期的边界变化<a class="ref" href="#s3">[3]</a><a class="ref" href="#s6">[6]</a>。477,120 是 336 的整数倍（336 × 1,420），477,800 不是，本页用 477,120。</p></div>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>Bitcoin Core 的贡献者</h3>
+        <p>Maxwell 2015 年 12 月的路线图主张立即推进 SegWit 软分叉。他写道，BIP 9 能让网络同时进行多个软分叉；SegWit 的设计为将来留了一个提高效率的硬分叉，但得到主要的好处并不需要它，所以它可以按自己的节奏、在没有争议的情况下进行<a class="ref" href="#s13">[13]</a>。五十多位贡献者联署支持这份路线图<a class="ref" href="#s12">[12]</a>，SegWit 随 0.13.1 发布<a class="ref" href="#s10">[10]</a>。《纽约时报》2017 年 7 月写道，开发者表示接下来几个月不打算提高区块大小<a class="ref" href="#s34">[34]</a>。BIP 91 生效前后，CoinDesk 写道，又有一些大多反对 SegWit2x 的 Core 贡献者在帮助平稳过渡，例如 Matt Corallo 在更新矿工使用的快速区块中继网络 FIBRE，Hilliard 说它“大概是把这一切维系住的东西”<a class="ref" href="#s29">[29]</a>。</p>
+        <h3>矿池和矿机厂商</h3>
+        <p>Bitmain 的立场变了几次。它说自己一直支持香港协议，直到不再相信这份协议会在可预见的将来实现<a class="ref" href="#s15">[15]</a>；后来它支持纽约协议，说要让协议尽快实现，同时为 BIP 148 准备了 UAHF<a class="ref" href="#s16">[16]</a>。《纽约时报》写道，Bitmain 是全球最大的比特币挖矿运营商，也是 ViaBTC 的主要投资方<a class="ref" href="#s34">[34]</a>。BIP 91 锁定时，矿池几乎一致支持；CoinDesk 也记下了一种担心：有的矿工发了信号，却没有运行对应的软件，或者运行一阵后在 SegWit 锁定前停下<a class="ref" href="#s29">[29]</a>。ViaBTC 在 Bitcoin Cash 上线之前就开放了它的交易<a class="ref" href="#s36">[36]</a>，并挖出了它的第一个区块<a class="ref" href="#s30">[30]</a>。</p>
+        <h3>纽约协议的签署方</h3>
+        <p>纽约协议的第二步是 SegWit2x：在 SegWit 之后用硬分叉把上限提到 2 MB。据 CoinDesk 此前的资料，分叉原定在 494,784 号区块<a class="ref" href="#s33">[33]</a>。2017 年 11 月 8 日，BitGo 的 CEO Mike Belshe 在 SegWit2x 的邮件列表上发了一封联名信，署名的还有 Wences Casares、吴忌寒（Bitmain 联席 CEO<a class="ref" href="#s15">[15]</a>）、Jeff Garzik、Peter Smith 和 Erik Voorhees。信中写道，他们坚信需要更大的区块，但有一件事更重要，就是让社区团结在一起；现在显然还没有为一次干净的扩容建立足够的共识，继续下去可能分裂社区，所以暂停即将到来的 2 MB 升级<a class="ref" href="#s21">[21]</a>。Bitcoin Optech 写道，签署方的发言人是在大量个人用户和几家公司公开反对之后撤回提案的<a class="ref" href="#s25">[25]</a>。</p>
+        <p>计划取消了，软件还在运行。CoinDesk 11 月 17 日报道，Bitnodes 的数据显示 95 个运行 SegWit2x 软件的节点停在 494,782 号区块，CoinDance 统计有 154 个节点在运行 btc1 软件。原因似乎是代码里的一个问题，让矿工挖不出把这些节点推上新链的、大于 1 MB 的区块。批评者说 Garzik 犯了“差一位”的错误；Garzik 说，在缺少算力的情况下，代码是按设计运行的<a class="ref" href="#s33">[33]</a>。</p>
+        <h3>用户和交易所</h3>
+        <p>Bitcoin Optech 写道，一些用户认为矿工在不正当地拖延一项有用的新功能，于是做出了后来成为 BIP 148 的强制激活<a class="ref" href="#s25">[25]</a>。BitMEX Research 事后写道，真正执行 BIP 91 和 BIP 148 规则的用户只是少数，所以这段时间链分裂的风险偏高<a class="ref" href="#s28">[28]</a>。分叉当天，多数交易所和服务还不支持 Bitcoin Cash<a class="ref" href="#s36">[36]</a>；Coinbase 到 2017 年 12 月 19 日才上线<a class="ref" href="#s40">[40]</a>。</p>
+        <div class="note doubt"><span class="h">SegWit 是靠什么激活的</span><p>各方说法不一。SegWit2x 的发起人写道，SegWit2x 8 月打破了僵局，很快促成了 SegWit 的激活<a class="ref" href="#s21">[21]</a>。CoinDesk 2017 年 7 月写道，很多人希望 BIP 91 成功，可能是想借此取代 BIP 148 这样更激进的方案<a class="ref" href="#s29">[29]</a>。Bitcoin Optech 写道，上面这些事件以及同期的其他事件各自对 SegWit 激活起了多大作用，至今仍有争论<a class="ref" href="#s25">[25]</a>。本页只按时间列出各方的做法。</p></div>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>两条链</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>项目</th><th>比特币</th><th>Bitcoin Cash</th></tr></thead>
+          <tbody>
+            <tr><td>区块上限</td><td>权重不超过 400 万，base size 不超过 1 MB<a class="ref" href="#s4">[4]</a><a class="ref" href="#s9">[9]</a></td><td>8 MB<a class="ref" href="#s18">[18]</a>，2018 年提到 32 MB<a class="ref" href="#s40">[40]</a></td></tr>
+            <tr><td>怎样改的</td><td>软分叉，用 BIP 9 部署，BIP 91 和 BIP 148 强制发信号<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a></td><td>按时间触发的硬分叉<a class="ref" href="#s17">[17]</a></td></tr>
+            <tr><td>交易签名</td><td>SegWit 交易的签名放在见证部分<a class="ref" href="#s4">[4]</a></td><td>必须带 SIGHASH_FORKID，防止交易在两条链之间重放<a class="ref" href="#s17">[17]</a></td></tr>
+            <tr><td>难度调整</td><td>每 2,016 个区块调整一次<a class="ref" href="#s40">[40]</a></td><td>先加了紧急难度调整，2017 年 11 月改为每个区块调整<a class="ref" href="#s17">[17]</a><a class="ref" href="#s40">[40]</a></td></tr>
+            <tr><td>共同的历史</td><td colspan="2">478,558 号区块以前完全相同<a class="ref" href="#s40">[40]</a></td></tr>
+          </tbody>
+        </table></div>
+        <h3>价格</h3>
+        <p>Bitcoin Cash 刚开始交易时的价格，几处记录不一样：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>时间和场所</th><th>价格</th></tr></thead>
+          <tbody>
+            <tr><td>《纽约时报》</td><td>7 月 25 日，少数交易所的期货</td><td>约 450 美元，比特币约 2,600 美元<a class="ref" href="#s34">[34]</a></td></tr>
+            <tr><td>CoinDesk</td><td>8 月 1 日分叉后，Kraken（据 CoinMarketCap）</td><td>约 219 美元<a class="ref" href="#s30">[30]</a></td></tr>
+            <tr><td>《华尔街日报》</td><td>8 月 1 日下午，以 ViaBTC 上的交易为准</td><td>约为一枚比特币的 9.8%<a class="ref" href="#s36">[36]</a></td></tr>
+            <tr><td>维基百科</td><td>8 月 1 日开始交易时</td><td>约 240 美元，比特币约 2,700 美元<a class="ref" href="#s40">[40]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">这几个价格不能直接比较</span><p>《纽约时报》的是分叉前的期货价，其余三个是分叉当天不同时间、不同场所的价格；那天多数交易所还不支持 Bitcoin Cash<a class="ref" href="#s36">[36]</a>。</p></div>
+        <p>比特币这边，BIP 91 锁定的那一周涨了约五成<a class="ref" href="#s35">[35]</a>。11 月 8 日 SegWit2x 暂停，比特币当天创下 7,879 美元的新高；《华尔街日报》写道，市场不再担心出现两个互相竞争的比特币，比特币当年已经涨了 656%<a class="ref" href="#s37">[37]</a>。</p>
+        <h3>生效之后还要升级</h3>
+        <p>SegWit 是选用的：钱包升级后把签名移进见证部分，才能用上多出来的空间<a class="ref" href="#s11">[11]</a>。CoinDesk 在锁定时写道，服务商还要升级软件才能支持新格式的交易，这个改动要多久才能传遍用户、钱包、交易所和其他基础设施，还不清楚<a class="ref" href="#s31">[31]</a>。</p>
+        <h3>治理</h3>
+        <p>De Filippi 和 Loveluck 2016 年的论文把比特币的协调分成两层：由基础设施进行的治理，靠协议本身执行；对基础设施的治理，由开发者和其他相关方管理。论文的结论是，整个系统呈现高度技术官僚的权力结构：自动执行的规则由少数专家设计，他们对自己的决定只承担有限的责任<a class="ref" href="#s24">[24]</a>。研究过比特币、当时是电子前哨基金会研究员的 Joseph Bonneau 2017 年对《纽约时报》说，长远看，比特币会被迫发展出某种真正的政治结构来做这类决定，但现在还没有，结果就是混乱<a class="ref" href="#s34">[34]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>Bitcoin Cash 换掉紧急难度调整</h3>
+        <p>UAHF 的紧急难度调整让 Bitcoin Cash 的难度大起大落。CoinDesk 写道，难度的突然变化让大批矿工在比特币和 Bitcoin Cash 之间频繁切换，哪边收益高就去哪边<a class="ref" href="#s32">[32]</a>；维基百科写道，Bitcoin Cash 一度比比特币多出几千个区块<a class="ref" href="#s40">[40]</a>。2017 年 11 月 13 日约 21:00 UTC，Bitcoin Cash 硬分叉换掉了这条规则；CoinDesk 发稿时，约 82% 的节点已升级到 0.16.0 或更新的版本。说明这次分叉的博文写道，旧规则“让用户得不到稳定的快速确认，也大幅改变了发行的节奏”<a class="ref" href="#s32">[32]</a>。新算法每个区块调整一次难度，用最近 144 个区块的移动窗口计算。2018 年，Bitcoin Cash 的区块上限从 8 MB 提到 32 MB<a class="ref" href="#s40">[40]</a>。</p>
+        <h3>再次分裂</h3>
+        <p>2018 年 11 月 15 日，Bitcoin Cash 因为规则的分歧再次分裂，在 556,766 号区块分出 Bitcoin SV，每 1 枚 BCH 得到 1 枚 BSV<a class="ref" href="#s41">[41]</a>。Bloomberg 写道，两派争夺 Bitcoin Cash 的网络和名字，价格因此跌了近一半；最后 ABC 一派掌管 Bitcoin Cash，代表 SV 一派的 Calvin Ayre 说，SV 的支持者“不再想要 Bitcoin Cash 这个名字”<a class="ref" href="#s38">[38]</a>。</p>
+        <h3>后来的软分叉怎样激活</h3>
+        <p>2021 年的 Taproot 软分叉用的是 BIP 9 的一个变体，叫 Speedy Trial。按 Bitcoin Core 0.21.1 的发布说明，Taproot 用第 2 位，从 2021 年 4 月 24 日之后的第一个周期开始统计；在 8 月 11 日之后的第一个周期开始以前，只要某个 2,016 块的周期里有 90% 的区块发信号，就锁定，并在 709,632 号区块生效；没有锁定的话，预计会另外部署一个激活机制<a class="ref" href="#s27">[27]</a>。Taproot 2021 年 6 月锁定，后来在 709,632 号区块激活<a class="ref" href="#s26">[26]</a>。后来 Ordinals 铭文把内容放进 Taproot 脚本路径花费的见证数据<a class="ref" href="#s44">[44]</a>，经过见<a href="2023-ordinals.html">Ordinals 铭文上线</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>激活的门槛也是否决的门槛。BIP 9 要求 95%，超过 5% 的算力不发信号就锁定不了<a class="ref" href="#s3">[3]</a>。SegWit 的信号长期远低于这个数<a class="ref" href="#s25">[25]</a>，BIP 91 生效后的下一个统计周期，区块全部发了信号，SegWit 才锁定<a class="ref" href="#s39">[39]</a>。</li>
+            <li>信号表达的是意愿，不保证执行。BIP 91 锁定时，就有人担心矿工发了信号却没有运行对应的软件<a class="ref" href="#s29">[29]</a>。</li>
+            <li>硬分叉要先想好重放和难度。Bitcoin Cash 用 SIGHASH_FORKID 把两条链的交易分开<a class="ref" href="#s17">[17]</a>，紧急难度调整却让矿工来回切换，三个多月后又硬分叉了一次<a class="ref" href="#s32">[32]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给矿工和公司</span>
+          <ul>
+            <li>会场上签的协议，管不住运行节点的人。纽约协议的签署方称代表 83.28% 的算力<a class="ref" href="#s20">[20]</a>，第二步的 2 MB 硬分叉还是在公开的反对中撤回了<a class="ref" href="#s25">[25]</a>。</li>
+            <li>计划取消了，软件也要跟着停。SegWit2x 暂停九天后，Bitnodes 仍统计到 95 个运行它的软件的节点停在 494,782 号区块<a class="ref" href="#s33">[33]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户和交易所</span>
+          <ul>
+            <li>链分裂以后，分叉前的币在两条链上都有，能不能卖、什么时候能卖，取决于交易所。分叉当天多数交易所不支持 Bitcoin Cash<a class="ref" href="#s36">[36]</a>，Coinbase 四个多月后才上线<a class="ref" href="#s40">[40]</a>。</li>
+            <li>运行全节点的人也在定规则。BIP 148 的节点会拒绝不发信号的区块<a class="ref" href="#s5">[5]</a>，但据 BitMEX Research，这样做的用户只是少数<a class="ref" href="#s28">[28]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">bitcoin/bitcoin，提交 a30b56ebe76f，《fix openssl linkage problems, disable minimize to tray on Linux because it has too many problems including a CPU peg bug》，2010-07-15。<a href="https://github.com/bitcoin/bitcoin/commit/a30b56ebe76ffff9f9cc8a6667186179413c6349">github.com</a></li>
+          <li id="s2">bitcoin/bitcoin，提交 8c9479c6bbbc（SVN r148），《cleanup, catch some recoverable exceptions and continue -- version 0.3.12 release》，2010-09-07。<a href="https://github.com/bitcoin/bitcoin/commit/8c9479c6bbbc38b897dc97de9d04e4d5a5a36730">github.com</a></li>
+          <li id="s3">Pieter Wuille、Peter Todd、Greg Maxwell、Rusty Russell，《BIP 9: Version bits with timeout and delay》，2015-10-04 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki">github.com</a></li>
+          <li id="s4">Eric Lombrozo、Johnson Lau、Pieter Wuille，《BIP 141: Segregated Witness (Consensus layer)》，2015-12-21 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki">github.com</a></li>
+          <li id="s5">Shaolin Fry，《BIP 148: Mandatory activation of segwit deployment》，2017-03-12 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0148.mediawiki">github.com</a></li>
+          <li id="s6">James Hilliard，《BIP 91: Reduced threshold Segwit MASF》，2017-05-22 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0091.mediawiki">github.com</a></li>
+          <li id="s7">Gavin Andresen，《BIP 101: Increase maximum block size》，2015-06-22 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0101.mediawiki">github.com</a></li>
+          <li id="s8">Gavin Andresen，《BIP 109: Two million byte size limit with sigop and sighash limits》，2016-01-28 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0109.mediawiki">github.com</a></li>
+          <li id="s9">bitcoin/bitcoin，v0.13.1 标签下的 src/consensus/consensus.h 和 src/chainparams.cpp。<a href="https://github.com/bitcoin/bitcoin/tree/v0.13.1/src">github.com</a></li>
+          <li id="s10">Bitcoin Core，《Bitcoin Core 0.13.1 Released with Segregated Witness》，2016-10-27。<a href="https://bitcoincore.org/en/2016/10/27/release-0.13.1/">bitcoincore.org</a></li>
+          <li id="s11">Bitcoin Core，《Segregated Witness Benefits》，2016-01-26。<a href="https://bitcoincore.org/en/2016/01/26/segwit-benefits/">bitcoincore.org</a></li>
+          <li id="s12">Bitcoin Core，《Capacity increases for the Bitcoin system》（联署声明），2015-12-21。<a href="https://bitcoincore.org/en/2015/12/21/capacity-increase/">bitcoincore.org</a></li>
+          <li id="s13">Gregory Maxwell，bitcoin-dev 邮件列表，《Capacity increases for the Bitcoin system.》，2015-12-07（Internet Archive 存档）。<a href="https://web.archive.org/web/2016/https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-December/011865.html">web.archive.org</a></li>
+          <li id="s14">Gregory Maxwell，bitcoin-dev 邮件列表，《BIP proposal: Inhibiting a covert attack on the Bitcoin POW function》，2017-04-05（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2017-April/013996.html">web.archive.org</a></li>
+          <li id="s15">Bitmain，《Regarding Recent Allegations and Smear Campaigns》，2017-04-07（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://blog.bitmain.com/en/regarding-recent-allegations-smear-campaigns/">web.archive.org</a></li>
+          <li id="s16">Bitmain，《UAHF: A contingency plan against UASF (BIP148)》，2017-06-14（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://blog.bitmain.com/en/uahf-contingency-plan-uasf-bip148/">web.archive.org</a></li>
+          <li id="s17">bitcoincash.org，《UAHF Technical Specification》1.6 版，2017-07-24。<a href="https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/uahf-technical-spec.md">github.com</a></li>
+          <li id="s18">Bitcoin ABC 源码：v0.14.6 的 src/consensus/consensus.h，v0.16.0 的 src/chainparams.cpp。<a href="https://github.com/Bitcoin-ABC/bitcoin-abc/blob/v0.14.6/src/consensus/consensus.h">github.com</a>（v0.14.6）、<a href="https://github.com/Bitcoin-ABC/bitcoin-abc/blob/v0.16.0/src/chainparams.cpp">github.com</a>（v0.16.0）</li>
+          <li id="s19">Bitcoin Roundtable，《Bitcoin Roundtable Consensus》，2016-02-21（Internet Archive 存档）。<a href="https://web.archive.org/web/2016/https://medium.com/@bitcoinroundtable/bitcoin-roundtable-consensus-266d475a61ff">web.archive.org</a></li>
+          <li id="s20">Digital Currency Group，《Bitcoin Scaling Agreement at Consensus 2017》，2017-05-23（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://medium.com/@DCGco/bitcoin-scaling-agreement-at-consensus-2017-133521fe9a77">web.archive.org</a></li>
+          <li id="s21">Mike Belshe 等，Bitcoin-segwit2x 邮件列表，《Segwit2x Final Steps》，2017-11-08（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://lists.linuxfoundation.org/pipermail/bitcoin-segwit2x/2017-November/000685.html">web.archive.org</a></li>
+          <li id="s22">Gavin Andresen，《Why increasing the max block size is urgent》，2015-05-04（Internet Archive 存档）。<a href="https://web.archive.org/web/2015/http://gavinandresen.ninja/why-increasing-the-max-block-size-is-urgent">web.archive.org</a></li>
+          <li id="s23">Mike Hearn，《The resolution of the Bitcoin experiment》，2016-01-14（Internet Archive 存档）。<a href="https://web.archive.org/web/2016/https://blog.plan99.net/the-resolution-of-the-bitcoin-experiment-dabb30201f7">web.archive.org</a></li>
+          <li id="s24">Primavera De Filippi、Benjamin Loveluck，《The invisible politics of Bitcoin: governance crisis of a decentralised infrastructure》，Internet Policy Review 第 5 卷第 3 期，2016-09-30。<a href="https://policyreview.info/articles/analysis/invisible-politics-bitcoin-governance-crisis-decentralised-infrastructure">policyreview.info</a></li>
+          <li id="s25">Bitcoin Optech，《Soft fork activation》专题页，2026 年 11 月查阅。<a href="https://bitcoinops.org/en/topics/soft-fork-activation/">bitcoinops.org</a></li>
+          <li id="s26">Bitcoin Optech，《Taproot》专题页，2026 年 11 月查阅。<a href="https://bitcoinops.org/en/topics/taproot/">bitcoinops.org</a></li>
+          <li id="s27">Bitcoin Core，0.21.1 版发布说明（doc/release-notes.md），2021。<a href="https://github.com/bitcoin/bitcoin/blob/v0.21.1/doc/release-notes.md">github.com</a></li>
+          <li id="s28">BitMEX Research，《A complete history of Bitcoin's consensus forks》，2017-12-28（Internet Archive 存档）。<a href="https://web.archive.org/web/2020/https://blog.bitmex.com/bitcoins-consensus-forks/">web.archive.org</a></li>
+          <li id="s29">CoinDesk，《BIP 91 Locks In: What This Means for Bitcoin and Why It's Not Scaled Yet》，2017-07-21（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/http://www.coindesk.com/bip-91-locks-means-bitcoin-not-scaled-yet/">web.archive.org</a></li>
+          <li id="s30">CoinDesk，《Bitcoin Cash Just Mined its First Block, Making Blockchain Split Official》，2017-08-01（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://www.coindesk.com/bitcoin-cash-just-mined-first-block-making-blockchain-split-official/">web.archive.org</a></li>
+          <li id="s31">CoinDesk，《SegWit Lock-In: What the Tech Milestone Means for Bitcoin》，2017-08-08（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://www.coindesk.com/segwits-likely-lock-todays-milestone-means-bitcoin/">web.archive.org</a></li>
+          <li id="s32">CoinDesk，《Bitcoin Cash Hard Forks In Bid to Ease Mining Difficulties》，2017-11-13（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://www.coindesk.com/bitcoin-cash-hard-forks-blockchain-bid-ease-mining-difficulties/">web.archive.org</a></li>
+          <li id="s33">CoinDesk，《No Fork, No Fire: Segwit2x Nodes Stall Running Abandoned Bitcoin Code》，2017-11-17（Internet Archive 存档）。<a href="https://web.archive.org/web/2017/https://www.coindesk.com/no-fork-no-fire-segwit2x-nodes-stall-running-abandoned-bitcoin-code/">web.archive.org</a></li>
+          <li id="s34">The New York Times，《Some Bitcoin Backers Are Defecting to Create a Rival Currency》，2017-07-25（Internet Archive 存档）。<a href="https://web.archive.org/web/20201107234022/https://www.nytimes.com/2017/07/25/business/dealbook/bitcoin-cash-split.html">web.archive.org</a></li>
+          <li id="s35">The Wall Street Journal，《Bitcoin Rallies Sharply After Vote Resolves Bitter Scaling Debate》，2017-07-21（Internet Archive 存档，只读到导语）。<a href="https://web.archive.org/web/2017/https://blogs.wsj.com/moneybeat/2017/07/21/bitcoin-rallies-sharply-after-vote-resolves-bitter-scaling-debate/">web.archive.org</a></li>
+          <li id="s36">The Wall Street Journal，《Bitcoin Rival Launches in Volatile First Day》，2017-08-01（Internet Archive 存档，只读到导语）。<a href="https://web.archive.org/web/20190605104448/https://www.wsj.com/articles/bitcoin-rival-launches-in-volatile-first-day-1501609631">web.archive.org</a></li>
+          <li id="s37">The Wall Street Journal，《Bitcoin Dodges Split That Threatened Its Surging Price》，2017-11-08（Internet Archive 存档，只读到导语）。<a href="https://web.archive.org/web/20171108204840/https://www.wsj.com/articles/bitcoin-dodges-split-that-threatened-its-surging-price-1510172701">web.archive.org</a></li>
+          <li id="s38">Bloomberg，《Bitcoin Cash Wars End With No Relief for Biggest Cryptocurrency》，2018-11-23（Internet Archive 存档）。<a href="https://web.archive.org/web/20190803082954/https://www.bloomberg.com/news/articles/2018-11-23/bitcoin-cash-wars-end-with-no-relief-for-biggest-cryptocurrency">web.archive.org</a></li>
+          <li id="s39">维基百科，《SegWit》。<a href="https://en.wikipedia.org/wiki/SegWit">en.wikipedia.org</a></li>
+          <li id="s40">维基百科，《Bitcoin Cash》。<a href="https://en.wikipedia.org/wiki/Bitcoin_Cash">en.wikipedia.org</a></li>
+          <li id="s41">维基百科，《List of bitcoin forks》。<a href="https://en.wikipedia.org/wiki/List_of_bitcoin_forks">en.wikipedia.org</a></li>
+          <li id="s42">维基百科，《Bitcoin Unlimited》。<a href="https://en.wikipedia.org/wiki/Bitcoin_Unlimited">en.wikipedia.org</a></li>
+          <li id="s43">Gavin Andresen，《BIP 50: March 2013 Chain Fork Post-Mortem》，2013-03-20 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0050.mediawiki">github.com</a></li>
+          <li id="s44">ordinals/ord 0.4.0，docs/src/inscriptions.md、overview.md、faq.md。<a href="https://github.com/ordinals/ord/tree/0.4.0/docs/src">github.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

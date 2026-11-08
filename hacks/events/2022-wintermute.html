@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wintermute 靓号地址被破解｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 9 月做市商 Wintermute 因 Profanity 靓号工具的 32 位种子缺陷被转走约 1.6 亿美元：Profanity 的私钥生成代码、管理员权限为何没撤、内部人指控的争议与同一漏洞的其他受害者。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-wintermute">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Wintermute 靓号地址被破解</h1>
+    <p class="lede">2022 年 9 月 20 日，做市商 Wintermute 的 DeFi 金库被转走约 1.6 亿美元。金库只认管理员地址，而其中一个管理员地址是用靓号工具 Profanity 生成的；Profanity 只用 32 位随机数做种子，私钥可以从公开的公钥倒推出来。这个缺陷在攻击前五天已被公开，Wintermute 转走了这个地址里的 ETH，却没有撤销它对金库的管理员权限。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">以太坊地址由私钥决定，想要一个开头带一串 0 的“靓号”地址，只能不停地换私钥碰运气。Profanity 用 GPU 做这件事，速度很快，但它的起点私钥只由一个 32 位随机数决定，之后每一步都是可以倒着做的加法。1inch 在 2022 年 9 月 15 日公开指出，只要拿到一个 Profanity 地址的公钥，就能在可以承受的算力内倒推出它的私钥<a class="ref" href="#s1">[1]</a>。骗子也用这类靓号工具造首尾和真地址相同的假地址，见诈骗站的<a href="../../scams/events/2024-address-poisoning.html">地址投毒</a>。</p>
+        <p>Wintermute 的 DeFi 金库合约只允许管理员调用转移资产的函数，热钱包地址 <span class="addr">0x0000000fe6a514a32abdcdfcc076c85243de899b</span> 是管理员之一，它正是一个靓号<a class="ref" href="#s4">[4]</a><a class="ref" href="#s7">[7]</a>。9 月 20 日，攻击者控制了这个地址，用它反复调用金库的特权函数，把稳定币、WBTC、ETH 等 70 多种代币转进自己的合约，总价值约 1.6 亿美元<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <p>CEO Evgeny Gaevoy 在事发约三小时后公开确认，称损失只限于 DeFi 业务，中心化交易和场外交易没有受影响，公司净资产仍有被盗金额的两倍<a class="ref" href="#s4">[4]</a><a class="ref" href="#s8">[8]</a>。Wintermute 用自有资金承担了损失，并按期偿还了 TrueFi 约 9,200 万美元的借款<a class="ref" href="#s11">[11]</a>。一名研究者随后指控这是内部人所为，Wintermute 否认，区块链安全公司 BlockSec 认为指控证据不足<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。攻击者身份至今没有被公开认定。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Wintermute 是总部在英国的算法做市商，业务同时覆盖中心化交易所、场外交易和链上 DeFi<a class="ref" href="#s8">[8]</a><a class="ref" href="#s12">[12]</a>。这一年它已经出过一次事：6 月，Wintermute 为 Optimism 的 OP 代币做市时，给出的收款地址是自己在以太坊主网的多签地址，而这个多签在 Optimism 上还没有部署，2,000 万枚 OP 被他人抢先部署合约占用，事后对方归还了大部分<a class="ref" href="#s13">[13]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <p>做市商和链上机器人喜欢开头带很多 0 的地址，主要是为了省 gas：地址作为参数写进交易数据时，零字节比非零字节便宜（EIP-2028 之后非零字节每字节 16 gas，零字节价格不变）<a class="ref" href="#s14">[14]</a>。rekt.news 转述 Gaevoy 的说法，用靓号是为了省 gas，而不是为了好看<a class="ref" href="#s4">[4]</a>。Wintermute 的热钱包地址开头有 7 个十六进制 0，金库合约 <span class="addr">0x00000000ae347930bd1e7b0f35588b92280f9e75</span> 开头有 8 个 0。</p>
+        <p>Profanity 是开发者 johguse 在 GitHub 上开源的 GPU 靓号生成工具，在以太坊开发者中流传多年，后来被作者放弃维护<a class="ref" href="#s2">[2]</a>。2022 年 1 月 17 日，1inch 的 Anton（GitHub 用户名 k06a）在项目里提交 issue，指出 <code>std::mt19937_64</code> 只用一个 32 位整数初始化；三天后他估算，1,000 块 GPU 可以在 50 天内破解所有 7 位靓号地址<a class="ref" href="#s3">[3]</a><a class="ref" href="#s7">[7]</a>。这个 issue 一直没有得到修复，直到 9 月 15 日项目被归档。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">Wintermute 与安全社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2022-01-17</time><div class="ev">k06a 在 Profanity 的 GitHub 提交 issue #61《Private key safety》，指出种子只有 32 位<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2022-06</time><div class="ev">Wintermute 因收款地址错误损失 2,000 万枚 OP，对方事后归还大部分<a class="ref" href="#s13">[13]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2022-09-14</time><div class="ev">21:28（UTC），Wintermute 把热钱包 <span class="addr">0x0000000fe6…</span> 里的 ETH 全部转走，但没有撤销它在金库的管理员身份<a class="ref" href="#s6">[6]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def key"><time>2022-09-15</time><div class="ev">1inch 发文披露 Profanity 漏洞，提醒用户立即转移资产；Profanity 作者删除可执行文件并归档仓库<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2022-09-17</time><div class="ev">ZachXBT 报告已有约 330 万美元因同一漏洞被盗<a class="ref" href="#s5">[5]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk key"><time>2022-09-20</time><div class="ev">攻击者向 Wintermute 热钱包转入 2 ETH 作手续费，随后用它调用金库的特权函数 109 次，把资产转进攻击合约<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2022-09-20</time><div class="ev">约三小时后，Gaevoy 在 Twitter 确认 DeFi 业务被盗约 1.6 亿美元，表示愿意把对方当作白帽处理<a class="ref" href="#s4">[4]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2022-09-21</time><div class="ev">Wintermute 称攻击只涉及 DeFi 智能合约，内部系统和第三方数据都没有受影响<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2022-09-26</time><div class="ev">PeckShield 报告另一个 Profanity 地址被盗约 732 ETH（约 95 万美元），转入 Tornado Cash<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2022-09-26</time><div class="ev">研究者 James Edwards（Librehash）在 Medium 发文，指控这是内部人所为<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2022-09-27</time><div class="ev">Wintermute 否认指控；BlockSec 发文分析，认为证据“不足以指控 Wintermute”<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2022-09-30</time><div class="ev">Amber Group 发布复现报告：一台 MacBook M1 在 48 小时内算出了 Wintermute 热钱包的私钥<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2022-10-15</time><div class="ev">Wintermute 按期偿还 TrueFi 约 9,200 万美元 USDT 借款<a class="ref" href="#s11">[11]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>Profanity 的做法是：随机选一个起点私钥 d，算出公钥 Q，看对应地址是否符合要求；不符合就把私钥加 1，再看下一个。椭圆曲线有一个性质：私钥加 1，公钥就加上一个公开的固定点 G。所以 Profanity 不必每一步都重算公钥，只要在上一个公钥上加 G 即可。为了用满 GPU，它同时开数百万个工作项，每个工作项的起点是在同一个初始私钥上加不同的偏移<a class="ref" href="#s7">[7]</a>。</p>
+        <p>问题出在最开始的那一个初始私钥。下面是 Profanity 生成它的代码：</p>
+<pre class="code"><code><span class="c">// johguse/profanity，Dispatcher.cpp：生成 256 位的初始私钥</span>
+cl_ulong4 Dispatcher::Device::createSeed() {
+    <span class="c">// Randomize private keys</span>
+    std::random_device rd;
+<span class="c">    // rd() 只返回一个 32 位无符号整数，却用它初始化整个 mt19937_64</span>
+<span class="bad">    std::mt19937_64 eng(rd());</span>
+    std::uniform_int_distribution&lt;cl_ulong&gt; distr;
+
+    cl_ulong4 r;
+<span class="c">    // 四个 64 位字拼成私钥；它们全由上面那 32 位决定，可能的起点只有 2^32 个</span>
+    r.s[0] = distr(eng);
+    r.s[1] = distr(eng);
+    r.s[2] = distr(eng);
+    r.s[3] = distr(eng);
+    return r;
+}</code></pre>
+        <p class="code-cap">来源：johguse/profanity 仓库（2022-09-15 归档），Dispatcher.cpp 第 100–121 行，与 issue #61 引用的提交 75afbad 一致<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。省略了调试分支，制表符改为空格。</p>
+        <p>找到靓号后，Profanity 这样算出最终私钥：</p>
+<pre class="code"><code><span class="c">// johguse/profanity，Dispatcher.cpp：printResult()</span>
+<span class="c">// 最终私钥 = 初始私钥 + 轮数（加在最低 64 位）+ 工作项编号（加在最高 64 位）</span>
+seedRes.s[0] = seed.s[0] + round; carry = seedRes.s[0] &lt; round;
+seedRes.s[1] = seed.s[1] + carry; carry = !seedRes.s[1];
+seedRes.s[2] = seed.s[2] + carry; carry = !seedRes.s[2];
+seedRes.s[3] = seed.s[3] + carry + r.foundId;</code></pre>
+        <p class="code-cap">来源：同上，Dispatcher.cpp 第 37–40 行。</p>
+        <p>两段代码放在一起，问题就清楚了。起点私钥只有 2<sup>32</sup> 种可能，工作项偏移和轮数都是公开算法里的已知量，每一步又都是加法。反过来，只要从目标地址发出过的任何一笔签名交易里恢复出公钥，就可以沿着同样的步骤往回减，直到碰上某一个可能的起点公钥，私钥也就随之确定<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 330" role="img" aria-labelledby="wm1-t wm1-d">
+            <title id="wm1-t">Profanity 的生成路径为什么能被倒推</title>
+            <desc id="wm1-d">上排是 Profanity 生成靓号的正向路径：32 位种子经 mt19937_64 得到初始私钥，按工作项编号偏移出数百万个起点，每轮私钥加一、公钥加 G，直到地址符合要求。下排是反向路径：从目标地址的签名交易恢复公钥，逐轮减回去，与事先算好的 2 的 32 次方个起点公钥比对，命中后即得私钥。</desc>
+            <defs>
+              <marker id="wm1-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="wm1-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="15" y="22">正向：Profanity 生成靓号</text>
+            <rect class="d-box atk" x="15" y="38" width="150" height="62" rx="4"/>
+            <text class="d-t b atk" x="90" y="63" text-anchor="middle">32 位随机种子</text>
+            <text class="d-t s m" x="90" y="85" text-anchor="middle">random_device()</text>
+            <rect class="d-box" x="215" y="38" width="160" height="62" rx="4"/>
+            <text class="d-t b" x="295" y="63" text-anchor="middle">初始私钥 d₀</text>
+            <text class="d-t s" x="295" y="85" text-anchor="middle">mt19937_64 生成 256 位</text>
+            <rect class="d-box" x="425" y="38" width="160" height="62" rx="4"/>
+            <text class="d-t b" x="505" y="63" text-anchor="middle">数百万个起点</text>
+            <text class="d-t s" x="505" y="85" text-anchor="middle">按工作项编号偏移</text>
+            <rect class="d-box" x="635" y="38" width="130" height="62" rx="4"/>
+            <text class="d-t b" x="700" y="63" text-anchor="middle">每轮 +1</text>
+            <text class="d-t s" x="700" y="85" text-anchor="middle">公钥 +G，直到命中</text>
+            <line class="d-line atk" x1="165" y1="69" x2="213" y2="69" marker-end="url(#wm1-ah-atk)"/>
+            <line class="d-line" x1="375" y1="69" x2="423" y2="69" marker-end="url(#wm1-ah)"/>
+            <line class="d-line" x1="585" y1="69" x2="633" y2="69" marker-end="url(#wm1-ah)"/>
+            <text class="d-t b" x="15" y="142">反向：从公钥倒推（1inch、Amber Group 公开的思路）</text>
+            <rect class="d-box doubt" x="15" y="158" width="150" height="62" rx="4"/>
+            <text class="d-t b" x="90" y="183" text-anchor="middle">事先算好</text>
+            <text class="d-t s" x="90" y="205" text-anchor="middle">2³² 个起点公钥</text>
+            <rect class="d-box" x="215" y="158" width="160" height="62" rx="4"/>
+            <text class="d-t b" x="295" y="183" text-anchor="middle">比对是否命中</text>
+            <text class="d-t s" x="295" y="205" text-anchor="middle">命中即知种子和私钥</text>
+            <rect class="d-box" x="425" y="158" width="160" height="62" rx="4"/>
+            <text class="d-t b" x="505" y="183" text-anchor="middle">逐轮减回去</text>
+            <text class="d-t s" x="505" y="205" text-anchor="middle">每一步都是已知的加法</text>
+            <rect class="d-box atk" x="635" y="158" width="130" height="62" rx="4"/>
+            <text class="d-t b atk" x="700" y="183" text-anchor="middle">目标公钥</text>
+            <text class="d-t s" x="700" y="205" text-anchor="middle">从签名交易恢复</text>
+            <line class="d-line atk" x1="635" y1="189" x2="587" y2="189" marker-end="url(#wm1-ah-atk)"/>
+            <line class="d-line atk" x1="425" y1="189" x2="377" y2="189" marker-end="url(#wm1-ah-atk)"/>
+            <line class="d-line" x1="215" y1="189" x2="167" y2="189" marker-end="url(#wm1-ah)"/>
+            <rect class="d-box soft" x="15" y="246" width="750" height="66" rx="4"/>
+            <text class="d-t s" x="390" y="272" text-anchor="middle">私钥 = 初始私钥 + 工作项偏移 + 轮数，只有初始私钥是“秘密”，而它只有 2³² 种</text>
+            <text class="d-t s" x="390" y="296" text-anchor="middle">Amber Group：MacBook M1 预计算不到 10 小时，之后每个 7 位前导零地址约 40 分钟</text>
+          </svg>
+          </div>
+          <figcaption>图 1：正向生成和反向倒推走的是同一条路。靓号要求越长，生成越慢，倒推也越慢，两者大致同步，所以“多要几个 0”并不能提高安全性<a class="ref" href="#s1">[1]</a>。</figcaption>
+        </figure>
+        <p>1inch 起初以为破解需要把 40 亿个种子逐一正向重算，要“数千块 GPU 和几个月时间”；换成反向思路后，他们写出的概念验证代码破解一个地址所需的时间，与当初生成这个地址的时间相当<a class="ref" href="#s1">[1]</a>。Amber Group 用一台 16 GB 内存的 MacBook M1，不到 10 小时完成预计算，之后约 40 分钟就能处理一个 7 位前导零的地址，总共不到 48 小时就算出了 Wintermute 热钱包的私钥<a class="ref" href="#s7">[7]</a>。</p>
+        <div class="note">
+          <span class="h">金库合约本身没有漏洞</span>
+          <p>rekt.news 引用研究者 Mudit Gupta 的分析：金库只允许管理员做这些转账，而 Wintermute 的热钱包正是管理员，合约一切按设计运行，出问题的是管理员私钥本身<a class="ref" href="#s4">[4]</a>。这是一次权限设计和密钥管理的失败：一个热钱包 EOA 单独掌握着上亿美元资产的转移权。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下依据 CertiK、rekt.news 和 Amber Group 已发表的分析整理。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 275" role="img" aria-labelledby="wm2-t wm2-d">
+            <title id="wm2-t">Wintermute 金库被转走的权限路径</title>
+            <desc id="wm2-d">攻击者向靓号热钱包转入 2 ETH 作手续费，再用热钱包的管理员身份调用金库特权函数 109 次，金库把资产转进攻击合约，攻击合约再转给攻击者地址，大部分稳定币随后存入 Curve 3pool。9 月 14 日 Wintermute 转走了热钱包的 ETH，但没有撤销它对金库的管理员权限。</desc>
+            <defs>
+              <marker id="wm2-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="wm2-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="15" y="20" width="150" height="190" rx="4"/>
+            <text class="d-t b atk" x="90" y="100" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="90" y="122" text-anchor="middle">已算出热钱包私钥</text>
+            <rect class="d-box" x="260" y="20" width="200" height="72" rx="4"/>
+            <text class="d-t b" x="360" y="46" text-anchor="middle">热钱包（金库管理员）</text>
+            <text class="d-t s m" x="360" y="68" text-anchor="middle">0x0000000fe6…</text>
+            <text class="d-t s" x="360" y="85" text-anchor="middle">Profanity 生成的靓号</text>
+            <rect class="d-box def" x="575" y="20" width="190" height="72" rx="4"/>
+            <text class="d-t b" x="670" y="46" text-anchor="middle">DeFi 金库合约</text>
+            <text class="d-t s m" x="670" y="68" text-anchor="middle">0x00000000ae…</text>
+            <text class="d-t s" x="670" y="85" text-anchor="middle">只允许管理员转出</text>
+            <rect class="d-box atk" x="575" y="150" width="190" height="60" rx="4"/>
+            <text class="d-t b atk" x="670" y="175" text-anchor="middle">攻击合约</text>
+            <text class="d-t s" x="670" y="196" text-anchor="middle">接收金库转出的资产</text>
+            <line class="d-line atk" x1="165" y1="56" x2="258" y2="56" marker-end="url(#wm2-ah-atk)"/>
+            <text class="d-t s atk halo" x="211" y="48" text-anchor="middle">① 转入 2 ETH</text>
+            <line class="d-line dash" x1="460" y1="44" x2="573" y2="44" marker-end="url(#wm2-ah)"/>
+            <text class="d-t s halo" x="516" y="36" text-anchor="middle">管理员权限</text>
+            <line class="d-line atk" x1="460" y1="74" x2="573" y2="74" marker-end="url(#wm2-ah-atk)"/>
+            <text class="d-t s atk halo" x="516" y="90" text-anchor="middle">② 特权调用 ×109</text>
+            <line class="d-line atk" x1="670" y1="92" x2="670" y2="148" marker-end="url(#wm2-ah-atk)"/>
+            <text class="d-t s atk halo" x="680" y="125">③ 转出资产</text>
+            <line class="d-line atk" x1="575" y1="180" x2="167" y2="180" marker-end="url(#wm2-ah-atk)"/>
+            <text class="d-t s atk halo" x="370" y="172" text-anchor="middle">④ 归集到攻击者地址，稳定币存入 Curve 3pool</text>
+            <rect class="d-box doubt" x="200" y="108" width="330" height="40" rx="4"/>
+            <text class="d-t s" x="365" y="133" text-anchor="middle">9 月 14 日转走了 ETH，管理员权限没有撤销</text>
+            <text class="d-t s" x="390" y="252" text-anchor="middle">调用次数依据 CertiK；资金路径依据 CertiK 与 rekt.news</text>
+          </svg>
+          </div>
+          <figcaption>图 2：金库合约本身按设计运行。只要在 ① 之前撤销热钱包的管理员权限，或把管理员换成多签，② 就会失败。</figcaption>
+        </figure>
+        <ol class="steps">
+          <li><b>拿到热钱包私钥</b>这个热钱包发过大量交易，公钥是公开的。CertiK 判断私钥是被泄露或被暴力破解的<a class="ref" href="#s5">[5]</a>；Amber Group 随后证明，按 1inch 公开的思路，一台笔记本两天内就能算出来<a class="ref" href="#s7">[7]</a>。</li>
+          <li><b>准备手续费</b>9 月 14 日 Wintermute 已把热钱包里的 ETH 转空。9 月 20 日，攻击者先向热钱包转入 2 ETH，用来支付后续交易的 gas<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>以管理员身份调用金库</b>CertiK 的分析称，攻击者用热钱包调用金库的一个特权函数（选择器 <code>0x178979ae</code>），把其中的 swap 合约指定为自己控制的合约，资产随之流出；这个函数被调用了 109 次<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>归集与转换</b>资产从金库进入攻击合约，再转到攻击者地址。大部分稳定币随后被存入 Curve 的 3pool，rekt.news 认为这是为了避免 USDC、USDT 被发行方冻结<a class="ref" href="#s4">[4]</a>。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">攻击者地址，两个来源说法不同</span>
+          <p>rekt.news 给出的攻击者地址是 <span class="addr">0xe74b28c2eAe8679e3cCc3a94d5d0dE83CCB84705</span>，攻击合约是 <span class="addr">0x0248f752802b2cfb4373cc0c3bc3964429385c26</span><a class="ref" href="#s4">[4]</a>。CertiK 的分析把 <span class="addr">0x6AE09…</span> 写成执行攻击的地址<a class="ref" href="#s5">[5]</a>，而 rekt.news 和 Halborn 都把 0x6AE09 描述为攻击前几天从多个 Profanity 钱包盗走约 330 万美元的另一个地址<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>。本页采用 rekt.news 的说法。</p>
+        </div>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="def"><b>Wintermute DeFi 金库</b>70 多种代币</li>
+          <li class="atk"><b>攻击合约</b>接收特权函数转出的资产</li>
+          <li class="atk"><b>攻击者地址</b>rekt.news 统计约 1.623 亿美元</li>
+          <li class="doubt"><b>Curve 3pool</b>大部分稳定币换成 3CRV</li>
+        </ol>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>资产</th><th class="n">数量或价值</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>稳定币</td><td class="n">约 1.184 亿美元</td><td>其中 USDC 约 6,140 万、USDT 约 2,950 万美元<a class="ref" href="#s4">[4]</a><a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>WBTC</td><td class="n">671 枚</td><td>约 1,300 万美元<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>ETH</td><td class="n">6,928 枚</td><td>约 940 万美元<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>其他代币</td><td class="n">60 多种</td><td>部分小币种的持仓占其流通量的 1%–21%<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>合计</td><td class="n"><span class="dispute">约 1.6 亿–1.625 亿美元</span></td><td>Gaevoy 称约 1.6 亿；BleepingComputer 1.622 亿；rekt.news 1.623 亿；CertiK 约 1.625 亿<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s8">[8]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>各家数字的差别来自统计时点和币价。攻击者把大部分稳定币存进 Curve 的 3pool 后，一度成为 3CRV 的第三大持有者，持有其供应量的 13% 以上<a class="ref" href="#s4">[4]</a>。BleepingComputer 发稿时，攻击者钱包里还有约 4,770 万美元的资产，其余已进入 3pool<a class="ref" href="#s8">[8]</a>。因为攻击者手里一些小币种的数量占到流通量的两成，市场一度担心被集中抛售，Wintermute 方面表示“不应该出现任何大规模抛售”<a class="ref" href="#s4">[4]</a>。本站没有查到这笔资金被冻结、追回或归还的公开报道。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>对 Wintermute</h3>
+        <p>Wintermute 没有倒下。事发时它对 TrueFi、Maple Finance 和 Clearpool 三家链上借贷平台共欠约 1.894 亿美元，最大一笔是 10 月 15 日到期的 TrueFi 9,250 万美元 USDT 借款，它按期还清；还完后仍欠 Maple 约 7,500 万美元、Clearpool 约 2,240 万美元<a class="ref" href="#s11">[11]</a>。这笔损失由 Wintermute 自己承担，没有转嫁给客户。</p>
+        <h3>同一漏洞的其他受害者</h3>
+        <p>Profanity 被广泛使用，受影响的远不止 Wintermute。1inch 在披露文章里提到，至少五个来自不同项目（包括 1inch 和 Synthetix）的部署地址领取了同一笔空投，资金被转进同一个钱包，这很可疑；它估计可能被盗的金额是“数千万美元，甚至数亿美元”<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th>事件</th><th class="n">损失</th></tr></thead>
+            <tbody>
+              <tr><td>2022-09-15 披露前</td><td>多个项目的 Profanity 部署地址被用来领取同一笔空投</td><td class="n">未公布</td></tr>
+              <tr><td>2022-09-17 前</td><td>地址 0x6AE09… 从多个 Profanity 钱包转走资产（ZachXBT 报告）</td><td class="n">约 330 万美元</td></tr>
+              <tr><td>2022-09-20</td><td>Wintermute 金库</td><td class="n">约 1.6 亿美元</td></tr>
+              <tr><td>2022-09-26</td><td>地址 0x9731F… 盗走一个 Profanity 地址的资产并转入 Tornado Cash（PeckShield 报告）</td><td class="n">约 732 ETH（约 95 万美元）</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">来源：1inch<a class="ref" href="#s1">[1]</a>、Cointelegraph<a class="ref" href="#s12">[12]</a>、Halborn<a class="ref" href="#s6">[6]</a>。</p>
+        <p>CertiK 统计，到 Wintermute 事件为止，2022 年因私钥泄露损失的金额至少有约 2.74 亿美元<a class="ref" href="#s5">[5]</a>。这起事件让开发者注意到一个过去很少被审视的环节：密钥是用什么工具生成的。合约写得再严，管理员私钥一旦可以被算出来，整套权限设计就失去了意义。同类的弱随机数问题，此前有 <a href="2020-lubian.html">LuBian</a> 的钱包，此后还有 2026 年的 <a href="2026-coldcard.html">Coldcard</a> 固件缺陷。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Wintermute 的回应</h3>
+        <p>Gaevoy 在宣布被盗时说，公司“仍有偿付能力，净资产是被盗金额的两倍多”，愿意把这次事件当作白帽事件处理，对方联系就可以谈漏洞赏金；他同时提醒，向 Wintermute 放贷的机构如有需要可以收回贷款，未来几天服务可能中断<a class="ref" href="#s4">[4]</a><a class="ref" href="#s8">[8]</a>。9 月 21 日，Wintermute 补充说明：“攻击只限于我们的 DeFi 智能合约，没有影响 Wintermute 的任何内部系统，没有任何第三方或 Wintermute 的数据被泄露。”<a class="ref" href="#s9">[9]</a></p>
+        <h3>内部人指控与反驳</h3>
+        <p>9 月 26 日，此前并不知名的研究者 James Edwards（网名 Librehash）在 Medium 发文，称“EOA 发起的相关交易清楚表明，黑客很可能是 Wintermute 团队的内部成员”<a class="ref" href="#s9">[9]</a>。他的理由主要有三点：</p>
+        <ul>
+          <li>金库合约没有公开验证源码，他自己反编译后认为代码与事后分析描述的不一致。</li>
+          <li>他查看合约当前的管理员映射，没有看到这个 EOA 有管理员权限。</li>
+          <li>攻击开始约两分钟后，有约 1,348 万美元的 USDT 从 Wintermute 在两家交易所的账户转进了已经被控制的合约，他质问团队为什么要往明知被攻破的合约里打钱。</li>
+        </ul>
+        <p>Wintermute 回应称，这是“来自一个 Medium 页面的未经证实的传言，其中的说法存在事实和技术错误”，这种指控需要专业、独立的事实核查<a class="ref" href="#s9">[9]</a>。BlockSec 9 月 27 日发文逐条分析：查看管理员映射的“当前状态”并不合理，因为项目方在发现攻击后可能已经撤销了权限，Etherscan 上的交易也显示 Wintermute 确实撤销了；那笔 USDT 转账也不一定可疑，攻击者可以像 MEV 机器人那样监控转账交易并抢在后面动手。BlockSec 的结论是，这份报告“不足以指控 Wintermute”<a class="ref" href="#s10">[10]</a>。</p>
+        <p>10 月中旬，Edwards 又称怀疑“最近这次‘黑客事件’的部分资金”被用来偿还 TrueFi，并认为一家每天处理数十亿美元的做市商用这种工具生成管理着数亿美元的地址“荒谬可笑”<a class="ref" href="#s11">[11]</a>。这些说法没有附上能支持它们的链上证据。截至 2026 年 10 月，本站没有查到任何执法机构或法院对这起事件作出认定的公开记录。</p>
+        <h3>独立复现</h3>
+        <p>Amber Group 的复现提供了一个重要事实：外部人员用一台普通笔记本，两天之内就能拿到这个私钥<a class="ref" href="#s7">[7]</a>。这不能证明攻击者是谁，但说明“只有内部人才可能做到”这个前提不成立。</p>
+        <h3>Profanity 的结局</h3>
+        <p>9 月 15 日，Profanity 的作者删除了所有受影响的可执行文件，随后归档仓库，并故意让代码处于无法编译的状态，README 上写着“Use something else!”<a class="ref" href="#s2">[2]</a>。1inch 指出，同一作者开发的合约地址靓号工具 ERADICATE 看起来没有这个漏洞<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给密钥生成工具的开发者</span>
+          <ul>
+            <li>种子必须来自密码学安全的随机源，长度不小于密钥本身。256 位私钥配 32 位种子，安全性就是 32 位。</li>
+            <li>私钥之间的派生关系如果是公开且可逆的（例如“加偏移、加轮数”），那么整组私钥的安全性只取决于那个起点。</li>
+            <li>停止维护的安全工具如果有已知的严重问题，要在 README 最显眼的位置写明，而不是只留在 issue 里。Profanity 的问题在 issue 里躺了八个月。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给持有大额资金的机构</span>
+          <ul>
+            <li>能动用上亿美元的权限，不要交给单个热钱包 EOA。用多签加时间锁，把机器人日常操作的权限和转出资金的权限分开。</li>
+            <li>一旦生成某个密钥的工具被公开攻破，就要把它生成的所有密钥当作已泄露：撤销权限、更换密钥、转移资金，三件事都要做。Wintermute 只做了第三件。</li>
+            <li>维护一份密钥清单，记录每个密钥由什么工具生成、在哪些合约里有什么权限。漏洞公布时，才能在几分钟内找出所有受影响的密钥和角色。</li>
+            <li>给金库的特权调用设上限和异常告警。这次特权函数被连续调用了上百次，热钱包在攻击前还突然收到一笔来路不明的 ETH，这些都是可以被监控到的信号。</li>
+            <li>合约地址的靓号可以用 CREATE2 的 salt 去碰，完全不涉及私钥；外部账户（EOA）的靓号则必须由私钥决定，要谨慎使用。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Vladimir Kozlov（1inch），《A vulnerability disclosed in Profanity, an Ethereum vanity address tool》，2022-09-15。<a href="https://1inch.com/blog/post/a-vulnerability-disclosed-in-profanity-an-ethereum-vanity-address-tool-68ed7455fc8c">1inch.com</a></li>
+          <li id="s2">johguse/profanity 仓库：README、Dispatcher.cpp、profanity.cl（2022-09-15 归档）。<a href="https://github.com/johguse/profanity">github.com</a></li>
+          <li id="s3">k06a，《Private key safety》，johguse/profanity issue #61，2022-01-17。<a href="https://github.com/johguse/profanity/issues/61">github.com</a></li>
+          <li id="s4">rekt.news，《Wintermute - REKT 2》，2022-09-20。<a href="https://rekt.news/wintermute-rekt-2/">rekt.news</a></li>
+          <li id="s5">CertiK，《Wintermute Hack》，2022-09-19（页面所示日期）。<a href="https://www.certik.com/resources/blog/wintermute-hack">certik.com</a></li>
+          <li id="s6">Rob Behnke（Halborn），《Explained: The Wintermute Hack (September 2022)》，2022-09-26。<a href="https://www.halborn.com/blog/post/explained-the-wintermute-hack-september-2022">halborn.com</a></li>
+          <li id="s7">Amber Group，《Exploiting the Profanity Flaw》，Medium，2022-09-30（经 Internet Archive 读取）。<a href="https://medium.com/amber-group/exploiting-the-profanity-flaw-e986576de7ab">medium.com</a>　<a href="https://web.archive.org/web/2022/https://medium.com/amber-group/exploiting-the-profanity-flaw-e986576de7ab">web.archive.org</a></li>
+          <li id="s8">BleepingComputer，《Hackers steal $162 million from Wintermute crypto market maker》，2022-09-20。<a href="https://www.bleepingcomputer.com/news/security/hackers-steal-162-million-from-wintermute-crypto-market-maker/">bleepingcomputer.com</a></li>
+          <li id="s9">Brian Quarmby，《Cyber sleuth alleges $160M Wintermute hack was an inside job》，Cointelegraph，2022-09-27。<a href="https://cointelegraph.com/news/cyber-sleuth-alleges-160m-wintermute-hack-was-an-inside-job">cointelegraph.com</a></li>
+          <li id="s10">Brian Quarmby，《Wintermute inside job theory ’not convincing enough’ — BlockSec》，Cointelegraph，2022-09-28。<a href="https://cointelegraph.com/news/wintermute-inside-job-theory-not-convincing-enough-blocksec">cointelegraph.com</a></li>
+          <li id="s11">Arijit Sarkar，《Wintermute repays $92M TrueFi loan on time despite suffering $160M hack》，Cointelegraph，2022-10-16。<a href="https://cointelegraph.com/news/wintermute-repays-92m-truefi-loan-on-time-despite-suffering-160m-hack">cointelegraph.com</a></li>
+          <li id="s12">Ezra Reguerra，《Almost $1M in crypto stolen from vanity address exploit》，Cointelegraph，2022-09-26。<a href="https://cointelegraph.com/news/almost-1m-in-crypto-stolen-from-vanity-address-exploit">cointelegraph.com</a></li>
+          <li id="s13">rekt.news，《Wintermute - REKT》（2022 年 6 月 OP 代币事件），2022-06-09。<a href="https://rekt.news/wintermute-rekt/">rekt.news</a></li>
+          <li id="s14">EIP-2028，《Transaction data gas cost reduction》，2019-05-03。<a href="https://eips.ethereum.org/EIPS/eip-2028">eips.ethereum.org</a></li>
+          <li id="s15">Blockscout，地址 0x0000000fe6a514a32abdcdfcc076c85243de899b 的交易记录。<a href="https://eth.blockscout.com/address/0x0000000fe6a514a32abdcdfcc076c85243de899b">eth.blockscout.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ronin 跨链桥被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 Ronin 跨链桥 9 个验证者中的 5 个签名落入攻击者手中，两笔伪造提现转走 173,600 枚 ETH 和 2,550 万 USDC 的完整经过：签名门槛与桥合约代码、虚假招聘入侵、Lazarus 归因、资金去向、赔付与新桥设计。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-ronin-bridge">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Ronin 跨链桥被盗</h1>
+    <p class="lede">2022 年 3 月 23 日，攻击者凑齐了 Ronin 跨链桥 9 个验证者中 5 个的签名，用两笔伪造的提现转走 173,600 枚 ETH 和 2,550 万 USDC，按被盗时的价格约 5.4 亿美元，到被发现时已超过 6 亿美元。桥合约本身没有漏洞，失守的是签名者：其中 4 个节点属于同一家公司，第 5 个来自一项早该撤销的授权。桥上没有大额流出告警，盗窃在六天后才因为一笔用户提现失败而暴露。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Ronin 是 Sky Mavis 为游戏 Axie Infinity 搭建的以太坊侧链。资产在以太坊和 Ronin 之间往返要经过一座桥，以太坊侧的桥合约放款前，核心的检查只有一项：这笔提现是否带有足够多验证者的签名。当时的门槛是 9 个验证者中的 5 个，其中 4 个节点由 Sky Mavis 自己运营。</p>
+        <p>据 The Block 援引知情人士的报道，攻击者冒充一家并不存在的公司，通过 LinkedIn 联系 Sky Mavis 的一名高级工程师，经过几轮“面试”后发去一份 PDF 格式的 offer，文件里带有间谍软件<a class="ref" href="#s5">[5]</a>。Sky Mavis 官方只确认一名员工被鱼叉式钓鱼攻破，攻击者由此进入公司的 IT 系统，控制了 4 个验证者节点<a class="ref" href="#s2">[2]</a>。第 5 个签名来自 Axie DAO 的验证者：2021 年 11 月用户量暴增，Sky Mavis 请 Axie DAO 帮忙分发免 gas 交易，Axie DAO 把 Sky Mavis 加进白名单，允许它代为签署交易；12 月这项安排停止了，白名单却一直没撤<a class="ref" href="#s1">[1]</a>。</p>
+        <p>3 月 23 日，攻击者用这 5 个签名从桥合约提走 173,600 枚 ETH 和 2,550 万 USDC。六天后，一名用户提现 5,000 ETH 失败，Sky Mavis 才发现被盗<a class="ref" href="#s1">[1]</a>。4 月 14 日，FBI 认定朝鲜的 Lazarus Group 和 APT38 对此负责，美国财政部同日制裁了收款地址<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。Sky Mavis 用自有资金补足了用户资产，桥在 6 月 28 日加上熔断分级和每日限额后重新开放<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。2022 年 9 月，超过 3,000 万美元的赃款被扣押<a class="ref" href="#s8">[8]</a>；Axie DAO 金库被盗的 5.6 万枚 ETH 没有得到补偿。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Axie Infinity 是一款基于 NFT 的“边玩边赚”游戏，玩家用名为 Axie 的宠物对战，赚取 SLP 等代币。2022 年 4 月 Axie 公布的数据是：月活跃玩家 220 万，持有 Axie 的地址 260 万<a class="ref" href="#s14">[14]</a>。为了解决在以太坊主网上开发 Axie 时遇到的问题，Sky Mavis 自建了侧链 Ronin，把游戏内交易和交易市场搬了上去<a class="ref" href="#s15">[15]</a>。</p>
+        <p>Ronin 不是由大量节点竞争出块的公链，而是由少数获准的验证者运行的权威证明（Proof of Authority）链。rekt.news 的评论是，为了最大化吞吐量，去中心化和去信任被放在了次要位置<a class="ref" href="#s7">[7]</a>。资产跨链靠一座桥：以太坊侧的合约锁住用户存入的 ETH、USDC 等资产，Ronin 侧发行对应的代币；用户要把资产提回以太坊，先在 Ronin 上发起提现，拿到验证者的签名，再到以太坊侧的合约领取。</p>
+        <p>这座桥由 Ronin 的验证者把守。按 Sky Mavis 事后的说明，当时链上共有 9 个验证者节点，确认一笔存款或提现需要其中 5 个签名；门槛定得低，是因为有些节点跟不上链的进度，或者卡在同步状态<a class="ref" href="#s1">[1]</a>。</p>
+        <p>问题在于这 9 个节点并不独立。Sky Mavis 自己运营其中 4 个，离 5 个只差一个。差的这一个来自 2021 年底那次临时安排：Axie DAO 允许 Sky Mavis 代它签署交易，安排在 12 月停止后，白名单权限没有收回<a class="ref" href="#s1">[1]</a>。从那时起，只要攻破 Sky Mavis 的系统，就能同时拿到 5 个签名。</p>
+        <p>按 Sky Mavis 的说法，被盗的 ETH 中有 5.6 万枚属于 Axie DAO 的社区金库<a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与执法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-11</time><div class="ev">Axie 用户量暴增。Sky Mavis 请 Axie DAO 帮忙分发免 gas 交易，Axie DAO 把 Sky Mavis 加入白名单，允许其代为签署交易<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2021-12</time><div class="ev">免 gas 安排停止，白名单权限没有撤销<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>攻击前，日期未公开</time><div class="ev">据 The Block 报道，一名 Sky Mavis 高级工程师被冒充招聘方的人通过 LinkedIn 接触，下载了带间谍软件的“offer”PDF<a class="ref" href="#s5">[5]</a>。官方只说一名员工被攻破，此人已离职<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk key"><time>2022-03-23</time><div class="ev">攻击者用 5 个签名伪造提现，分两笔交易从以太坊侧的桥合约提走 173,600 枚 ETH 和 2,550 万 USDC<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>03-23 至 03-29</time><div class="ev">攻击者通过 DEX 把 USDC 换成 ETH<a class="ref" href="#s6">[6]</a>。桥被掏空，六天里没有人察觉。</div></li>
+          <li class="def"><time>2022-03-29</time><div class="ev">签名门槛从 5/9 提到 8/9<a class="ref" href="#s1">[1]</a>。rekt.news 指出，这项改动比官方公告早了近 11 小时<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def key"><time>2022-03-29</time><div class="ev">Ronin 发布公告：一名用户提现 5,000 ETH 失败，团队这才发现 3 月 23 日已被盗。桥和 Katana DEX 暂停，Binance 关闭了与 Ronin 之间的通道<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-03-30</time><div class="ev">Sky Mavis 称与 Chainalysis、CrowdStrike 合作调查，确认是外部入侵，证据指向社会工程而非技术漏洞<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-03-31</time><div class="ev">原 Sky Mavis 的验证者全部更换<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-04-02</time><div class="ev">Binance 恢复 AXS、SLP 提币，此后为 Axie 用户提供 wETH 的充提通道<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2022-04-05</time><div class="ev">宣布引入 Nansen、Delphi Digital、Stable Node、Animoca Brands、Dialectic 五个新验证者<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2022-04-06</time><div class="ev">Sky Mavis 宣布 Binance 领投的 1.5 亿美元融资，用于赔付用户<a class="ref" href="#s14">[14]</a><a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def key"><time>2022-04-14</time><div class="ev">FBI 声明 Lazarus Group 和 APT38 对此负责。OFAC 把攻击者地址加进 Lazarus Group 的制裁名单<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。Elliptic 估计此时 18% 的赃款已被洗出<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2022-04-22</time><div class="ev">OFAC 在同一条目下追加 3 个以太坊地址<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2022-04-27</time><div class="ev">Ronin 发布 post-mortem，验证者增至 11 个，推出最高 100 万美元的漏洞赏金<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2022-05-06</time><div class="ev">美国财政部首次制裁混币器，对象是 Blender.io，称其处理了本案超过 2,050 万美元赃款<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def key"><time>2022-06-28</time><div class="ev">新桥经过一次内部审计和 Verichains、CertiK 两次外部审计后开放，官方称用户资产全部 1:1 补足<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2022-08-08</time><div class="ev">财政部制裁 Tornado Cash，称其洗过 Lazarus Group 在“迄今已知最大的虚拟货币盗窃案”中所盗的超过 4.55 亿美元<a class="ref" href="#s10">[10]</a>，Chainalysis 指出这就是本案<a class="ref" href="#s8">[8]</a>。验证者在 8 月增至 17 个，9 月 Google Cloud 成为第 18 个<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def key"><time>2022-09-08</time><div class="ev">Chainalysis 宣布在执法部门和行业协助下扣押超过 3,000 万美元赃款，称这是朝鲜黑客所盗加密资产第一次被扣押<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2023-07-17</time><div class="ev">Axie 更新融资公告：那轮融资最终只募了 1,100 万美元，赔付主要靠公司自有资金<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2024-08-06</time><div class="ev">另一起独立事故：桥升级漏掉一个初始化函数，约 1,200 万美元被 MEV 机器人取走后归还<a class="ref" href="#s21">[21]</a><a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2025-04-25</time><div class="ev">旧桥上的资产全部迁到 Chainlink CCIP<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2025-08</time><div class="ev">Axie 治理公告称，预计约 600 万 USDC 和其他资产会作为本案的追回款陆续进入社区金库<a class="ref" href="#s25">[25]</a>。</div></li>
+          <li><time>2026-05-13</time><div class="ev">Ronin 从独立链迁为基于 OP Stack 的以太坊 L2<a class="ref" href="#s24">[24]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次事件里，桥合约没有漏洞，它完全按设计运行。出问题的是这个设计所依赖的信任假设：它假定拿得出足够多验证者签名的提现就是真的。先看一次正常的提现和攻击者的伪造提现有什么不同。</p>
+        <div class="compare">
+          <div>
+            <h4>正常提现</h4>
+            <p>用户在 Ronin 侧调用网关合约的 <code>withdrawERC20For</code>，代币被转进网关，合约按顺序分配一个提现编号并发出 <code>TokenWithdrew</code> 事件。验证者看到事件后各自签名，通过 <code>submitWithdrawalSignatures</code> 提交到 Ronin。用户收集签名，到以太坊侧领钱<a class="ref" href="#s11">[11]</a>。</p>
+          </div>
+          <div>
+            <h4>伪造提现</h4>
+            <p>Ronin 侧什么都没发生。攻击者自己编了提现编号、收款人、代币和数量，用掌握的 5 个验证者身份对这条消息签名，直接拿到以太坊侧领钱。以太坊上的合约看不到 Ronin 的状态，只能核对签名。</p>
+          </div>
+        </div>
+        <p>下面是攻击前最后一次修改（2022 年 1 月 13 日）时，以太坊侧网关合约中提现和验签的代码<a class="ref" href="#s11">[11]</a>。英文注释是原有的，中文注释是本站加的：</p>
+<pre class="code"><code><span class="c">// MainchainGatewayManager.sol（commit 8992526），以太坊侧网关合约</span>
+function withdrawERC20For(
+  uint256 _withdrawalId,
+  address _user,
+  address _token,
+  uint256 _amount,
+  bytes memory _signatures
+)
+  public
+  whenNotPaused
+  onlyMappedToken(_token, 20)
+{
+  <span class="c">// 被签名的消息只有四个字段：编号、收款人、代币、数量</span>
+  bytes32 _hash = keccak256(
+    abi.encodePacked("withdrawERC20", _withdrawalId, _user, _token, _amount)
+  );
+
+<span class="bad">  require(verifySignatures(_hash, _signatures));   <span class="c">// 放款的唯一实质条件</span></span>
+
+  if (_token == registry.getContract(registry.WETH_TOKEN())) {
+    _withdrawETHFor(_user, _amount);              <span class="c">// WETH 解包成 ETH 后直接转给 _user</span>
+  } else {
+    <span class="c">// ……（余额不足时尝试 mint，随后 transfer 给 _user）……</span>
+  }
+
+  <span class="c">// 只要求这个编号以前没用过，不要求它在 Ronin 上真实存在</span>
+  _insertWithdrawalEntry(_withdrawalId, _user, _token, _amount);
+}
+
+function verifySignatures(bytes32 _hash, bytes memory _signatures) public view returns (bool) {
+  <span class="c">// 每个签名 66 字节：签名模式 1 字节 + r 32 + s 32 + v 1</span>
+  uint256 _signatureCount = _signatures.length.div(66);
+
+  Validator _validator = Validator(registry.getContract(registry.VALIDATOR()));
+  uint256 _validatorCount = 0;
+  address _lastSigner = address(0);
+
+  for (uint256 i = 0; i &lt; _signatureCount; i++) {
+    address _signer = _hash.recover(_signatures, i.mul(66));
+    if (_validator.isValidator(_signer)) {
+      _validatorCount++;
+    }
+    // Prevent duplication of signatures
+    require(_signer &gt; _lastSigner);   <span class="c">// 签名者地址必须严格递增，防止同一签名重复计数</span>
+    _lastSigner = _signer;
+  }
+
+  return _validator.checkThreshold(_validatorCount);
+}</code></pre>
+        <p class="code-cap">来源：axieinfinity/ronin-smart-contracts 仓库，commit 899252692d，contracts/chain/mainchain/MainchainGatewayManager.sol 第 192–236 行与第 292–317 行。原文 keccak256 的每个参数各占一行，这里压缩为一行；ERC-20 分支的 mint 与 transfer 从略。</p>
+        <p>门槛由验证者合约计算。门槛和验证者名单都能由一个 admin 地址修改：</p>
+<pre class="code"><code><span class="c">// Validator.sol（commit 8992526），第 48–54 行</span>
+function checkThreshold(uint256 _voteCount)
+  public
+  view
+  returns (bool)
+{
+<span class="bad">  return _voteCount.mul(denom) &gt;= num.mul(validatorCount);   <span class="c">// 攻击时 num = 5，denom = 9</span></span>
+}
+
+<span class="c">// MainchainValidator.sol（commit 8992526），第 21–33 行</span>
+function addValidators(address[] calldata _validators) external onlyAdmin { <span class="c">/* … */</span> }
+function removeValidator(address _validator) external onlyAdmin { <span class="c">/* … */</span> }
+function updateQuorum(uint256 _numerator, uint256 _denominator) external onlyAdmin { <span class="c">/* … */</span> }</code></pre>
+        <p class="code-cap">来源：同上，contracts/chain/common/Validator.sol 与 contracts/chain/mainchain/MainchainValidator.sol。三个管理函数的函数体从略。</p>
+        <p>按官方说明的 9 个验证者、5 个签名代进去：<code>validatorCount = 9</code>，<code>num = 5</code>，<code>denom = 9</code>，条件变成 <code>_voteCount × 9 ≥ 45</code>，也就是 5 个有效签名就够<a class="ref" href="#s1">[1]</a>。攻击者拿到的正是 5 个验证者的签名，合约没有任何理由拒绝它们。</p>
+        <p>提现编号也拦不住伪造的提现。从代码看，以太坊侧只检查编号有没有被用过，不核对这笔提现在 Ronin 上是否真的发生过；伪造的提现只要用没被用过的编号，就能通过这项检查<a class="ref" href="#s11">[11]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 540" role="img" aria-labelledby="ronin-sig-t ronin-sig-d">
+            <title id="ronin-sig-t">Ronin 桥的 5/9 签名门槛如何被凑齐</title>
+            <desc id="ronin-sig-d">Ronin 桥有 9 个验证者，提现需要 5 个签名。Sky Mavis 运营的 4 个节点被攻击者控制，第 5 个签名来自 Axie DAO 的节点，借助一项没有撤销的免 gas 白名单取得。另外 4 个验证者的签名没有被用到。攻击者用这 5 个签名伪造两条提现消息，直接提交给以太坊侧的 MainchainGatewayManager。合约只核对签名数量，不核对 Ronin 上是否真有这笔提现，也没有限额，于是把 173,600 ETH 和 2,550 万 USDC 转给攻击者。</desc>
+            <defs>
+              <marker id="ronin-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="ronin-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="380" y="24" text-anchor="middle">Ronin 桥：9 个验证者，提现需要其中 5 个签名</text>
+            <rect class="d-box atk" x="20" y="44" width="310" height="176" rx="4"/>
+            <text class="d-t b atk" x="175" y="68" text-anchor="middle">Sky Mavis 运营的 4 个节点</text>
+            <rect class="d-box" x="34" y="84" width="64" height="44" rx="3"/>
+            <text class="d-t m" x="66" y="111" text-anchor="middle">SM 1</text>
+            <rect class="d-box" x="108" y="84" width="64" height="44" rx="3"/>
+            <text class="d-t m" x="140" y="111" text-anchor="middle">SM 2</text>
+            <rect class="d-box" x="182" y="84" width="64" height="44" rx="3"/>
+            <text class="d-t m" x="214" y="111" text-anchor="middle">SM 3</text>
+            <rect class="d-box" x="256" y="84" width="64" height="44" rx="3"/>
+            <text class="d-t m" x="288" y="111" text-anchor="middle">SM 4</text>
+            <text class="d-t s" x="175" y="158" text-anchor="middle">一名员工被鱼叉式钓鱼攻破</text>
+            <text class="d-t s" x="175" y="180" text-anchor="middle">攻击者进入公司系统，控制 4 个节点</text>
+            <rect class="d-box atk" x="350" y="44" width="180" height="176" rx="4"/>
+            <text class="d-t b atk" x="440" y="68" text-anchor="middle">Axie DAO 的节点</text>
+            <rect class="d-box" x="408" y="84" width="64" height="44" rx="3"/>
+            <text class="d-t m" x="440" y="111" text-anchor="middle">DAO</text>
+            <text class="d-t s" x="440" y="158" text-anchor="middle">2021-11 的免 gas 白名单</text>
+            <text class="d-t s" x="440" y="180" text-anchor="middle">12 月停用，没有撤销</text>
+            <rect class="d-box soft" x="550" y="44" width="190" height="176" rx="4"/>
+            <text class="d-t b" x="645" y="68" text-anchor="middle">另外 4 个验证者</text>
+            <rect class="d-box soft" x="556" y="84" width="40" height="44" rx="3"/>
+            <text class="d-t s m" x="576" y="111" text-anchor="middle">V6</text>
+            <rect class="d-box soft" x="602" y="84" width="40" height="44" rx="3"/>
+            <text class="d-t s m" x="622" y="111" text-anchor="middle">V7</text>
+            <rect class="d-box soft" x="648" y="84" width="40" height="44" rx="3"/>
+            <text class="d-t s m" x="668" y="111" text-anchor="middle">V8</text>
+            <rect class="d-box soft" x="694" y="84" width="40" height="44" rx="3"/>
+            <text class="d-t s m" x="714" y="111" text-anchor="middle">V9</text>
+            <text class="d-t s" x="645" y="158" text-anchor="middle">签名没有被用到</text>
+            <text class="d-t s" x="645" y="180" text-anchor="middle">凑够 5/9 不需要它们</text>
+            <line class="d-line atk" x1="175" y1="220" x2="175" y2="268" marker-end="url(#ronin-ah-atk)"/>
+            <text class="d-t atk halo" x="187" y="250">4 个签名</text>
+            <line class="d-line atk" x1="440" y1="220" x2="440" y2="268" marker-end="url(#ronin-ah-atk)"/>
+            <text class="d-t atk halo" x="452" y="250">第 5 个签名</text>
+            <rect class="d-box atk" x="55" y="270" width="520" height="96" rx="4"/>
+            <text class="d-t b" x="315" y="294" text-anchor="middle">伪造的两条提现消息（Ronin 上没有对应记录）</text>
+            <text class="d-t m" x="75" y="318">提现 1  173,600 WETH  → 0x098b…2f96</text>
+            <text class="d-t m" x="75" y="338">提现 2  25,500,000 USDC → 0x098b…2f96</text>
+            <text class="d-t s" x="75" y="358">每条附 5 个签名，按签名者地址升序排列</text>
+            <line class="d-line atk" x1="315" y1="366" x2="315" y2="418" marker-end="url(#ronin-ah-atk)"/>
+            <text class="d-t atk halo" x="327" y="398">攻击者地址直接提交到以太坊</text>
+            <rect class="d-box doubt" x="20" y="420" width="174" height="100" rx="4"/>
+            <text class="d-t b" x="107" y="442" text-anchor="middle">合约没有核对</text>
+            <text class="d-t s" x="32" y="464">Ronin 上是否真有这笔提现</text>
+            <text class="d-t s" x="32" y="484">编号只查是否用过</text>
+            <text class="d-t s" x="32" y="504">无单笔上限、每日限额</text>
+            <line class="d-line dash" x1="194" y1="470" x2="203" y2="470"/>
+            <rect class="d-box" x="205" y="420" width="220" height="100" rx="4"/>
+            <text class="d-t b" x="315" y="442" text-anchor="middle">MainchainGatewayManager</text>
+            <text class="d-t m" x="315" y="464" text-anchor="middle">verifySignatures()</text>
+            <text class="d-t s" x="315" y="486" text-anchor="middle">5 × 9 ≥ 5 × 9，通过</text>
+            <text class="d-t s" x="315" y="508" text-anchor="middle">2022-03-23，两笔交易</text>
+            <line class="d-line atk" x1="425" y1="470" x2="440" y2="470" marker-end="url(#ronin-ah-atk)"/>
+            <rect class="d-box atk" x="442" y="420" width="190" height="100" rx="4"/>
+            <text class="d-t b atk" x="537" y="442" text-anchor="middle">攻击者地址</text>
+            <text class="d-t m" x="537" y="464" text-anchor="middle">0x098b…2f96</text>
+            <text class="d-t s" x="537" y="486" text-anchor="middle">收到 173,600 ETH</text>
+            <text class="d-t s" x="537" y="508" text-anchor="middle">收到 25,500,000 USDC</text>
+          </svg>
+          </div>
+          <figcaption>图 1：5/9 门槛被凑齐的路径。红色是攻击者控制或利用的部分，琥珀色是合约缺少的检查。以太坊侧的合约只能核对签名，看不到 Ronin 上发生了什么。</figcaption>
+        </figure>
+        <h3>第 5 个签名从哪里来</h3>
+        <p>Sky Mavis 的 4 个节点由攻击者直接控制，因为他们已经进入了 Sky Mavis 的系统。官方对第 5 个签名的解释是：攻击者在 Sky Mavis 的免 gas RPC 节点里找到一个“后门”，用它拿到了 Axie DAO 验证者的签名；后门之所以存在，是因为 2021 年 11 月 Axie DAO 把 Sky Mavis 加进白名单，12 月停用时没有撤销<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。官方没有公开这个 RPC 节点具体接受什么请求，也没有解释 Axie DAO 的节点为什么会给一笔根本不存在的提现签名。</p>
+        <div class="note doubt">
+          <span class="h">“私钥被盗”还是“签名被代签”</span>
+          <p>Sky Mavis 的公告正文说攻击者通过白名单“拿到了 Axie DAO 验证者的签名”，同一篇的问答部分又说“5 把验证者私钥被盗，4 把属于 Sky Mavis，1 把属于 Axie DAO”<a class="ref" href="#s1">[1]</a>。两种说法对应的攻击路径不同，本页没有找到官方对这处出入的解释。</p>
+        </div>
+        <h3>为什么六天没人发现</h3>
+        <p>旧桥合约没有单笔上限，没有每日限额，也没有大额延迟到账。Sky Mavis 在 post-mortem 里承认，当时没有任何系统监控桥上的大额流出<a class="ref" href="#s2">[2]</a>。六天后，一名用户提现 5,000 ETH 失败，问题才暴露出来<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>入侵阶段的细节来自两处：Sky Mavis 的 post-mortem 和 The Block 援引两名知情人士的报道。官方没有公布入侵发生的日期。链上阶段依据 Ronin 的公告和 Elliptic、Chainalysis 的分析<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。</p>
+        <ol class="steps">
+          <li><b>虚假招聘</b>据 The Block 报道，冒充一家并不存在的公司的人通过 LinkedIn 接触 Sky Mavis 的一名高级工程师，经过几轮面试后发出 offer。offer 是一份 PDF，工程师下载后，间谍软件进入了 Ronin 的系统<a class="ref" href="#s5">[5]</a>。Sky Mavis 拒绝评论具体手法，只在 post-mortem 里说员工长期在各种社交渠道遭受高级鱼叉式钓鱼，其中一人被攻破，此人已离职<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>从员工电脑到验证者节点</b>攻击者以这名员工的权限为跳板，渗透进 Sky Mavis 的 IT 基础设施，拿到了验证者节点的访问权<a class="ref" href="#s2">[2]</a>。4 个 Sky Mavis 节点的签名能力从此落入攻击者手中。</li>
+          <li><b>拿到第 5 个签名</b>攻击者利用 Sky Mavis 免 gas RPC 节点上没有撤销的白名单，取得了 Axie DAO 验证者的签名<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>伪造提现</b>攻击者用拿到的 5 个签名伪造了两笔提现，一笔 173,600 ETH，一笔 2,550 万 USDC<a class="ref" href="#s1">[1]</a>。收款地址 <span class="addr">0x098b716b8aaf21512996dc57eb0615e2383e2f96</span> 列在 Ronin 的公告里，后来被 Etherscan 标为 Ronin Bridge Exploiter，并被 OFAC 列入制裁名单<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a><a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>提交到以太坊</b>3 月 23 日，两笔提现被提交给以太坊侧的桥合约。合约核对的是签名是否有效、数量够不够门槛，两项都满足就放款<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>换掉可冻结的资产</b>USDC 可以被发行方冻结。Elliptic 观察到，攻击者先通过 DEX 把 USDC 换成 ETH，避开了中心化交易所的 AML 和 KYC 检查<a class="ref" href="#s6">[6]</a>。</li>
+        </ol>
+        <p>两笔交易的哈希是 <span class="addr">0xc28fad5e8d5e0ce6a2eaf67b6687be5d58113e16be590824d6cfa1a94467d0b7</span> 和 <span class="addr">0xed2c72ef1a552ddaec6dd1f5cddf0b59a8f37f82bdda5257d9c7c37db7bb9b08</span>，见 Ronin 公告所附链接<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>攻击者的主地址在 Etherscan 上被标为 Ronin Bridge Exploiter，并带有 OFAC 制裁标记<a class="ref" href="#s12">[12]</a>。Chainalysis 把 Lazarus Group 处理这笔钱的流程概括为五步，整个过程用到了 12,000 多个地址<a class="ref" href="#s8">[8]</a>：</p>
+        <ol class="flow">
+          <li class="atk"><b>主地址</b>173,600 ETH，加上 2,550 万 USDC 换成的 ETH</li>
+          <li class="atk"><b>中间钱包</b>按批次转出，PeckShield 观察到每两三天约 3,000 ETH</li>
+          <li class="atk"><b>Tornado Cash</b>ETH 分批混币，是最主要的通道</li>
+          <li class="doubt"><b>换成 BTC 后兑现</b>BTC 再分批混币，其中超过 2,050 万美元经过 Blender.io；最后存入兑法币的服务，接收方大多未公开</li>
+        </ol>
+        <p>PeckShield 的观察见 The Record 的报道<a class="ref" href="#s13">[13]</a>，Blender.io 的数字来自美国财政部<a class="ref" href="#s9">[9]</a>。各机构当时公布的洗钱进度：PeckShield 称到 4 月 9 日约 7.5% 已被洗出，钱包里还有约 159,710 ETH<a class="ref" href="#s13">[13]</a>；Elliptic 称到 4 月 14 日已有 18% 被洗出，原地址剩约 4.33 亿美元<a class="ref" href="#s6">[6]</a>。</p>
+        <p>Elliptic 在 4 月 14 日的拆分是：攻击者先把约 1,670 万美元的 ETH 转进三家中心化交易所，这在 DeFi 攻击里不常见，但在 Lazarus 过去的案子里出现过；交易所公开表示会配合执法后，攻击者转向 Tornado Cash，截至当时送进去约 8,030 万美元，另有约 970 万美元停在中间钱包，等着被混币<a class="ref" href="#s6">[6]</a>。rekt.news 提到较早转出的 6,250 ETH 有一部分进了 FTX 和 Crypto.com<a class="ref" href="#s7">[7]</a>。</p>
+        <p>美国财政部 8 月制裁 Tornado Cash 时称，它洗过的资金中包括 Lazarus Group 在“迄今已知最大的虚拟货币盗窃案”中所盗的超过 4.55 亿美元<a class="ref" href="#s10">[10]</a>，Chainalysis 的文章明确把这笔钱对应到本案<a class="ref" href="#s8">[8]</a>。Tornado Cash 被制裁后，Chainalysis 观察到 Lazarus 转而用跨链桥和 DeFi 服务在币种之间来回跳转，例如把 ETH 跨到 BNB Chain 换成 USDD，再跨到 BitTorrent Chain<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>追回了多少</h3>
+        <p>2022 年 9 月 8 日，Chainalysis 宣布在执法部门和行业机构的协助下，超过 3,000 万美元的赃款被扣押，按被盗与扣押时的价差折算约占总额的 10%，并称这是朝鲜黑客所盗加密资产第一次被扣押。同一篇文章也说，大部分资金仍在黑客控制的钱包里<a class="ref" href="#s8">[8]</a>。</p>
+        <p>此后的公开信息很少。2025 年 8 月 Axie Infinity 的治理公告提到，预计约 600 万 USDC 和“约 4,000 万”的其他资产会作为本案的追回款陆续进入社区金库<a class="ref" href="#s25">[25]</a>。公告没有说明这些资产来自哪次扣押或司法程序，“约 4,000 万”也没有写明单位。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>损失金额的几种口径</h3>
+        <p>被盗的数量没有争议，金额却有好几个说法，差别主要来自按哪一天的 ETH 价格折算。Elliptic 的标题写作 5.4 亿美元，正文说被发现时这笔钱价值超过 6.15 亿美元<a class="ref" href="#s6">[6]</a>。FBI 的说法是 6.2 亿美元<a class="ref" href="#s3">[3]</a>，rekt.news 和不少媒体写约 6.24 亿至 6.25 亿美元<a class="ref" href="#s7">[7]</a><a class="ref" href="#s16">[16]</a>。本页顶部采用的 <span class="dispute">约 6.24 亿美元</span> 属于后一类，更接近发现时的价值。</p>
+        <p>排名也随口径变化。美国财政部 2022 年称它是“迄今最大的虚拟货币盗窃案”<a class="ref" href="#s10">[10]</a>；Elliptic 按被盗时价值把它列为史上第二大加密货币盗窃<a class="ref" href="#s6">[6]</a>。如果按被盗时价值比较，2021 年的 <a href="2021-poly-network.html">Poly Network</a> 约 6.11 亿美元更高，那笔钱后来全数归还。</p>
+        <h3>对 Axie 玩家</h3>
+        <p>官方桥从 3 月 29 日关闭到 6 月 28 日，整整三个月。期间 Ronin 上的 AXS、RON、SLP 不受影响，但用户没法通过官方桥存取 ETH 和 USDC<a class="ref" href="#s1">[1]</a>。Binance 为 Axie 用户提供了 wETH 的充提通道，到 6 月共有 4.6 万枚 wETH 经 Binance 转出，所需的 ETH 流动性来自 Axie Infinity 的资产负债表和创始团队的资金<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>朝鲜与混币器制裁</h3>
+        <p>案发三周后，FBI 公开把这起盗窃归到朝鲜名下，并表示会与财政部一起继续揭露朝鲜用网络犯罪和加密货币盗窃为政权创收的行为<a class="ref" href="#s3">[3]</a>。本案的洗钱路径随后出现在美国财政部的两项制裁里：2022 年 5 月制裁 Blender.io，这是财政部第一次制裁混币器<a class="ref" href="#s9">[9]</a>；8 月制裁 Tornado Cash，公告列举的第一个案例就是本案<a class="ref" href="#s10">[10]</a><a class="ref" href="#s8">[8]</a>。制裁的经过和后来的诉讼，见大事记的<a href="../../milestones/events/2022-tornado-sanctions.html">OFAC 制裁 Tornado Cash</a>。</p>
+        <h3>跨链桥之年</h3>
+        <p>Ronin 是 2022 年接连发生的跨链桥大案之一。几起事件失守的环节各不相同：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th class="n">损失</th><th>失守的环节</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2022-wormhole.html">Wormhole</a></td><td>2022-02</td><td class="n">约 3.26 亿美元</td><td>没有校验传入的 sysvar 账户，守护者签名检查被绕过</td></tr>
+              <tr><td>Ronin</td><td>2022-03</td><td class="n">约 5.4 亿至 6.2 亿美元</td><td>9 个签名者中的 5 个落入攻击者手中</td></tr>
+              <tr><td><a href="2022-harmony-horizon.html">Harmony Horizon</a></td><td>2022-06</td><td class="n">约 1 亿美元</td><td>2/5 多签的两把私钥被盗</td></tr>
+              <tr><td><a href="2022-nomad-bridge.html">Nomad</a></td><td>2022-08</td><td class="n">约 1.9 亿美元</td><td>可信根被初始化为 0x00，任何消息都被当作已验证</td></tr>
+              <tr><td><a href="2022-bnb-bridge.html">BNB Chain 跨链桥</a></td><td>2022-10</td><td class="n">铸出约 5.7 亿美元</td><td>IAVL 默克尔证明的校验缺陷</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">金额按本站各事件页的口径。</p>
+        <h3>虚假招聘成了固定套路</h3>
+        <p>通过 LinkedIn 冒充招聘方接触目标公司员工，在后来几起被归因于朝鲜的案子里反复出现。2024 年 <a href="2024-dmm-bitcoin.html">DMM Bitcoin</a> 被盗 4,502 枚 BTC，起点同样是 LinkedIn 上的假招聘者，和一份带恶意代码的“编程测试”。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>最初几天的止血</h3>
+        <p>3 月 29 日，Sky Mavis 把签名门槛从 5/9 提到 8/9<a class="ref" href="#s1">[1]</a>。rekt.news 当时就指出，这项改动比官方公告早了近 11 小时<a class="ref" href="#s7">[7]</a>。随后桥和 Katana DEX 暂停，节点迁到与旧基础设施完全隔离的新环境<a class="ref" href="#s1">[1]</a>。3 月 31 日，原 Sky Mavis 的验证者全部更换<a class="ref" href="#s1">[1]</a>。</p>
+        <p>这些操作本身暴露了另一个单点。从合约代码看，改门槛和增删验证者都只需要 admin 一个地址<a class="ref" href="#s11">[11]</a>。它让 Sky Mavis 能在几小时内堵上口子；反过来，谁拿到这把钥匙，谁就能把门槛改低，或者把自己的地址加进验证者名单。</p>
+        <h3>谁来填这个窟窿</h3>
+        <p>桥重新开放时，Ronin 公布了 173,600 ETH 和 2,550 万 USDC 缺口的处理方式<a class="ref" href="#s15">[15]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>部分</th><th class="n">数量</th><th>处理方式</th></tr></thead>
+            <tbody>
+              <tr><td>Axie DAO 金库的份额</td><td class="n">56,000 ETH</td><td>不补足，留给执法追回；两年内追不回，由 Axie DAO 投票决定下一步</td></tr>
+              <tr><td>经 Binance 提走的部分</td><td class="n">46,000 ETH</td><td>用户在 Binance 把 wETH 换成 ETH，ETH 来自 Axie Infinity 的资产负债表和创始团队；Binance 收到的 wETH 被转进 Ronin 上的销毁地址</td></tr>
+              <tr><td>剩余负债</td><td class="n">71,600 ETH + 2,550 万 USDC</td><td>由 Sky Mavis 全额补足，Ronin 上的 wETH 和 USDC 恢复与以太坊侧 1:1 足额</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>4 月 6 日宣布的 1.5 亿美元融资由 Binance 领投，Animoca Brands、a16z、Dialectic、Paradigm、Accel 参与，当时说与 Sky Mavis 和 Axie 的自有资金一起用于赔付<a class="ref" href="#s14">[14]</a>。2023 年 7 月 17 日，Axie 在同一篇公告前补了一段：随着对事件了解加深，Sky Mavis 和 Axie Infinity 用公司自己的资产负债表就补足了桥，这轮融资因此大幅缩减，最终只募了 1,100 万美元<a class="ref" href="#s14">[14]</a>。“融资 1.5 亿美元赔付用户”这一流传很广的说法，需要按这段更新来理解。</p>
+        <p>Axie DAO 金库的 5.6 万枚 ETH 没有补上。本站没有找到“两年内由 DAO 投票决定”那次投票的公开记录。2025 年 8 月的治理公告称，截至 2025 年 7 月金库里约有 2,600 枚 ETH，并预计会有本案的追回款进入金库<a class="ref" href="#s25">[25]</a>。</p>
+        <h3>新桥的设计</h3>
+        <p>6 月 28 日开放的新桥经过一次内部审计和 Verichains、CertiK 两次外部审计，主要改了三处<a class="ref" href="#s15">[15]</a>：</p>
+        <ul>
+          <li><b>治理者与验证者分开。</b>增删验证者、升级合约、改门槛这类变更，改由治理者（Governor）投票决定，同一时间只能进行一项投票。官方的比喻是：治理者像冷钱包，验证者像热钱包。</li>
+          <li><b>熔断分级。</b>按提现金额要求不同比例的验证者签名：一般提现 70%；100 万美元以上 90%；1,000 万美元以上 90% 加人工审核，并进入 7 天的审查期。</li>
+          <li><b>每日限额。</b>验证者可以设置每日提现上限，初始为 5,000 万美元，每天 00:00（UTC）重置；第三档提现需要管理员操作，不计入每日限额。</li>
+        </ul>
+        <p>拿 3 月 23 日的第 1 笔交易套这套规则：173,600 ETH 当时约值 5.1 亿美元，落在第三档，需要约 90% 的验证者签名并经过人工审核。攻击者手里的 5 个签名不够，7 天的审查期也足够发现问题。</p>
+        <h3>验证者的扩充</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th class="n">验证者数</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>攻击时</td><td class="n">9</td><td>门槛 5/9，Sky Mavis 运营其中 4 个<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>2022-03-29</td><td class="n">9</td><td>门槛改为 8/9；3 月 31 日换掉原 Sky Mavis 节点<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>2022-04-27</td><td class="n">11</td><td>目标：三个月内 21 个，长期 100 个以上<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>2022-08-17</td><td class="n">17</td><td>Sky Mavis 提名，现有验证者 70% 同意才能加入<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td>2022-09-09</td><td class="n">18</td><td>Google Cloud 成为第 18 个<a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><td>2024-02</td><td class="n">22</td><td>12 个治理验证者加 10 个开放席位，每天选出 22 个<a class="ref" href="#s20">[20]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>执法</h3>
+        <blockquote>
+          <p>Through our investigation we were able to confirm Lazarus Group and APT38, cyber actors associated with the DPRK, are responsible for the theft of $620 million in Ethereum reported on March 29.</p>
+          <cite>FBI 声明，2022-04-14<a class="ref" href="#s3">[3]</a></cite>
+        </blockquote>
+        <p>OFAC 早在 2019 年 9 月就制裁了 Lazarus Group。2022 年 4 月 14 日和 22 日，它先后把攻击者的主地址和另外 3 个以太坊地址加进 Lazarus Group 的 SDN 条目<a class="ref" href="#s4">[4]</a>；5 月 6 日制裁 Blender.io 时，又公布了 4 个 Lazarus 用来洗这笔钱的钱包地址<a class="ref" href="#s9">[9]</a>。归因由 FBI 作出，制裁针对的是组织和地址，本站没有查到针对具体个人的公开起诉。</p>
+        <h3>2024 年的另一次事故</h3>
+        <p>2024 年 8 月 6 日，Ronin 桥又出了一次事故，与 2022 年无关。一次升级定义了 v3 和 v4 两个初始化函数，实际只调用了 v4；负责设置 <code>_totalOperatorWeight</code> 的 v3 没有执行，最低投票权重因此为 0。一个 MEV 机器人抢先提走约 4,000 ETH 和 200 万 USDC，约合 1,200 万美元，事后全数归还，拿到 50 万美元赏金<a class="ref" href="#s21">[21]</a><a class="ref" href="#s22">[22]</a>。这次没有造成损失，但说明桥的安全依赖于每一次升级都正确执行。</p>
+        <h3>迁到 CCIP 和以太坊 L2</h3>
+        <p>2024 年，Ronin 的验证者投票选择 Chainlink CCIP 作为跨链基础设施，Chainlink 得 10 票，LayerZero 3 票，Axelar 0 票。2025 年 4 月 25 日，旧桥上的全部代币迁到 CCIP，官方估计约合 4.5 亿美元以上<a class="ref" href="#s23">[23]</a>。2026 年 5 月 13 日，Ronin 从独立的侧链迁为基于 OP Stack 的以太坊 L2，由 Conduit 主导迁移，RON 仍是 gas 代币<a class="ref" href="#s24">[24]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <p>攻击要成功，必须同时过四关。下表列出每一关当时的状态，以及守住它会怎样：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>环节</th><th>当时的状态</th><th>守住它会怎样</th></tr></thead>
+            <tbody>
+              <tr><td>签名者是否独立</td><td>9 个验证者中 4 个属于 Sky Mavis</td><td>攻破一家公司最多拿到 1 个签名，离 5 个很远</td></tr>
+              <tr><td>临时授权是否收回</td><td>2021 年 12 月停用后没有撤销</td><td>攻击者只有 4 个签名，差 1 个过不了门槛</td></tr>
+              <tr><td>大额提现有没有额外关卡</td><td>无单笔上限、无每日限额、无延迟</td><td>超过 5 亿美元的提现会先进入人工审核和审查期</td></tr>
+              <tr><td>流出有没有监控</td><td>没有，靠用户提现失败才发现</td><td>一笔交易转走桥上 99.99% 的 WETH，这样的异常可以在当天发现并暂停</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>第三关是 Ronin 新桥补上的部分。下面的示意代码表达的是同一类思路：签名够数只是必要条件，大额提现还要更高的签名比例、排队等待和人工确认。</p>
+<pre class="code"><code><span class="c">// 示意：按金额分级的提现关卡，不是 Ronin 的实际代码</span>
+function requiredWeight(uint256 usdValue) internal pure returns (uint256 pct) {
+  if (usdValue &gt;= 10_000_000e18) return 90;   <span class="c">// 第三档：90% 签名 + 人工审核 + 审查期</span>
+  if (usdValue &gt;= 1_000_000e18) return 90;    <span class="c">// 第二档：90% 签名</span>
+  return 70;                                  <span class="c">// 第一档：70% 签名</span>
+}
+
+function withdraw(Receipt calldata r, bytes calldata sigs) external {
+  uint256 usd = priceOf(r.token, r.amount);
+  require(signedWeight(r, sigs) * 100 &gt;= requiredWeight(usd) * totalWeight, "sigs");
+<span class="good">  <span class="c">// 大额：先锁定，审查期满且人工批准后才放款</span></span>
+<span class="good">  if (usd &gt;= 10_000_000e18) {</span>
+<span class="good">    locked[hash(r)] = block.timestamp + 7 days;</span>
+<span class="good">    return;</span>
+<span class="good">  }</span>
+<span class="good">  <span class="c">// 每日限额：当天累计流出不能超过上限</span></span>
+<span class="good">  require(dailyOut[today()] + usd &lt;= dailyLimit, "daily limit");</span>
+  dailyOut[today()] += usd;
+  release(r);
+}</code></pre>
+        <p class="code-cap">示意代码，省略了价格来源、重放保护、审查期内的取消流程等细节。档位与限额数字取自 Ronin 新桥公告<a class="ref" href="#s15">[15]</a>。</p>
+        <div class="note lesson">
+          <span class="h">给跨链桥和多签的设计者</span>
+          <ul>
+            <li>按“背后是谁”数签名者，不按节点数。同一家公司的 4 个节点，遇到一次入侵就等于 1 个。</li>
+            <li>临时授权要写明到期时间并自动失效。Axie DAO 的白名单本该只存在一个月，实际多活了三个多月。</li>
+            <li>不要只靠签名。单笔上限、每日限额、大额延迟和人工复核，是签名者失守之后的最后一道防线。</li>
+            <li>监控桥的余额和大额流出，异常时自动暂停。桥在一笔交易里蒸发 99.99% 的 WETH，本该是最容易触发的告警。</li>
+            <li>管理员权限和验证者权限一样要分散。一把能改门槛、能增删验证者的 admin 私钥，本身就是又一个单点。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给团队</span>
+          <ul>
+            <li>签名密钥所在的机器要和员工办公环境隔离，员工电脑被攻破后不应该能一路走到验证者节点。Sky Mavis 事后要求员工使用工作专用设备，并提出建立零信任架构<a class="ref" href="#s2">[2]</a>。</li>
+            <li>把“陌生招聘方发来的文件”当成攻击面。在加密行业，几轮看起来正常的面试可能就是攻击的一部分。</li>
+            <li>出事后先止血再公告。Sky Mavis 在公告前几小时就把门槛提到 8/9，这一步做得对；但被盗的资金在六天前就已经离开了桥。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给评估跨链桥的人</span>
+          <ul>
+            <li>看签名门槛的同时，看签名者分别是谁、彼此是否独立、谁能修改门槛，以及有没有限额和延迟。“9 个验证者”这个数字本身说明不了什么。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Ronin Network，《Community Alert: Ronin Validators Compromised》，2022-03-29 首发，至 2022-06-28 多次更新。原地址已失效，引用 Wayback Machine 快照。<a href="http://web.archive.org/web/20230927123951/https://blog.roninchain.com/p/community-alert-ronin-validators">web.archive.org</a></li>
+          <li id="s2">Ronin Network，《Back to Building: Ronin Security Breach Postmortem》，2022-04-27。原地址已失效，引用 Wayback Machine 快照。<a href="http://web.archive.org/web/20220428020448/https://roninblockchain.substack.com/p/back-to-building-ronin-security-breach?s=r">web.archive.org</a></li>
+          <li id="s3">FBI，《FBI Statement on Attribution of Malicious Cyber Activity Posed by the Democratic People's Republic of Korea》，2022-04-14。<a href="https://www.fbi.gov/news/press-releases/press-releases/fbi-statement-on-attribution-of-malicious-cyber-activity-posed-by-the-democratic-peoples-republic-of-korea">fbi.gov</a></li>
+          <li id="s4">美国财政部 OFAC，《North Korea Designation Update》，2022-04-14；《North Korea Designation Update; Counter Narcotics Designations Removals》，2022-04-22。<a href="https://ofac.treasury.gov/recent-actions/20220414">ofac.treasury.gov（04-14）</a>，<a href="https://ofac.treasury.gov/recent-actions/20220422">ofac.treasury.gov（04-22）</a></li>
+          <li id="s5">Ryan Weeks，《How a fake job offer took down the world's most popular crypto game》，The Block，2022-07-06。<a href="https://www.theblock.co/post/156038/how-a-fake-job-offer-took-down-the-worlds-most-popular-crypto-game">theblock.co</a></li>
+          <li id="s6">Elliptic，《North Korea's Lazarus Group identified as exploiters behind $540 million Ronin bridge heist》，2022-03-29，2022-04-14 更新。<a href="https://www.elliptic.co/blog/540-million-stolen-from-the-ronin-defi-bridge">elliptic.co</a></li>
+          <li id="s7">rekt.news，《Ronin Network - REKT》，2022-03-29。<a href="https://rekt.news/ronin-rekt/">rekt.news</a></li>
+          <li id="s8">Erin Plante，《$30 Million Seized: How the Cryptocurrency Community Is Making It Difficult for North Korean Hackers To Profit》，Chainalysis，2022-09-08。<a href="https://www.chainalysis.com/blog/axie-infinity-ronin-bridge-dprk-hack-seizure/">chainalysis.com</a></li>
+          <li id="s9">美国财政部，《U.S. Treasury Issues First-Ever Sanctions on a Virtual Currency Mixer, Targets DPRK Cyber Threats》，2022-05-06。<a href="https://home.treasury.gov/news/press-releases/jy0768">home.treasury.gov</a></li>
+          <li id="s10">美国财政部，《U.S. Treasury Sanctions Notorious Virtual Currency Mixer Tornado Cash》，2022-08-08。<a href="https://home.treasury.gov/news/press-releases/jy0916">home.treasury.gov</a></li>
+          <li id="s11">axieinfinity/ronin-smart-contracts 仓库，commit 899252692d（2022-01-13，攻击前最后一次修改）：MainchainGatewayManager.sol、Validator.sol、MainchainValidator.sol、SidechainGatewayManager.sol。<a href="https://github.com/axieinfinity/ronin-smart-contracts/tree/899252692d6ebf1ff74c9e8b78c880ede26d0954/contracts/chain">github.com</a></li>
+          <li id="s12">Etherscan，地址 0x098b716b8aaf21512996dc57eb0615e2383e2f96（标签 Ronin Bridge Exploiter、OFAC-Sanctioned）。<a href="https://etherscan.io/address/0x098b716b8aaf21512996dc57eb0615e2383e2f96">etherscan.io</a></li>
+          <li id="s13">Jonathan Greig，《US agency attributes $540 million Ronin hack to North Korean APT group》，The Record，2022-04-14。<a href="https://therecord.media/us-agency-attributes-540-million-ronin-hack-to-north-korean-apt-group">therecord.media</a></li>
+          <li id="s14">Axie Infinity，《Sky Mavis Raises $150M Led By Binance, Funds to be Restored on the Ronin Bridge》，2022-04-06，2023-07-17 更新。<a href="https://blog.axieinfinity.com/p/funding">blog.axieinfinity.com</a></li>
+          <li id="s15">Ronin Network，《The Ronin Bridge Is Open》，2022-06-28。<a href="https://blog.roninchain.com/p/the-ronin-bridge-is-open-">blog.roninchain.com</a></li>
+          <li id="s16">Anita Ramaswamy，《Axie Infinity creator raises $150M to compensate hack victims》，TechCrunch，2022-04-06。<a href="https://techcrunch.com/2022/04/06/axie-infinity-creator-raises-150m-round-to-compensate-victims-of-625m-ronin-hack/">techcrunch.com</a></li>
+          <li id="s17">Ronin Network，《Securing Ronin: Announcing 5 Additional Ronin Validators》，2022-04-05。<a href="https://blog.roninchain.com/p/securing-ronin">blog.roninchain.com</a></li>
+          <li id="s18">Ronin Network，《New Ronin Validators!》，2022-08-17。<a href="https://blog.roninchain.com/p/new-ronin-validators">blog.roninchain.com</a></li>
+          <li id="s19">Ronin Network，《Google Cloud Ronin Network Validator》，2022-09-09。<a href="https://blog.roninchain.com/p/sky-mavis-adds-google-cloud-as-ronin">blog.roninchain.com</a></li>
+          <li id="s20">Phuc Thai，《Decentralization on Ronin》，Ronin Network，2024-02-16。<a href="https://blog.roninchain.com/p/decentralization-on-ronin">blog.roninchain.com</a></li>
+          <li id="s21">Rob Behnke，《Explained: The Ronin Network Hack (August 2024)》，Halborn，2024-08-08。<a href="https://www.halborn.com/blog/post/explained-the-ronin-network-hack-august-2024">halborn.com</a></li>
+          <li id="s22">BleepingComputer，《Ronin Network hacked, $12 million returned by "white hat" hackers》，2024-08-07。<a href="https://www.bleepingcomputer.com/news/security/ronin-network-hacked-12-million-returned-by-white-hat-hackers/">bleepingcomputer.com</a></li>
+          <li id="s23">Ronin Network，《The Ronin Bridge &lt;&gt; Chainlink CCIP migration is complete!》，2025-04-25。<a href="https://blog.roninchain.com/p/the-ronin-bridge-chainlink-ccip-migration">blog.roninchain.com</a></li>
+          <li id="s24">Ronin Network，《Ronin is Home.》，2026-05-13。<a href="https://blog.roninchain.com/p/ronin-is-home">blog.roninchain.com</a></li>
+          <li id="s25">Axie Infinity，《The Next Chapter of Axie Governance: The Foundation, The Treasury, and Your Voice》，2025-08-08。<a href="https://blog.axieinfinity.com/p/the-next-chapter-of-axie-governance">blog.axieinfinity.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

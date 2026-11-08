@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BeautyChain（BEC）整数溢出｜区块链被盗事件编年史</title>
+<meta name="description" content="2018 年 BEC 代币合约 batchTransfer 函数的乘法溢出（CVE-2018-10299）让攻击者凭空记上天量代币的完整经过：漏洞代码、攻击步骤、OKEx 回滚与换发新合约、同类漏洞波及的代币，以及从 SafeMath 到 Solidity 0.8 默认溢出检查的演变。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2018-beautychain-bec">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2018 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>BeautyChain（BEC）整数溢出</h1>
+    <p class="lede">2018 年 4 月 22 日，攻击者调用 BEC 代币合约的批量转账函数，利用“人数 × 单笔金额”这一步的乘法溢出，没花一枚代币就给两个地址各记上约 5.8×10⁵⁸ 枚 BEC，而 BEC 的总量只有 70 亿枚。部分代币被转进 OKEx 抛售，项目方随即暂停合约转账，交易所回滚了异常成交，项目方换发了新合约。两天后同类漏洞在 SmartMesh（SMT）上重演，OKEx、火币等交易所一度暂停全部 ERC-20 代币的充值。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">BEC 合约在标准的 ERC-20 转账之外加了一个批量转账函数 <code>batchTransfer</code>：先用“收款地址数 × 每个地址的金额”算出总额，检查调用者余额够不够，再给每个地址加钱。合约里对余额和金额的加减都经过 SafeMath，唯独这一行乘法没有。Solidity 0.8 之前，<code>uint256</code> 乘法溢出不会报错，只会悄悄截断。攻击者传入 2 个地址、每个地址 2²⁵⁵ 个最小单位，乘积 2²⁵⁶ 恰好截断成 0，余额检查于是对任何地址都成立。</p>
+        <p>结果是调用者的余额减了 0，两个收款地址各多出约 5.79×10⁵⁸ 枚 BEC。PeckShield 的监控系统在 UTC 03:28 发现了这笔转账，把漏洞命名为 batchOverflow，编号 CVE-2018-10299<a class="ref" href="#s1">[1]</a><a class="ref" href="#s10">[10]</a>。攻击者把部分代币转进 OKEx 抛售，BEC 价格大跌<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a>。美链暂停了合约的全部转账，OKEx 暂停 BEC 的提币和交易，事后把 4 月 22 日 13:18（香港时间）之后的 BEC 成交全部回滚，并给受影响用户 10% 的 USDT 补偿<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>美链随后部署了删掉 <code>batchTransfer</code> 的新合约，把攻击前的持仓 1:1 映射过去，攻击者地址的余额不予映射<a class="ref" href="#s4">[4]</a><a class="ref" href="#s25">[25]</a>。安全公司很快发现，以太坊上还有十几个合约带着同样的代码<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。两天后，SmartMesh（SMT）等代币被人用相似的加法溢出攻击，OKEx、火币、Poloniex 等交易所一度暂停全部 ERC-20 代币的充值或充提<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。攻击者身份至今没有公开。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>美链（Beauty Chain）自称“全球第一个基于区块链技术打造的美丽生态链平台”，打算用代币 BEC（官网中文名“美蜜”）奖励内容创作和社区参与。官网把自拍修图应用 BeautyPlus 列为“种子应用”；两位创始人 Ryan Cheung 和 Edward Chow 此前创办的 PressLogic 获得过美图的 A 轮投资<a class="ref" href="#s4">[4]</a><a class="ref" href="#s12">[12]</a>。当时的中文报道里也有“美图 BEC”的叫法<a class="ref" href="#s15">[15]</a>。</p>
+        <p>BEC 总量 70 亿枚，流通量 35 亿枚，2018 年 2 月 23 日开始流通，按基金会 30%、生态发展 10%、团队 10%、社区奖励 50% 分配，项目注册地是新加坡，OKEx 的项目资料里预售和公募各项都填着“N/A”<a class="ref" href="#s14">[14]</a>。同一天，OKEx 作为全球首家交易所上线 BEC，开通 BEC/BTC、BEC/ETH、BEC/USDT 三个现货交易对<a class="ref" href="#s13">[13]</a>。攻击发生前，BEC 的价格约为 0.3 美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <p>BEC 合约的源码在 Etherscan 上公开验证，编译器版本 0.4.19<a class="ref" href="#s3">[3]</a>。它的结构是当时常见的代币模板：SafeMath 库，加上 BasicToken、StandardToken、Ownable、Pausable、PausableToken 一层层继承，最后由 BecToken 设定名称、精度和总量。其中 Pausable 与 zeppelin-solidity 1.3.0（OpenZeppelin Contracts 的早期版本）中的同名合约逐行相同，PausableToken 里的 <code>transfer</code>、<code>transferFrom</code>、<code>approve</code> 三个包装函数也与模板一致<a class="ref" href="#s24">[24]</a>。<code>batchTransfer</code> 是项目方自己加进 PausableToken 的。它不属于 ERC-20 标准，作用是用一笔交易给最多 20 个地址各转同样数量的代币。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2018-02-23</time><div class="ev">OKEx 作为首家交易所上线 BEC，开放充值和三个现货交易对<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk key"><time>2018-04-22 03:28</time><div class="ev">PeckShield 的自动监控对一笔 BEC 转账报警：同一合约向两个地址各转出 2²⁵⁵ 个最小单位的 BEC。PeckShield 随后确认，这是利用合约中一个此前未知的漏洞发起的真实攻击<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>05:00 前后</time><div class="ev">OKEx 检测到 BEC 交易异常（香港时间约 13:00）<a class="ref" href="#s5">[5]</a>。SECBIT 的说法是，项目方在攻击者往交易所大量抛售 BEC 时才察觉<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>05:18 起</time><div class="ev">据美链公告，BEC 价格自香港时间 13:18 起大幅波动。美链随后暂停了 BEC 的一切交易和转账，具体时刻没有公布。13:18 后来被定为回滚基准<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>08:12</time><div class="ev">OKEx 公告应美链要求暂停 BEC 提币和 BEC/USDT、BEC/BTC、BEC/ETH 交易（香港时间 16:12）<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2018-04-22</time><div class="ev">PeckShield 发文披露 batchOverflow，称扫描发现另有十几个 ERC-20 合约存在同样漏洞，并在一个没有上交易所的合约上验证了可利用性<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2018-04-23 04:29</time><div class="ev">NVD 发布 CVE-2018-10299<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2018-04-23</time><div class="ev">美链基金会公告：已暂停一切交易和转账，与 OKEx 约定把交易回滚到 4 月 22 日 13:18（香港时间），并将发布新合约做 1:1 映射<a class="ref" href="#s4">[4]</a>。SECBIT 按函数选择器 <code>0x83f12fec</code> 扫描全链，找出另外 12 个与 BEC 相同的合约<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2018-04-24</time><div class="ev">OKEx 宣布把 BEC 三个交易对的数据回滚到 4 月 22 日 13:18（香港时间），只回滚 BEC 的成交<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>2018-04-24 13:17</time><div class="ev">PeckShield 发现 MESH 代币出现天量转账，19:16 SMT 出现同样模式。漏洞是 <code>transferProxy</code> 中 <code>_fee + _value</code> 的加法溢出，被命名为 proxyOverflow<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def key"><time>2018-04-25</time><div class="ev">火币 Pro 一度暂停全部币种的充提，后收窄为 ERC-20 代币<a class="ref" href="#s15">[15]</a><a class="ref" href="#s8">[8]</a>。OKEx 自香港时间 15:30 起暂停全部 ERC-20 代币充值<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。Poloniex、Changelly、Quoine、HitBTC 也暂停了 ERC-20 相关服务<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。NVD 发布 CVE-2018-10376<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2018-04-25</time><div class="ev">美链开始把 BEC 1:1 映射到新合约，攻击者账户的余额不予映射<a class="ref" href="#s4">[4]</a>。SmartMesh 公布伪币数据，承诺销毁等量 SMT<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2018-04-28</time><div class="ev">OKEx 完成 BEC 异常成交的回滚，按成交当天的 USDT 价格结算，另给用户 10% 的 USDT 补偿<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2018-04 下旬</time><div class="ev">Quantstamp 为 Binance 审计已上线的 ERC-20 代币，结论是没有代币受 batchOverflow 或 proxyOverflow 影响<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def key"><time>2018-05-02</time><div class="ev">美链完成全部映射，公布新合约地址 <span class="addr">0x3495ffcee09012ab7d827abf3e3b3ae428a38443</span>，称等 OKEx 换上新合约后即可重启 BEC 交易<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2018-06-12</time><div class="ev">又一批 ERC-20 溢出漏洞被披露（CVE-2018-11687 等 5 个）。SECBIT 称扫描两万多个合约，发现 800 多个存在同样问题<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2020-09 起</time><div class="ev">美链官网 beauty.io 在 Internet Archive 中最后一次正常抓取是 2020-07-18，此后返回 502，2021-06 起返回 404<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="key"><time>2020-12-16</time><div class="ev">Solidity 0.8.0 发布，算术运算默认检查溢出，溢出即回滚<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2023-10-05</time><div class="ev">OpenZeppelin Contracts 5.0.0 删除 SafeMath，理由是它已被 Solidity 0.8 的原生溢出检查取代<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">本站没有查到关于攻击者身份、执法行动或司法程序的公开报道。</div></li>
+        </ol>
+        <p>带具体时刻的条目为 UTC。原始资料用香港时间（UTC+8）的已换算，并在括号里保留原时间。PeckShield 记录的 03:28 是其系统报警的时刻。</p>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p><code>batchTransfer</code> 接收两个参数：收款地址数组 <code>_receivers</code> 和每个地址收到的数量 <code>_value</code>。下面是 Etherscan 上已验证源码中的这个函数<a class="ref" href="#s3">[3]</a>，行号与 PeckShield 文中引用的一致<a class="ref" href="#s1">[1]</a>：</p>
+<pre class="code"><code><span class="c">// BecToken.sol，PausableToken 合约中的 batchTransfer（第 255–267 行）</span>
+function batchTransfer(address[] _receivers, uint256 _value)
+    public whenNotPaused returns (bool) {
+  uint cnt = _receivers.length;
+<span class="bad">  uint256 amount = uint256(cnt) * _value;     <span class="c">// 裸乘法，没有用 SafeMath</span></span>
+  require(cnt &gt; 0 &amp;&amp; cnt &lt;= 20);
+<span class="bad">  require(_value &gt; 0 &amp;&amp; balances[msg.sender] &gt;= amount);  <span class="c">// amount 为 0 时恒成立</span></span>
+
+  balances[msg.sender] = balances[msg.sender].sub(amount);  <span class="c">// 扣的是截断后的 amount</span>
+  for (uint i = 0; i &lt; cnt; i++) {
+      <span class="c">// 加的是完整的 _value，每个地址一份</span>
+      balances[_receivers[i]] = balances[_receivers[i]].add(_value);
+      Transfer(msg.sender, _receivers[i], _value);
+  }
+  return true;
+}</code></pre>
+        <p class="code-cap">来源：Etherscan 上已验证的 BecToken 合约（<span class="addr">0xc5d105e63711398af9bbff092d4b6769c82f793d</span>）源码第 255–267 行。去掉了一层缩进，函数签名折成两行，中文注释是本站加的。</p>
+        <p><code>uint256</code> 能表示 0 到 2²⁵⁶ − 1。Solidity 0.8 之前，加、减、乘的结果超出这个范围时不会报错，只保留结果的低 256 位，相当于对 2²⁵⁶ 取模；0.8 以后这种行为只在 <code>unchecked</code> 块里保留<a class="ref" href="#s22">[22]</a>。所以只要 <code>cnt × _value</code> 恰好是 2²⁵⁶ 的整数倍，<code>amount</code> 就是 0。攻击者用的是最简单的一组：2 个地址，<code>_value</code> = 2²⁵⁵，十六进制是 <code>0x8000…0000</code>（8 后面 63 个 0）<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 400" role="img" aria-labelledby="bec-ovf-t bec-ovf-d">
+            <title id="bec-ovf-t">batchTransfer 中 amount 溢出为 0 的过程</title>
+            <desc id="bec-ovf-d">第一行是 _value 等于 2 的 255 次方时的 256 位数，只有最高位是 1。乘以 2 相当于左移一位，这个 1 被推到第 256 位，超出 uint256 的范围被丢弃，amount 的 256 位全为 0。于是余额检查对任何地址都成立，调用者余额减 0，两个不同的收款地址各加 2 的 255 次方个最小单位。</desc>
+            <defs>
+              <marker id="bec-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bec-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="94" y="30"><tspan class="m">_value</tspan> = 2²⁵⁵，十六进制是 8 后面跟 63 个 0</text>
+            <rect class="d-box" x="94" y="42" width="646" height="44" rx="4"/>
+            <rect class="d-box atk" x="94" y="42" width="48" height="44" rx="4"/>
+            <text class="d-t b m" x="118" y="69" text-anchor="middle">1</text>
+            <text class="d-t m" x="441" y="69" text-anchor="middle">0 0 0 0 0 0 … 共 255 个 0 … 0 0 0 0 0 0</text>
+            <text class="d-t s" x="118" y="104" text-anchor="middle">第 255 位</text>
+            <text class="d-t s" x="740" y="104" text-anchor="end">第 0 位</text>
+            <path class="d-line atk" d="M110,112 C110,132 64,128 64,147" marker-end="url(#bec-ah-atk)"/>
+            <text class="d-t atk halo" x="150" y="134">× 2，等于整体左移一位</text>
+            <rect class="d-box doubt" x="40" y="150" width="48" height="44" rx="4" stroke-dasharray="5 4"/>
+            <text class="d-t b m" x="64" y="177" text-anchor="middle">1</text>
+            <rect class="d-box atk" x="94" y="150" width="646" height="44" rx="4"/>
+            <text class="d-t m" x="417" y="177" text-anchor="middle">0 0 0 0 0 0 … 256 位全是 0 … 0 0 0 0 0 0</text>
+            <text class="d-t s" x="40" y="214">第 256 位超出 uint256，被丢弃</text>
+            <text class="d-t s atk" x="740" y="214" text-anchor="end"><tspan class="m">amount</tspan> = 2 × 2²⁵⁵ mod 2²⁵⁶ = 0</text>
+            <line class="d-line atk" x1="417" y1="222" x2="417" y2="250" marker-end="url(#bec-ah-atk)"/>
+            <rect class="d-box atk" x="94" y="252" width="646" height="54" rx="4"/>
+            <text class="d-t m" x="417" y="276" text-anchor="middle">require(_value &gt; 0 &amp;&amp; balances[msg.sender] &gt;= amount)</text>
+            <text class="d-t s" x="417" y="296" text-anchor="middle">amount 是 0，任何地址都能通过；攻击者不需要持有 BEC</text>
+            <line class="d-line" x1="194" y1="306" x2="194" y2="324" marker-end="url(#bec-ah)"/>
+            <line class="d-line atk" x1="417" y1="306" x2="417" y2="324" marker-end="url(#bec-ah-atk)"/>
+            <line class="d-line atk" x1="640" y1="306" x2="640" y2="324" marker-end="url(#bec-ah-atk)"/>
+            <rect class="d-box" x="94" y="326" width="200" height="66" rx="4"/>
+            <text class="d-t b" x="194" y="348" text-anchor="middle">调用者</text>
+            <text class="d-t s m" x="194" y="366" text-anchor="middle">balance − 0</text>
+            <text class="d-t s" x="194" y="384" text-anchor="middle">余额不变</text>
+            <rect class="d-box atk" x="317" y="326" width="200" height="66" rx="4"/>
+            <text class="d-t b" x="417" y="348" text-anchor="middle">收款地址 1</text>
+            <text class="d-t s" x="417" y="366" text-anchor="middle">+ 2²⁵⁵ 个最小单位</text>
+            <text class="d-t s" x="417" y="384" text-anchor="middle">约 5.79×10⁵⁸ 枚 BEC</text>
+            <rect class="d-box atk" x="540" y="326" width="200" height="66" rx="4"/>
+            <text class="d-t b" x="640" y="348" text-anchor="middle">收款地址 2</text>
+            <text class="d-t s" x="640" y="366" text-anchor="middle">+ 2²⁵⁵ 个最小单位</text>
+            <text class="d-t s" x="640" y="384" text-anchor="middle">约 5.79×10⁵⁸ 枚 BEC</text>
+          </svg>
+          </div>
+          <figcaption>图 1：<code>cnt = 2</code>、<code>_value</code> = 2²⁵⁵ 时第 257 行的计算。<code>uint256</code> 只有 256 位，乘积 2²⁵⁶ 的那个 1 落在第 256 位，被直接丢掉，<code>amount</code> 变成 0。余额检查和扣款用的都是这个 0，入账却按完整的 <code>_value</code> 给每个地址各加一份。红色是被利用的步骤，虚线框是被丢弃的位。</figcaption>
+        </figure>
+        <p>攻击发生时，函数里每一行的实际取值如下：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>行</th><th>这一步</th><th>取值</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>256</td><td>取人数 <code>cnt</code></td><td>2</td><td>两个攻击者控制的地址</td></tr>
+              <tr><td>257</td><td>算总额 <code>amount</code></td><td>0</td><td>数学上应为 2²⁵⁶，溢出截断成 0，不报错</td></tr>
+              <tr><td>258</td><td>人数检查</td><td>通过</td><td>只限制人数，不限制金额</td></tr>
+              <tr><td>259</td><td>余额检查</td><td>通过</td><td>任何余额都 ≥ 0，调用者不需要持有 BEC</td></tr>
+              <tr><td>261</td><td>调用者扣款</td><td>减 0</td><td>调用者余额不变</td></tr>
+              <tr><td>263</td><td>收款地址入账</td><td>各加 2²⁵⁵</td><td>循环两次，代币凭空出现</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>合约里其实有 SafeMath</h3>
+        <p>同一个文件的开头就定义了 SafeMath。它的 <code>mul</code> 用除法反推来检测乘法溢出，<code>transfer</code> 里的加减法也都走 SafeMath<a class="ref" href="#s3">[3]</a>：</p>
+<pre class="code"><code><span class="c">// BecToken.sol 第 7–12 行：SafeMath.mul，溢出时 assert 失败，整笔交易回滚</span>
+library SafeMath {
+  function mul(uint256 a, uint256 b) internal constant returns (uint256) {
+    uint256 c = a * b;
+<span class="good">    assert(a == 0 || c / a == b);   <span class="c">// 截断后 c / a 不等于 b，就能发现溢出</span></span>
+    return c;
+  }
+  <span class="c">// ……（div、sub、add 从略）……</span>
+}
+
+<span class="c">// 第 59–68 行：BasicToken.transfer，减和加都经过 SafeMath</span>
+function transfer(address _to, uint256 _value) public returns (bool) {
+  require(_to != address(0));
+  require(_value &gt; 0 &amp;&amp; _value &lt;= balances[msg.sender]);
+  // SafeMath.sub will throw if there is not enough balance.
+<span class="good">  balances[msg.sender] = balances[msg.sender].sub(_value);</span>
+<span class="good">  balances[_to] = balances[_to].add(_value);</span>
+  Transfer(msg.sender, _to, _value);
+  return true;
+}</code></pre>
+        <p class="code-cap">来源：同上，第 7–12 行和第 59–68 行，省略了 SafeMath 的其余三个函数和一个空行，去掉了一层缩进。英文注释是原有的。</p>
+        <p>写这份合约的人知道整数溢出，模板里的加减法都处理了，自己新加的那一行乘法却没有。SECBIT 当天的分析也指出了这一点。它找到的另外 12 个相同合约中，有些出自不同的开发团队，SECBIT 推测这些代码可能来自同一个作者<a class="ref" href="#s2">[2]</a>。</p>
+        <div class="note">
+          <span class="h">为什么要两个不同的地址，cnt ≤ 20 为什么挡不住</span>
+          <p>入账那一行用的是 SafeMath 的 <code>add</code>，它只在结果溢出时回滚。两个收款地址原本余额都是 0，各加一次 2²⁵⁵ 不会溢出，这道检查不起作用。如果把同一个地址填两次，第二次就是 2²⁵⁵ + 2²⁵⁵，<code>add</code> 会让整笔交易回滚。这是从代码推出的结论，与 PeckShield 看到的“同一合约转给两个不同地址”一致<a class="ref" href="#s1">[1]</a>。</p>
+          <p><code>cnt &lt;= 20</code> 只限制了人数。只要 <code>cnt × _value</code> 恰好等于 2²⁵⁶，乘积就会截断成 0，例如 4 个地址各 2²⁵⁴，或 16 个地址各 2²⁵²。这同样是从代码推出的，实际攻击只用了 2 个地址。</p>
+        </div>
+        <p>代币合约有一条隐含的不变量：所有地址的余额之和等于 <code>totalSupply</code>。<code>transfer</code> 减和加的是同一个数，天然守住这条规则。<code>batchTransfer</code> 减的是截断后的 <code>amount</code>，加的是 <code>cnt</code> 份完整的 <code>_value</code>，两者一旦不等，差额就凭空出现在收款地址上。<code>batchTransfer</code> 不改 <code>totalSupply</code>，所以攻击之后 <code>totalSupply</code> 仍是 70 亿枚，两个收款地址的余额加起来却约有 1.16×10⁵⁹ 枚。</p>
+        <h3>正确的写法</h3>
+        <p>把这一行乘法也交给 SafeMath 就够了，这也是 SECBIT 漏洞清单给出的建议写法<a class="ref" href="#s18">[18]</a>。到了 Solidity 0.8 以后，同样一行裸乘法会因为溢出直接回滚<a class="ref" href="#s21">[21]</a>：</p>
+<pre class="code"><code><span class="c">// 示意：两种不会溢出的写法</span>
+<span class="c">// Solidity 0.4.x：乘法也走 SafeMath，溢出时 assert 失败，整笔交易回滚</span>
+<span class="good">uint256 amount = uint256(cnt).mul(_value);</span>
+
+<span class="c">// Solidity 0.8 及以后：算术运算默认检查溢出，溢出时以 Panic(0x11) 回滚</span>
+<span class="good">uint256 amount = cnt * _value;</span></code></pre>
+        <p class="code-cap">示意代码，不是美链的补丁。美链的实际做法是在新合约里把 <code>batchTransfer</code> 整个删掉，见“后续处置”。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击者没有公开身份，也没有发表过任何说明。下面的步骤依据 PeckShield 和 SECBIT 对攻击交易的分析<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p>
+        <ol class="steps">
+          <li><b>不需要本金</b>扣款额因为溢出变成 0，发起交易的地址不必持有任何 BEC，只要付以太坊的手续费。PeckShield 的说法是，两个收款地址的余额增加了天量的 <code>_value</code>，攻击者却“without costing a dime”<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>构造参数</b>准备两个收款地址，<code>_value</code> 填 2²⁵⁵。按 ABI 编码，交易输入依次是函数选择器 <code>0x83f12fec</code>、数组的偏移位置、<code>_value</code>、数组长度 2 和两个地址<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>一次调用，两条转账记录</b><code>batchTransfer</code> 执行后发出两条 <code>Transfer</code> 事件，金额都是 2²⁵⁵ 个最小单位，即约 5.79×10⁵⁸ 枚 BEC。PeckShield 在 UTC 03:28 报警的，就是这两笔金额相同、来自同一合约、收款地址不同的转账<a class="ref" href="#s1">[1]</a>。SECBIT 文中链接的攻击交易是 <span class="addr">0xad89ff16fd1ebe3a0a7cf4ed282302c06626c1af33221ebe0d3a470aba4a660f</span><a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>转进交易所抛售</b>攻击者把一部分 BEC 转进交易所卖出，OKEx 在香港时间 13:00 前后发现异常交易<a class="ref" href="#s5">[5]</a>。具体卖了多少、换成了什么，美链和 OKEx 都没有公布。SECBIT 的说法是，在项目方暂停合约之前，攻击者卖出的不多<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>合约被暂停</b>美链宣布暂停 BEC 的一切交易和转账<a class="ref" href="#s4">[4]</a>，SECBIT 的描述是项目方暂停了合约<a class="ref" href="#s2">[2]</a>。BEC 继承了 Pausable：owner 调用 <code>pause()</code> 后，带 <code>whenNotPaused</code> 修饰符的 <code>transfer</code>、<code>transferFrom</code>、<code>approve</code> 和 <code>batchTransfer</code> 全部失效，漏洞也就无法再被利用。</li>
+        </ol>
+<pre class="code"><code><span class="c">// BecToken.sol 第 205–208 行、第 221–224 行：Pausable 合约</span>
+modifier whenNotPaused() {
+  require(!paused);            <span class="c">// 暂停后，带这个修饰符的函数一律回滚</span>
+  _;
+}
+
+function pause() onlyOwner whenNotPaused public {   <span class="c">// 只有 owner 能调用</span>
+  paused = true;
+  Pause();
+}</code></pre>
+        <p class="code-cap">来源：同上。<code>batchTransfer</code> 的声明里带着 <code>whenNotPaused</code>（第 255 行），所以暂停对它同样生效。</p>
+        <div class="note doubt">
+          <span class="h">一笔交易还是两笔</span>
+          <p>PeckShield 写的是“两笔”各 2²⁵⁵ 的大额转账，CryptoSlate 写的是增发分“两笔交易”完成<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。从代码看，<code>_value</code> 为 2²⁵⁵ 时 <code>cnt</code> 必须是偶数，每次调用至少留下两条转账记录，所以这两条记录应来自同一次调用，这与 SECBIT 解析的交易输入（数组长度为 2）一致<a class="ref" href="#s2">[2]</a>。本站没有做链上核对。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>这起事件里没有真实资产被直接转走。攻击者拿到的是合约账本上凭空多出来的余额，要变现只能卖给别人。所以资金去向取决于两件事：攻击者在交易所卖出了多少，这些成交后来有没有被撤销。</p>
+        <ol class="flow">
+          <li class="atk"><b>凭空增发</b>两个地址各多出 2²⁵⁵ 个最小单位，合计约 1.16×10⁵⁹ 枚 BEC</li>
+          <li class="atk"><b>转进 OKEx 抛售</b>香港时间 13:00 前后出现异常成交，BEC 价格大跌</li>
+          <li class="def"><b>暂停与回滚</b>合约停止转账；OKEx 撤销 13:18 之后的 BEC 成交，按当天 USDT 价格结算并补偿 10%</li>
+          <li class="ok"><b>新合约映射</b>攻击前的持仓 1:1 转到新合约，攻击者的余额不予映射，旧合约停用</li>
+        </ol>
+        <div class="compare">
+          <div>
+            <h4>公开了的</h4>
+            <p>增发数量，PeckShield、SECBIT、CoinDesk 给出的数字一致<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s8">[8]</a>。攻击前的价格，约 0.3 美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。OKEx 回滚的基准时间和补偿比例<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。新合约地址和映射规则<a class="ref" href="#s4">[4]</a>。</p>
+          </div>
+          <div>
+            <h4>没有公开的</h4>
+            <p>攻击者实际卖出了多少 BEC，换回了多少 USDT、BTC 或 ETH。这些资产有没有在暂停之前从交易所提走。回滚让 OKEx 和成交对手承担了多少成本。攻击者是谁。</p>
+          </div>
+        </div>
+        <p>当时有报道把增发数量直接乘以市价，算出天文数字的“损失”。CryptoSlate 按每枚 0.32 美元算出约 3.7×10⁶⁰ 美元，可是按它自己给出的数量和单价相乘只有约 3.7×10⁵⁸<a class="ref" href="#s9">[9]</a>。CertiK 则把两个地址合计的 2²⁵⁶ 个最小单位写成了“2²⁵⁶ 枚代币”<a class="ref" href="#s19">[19]</a>。这类数字没有意义：凭空增发的代币不可能按市价全部卖出，真实损失只取决于攻击者实际卖出并提走的部分，而这部分从未公开。本站因此不给这起事件标注被盗金额。</p>
+        <h3>SMT 的处理方式</h3>
+        <p>两天后的 SMT 事件走了另一条路。SmartMesh 公开了伪币的流向，基金会销毁与伪币等量的 SMT，让总量维持在 3,141,592,653 枚。公告称漏洞“已修复”，没有说明修复方式<a class="ref" href="#s16">[16]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th>BEC</th><th>SMT</th></tr></thead>
+            <tbody>
+              <tr><td>溢出位置</td><td><code>batchTransfer</code> 的乘法</td><td><code>transferProxy</code> 的加法<a class="ref" href="#s6">[6]</a></td></tr>
+              <tr><td>伪币转入交易所</td><td>未公布</td><td>65,300,289 枚<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>伪币成交</td><td>未公布</td><td>约 16,638,887 枚<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>交易所</td><td>OKEx 回滚成交，补偿 10% USDT<a class="ref" href="#s4">[4]</a></td><td>冻结未成交的伪币<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>项目方</td><td>换发新合约，不映射攻击者余额<a class="ref" href="#s4">[4]</a></td><td>销毁等量 SMT<a class="ref" href="#s16">[16]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>交易所成了实际的防线</h3>
+        <p>PeckShield 在披露时写道，以太坊讲“代码即法律”，合约部署后不能修改，也没有传统软件那样的安全响应机制；它作为第三方安全公司，无权让交易所暂停可疑代币的交易<a class="ref" href="#s1">[1]</a>。能拦住损失的是交易所。</p>
+        <p>4 月 25 日 SMT 出事后，OKEx 暂停全部 ERC-20 代币的充值，理由是攻击者能凭空生成大量代币充进正常地址、操纵价格<a class="ref" href="#s7">[7]</a>。火币 Pro 一度暂停所有币种的充提，后收窄为 ERC-20 代币；Poloniex、Changelly、Quoine、HitBTC 也暂停了 ERC-20 相关服务，CoinDesk 发稿时 Poloniex 已经恢复<a class="ref" href="#s8">[8]</a>。据 CryptoSlate 转述，火币的公告还提到，其系统检测到了 SMT 攻击者的充值，没有入账<a class="ref" href="#s9">[9]</a>。PeckShield 同日指出，部分受影响的代币仍能在 gate.io、HitBTC、YoBit、CoinExchange 交易<a class="ref" href="#s6">[6]</a>。这与 CoinDesk 关于 HitBTC 已暂停的说法不一致，可能对应的是不同时刻。</p>
+        <h3>漏洞不止一个合约</h3>
+        <p>PeckShield 在 4 月 22 日就说扫描到十几个 ERC-20 合约存在同样问题<a class="ref" href="#s1">[1]</a>。SECBIT 按函数选择器比对，找出 12 个与 BEC 相同的合约<a class="ref" href="#s2">[2]</a>。在 SECBIT 后来维护的问题代币清单里，batchTransfer 溢出一类列了 13 个地址，其中包括 BEC，清单的说明文字却写“至少还有 10 个合约”，两处口径不一致<a class="ref" href="#s18">[18]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>漏洞与溢出位置</th><th>已知受影响的合约</th></tr></thead>
+            <tbody>
+              <tr><td>batchOverflow（CVE-2018-10299），<code>batchTransfer</code> 的乘法</td><td>BEC 及另外 12 个相同合约，含 AMMBR<a class="ref" href="#s2">[2]</a><a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td>proxyOverflow（CVE-2018-10376），<code>transferProxy</code> 的加法</td><td>MESH、UGToken、SMT、SMART、MTC、FirstCoin、GG Token、CNY Token、CNYTokenPlus<a class="ref" href="#s6">[6]</a><a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>2018-06 披露的 CVE-2018-11687 等 5 个，多种整数溢出，本站未逐条核对</td><td>SECBIT 称扫描两万多个合约，发现 800 多个有同样问题<a class="ref" href="#s18">[18]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>从 SafeMath 到 Solidity 0.8</h3>
+        <p>BEC 已经引入了 SafeMath，只是没有用在每一处运算上。所以事后的建议集中在“每一处都要用”。SECBIT 的小标题就是“Use REAL SafeMath”<a class="ref" href="#s2">[2]</a>。NCC Group 发起的 DASP Top 10（2018）把 batchOverflow 和 proxyOverflow 列为“算术问题”一类的真实案例<a class="ref" href="#s20">[20]</a>。CertiK 用 BEC 举例说明，给函数加上“不溢出”的后置条件，形式化验证几秒钟就能给出反例<a class="ref" href="#s19">[19]</a>。</p>
+        <p>结构性的改变发生在两年多以后。2020 年 12 月发布的 Solidity 0.8.0 把溢出检查做进了编译器：算术运算默认检查溢出，溢出时以 <code>Panic(0x11)</code> 回滚；要用旧的回绕行为，必须写进 <code>unchecked</code> 块<a class="ref" href="#s21">[21]</a>。SafeMath 因此大多不再需要，OpenZeppelin 在 2023 年的 Contracts 5.0 中删掉了它<a class="ref" href="#s23">[23]</a>。用 0.8 编译 BEC 那一行裸乘法，攻击交易会直接失败。</p>
+        <h3>溢出并没有消失</h3>
+        <p>编译器的检查只管加减乘除这类算术运算。Solidity 文档写明，位移运算从不做溢出检查，结果总是截断；把整数显式转换成更小的类型时，高位会被直接丢掉；<code>unchecked</code> 块里的运算按设计回绕<a class="ref" href="#s22">[22]</a>。Solidity 以外的链，则要看各自的语言和数学库。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>溢出在哪里</th><th>后果</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2010-bitcoin-overflow.html">比特币价值溢出</a>，2010-08</td><td>节点对交易输出求和，有符号 64 位整数溢出</td><td>凭空产生约 1,844 亿枚 BTC，升级后的节点另起新链将其作废</td></tr>
+              <tr><td>BEC，2018-04</td><td>Solidity 0.4.19，<code>uint256</code> 乘法回绕</td><td>凭空记上约 1.16×10⁵⁹ 枚 BEC，暂停、回滚、换发新合约</td></tr>
+              <tr><td>SMT，2018-04</td><td><code>uint256</code> 加法回绕</td><td>约 1,664 万枚伪币在交易所成交，基金会销毁等量 SMT<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td><a href="2025-cetus.html">Cetus</a>，2025-05</td><td>Sui Move 数学库里手写的左移溢出判断，阈值写错</td><td>被取走约 2.23 亿美元，大部分被验证者冻结后追回</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>交易所回滚成交</h3>
+        <p>4 月 24 日，OKEx 宣布把 BEC/BTC、BEC/ETH、BEC/USDT 三个交易对的数据回滚到 4 月 22 日 13:18（香港时间），只回滚这个时刻之后的 BEC 成交，其他币种不受影响<a class="ref" href="#s5">[5]</a>。按美链 5 月 2 日的通报，回滚在 4 月 28 日完成，统一按成交当天的 USDT 价格结算，另给用户 10% 的 USDT 补偿<a class="ref" href="#s4">[4]</a>。这次回滚只改了交易所自己的内部账本。<a href="2016-the-dao.html">The DAO</a> 之后以太坊的硬分叉改的是整条链的状态，需要全网升级，两者不在一个层面。</p>
+        <h3>换发新合约</h3>
+        <p>旧合约的代码不能修改，美链只能另部署一个合约，把攻击前的持仓 1:1 映射过去，攻击者地址的余额不予映射。映射从 4 月 25 日开始，因为持币地址分散、以太坊网络拥堵，到 5 月 2 日凌晨（香港时间）才完成<a class="ref" href="#s4">[4]</a>。</p>
+        <p>新合约的版本号是 1.0.1，用 0.4.23 编译<a class="ref" href="#s25">[25]</a>。对比 Etherscan 上新旧两份已验证源码，功能上唯一的差别是 <code>batchTransfer</code> 被整段删掉，SafeMath、暂停开关和 owner 权限原样保留<a class="ref" href="#s3">[3]</a><a class="ref" href="#s25">[25]</a>。新合约的构造函数仍把 70 亿枚全部记在部署者名下，映射应是项目方逐笔转账完成的。这是本站根据代码和公告做的推断，美链没有说明具体做法。</p>
+        <h3>安全公司与交易所的后续动作</h3>
+        <p>PeckShield 和 SECBIT 披露漏洞时都表示已联系受影响合约的项目方<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。SECBIT 随后在 GitHub 上建立问题代币合约清单，按漏洞类型归类，batchTransfer 溢出编为 A1 类<a class="ref" href="#s18">[18]</a>。Quantstamp 为 Binance 审计了已上线的 ERC-20 代币，结论是没有一个受这两个溢出漏洞影响，并表示已联系所有受影响的代币项目，愿意按成本价协助修复<a class="ref" href="#s17">[17]</a>。SmartMesh 则把“交易所完成 ERC-20 审计所需的时间”列为恢复 SMT 充提的条件之一<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>攻击者与项目现状</h3>
+        <p>截至 2026 年 10 月，本站没有查到任何机构公开攻击者的身份，也没有查到执法或司法方面的进展。美链官网 beauty.io 在 2020 年 7 月 18 日之后就没有再被 Internet Archive 正常抓取到，之后先返回 502，2021 年 6 月起返回 404<a class="ref" href="#s26">[26]</a>。本站也没有找到 OKEx 关于恢复 BEC 交易或将其下架的公告。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>每一处运算都要防溢出，包括“看起来不会溢出”的乘法。BEC 合约里，涉及用户传入金额的运算只有这一行没走 SafeMath。</li>
+            <li>用 0.8 以上的编译器，把 <code>unchecked</code> 块、位移和向更小类型的转换当作审查重点。</li>
+            <li>先校验再计算。批量转账可以先要求 <code>_value &lt;= balances[msg.sender] / cnt</code>，或者在循环里逐笔用 <code>sub</code> 扣款。</li>
+            <li>对外部传入的数值测边界：0、1、2²⁵⁵、2²⁵⁶ − 1，以及数组里出现重复地址的情况。</li>
+            <li>把“余额之和等于 <code>totalSupply</code>”写成不变量，用模糊测试或形式化验证去检查。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给项目方</span>
+          <ul>
+            <li>在成熟模板上新加的代码风险最高，应该单独审计。BEC 的 Pausable 与模板逐行相同，漏洞在项目方自己加的 13 行里。</li>
+            <li>暂停开关当天止住了损失，也意味着 owner 能冻结所有人的代币。这种权限应该在上线前向持有人说明。</li>
+            <li>同一份代码常被多个项目复用。一个合约出事，应尽快按函数选择器或代码相似度扫描同类合约并通知交易所，SECBIT 当天就是这样找到另外 12 个合约的<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>上币前审查合约里的非标准函数和 owner 权限，<code>batchTransfer</code> 这类 ERC-20 标准之外的函数尤其要看。</li>
+            <li>入账前做合理性检查。单笔充值超过代币总量这类明显的异常，系统应自动拒绝；SMT 事件中，火币的系统就检测到了攻击者的充值，没有入账<a class="ref" href="#s9">[9]</a>。</li>
+            <li>接入链上异常转账监控。PeckShield 的系统在 UTC 03:28 报警，比 OKEx 发现异常成交早约一个半小时<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">PeckShield，《ALERT: New batchOverflow Bug in Multiple ERC20 Smart Contracts (CVE-2018-10299)》，2018-04-22。Internet Archive 存档。<a href="https://web.archive.org/web/20190828055801/https://blog.peckshield.com/2018/04/22/batchOverflow/">blog.peckshield.com</a></li>
+          <li id="s2">p0n1（SECBIT Labs），《A disastrous vulnerability found in smart contracts of BeautyChain (BEC)》，Medium，2018-04-23。Internet Archive 存档。<a href="https://web.archive.org/web/20180816052815/https://medium.com/secbit-media/a-disastrous-vulnerability-found-in-smart-contracts-of-beautychain-bec-dbf24ddbc30e">medium.com</a></li>
+          <li id="s3">Etherscan，BeautyChain: BEC Token 合约 <span class="addr">0xc5d105e63711398af9bbff092d4b6769c82f793d</span> 已验证源码（BecToken.sol，编译器 v0.4.19）。<a href="https://etherscan.io/address/0xc5d105e63711398af9bbff092d4b6769c82f793d#code">etherscan.io</a></li>
+          <li id="s4">美链基金会，《美链BEC出现智能合约安全问题情况通报》（2018-04-23）与《关于BEC新的智能合约和交易所交易回滚的进展通报》（2018-05-02），beauty.io 中文页，Internet Archive 2018-05-04 存档。<a href="https://web.archive.org/web/20180504044723/http://www.beauty.io:80/cn.html">beauty.io</a></li>
+          <li id="s5">OKEx，《BeautyChain (BEC) Withdrawal and Trading Suspended[Update]》，2018-04-22，2018-04-24 更新。Internet Archive 存档。<a href="https://web.archive.org/web/20190822191034/https://support.okex.com/hc/en-us/articles/360002944212-BeautyChain-BEC-Withdrawal-and-Trading-Suspended">support.okex.com</a></li>
+          <li id="s6">PeckShield，《New proxyOverflow Bug in Multiple ERC20 Smart Contracts (CVE-2018-10376)》，2018-04-25。Internet Archive 存档。<a href="https://web.archive.org/web/20191120092241/https://blog.peckshield.com/2018/04/25/proxyOverflow/">blog.peckshield.com</a></li>
+          <li id="s7">OKEx，《ERC-20 Tokens Deposit Suspended》，2018-04-25。Internet Archive 存档。<a href="https://web.archive.org/web/20190403134417/https://support.okex.com/hc/en-us/articles/360003019292">support.okex.com</a></li>
+          <li id="s8">Nikhilesh De，《Crypto Exchanges Pause Services Over Contract Bugs》，CoinDesk，2018-04-25。<a href="https://www.coindesk.com/markets/2018/04/25/crypto-exchanges-pause-services-over-contract-bugs">coindesk.com</a></li>
+          <li id="s9">Sam Town，《BatchOverflow Exploit Creates Trillions of Ethereum Tokens, Major Exchanges Halt ERC20 Deposits》，CryptoSlate，2018-04-26。<a href="https://cryptoslate.com/batchoverflow-exploit-creates-trillions-of-ethereum-tokens/">cryptoslate.com</a></li>
+          <li id="s10">NIST NVD，CVE-2018-10299，2018-04-23 发布。<a href="https://nvd.nist.gov/vuln/detail/CVE-2018-10299">nvd.nist.gov</a></li>
+          <li id="s11">NIST NVD，CVE-2018-10376，2018-04-25 发布。<a href="https://nvd.nist.gov/vuln/detail/CVE-2018-10376">nvd.nist.gov</a></li>
+          <li id="s12">美链官网英文页（项目介绍与创始团队），Internet Archive 2018-05-10 存档。<a href="https://web.archive.org/web/20180510170205/https://www.beauty.io/">beauty.io</a></li>
+          <li id="s13">OKEx，《BEC (BEC) Now Available, World-Premiering on OKEx》，2018-02-23。Internet Archive 存档。<a href="https://web.archive.org/web/20190716211253/https://support.okex.com/hc/en-us/articles/360001148271-BEC-BEC-Now-Available-World-Premiering-on-OKEx">support.okex.com</a></li>
+          <li id="s14">OKEx，《BEC (BEC)》项目资料页，2018-05-10。Internet Archive 存档。<a href="https://web.archive.org/web/20190719054515/https://support.okex.com/hc/en-us/articles/360001124052-BEC-BEC-">support.okex.com</a></li>
+          <li id="s15">新浪财经（来源：币世界），《SMT又报智能合约漏洞！这一漏洞到底怎么回事？》，2018-04-25。<a href="https://finance.sina.com.cn/blockchain/coin/2018-04-25/doc-ifzqvvsc0353302.shtml">finance.sina.com.cn</a></li>
+          <li id="s16">SmartMesh，《SmartMesh Announcement on Ethereum Smart Contract Overflow Vulnerability》，2018-04-25。Internet Archive 存档。<a href="https://web.archive.org/web/20190826063336/https://smartmesh.io/2018/04/25/smartmesh-announcement-on-ethereum-smart-contract-overflow-vulnerability/">smartmesh.io</a></li>
+          <li id="s17">Josiah Wilmoth，《Audit Gives Binance-Listed ERC20 Tokens Clean Bill of Health from ‘batchOverflow’ Bug》，CCN，Yahoo Finance 转载，2018-07-30。<a href="https://uk.finance.yahoo.com/news/audit-gives-binance-listed-erc20-045354392.html">finance.yahoo.com</a></li>
+          <li id="s18">SECBIT Labs，awesome-buggy-erc20-tokens（README、ERC20_token_issue_list.md 中 A1 batchTransfer-overflow 条目，以及 csv/batchTransfer-overflow.o.csv）。<a href="https://github.com/sec-bit/awesome-buggy-erc20-tokens">github.com</a></li>
+          <li id="s19">CertiK，《How Formal Verification Would Have Discovered the Code Exploit in the Beauty Chain Smart Contract》，2018-04-30。<a href="https://www.certik.com/blog/how-formal-verification-would-have-discovered-the-code-exploit-in-the-beauty-chain-smart-contract">certik.com</a></li>
+          <li id="s20">NCC Group，《DASP Top 10 of 2018》，第 3 项 Arithmetic Issues。Internet Archive 存档。<a href="https://web.archive.org/web/20191205070437/https://dasp.co/">dasp.co</a></li>
+          <li id="s21">Solidity 团队，《Solidity 0.8.0 Release Announcement》，2020-12-16。<a href="https://soliditylang.org/blog/2020/12/16/solidity-v0.8.0-release-announcement/">soliditylang.org</a></li>
+          <li id="s22">Solidity 文档，《Types》（整数的 checked 与 unchecked 两种模式、位移、显式转换）与《Solidity v0.8.0 Breaking Changes》。<a href="https://docs.soliditylang.org/en/latest/types.html">docs.soliditylang.org</a></li>
+          <li id="s23">OpenZeppelin，openzeppelin-contracts CHANGELOG，5.0.0（2023-10-05）的 Removals 与 SafeMath 条目。<a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/CHANGELOG.md">github.com</a></li>
+          <li id="s24">OpenZeppelin，zeppelin-solidity v1.3.0 的 lifecycle/Pausable.sol 与 token/PausableToken.sol。<a href="https://github.com/OpenZeppelin/openzeppelin-contracts/tree/v1.3.0/contracts">github.com</a></li>
+          <li id="s25">Etherscan，BEC 新合约 <span class="addr">0x3495ffcee09012ab7d827abf3e3b3ae428a38443</span> 已验证源码（BecToken.sol，version 1.0.1，编译器 v0.4.23）。<a href="https://etherscan.io/address/0x3495ffcee09012ab7d827abf3e3b3ae428a38443#code">etherscan.io</a></li>
+          <li id="s26">Internet Archive，beauty.io 抓取记录（CDX，2020–2022）。<a href="https://web.archive.org/cdx/search/cdx?url=beauty.io/&amp;from=2020&amp;to=2022&amp;fl=timestamp,statuscode">web.archive.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

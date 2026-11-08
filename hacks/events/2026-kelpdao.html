@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KelpDAO rsETH 跨链被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2026 年 4 月 KelpDAO 的 rsETH 跨链路径只依赖一个 LayerZero 验证者，伪造消息放出 116,500 枚 rsETH、约 2.92 亿美元：验证机制、RPC 投毒、Aave 坏账、Arbitrum 冻结、DeFi United 救助与诉讼。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2026-kelpdao">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2026 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>KelpDAO rsETH 跨链被盗</h1>
+    <p class="lede">2026 年 4 月 18 日，一条伪造的跨链消息通过了 LayerZero 验证者的签字，KelpDAO 在以太坊上的桥合约放出 116,500 枚 rsETH，约 2.92 亿美元。这条路径只配置了一个验证者，攻击者让它读到了假数据。攻击者把 rsETH 押进 Aave 借走真实的 ETH，引发的坏账担忧让 DeFi 锁仓量两天内减少约 130 亿美元。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">rsETH 是 KelpDAO 发行的再质押代币，借助 LayerZero 的 OFT 标准扩展到约 20 条链。以太坊上的 rsETH 锁在 RSETH_OFTAdapter 合约里，远端链上铸出等量的副本；副本跨回以太坊时，适配器要等接收库确认“配置的验证者都签了字”才放币。Kelp 的 Unichain→以太坊路径只配置了一个验证者，即 LayerZero Labs 运营的 DVN<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>2026 年 4 月 18 日 17:35（UTC），一条声称来自 Unichain 的消息得到了这个验证者的签字，适配器放出 116,500 枚 rsETH，而 Unichain 上并没有对应的销毁<a class="ref" href="#s1">[1]</a>。按 Galaxy 的分析和 LayerZero 的说法，攻击者篡改了验证者读取链上数据所用的两个 RPC 节点，同时对其余节点发动 DDoS，让验证者只能读到伪造的数据；签名密钥没有泄露<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。随后一笔 40,000 枚的提取因 Kelp 冻结了接收地址而失败<a class="ref" href="#s1">[1]</a>。</p>
+        <p>损失随后沿着借贷协议扩散。攻击者把其中 89,567 枚 rsETH 存进以太坊和 Arbitrum 上的 Aave，借走 82,650 枚 WETH<a class="ref" href="#s1">[1]</a>。远端链上的 rsETH 失去了大部分储备，市场担心 Aave 出现坏账，两天内 DeFi 总锁仓减少约 130 亿美元，其中 Aave 流出约 85 亿美元<a class="ref" href="#s3">[3]</a>。</p>
+        <p>Arbitrum 安全委员会冻结了攻击者在该链上的 30,765.67 枚 ETH<a class="ref" href="#s5">[5]</a>。Aave 牵头的 DeFi United 联合 EtherFi、Lido、Mantle 等方筹资，并清算了攻击者在 Aave 和 Compound 上的抵押仓位，收回约 10.7 万枚 rsETH<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。LayerZero 初步把攻击归因于朝鲜 Lazarus 旗下的 TraderTraitor，本站没有查到执法机构的公开确认<a class="ref" href="#s4">[4]</a>。谁该为单一验证者的配置负责，双方各执一词。2026 年 9 月，Kelp 在加拿大不列颠哥伦比亚省起诉 LayerZero 及其 CEO Bryan Pellegrino<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <h3>rsETH 的跨链储备</h3>
+        <p>Kelp 是一个流动性再质押协议：用户存入 ETH 或 LST，换得生息凭证 rsETH。主网上的 rsETH 由 Kelp 的质押存款支撑；L2 等远端链上的 rsETH 是跨链副本，储备全部锁在以太坊的适配器里。Aave 服务商的事故报告把这套机制必须满足的条件写成一个不等式：以太坊适配器锁定的 rsETH 不少于所有远端链铸出的 rsETH 总量<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>验证者由应用自己选</h3>
+        <p>在 LayerZero V2 中，一条跨链消息是否可信由 DVN（去中心化验证网络）判断。每个应用为每条入站路径单独配置：必须签字的 required DVN、可选 DVN 及其阈值，以及源链需要的区块确认数<a class="ref" href="#s17">[17]</a>。配置多严，由应用自己决定。按 ForkLog 引用的 Dune 数据，约 2,665 个活跃的 OApp 合约中约有 47% 使用 1-of-1 配置<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>借贷市场里的 rsETH</h3>
+        <p>rsETH 是 Aave 上的主要抵押品之一。Galaxy 指出，Aave 在 2026 年 1 月把 E-Mode 下以 rsETH 借 WETH 的 LTV 从 72% 上调到 93%，同期 SparkLend 的上限是 72%，Fluid 约 75%<a class="ref" href="#s3">[3]</a>。抵押率越高，桥一旦出事，借贷协议承担的坏账风险越大。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>时间均为 UTC。</p>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2026-01</time><div class="ev">Aave 把 E-Mode 下以 rsETH 借 WETH 的 LTV 从 72% 上调到 93%<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2026-04-18 前</time><div class="ev">据链上侦探 ZachXBT，攻击地址的启动资金来自 Tornado Cash<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk key"><time>2026-04-18 17:35</time><div class="ev">一条声称来自 Unichain 的消息只凭一个 DVN 的签字就在以太坊上通过验证并被执行，适配器放出 116,500 枚 rsETH，Unichain 上没有对应的销毁<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2026-04-18</time><div class="ev">几分钟内，rsETH 被分散到 7 个地址，一部分存进以太坊上的 Aave，一部分跨到 Arbitrum 再存进 Aave，借出 WETH<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-04-18</time><div class="ev">第二条伪造消息（40,000 枚 rsETH）同样通过了验证，但 Kelp 已冻结接收地址，执行失败；Kelp 随后从适配器撤出 40,373 枚 rsETH<a class="ref" href="#s1">[1]</a>。Decrypt 称两笔相隔约三分钟<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2026-04-18 18:52</time><div class="ev">Aave 的 Protocol Guardian 开始冻结所有部署上的 rsETH 和 wrsETH 市场<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2026-04-19</time><div class="ev">Aave 又在 Core、Prime、Arbitrum、Base、Mantle、Linea 六个部署上冻结 WETH，停止以 WETH 为抵押的新借款<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2026-04-20</time><div class="ev">LayerZero 公布初步分析，称攻击者“很可能”是朝鲜 Lazarus 旗下的 TraderTraitor，并表示曾多次建议 Kelp 使用多个验证者，此后不再为单一验证者配置的应用签字<a class="ref" href="#s4">[4]</a>。Aave 的服务商发布事故报告<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2026-04-20 前后</time><div class="ev">48 小时内，DeFi 总锁仓从约 995 亿美元降到约 863 亿美元；Aave 两天流出约 84.5 亿美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def key"><time>2026-04-21</time><div class="ev">Arbitrum 安全委员会冻结攻击者在 Arbitrum One 上的 30,765.67 枚 ETH<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2026-04-23 至 25</time><div class="ev">Lido 提案拿出至多 2,500 枚 stETH 参与救助<a class="ref" href="#s12">[12]</a>；Aave 公布 DeFi United 首批参与方<a class="ref" href="#s10">[10]</a>；Aave Labs、KelpDAO、LayerZero、EtherFi、Compound 联名提出 Arbitrum 治理提案，请求释放被冻结的 ETH<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2026-05-01</time><div class="ev">持有对朝鲜恐怖主义赔偿判决的原告取得纽约法院的限制令，禁止 Arbitrum DAO 转移这笔 ETH；Aave LLC 提出紧急动议反对<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def key"><time>2026-05-06</time><div class="ev">Aave 通过专门的治理提案清算了攻击者在以太坊和 Arbitrum 上的仓位，连同 Compound 的清算共收回 106,993 枚 rsETH<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2026-05-08</time><div class="ev">纽约南区联邦法院修改限制令，允许 Arbitrum DAO 通过链上投票把这笔 ETH 转入 Aave LLC 控制的钱包<a class="ref" href="#s9">[9]</a>。投票以 90.96% 赞成通过<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2026-05-09</time><div class="ev">Aave 提议解除 WETH 冻结、恢复 LTV。Mantle DAO 经链上投票正式加入 DeFi United<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2026-05-10 前后</time><div class="ev">LayerZero 承认“允许我们的 DVN 以 1/1 方式处理高价值交易是个错误”，默认配置改为 5/5，至少 3/3<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-05-21</time><div class="ev">Lido 发布复盘：其 EarnETH 策略在最坏情况下的风险敞口约 9,000 ETH<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="key"><time>2026-09-25</time><div class="ev">Kelp 在不列颠哥伦比亚省对 LayerZero 及其 CEO Bryan Pellegrino 提起民事诉讼。Pellegrino 称诉讼“毫无依据”<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">诉讼尚在进行。本站没有查到执法机构对攻击者归属的公开认定。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次没有合约漏洞。适配器、EndpointV2 和接收库都按设计运行，出问题的是对“这条消息是真的”的判断：按应用的配置，一个 DVN 的签字就足够了。下面是 LayerZero V2 接收库里决定消息能否通过验证的代码：</p>
+<pre class="code"><code><span class="c">// UlnBase.sol：每条路径的验证配置</span>
+struct UlnConfig {
+    uint64 confirmations;
+    uint8 requiredDVNCount;
+    uint8 optionalDVNCount;
+    uint8 optionalDVNThreshold; // (0, optionalDVNCount]
+    address[] requiredDVNs;
+    address[] optionalDVNs;
+}
+
+<span class="c">// ReceiveUlnBase.sol：所有 required DVN 都签了字，且没有可选 DVN 时，直接通过</span>
+function _checkVerifiable(
+    UlnConfig memory _config,
+    bytes32 _headerHash,
+    bytes32 _payloadHash
+) internal view returns (bool) {
+    // iterate the required DVNs
+    if (_config.requiredDVNCount &gt; 0) {
+        for (uint8 i = 0; i &lt; _config.requiredDVNCount; ++i) {
+            if (!_verified(_config.requiredDVNs[i], _headerHash, _payloadHash,
+                    _config.confirmations)) {
+                // return if any of the required DVNs haven't signed
+                return false;
+            }
+        }
+        if (_config.optionalDVNCount == 0) {
+            // returns early if all required DVNs have signed and there are no optional DVNs
+<span class="bad">            return true;   <span class="c">// 1-of-1 配置：唯一的验证者签了字，就走到这里</span></span>
+        }
+    }
+    <span class="c">// ……（可选 DVN 的阈值判断）……</span>
+}</code></pre>
+        <p class="code-cap">来源：LayerZero-Labs/LayerZero-v2 仓库 main 分支，packages/layerzero-v2/evm/messagelib/contracts/uln/UlnBase.sol 第 8–16 行（去掉了两行原注释）、ReceiveUlnBase.sol 第 90–107 行，一处长行折行。</p>
+        <p>代码本身没有错，它如实执行了应用给出的配置。Kelp 的 Unichain→以太坊路径是 1-of-1：一个 required DVN，没有可选 DVN<a class="ref" href="#s1">[1]</a>。这个 DVN 的判断一旦出错，链上没有第二个独立的来源可以否决它。</p>
+        <h3>验证者是怎么被骗的</h3>
+        <p>DVN 要确认“Unichain 上确实发生了这笔销毁和发送”，靠的是通过 RPC 节点读取 Unichain 的链上数据。按 Galaxy 的分析，攻击者控制了 DVN 依赖的两个下游 RPC 节点，让它们返回伪造的数据，同时对没有被控制的节点发动 DDoS，迫使 DVN 切换到被控制的节点上<a class="ref" href="#s3">[3]</a>。Decrypt 转述的分析称，节点上的恶意软件在执行后会删除自己的程序和日志<a class="ref" href="#s4">[4]</a>。LayerZero 表示签名密钥没有泄露，这是对基础设施的操纵，不是合约漏洞<a class="ref" href="#s3">[3]</a>。</p>
+        <p>结果是，DVN 为一个编号为 308 的消息签了字，以太坊接受了它；而 Unichain 上的出站编号仍停在 307，说明这条消息从未在源链上发出。适配器的余额从攻击前一个区块的 116,723 枚 rsETH 降到 223 枚<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 345" role="img" aria-labelledby="kelp-path-t kelp-path-d">
+            <title id="kelp-path-t">伪造消息如何通过单一验证者</title>
+            <desc id="kelp-path-d">Unichain 上没有发生销毁，出站编号停在 307。攻击者控制了两个 RPC 节点返回伪造数据，并对其余节点发动 DDoS。唯一的验证者 LayerZero Labs DVN 读到假数据，为编号 308 的消息签字。以太坊上的接收库只需要这一个签字就判定通过，适配器放出 116,500 枚 rsETH 给攻击者，攻击者存入 Aave 借出 WETH。如果配置了第二个独立运营、使用不同数据源的 DVN，它会拒签。</desc>
+            <defs>
+              <marker id="kelp-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="kelp-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t s" x="110" y="30" text-anchor="middle">源链一侧</text>
+            <text class="d-t s" x="380" y="30" text-anchor="middle">验证</text>
+            <text class="d-t s" x="650" y="30" text-anchor="middle">目标链：以太坊</text>
+            <rect class="d-box" x="20" y="50" width="180" height="60" rx="4"/>
+            <text class="d-t b" x="110" y="74" text-anchor="middle">Unichain 链上</text>
+            <text class="d-t s" x="110" y="96" text-anchor="middle">出站编号 307，没有销毁</text>
+            <line class="d-line dash" x1="110" y1="110" x2="110" y2="168"/>
+            <text class="d-t s" x="118" y="145">本应如实转述</text>
+            <rect class="d-box atk" x="20" y="170" width="180" height="60" rx="4"/>
+            <text class="d-t b" x="110" y="194" text-anchor="middle">被控制的 RPC 节点 ×2</text>
+            <text class="d-t s" x="110" y="216" text-anchor="middle">返回伪造的数据</text>
+            <rect class="d-box soft" x="20" y="270" width="180" height="56" rx="4"/>
+            <text class="d-t b" x="110" y="292" text-anchor="middle">其余 RPC 节点</text>
+            <text class="d-t s" x="110" y="313" text-anchor="middle">遭 DDoS，无法访问</text>
+            <line class="d-line atk" x1="200" y1="200" x2="288" y2="200" marker-end="url(#kelp-ah-atk)"/>
+            <text class="d-t s atk halo" x="244" y="192" text-anchor="middle">假数据</text>
+            <rect class="d-box" x="290" y="170" width="180" height="60" rx="4"/>
+            <text class="d-t b" x="380" y="194" text-anchor="middle">LayerZero Labs DVN</text>
+            <text class="d-t s" x="380" y="216" text-anchor="middle">唯一验证者，1-of-1</text>
+            <path class="d-line atk" d="M470,190 H515 V80 H558" marker-end="url(#kelp-ah-atk)"/>
+            <text class="d-t s atk" x="508" y="135" text-anchor="end">为编号 308 签字</text>
+            <rect class="d-box" x="560" y="50" width="180" height="60" rx="4"/>
+            <text class="d-t b" x="650" y="74" text-anchor="middle">ReceiveUln302</text>
+            <text class="d-t s" x="650" y="96" text-anchor="middle">一个签字即通过验证</text>
+            <line class="d-line" x1="650" y1="110" x2="650" y2="168" marker-end="url(#kelp-ah)"/>
+            <text class="d-t s halo" x="658" y="145">交付消息</text>
+            <rect class="d-box atk" x="560" y="170" width="180" height="60" rx="4"/>
+            <text class="d-t b" x="650" y="194" text-anchor="middle">RSETH_OFTAdapter</text>
+            <text class="d-t s" x="650" y="216" text-anchor="middle">放出 116,500 rsETH</text>
+            <line class="d-line atk" x1="650" y1="230" x2="650" y2="268" marker-end="url(#kelp-ah-atk)"/>
+            <rect class="d-box atk" x="560" y="270" width="180" height="56" rx="4"/>
+            <text class="d-t b" x="650" y="292" text-anchor="middle">攻击者地址</text>
+            <text class="d-t s" x="650" y="313" text-anchor="middle">存进 Aave，借出 WETH</text>
+            <rect class="d-box def" x="290" y="270" width="230" height="56" rx="4"/>
+            <text class="d-t b" x="405" y="292" text-anchor="middle">若有第二个独立的 DVN</text>
+            <text class="d-t s" x="405" y="313" text-anchor="middle">运营方和数据源不同，会拒签</text>
+          </svg>
+          </div>
+          <figcaption>图 1：伪造消息的路径。红色是被控制或被利用的环节，蓝色是本可以拦住它的配置。依据 Aave 服务商的事故报告、Galaxy 的分析和 LayerZero 的说法<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</figcaption>
+        </figure>
+        <h3>坏账为什么落在 Aave</h3>
+        <p>被放出的 rsETH 本身没有问题，问题是远端链上的 rsETH 失去了储备。Aave 服务商的报告统计，远端链上的 rsETH 合计 152,577 枚，而适配器里只剩 Kelp 抢先撤出的 40,373 枚，缺口约 112,204 枚<a class="ref" href="#s1">[1]</a>。攻击者把 rsETH 按高抵押率存进 Aave 借走 WETH，7 个地址的健康因子停在 1.01 到 1.03 之间。只要 rsETH 被重新定价，这些仓位就会变成坏账。Galaxy 按两种分摊方式估算，Aave 的坏账在 1.237 亿到 2.301 亿美元之间<a class="ref" href="#s3">[3]</a>。</p>
+        <div class="compare">
+          <div><h4>LayerZero 的说法</h4><p>曾多次建议 Kelp 使用多个验证者；事后不再为单一验证者配置的应用签字<a class="ref" href="#s4">[4]</a>。5 月承认“允许我们的 DVN 以 1/1 方式处理高价值交易是个错误”<a class="ref" href="#s14">[14]</a>。</p></div>
+          <div><h4>Kelp 的说法</h4><p>这套配置事先与 LayerZero 讨论过，并被确认是安全的；LayerZero 在事前书面审阅并认可了它的部署和配置，事后却把责任推给 Kelp<a class="ref" href="#s16">[16]</a>。</p></div>
+        </div>
+        <p>两种说法都还没有经过法院审理。</p>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下按已公开的事故报告和报道转述，只写结论和每一步本可以在哪里拦住<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <ol class="steps">
+          <li><b>污染数据源</b>攻击者控制了 LayerZero Labs DVN 依赖的两个 RPC 节点，并对其余节点发动 DDoS，迫使 DVN 只能读取被控制的节点。如果 DVN 在数据源不一致或不可用时停止签字，而不是切换到剩下的节点，这一步就不会生效。</li>
+          <li><b>伪造消息通过验证</b>DVN 为一条源链上不存在的消息签了字。路径配置是 1-of-1，接收库凭这一个签字判定通过，适配器放出 116,500 枚 rsETH。第二个独立运营、使用不同数据源的 DVN 可以在这里拦住它；桥合约如果有单笔或单位时间的放币上限，损失也会小得多。</li>
+          <li><b>换成真实资产</b>几分钟内，rsETH 被分散到 7 个地址，其中 89,567 枚存进以太坊和 Arbitrum 上的 Aave，借出 82,650 枚 WETH 和约 821 枚 wstETH；另有 17,426 枚进了 Compound，约 5,211 枚在 DEX 上卖出<a class="ref" href="#s11">[11]</a>。如果借贷协议对跨链副本设了更低的抵押率或更小的供给上限，能借走的 ETH 会少得多。</li>
+          <li><b>第二次尝试失败</b>第二条伪造消息（40,000 枚 rsETH）同样通过了验证，但 Kelp 已经冻结了接收地址，执行失败。Kelp 随即从适配器撤出剩下的 40,373 枚 rsETH<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>适配器放出</b>116,500 rsETH，无对应销毁</li>
+          <li class="atk"><b>抵押借款</b>rsETH 存进 Aave、Compound，借出 WETH</li>
+          <li class="def"><b>冻结</b>Arbitrum 上 30,765.67 ETH 被安全委员会冻结</li>
+          <li class="ok"><b>清算收回</b>106,993 rsETH 回到救助方，用于恢复储备</li>
+        </ol>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>去向</th><th class="n">数量</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td>存进 Aave（以太坊、Arbitrum）作抵押</td><td class="n">89,567 rsETH</td><td>5 月 6 日被清算收回<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>存进 Compound 作抵押</td><td class="n">17,426 rsETH</td><td>被清算收回<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>在 DEX 卖出</td><td class="n">约 5,211 rsETH</td><td>未收回，缺口由 DeFi United 承诺的 ETH 补足<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>从 Aave 借出</td><td class="n">82,650 WETH<br>约 821 wstETH</td><td>被攻击者带走<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>冻结在 Arbitrum One</td><td class="n">30,765.67 ETH</td><td>经投票和法院许可，转入 Aave LLC 控制的钱包用于救助<a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>清算收回的是攻击者押在借贷协议里的 rsETH，它们回到救助方手里，用来补远端链 rsETH 的储备缺口；攻击者借走的 WETH 并没有因此回来。除 Arbitrum 冻结的部分外，本站没有查到其余资金被追回的公开记录。</p>
+        <div class="note doubt">
+          <span class="h">金额与日期的口径</span>
+          <p>损失金额按 116,500 枚 rsETH 折算，Galaxy 写作约 2.9 亿美元<a class="ref" href="#s3">[3]</a>，CoinDesk、Cointelegraph 写作 2.92 亿美元<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。CoinDesk 的诉讼报道把攻击日期写成 4 月 22 日，与 Aave 服务商报告的区块时间（4 月 18 日）不符，本页以 4 月 18 日为准<a class="ref" href="#s1">[1]</a>。</p>
+        </div>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>借贷协议的挤兑</h3>
+        <p>Aave 冻结了 rsETH 市场，又在六个部署上冻结 WETH 并把 WETH 的 LTV 设为 0<a class="ref" href="#s2">[2]</a><a class="ref" href="#s11">[11]</a>。存款人担心坏账，Aave 的锁仓两天内从约 264 亿美元降到约 179 亿美元，其中 ETH 和 WETH 流出约 54 亿美元；整个 DeFi 的锁仓 48 小时内减少约 130 亿美元<a class="ref" href="#s3">[3]</a>。被盗的是一个再质押代币的跨链储备，挤兑却落在了最大的借贷协议上。</p>
+        <h3>沿着收益策略扩散</h3>
+        <p>Lido 的 stETH 和 wstETH 没有受影响，但它的 EarnETH 策略持有与 rsETH 相关的仓位，又受借款利率飙升的牵连，最坏情况下的风险敞口约 9,000 ETH，当时约合 2,100 万美元。Lido Earn 和 Mellow 暂停了金库的资金进出，协调平掉杠杆仓位<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>跨链安全</h3>
+        <p>按 ForkLog 引用的 Dune 数据，事发时约 47% 的活跃 OApp 合约使用 1-of-1 配置<a class="ref" href="#s14">[14]</a>，Kelp 只是其中一个。这起事件把跨链桥安全的问题从“签名者有几个”推进到“签名者读的是什么数据”。早年的跨链桥大案多出在签名密钥上，如 <a href="2022-ronin-bridge.html">Ronin</a>；这次密钥完好，被骗的是验证者的数据来源。合约验证逻辑出错的案例可以对照 <a href="2022-nomad-bridge.html">Nomad</a> 和 <a href="2022-wormhole.html">Wormhole</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Arbitrum 冻结与它引起的争议</h3>
+        <p>Arbitrum 安全委员会的做法是在以太坊上原子地升级 Inbox 合约，加入一个可以冒充任意发送者的函数，以攻击者地址的名义发起一笔跨链交易，把 30,765.67 枚 ETH 转到一个特殊地址，再把合约恢复原样。要释放这笔钱，必须经过 Arbitrum 治理<a class="ref" href="#s5">[5]</a>。一个 L2 的安全委员会可以替用户地址“签字”转走资产，这在社区里引起了争论：有人据此说 Arbitrum 不够去中心化，也有人认为这正是安全委员会存在的意义。一位社区成员在治理论坛开帖，主张把这类紧急权限的边界事先写清楚<a class="ref" href="#s7">[7]</a>。</p>
+        <p>释放的过程又牵出了法院。持有对朝鲜恐怖主义赔偿判决的原告申请限制令，要求不得转移这笔 ETH。Aave LLC 提出紧急动议，认为限制令建立在“攻击者是 Lazarus”这一未经证实的推测上，并称暂时持有被盗资产不等于拥有它<a class="ref" href="#s8">[8]</a>。5 月 8 日，纽约南区联邦法院的 Margaret M. Garnett 法官修改限制令，允许 Arbitrum DAO 投票把这笔 ETH 转入 Aave LLC 控制的钱包，条件是 Aave LLC 此后受同一限制令约束<a class="ref" href="#s9">[9]</a>。Arbitrum DAO 的投票以 90.96% 赞成通过<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>DeFi United</h3>
+        <p>Aave 把这次救助称为 DeFi United。4 月 24 日的治理提案列出的首批参与方包括 EtherFi、Lido、Mantle、Ethena、Ink Foundation、Golem Foundation、BGD Labs 等<a class="ref" href="#s10">[10]</a>。Lido 提议拿出至多 2,500 枚 stETH，专门用来缩小 rsETH 的缺口<a class="ref" href="#s12">[12]</a>；Mantle DAO 经链上投票加入<a class="ref" href="#s11">[11]</a>。接收资金的救助多签按社区意见从 2/3 改为 3/4，增加 EtherFi 为签名人<a class="ref" href="#s6">[6]</a>。</p>
+        <p>最关键的一步是 5 月 6 日的清算：Aave 用一个专门构造的治理提案清算了攻击者的仓位，连同 Compound 共收回 106,993 枚 rsETH，约占远端链 112,103 枚无储备 rsETH 的 95%；剩下的约 5,211 枚由 DeFi United 承诺的 ETH 补足。5 月 9 日，Aave 提议恢复 WETH 的 LTV、解除冻结<a class="ref" href="#s11">[11]</a>。各方实际出资的总额，本站没有找到可核实的最终数字。</p>
+        <h3>LayerZero 的改动</h3>
+        <p>LayerZero 在事发两天后宣布不再为单一验证者配置的应用签字<a class="ref" href="#s4">[4]</a>。5 月，它承认允许自己的 DVN 以 1/1 方式处理高价值交易是个错误，把默认配置改为 5/5、至少 3/3，并开发第二个 DVN 客户端和名为 Console 的监控平台<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>诉讼与归因</h3>
+        <p>2026 年 9 月 25 日，Kelp 背后的公司在不列颠哥伦比亚省对 LayerZero 和 Pellegrino 提起民事诉讼，指控 LayerZero 没有披露其技术固有的风险，没能阻止基础设施被渗透，事后又公开把责任推给 Kelp。Pellegrino 称诉讼“毫无依据”，表示会在温哥华应诉<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。</p>
+        <p>攻击者的归属目前只有 LayerZero 的初步判断：“很可能”是朝鲜 Lazarus 旗下的 TraderTraitor。安全公司 Cyvers 没有附和这一归因<a class="ref" href="#s4">[4]</a>，Aave LLC 在法庭上也称它是未经证实的推测<a class="ref" href="#s8">[8]</a>。截至 2026 年 10 月，本站没有查到 FBI 等执法机构的公开认定。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给跨链应用</span>
+          <ul>
+            <li>高价值路径不要只靠一个验证者。用 required 加 optional 的阈值组合多个独立运营的 DVN，LayerZero 事后的默认值是 5/5、至少 3/3<a class="ref" href="#s14">[14]</a>。</li>
+            <li>把配置当成安全边界来管理：谁改的、谁审过、依据是什么，都要留下记录。这次“谁选了 1-of-1”成了诉讼的焦点。</li>
+            <li>给桥合约加单笔和单位时间的放币上限。116,500 枚 rsETH 一次放出，约占适配器全部余额。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给验证者运营方</span>
+          <ul>
+            <li>数据源不一致或不可用时停止签字，而不是切换到剩下的节点。攻击者发动 DDoS，正是为了逼出这次切换<a class="ref" href="#s3">[3]</a>。</li>
+            <li>交叉核对多个独立运营的 RPC 来源，并把源链状态的检查做进签字前的最后一步，例如出站编号是否真的推进了。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给借贷协议和治理</span>
+          <ul>
+            <li>跨链副本的风险高于主网原生资产，抵押率和供给上限要反映桥的风险。93% 的 LTV 让伪造的 rsETH 几乎能等额换成 WETH<a class="ref" href="#s3">[3]</a>。</li>
+            <li>紧急冻结权限救回了 3 万多枚 ETH，也引出了权限边界和法院管辖的争议。能做什么、谁来批准、事后如何释放，最好事先写进规则。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">LlamaRisk 等 Aave 服务商，《rsETH Incident Report (April 20, 2026)》，Aave 治理论坛，2026-04-20。<a href="https://governance.aave.com/t/rseth-incident-report-april-20-2026/24580">governance.aave.com</a></li>
+          <li id="s2">LlamaRisk，《rsETH incident — 2026-04-18》，Aave 治理论坛，2026-04-18 至 19。<a href="https://governance.aave.com/t/rseth-incident-2026-04-18/24481">governance.aave.com</a></li>
+          <li id="s3">Lucas Tcheyan，《KelpDAO/LayerZero Exploit Drains $290m, Freezes DeFi Markets》，Galaxy Research，2026-04-22。<a href="https://www.galaxy.com/insights/research/kelpdao-layerzero-exploit-defi">galaxy.com</a></li>
+          <li id="s4">Vince Dioquino，《LayerZero Pins $292M KelpDAO Bridge Hack on North Korea's Lazarus Group》，Decrypt，2026-04-20。<a href="https://decrypt.co/364872/layerzero-pins-292m-kelpdao-bridge-hack-on-north-koreas-lazarus-group">decrypt.co</a></li>
+          <li id="s5">Arbitrum，《Security Council Emergency Action – 21/04/2026》，Arbitrum 治理论坛，2026-04-21。<a href="https://forum.arbitrum.foundation/t/security-council-emergency-action-21-04-2026/30803">forum.arbitrum.foundation</a></li>
+          <li id="s6">Aave Labs、KelpDAO、LayerZero、EtherFi、Compound，《[Constitutional] AIP: Approve Release of Frozen ETH》及讨论，Arbitrum 治理论坛，2026-04-25 起。<a href="https://forum.arbitrum.foundation/t/constitutional-aip-approve-release-of-frozen-eth/30825">forum.arbitrum.foundation</a></li>
+          <li id="s7">OliverBuilds，《Security Council Emergency Action: How Arbitrum Handles Authority》，Arbitrum 治理论坛，2026-04-23。<a href="https://forum.arbitrum.foundation/t/security-council-emergency-action-how-arbitrum-handles-authority/30812">forum.arbitrum.foundation</a></li>
+          <li id="s8">The Block，《Arbitrum DAO approves $70 million ETH release for Kelp DAO recovery》，2026-05-08。<a href="https://www.theblock.co/news/ecosystems/2026-05-08-arbitrum-dao-approves-eth-release-400527">theblock.co</a></li>
+          <li id="s9">美国纽约南区联邦地区法院，Kim v. Democratic People's Republic of Korea，案号 1:25-mc-00527-MMG，第 52 号文件（修改限制令的命令），2026-05-08。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.653423/gov.uscourts.nysd.653423.52.0.pdf">courtlistener.com</a></li>
+          <li id="s10">TokenLogic，《[ARFC] rsETH Incident Funding Update》，Aave 治理论坛，2026-04-24。<a href="https://governance.aave.com/t/arfc-rseth-incident-funding-update/24740">governance.aave.com</a></li>
+          <li id="s11">《[Direct-to-AIP] WETH Unfreeze and LTV Restoration Across Aave V3 Instances》，Aave 治理论坛，2026-05-09。<a href="https://governance.aave.com/t/direct-to-aip-weth-unfreeze-and-ltv-restoration-across-aave-v3-instances/24878">governance.aave.com</a></li>
+          <li id="s12">《Lido DAO contribution to coordinated rsETH relief effort》，Lido 研究论坛，2026-04-23。<a href="https://research.lido.fi/t/lido-dao-contribution-to-coordinated-rseth-relief-effort/11483">research.lido.fi</a></li>
+          <li id="s13">《Kelp Incident Review: EarnETH Exposure, Response, and Risk Framework Changes》，Lido 研究论坛，2026-05-21。<a href="https://research.lido.fi/t/kelp-incident-review-earneth-exposure-response-and-risk-framework-changes/11579">research.lido.fi</a></li>
+          <li id="s14">ForkLog，《LayerZero Admits Errors Following $292 Million Kelp Hack》，2026-05-10。<a href="https://forklog.com/en/layerzero-admits-errors-following-292-million-kelp-hack/">forklog.com</a></li>
+          <li id="s15">Olivier Acuna，《KelpDAO sues LayerZero for the largest exploit 2026 has seen so far》，CoinDesk，2026-09-25。<a href="https://www.coindesk.com/business/2026/09/25/kelpdao-sues-layerzero-for-the-largest-exploit-2026-has-seen-so-far">coindesk.com</a></li>
+          <li id="s16">Ezra Reguerra，《KelpDAO sues LayerZero, CEO over $292M rsETH bridge exploit》，Cointelegraph，2026-09-25。<a href="https://cointelegraph.com/news/kelpdao-layerzero-lawsuit-rseth-exploit">cointelegraph.com</a></li>
+          <li id="s17">LayerZero V2 源码，LayerZero-Labs/LayerZero-v2 仓库 main 分支，messagelib/contracts/uln/UlnBase.sol、ReceiveUlnBase.sol。<a href="https://github.com/LayerZero-Labs/LayerZero-v2/tree/main/packages/layerzero-v2/evm/messagelib/contracts/uln">github.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KuCoin 热钱包被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2020 年 9 月 KuCoin 多条链的热钱包私钥泄露、约 2.8 亿美元被转走的经过：Tether 冻结与几十个项目方换币作废被盗代币、“追回 84%”的统计口径、Chainalysis 对 Lazarus 的归因，以及经 Uniswap、混币器和 Tornado Cash 的洗钱路径。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2020-kucoin">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2020 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>KuCoin 热钱包被盗</h1>
+    <p class="lede">2020 年 9 月 25 日 18:49（UTC）起，KuCoin 在比特币、以太坊等多条链上的热钱包被转空，涉及 154 种代币，按当日价格约 2.75 亿至 2.85 亿美元。被盗的大多是有明确发行方的代币，Tether 冻结了 USDT，几十个项目方重新发行代币，让攻击者手里的旧币作废。KuCoin 后来称 84% 的资产经合作和执法追回，其余 16% 由自己和保险基金补足。Chainalysis 把这起攻击归因于朝鲜的 Lazarus。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">KuCoin 承认事件起因是几个热钱包的私钥泄露。它在 2021 年 2 月的公开信中说，攻击者发动了一次复杂的 APT 攻击，在内网潜伏了很长时间，绕过安全系统拿到了这些私钥<a class="ref" href="#s5">[5]</a>。KuCoin 没有发布技术报告，入侵路径和私钥的存放方式都不清楚。</p>
+        <p>这起事件的特别之处在于事后处置。被盗资产里有大量 ERC-20 代币，它们背后都有能找到的发行方。Tether 冻结了约 2,200 万 USDT，Orion、KardiaChain、VELO 等项目在几天内完成换币，作废了攻击者地址里的旧币<a class="ref" href="#s4">[4]</a>。事发约 90 小时后，KuCoin 说已有价值超过 1.4 亿美元的 10 种代币脱离了攻击者的控制<a class="ref" href="#s3">[3]</a>。冻结不了的部分是 BTC、ETH 这类原生币和流动性好的代币：攻击者在 Uniswap、Kyber 上把代币换成 ETH，把 BTC 送进混币器<a class="ref" href="#s7">[7]</a>，10 月下旬又有 11,500 ETH 进入 Tornado Cash<a class="ref" href="#s11">[11]</a>。</p>
+        <p>“追回 84%”是 KuCoin 自己的统计：78% 来自交易所和项目方的合作，其中很大一部分是换币让旧币作废，并不是从攻击者手里拿回了钱；6% 来自执法和安全机构<a class="ref" href="#s5">[5]</a>。联合国安理会专家小组说这次攻击“强烈指向”朝鲜，但没有点名 KuCoin；Chainalysis 则明确归因于 Lazarus<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。没有公开的逮捕或起诉。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>KuCoin 自称“人民的交易所”，以上架大量小币种著称。事发时 CoinGecko 统计的日成交量约 1 亿美元<a class="ref" href="#s6">[6]</a>。它在比特币、以太坊、莱特币、瑞波、恒星、波场、BSV 等多条链上各有热钱包，以太坊热钱包里放着 ETH 和上百种 ERC-20 代币。</p>
+        <p>KuCoin 全球 CEO Johnny Lyu 在事发当天的直播中说，KuCoin 从 2018 年初就设立了保险基金，用于应对这类意外的安全事件<a class="ref" href="#s2">[2]</a>。</p>
+        <p>当时 DeFi 正在快速增长。Uniswap、Kyber 这类去中心化交易所不托管资金，也不要求用户提供身份信息，任何地址都能直接把一种代币换成另一种。这一点后来决定了哪些被盗资产追得回来，哪些追不回来。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与行业行动</span><span>其他事件</span></p>
+        <p>时刻均为 UTC。KuCoin 的公告使用 UTC+8，9 月 26 日 02:51（UTC+8）即 9 月 25 日 18:51（UTC）。</p>
+        <ol class="timeline">
+          <li class="atk key"><time>2020-09-25 18:49</time><div class="ev">第一笔异常转账：约 8,709 ETH 从 KuCoin 热钱包转到攻击者地址，打包在区块 10,933,501<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>09-25 18:51</time><div class="ev">风控系统第一次告警。19:01 又报热钱包余额异常，19:15 成立专项小组<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>09-25 19:20</time><div class="ev">运维紧急关闭钱包服务器，关机后仍然出现异常交易<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>09-25 20:20</time><div class="ev">开始把热钱包剩余资产转入冷钱包，20:50 转完大部分<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>09-25 21:00</time><div class="ev">已联系币安、火币、OKEx、Bybit、Upbit 等 20 多家平台拉黑可疑地址、追踪资金<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>09-26 02:41</time><div class="ev">KuCoin 发布正式公告：部分 BTC、ERC-20 等资产从热钱包转出，冷钱包安全，用户损失由 KuCoin 和保险基金全额承担，充提暂停<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>09-26 04:30</time><div class="ev">Johnny Lyu 直播：原因是热钱包私钥泄露，旧热钱包已弃用；悬赏最高 10 万美元征集线索<a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>09-26</time><div class="ev">Tether 冻结攻击者地址中的 USDT，KuCoin 后来汇总为约 2,200 万枚<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>09-27 前后</time><div class="ev">Orion 在约 36 小时内完成换币，成为第一个完全恢复交易和充提的项目<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>09-28</time><div class="ev">Ampleforth 宣布禁止攻击者地址中约 1,482 万 AMPL 的转出<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>09-29</time><div class="ev">Chainalysis 发文：攻击者用 Uniswap、Kyber 把 ERC-20 代币换成 ETH，在大部分被冻结前至少卖出了 1,300 万美元<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>09-29 16:30</time><div class="ev">Johnny Lyu 第二次直播：10 种代币、价值超过 1.4 亿美元已脱离攻击者控制，另有 7 个项目的代币被冻结；12 小时内通知了 100 多个受影响项目<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>10-03</time><div class="ev">Johnny Lyu 发推称已追回约 2.04 亿美元<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>10-07</time><div class="ev">BTC、ETH、ERC20-USDT 恢复充提，其他币种陆续恢复<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>10-23 至 10-26</time><div class="ev">攻击者主地址把 11,520 ETH 转到一个中转地址，后者分 115 笔、每笔 100 ETH 存入 Tornado Cash<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>11-21</time><div class="ev">KuCoin 持续更新的公告列出数十个完成换币或冻结的项目和各自保住的数量<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="key"><time>2021-02-03</time><div class="ev">Johnny Lyu 公开信：154 种代币受影响，共约 2.85 亿美元；78% 经合作追回，6% 经执法追回，16% 由 KuCoin 和保险基金补足<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2021-02-09</time><div class="ev">Chainalysis《2021 加密犯罪报告》节选发布，把这次攻击归因于 Lazarus<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2021-03</time><div class="ev">联合国安理会朝鲜制裁委员会专家小组报告（S/2021/211）称，一起 2020 年 9 月约 2.81 亿美元的交易所被盗案初步分析“强烈指向”朝鲜，未点名交易所<a class="ref" href="#s9">[9]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <h3>热钱包私钥是怎么丢的</h3>
+        <p>KuCoin 只公开了结论：攻击者长期潜伏，严重破坏了内网，绕过安全系统拿到了“少数几个热钱包”的私钥<a class="ref" href="#s5">[5]</a>。入口是什么、私钥原本怎样存放、为什么多条链的私钥能被一起拿走，都没有公布。KuCoin 自己的时间线里有一个细节：19:20 关闭钱包服务器以后，链上仍然出现异常交易<a class="ref" href="#s2">[2]</a>。这与攻击者已经拿到私钥原文、可以在自己的机器上签名的情况相符，但 KuCoin 也说过，公告之后的部分转出是它自己在转移资产，所以这一点不能作为定论。</p>
+        <h3>为什么有的能冻结，有的不能</h3>
+        <p>被盗资产分成三类，命运完全不同。原生币（BTC、ETH、LTC、XRP 等）一旦签名转出，没有任何人能冻结，只能靠交易所拉黑地址、拒收充值。另外两类是以太坊上的代币，它们的余额记在发行方部署的合约里，能不能冻结取决于合约给发行方留了什么权限，以及项目方能否让市场改认一份新合约。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 400" role="img" aria-labelledby="kc-fig1-t kc-fig1-d">
+            <title id="kc-fig1-t">KuCoin 被盗资产的三种结局</title>
+            <desc id="kc-fig1-d">顶部是被盗的热钱包资产。第一类是 USDT 这类发行方有黑名单权限的代币，Tether 冻结约 2,200 万 USDT。第二类是项目方能重新发行的代币，如 ORN、VELO、KAI，项目方发行新合约并换币，攻击者手里的旧币作废。第三类是原生币和来不及冻结的代币，攻击者经 Uniswap 和 Kyber 换成 ETH，或把 BTC 送进混币器，ETH 最终进入 Tornado Cash。前两类占 KuCoin 所说追回部分的大头，第三类基本无法追回。</desc>
+            <defs>
+              <marker id="kc-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="kc-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="kc-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <rect class="d-box atk" x="240" y="16" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="390" y="39" text-anchor="middle">被盗的热钱包资产</text>
+            <text class="d-t s" x="390" y="60" text-anchor="middle">154 种代币，约 2.75 亿至 2.85 亿美元</text>
+            <line class="d-line" x1="330" y1="72" x2="135" y2="122" marker-end="url(#kc-ah)"/>
+            <line class="d-line" x1="390" y1="72" x2="390" y2="122" marker-end="url(#kc-ah)"/>
+            <line class="d-line" x1="450" y1="72" x2="645" y2="122" marker-end="url(#kc-ah)"/>
+            <rect class="d-box def" x="20" y="124" width="230" height="74" rx="4"/>
+            <text class="d-t b" x="135" y="148" text-anchor="middle">发行方能拉黑</text>
+            <text class="d-t s" x="135" y="169" text-anchor="middle">USDT：合约自带黑名单</text>
+            <text class="d-t s" x="135" y="188" text-anchor="middle">Tether 冻结约 2,200 万枚</text>
+            <rect class="d-box def" x="275" y="124" width="230" height="74" rx="4"/>
+            <text class="d-t b" x="390" y="148" text-anchor="middle">项目方能重新发行</text>
+            <text class="d-t s" x="390" y="169" text-anchor="middle">ORN、VELO、KAI 等几十种</text>
+            <text class="d-t s" x="390" y="188" text-anchor="middle">发新合约换币，旧币作废</text>
+            <rect class="d-box atk" x="530" y="124" width="230" height="74" rx="4"/>
+            <text class="d-t b" x="645" y="148" text-anchor="middle">谁也冻结不了</text>
+            <text class="d-t s" x="645" y="169" text-anchor="middle">BTC、ETH 等原生币</text>
+            <text class="d-t s" x="645" y="188" text-anchor="middle">和来不及冻结的代币</text>
+            <line class="d-line atk" x1="645" y1="198" x2="645" y2="236" marker-end="url(#kc-ah-atk)"/>
+            <rect class="d-box atk" x="530" y="238" width="230" height="56" rx="4"/>
+            <text class="d-t b" x="645" y="261" text-anchor="middle">Uniswap、Kyber 换成 ETH</text>
+            <text class="d-t s" x="645" y="282" text-anchor="middle">BTC 进混币器</text>
+            <line class="d-line atk" x1="645" y1="294" x2="645" y2="322" marker-end="url(#kc-ah-atk)"/>
+            <rect class="d-box atk" x="530" y="324" width="230" height="56" rx="4"/>
+            <text class="d-t b" x="645" y="347" text-anchor="middle">Tornado Cash</text>
+            <text class="d-t s" x="645" y="368" text-anchor="middle">2020-10 存入 11,500 ETH</text>
+            <line class="d-line def" x1="135" y1="198" x2="200" y2="266" marker-end="url(#kc-ah-def)"/>
+            <line class="d-line def" x1="390" y1="198" x2="330" y2="266" marker-end="url(#kc-ah-def)"/>
+            <rect class="d-box ok" x="40" y="268" width="440" height="74" rx="4"/>
+            <text class="d-t b" x="260" y="292" text-anchor="middle">攻击者手里的币被冻结或作废</text>
+            <text class="d-t s" x="260" y="313" text-anchor="middle">这部分构成 KuCoin 所说“合作追回”的大头</text>
+            <text class="d-t s" x="260" y="332" text-anchor="middle">钱没有从攻击者那里回来，是让它失去价值</text>
+          </svg>
+          </div>
+          <figcaption>图 1：被盗资产按“能不能冻结”分成三类。数字来自 KuCoin 的持续更新公告、Chainalysis 的分析和链上记录。</figcaption>
+        </figure>
+        <h3>发行方的黑名单：USDT 合约</h3>
+        <p>以太坊上的 USDT 合约从部署起就带有黑名单。合约所有者可以把任意地址加入黑名单，被拉黑的地址发起的转账会直接失败；如有需要，所有者还能把这个地址的余额清零并相应减少总供应量。下面是已验证源码中的关键几行<a class="ref" href="#s12">[12]</a>，中文注释是本站加的：</p>
+<pre class="code"><code><span class="c">// TetherToken（USDT，以太坊主网），BlackList 合约</span>
+mapping (address =&gt; bool) public isBlackListed;
+
+<span class="good">function addBlackList (address _evilUser) public onlyOwner {   <span class="c">// 只有所有者能调用</span></span>
+    isBlackListed[_evilUser] = true;
+    AddedBlackList(_evilUser);
+}
+
+function destroyBlackFunds (address _blackListedUser) public onlyOwner {
+    require(isBlackListed[_blackListedUser]);
+    uint dirtyFunds = balanceOf(_blackListedUser);
+    balances[_blackListedUser] = 0;      <span class="c">// 被拉黑地址的余额直接清零</span>
+    _totalSupply -= dirtyFunds;
+    DestroyedBlackFunds(_blackListedUser, dirtyFunds);
+}
+
+<span class="c">// TetherToken 合约：每次转账先查发送方是否在黑名单里</span>
+function transfer(address _to, uint _value) public whenNotPaused {
+<span class="good">    require(!isBlackListed[msg.sender]);   <span class="c">// 被拉黑的地址无法转出</span></span>
+    <span class="c">// ……正常转账逻辑……</span>
+}</code></pre>
+        <p class="code-cap">来源：以太坊主网 USDT 合约 0xdAC17F958D2ee523a2206206994597C13D831ec7 的已验证源码（Solidity 0.4.18），BlackList 合约与 TetherToken.transfer，省略了与本题无关的部分。</p>
+        <h3>没有黑名单的代币：换币</h3>
+        <p>大多数被盗的 ERC-20 代币合约里没有黑名单。ORN、KAI、VELO 等几十个项目采用的办法是“换币”（token swap）：部署一份新合约，按某个时间点的余额快照给持有人发放新币，快照中排除攻击者的地址，再请交易所和用户改用新合约<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。旧合约仍在链上，攻击者手里的旧币也还在，但交易所不再接受旧币，流动性转移到新币，旧币就失去了价值。这一步不靠合约里的特权，而靠足够多的交易所和做市商愿意配合。</p>
+        <p>REV 的做法又不一样：项目方销毁了转到可疑地址的代币，再给 KuCoin 增发同样数量<a class="ref" href="#s4">[4]</a>，这要求合约保留了铸造和销毁权限。Ampleforth 则直接禁止了攻击者地址中约 1,482 万 AMPL 的转出<a class="ref" href="#s4">[4]</a>。</p>
+        <div class="note">
+          <span class="h">冻结能力从哪里来</span>
+          <p>不论是黑名单、销毁增发还是换币，前提都是有一个能代表这个代币做决定的中心：持有合约特权的发行方，或者能说服市场改认新合约的项目方。没有这样的中心，就只能靠交易所拒收。KuCoin CEO 在 9 月 30 日的直播中说，有的项目拒绝配合<a class="ref" href="#s3">[3]</a>。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>KuCoin 只公开了 APT 攻击的结论，入侵阶段的细节没有公布。下面的经过从私钥泄露之后开始，依据 KuCoin 的时间线、CoinDesk 和 Chainalysis 的报道以及链上公开记录。</p>
+        <ol class="steps">
+          <li><b>长期潜伏，拿到私钥</b>攻击者在 KuCoin 内网潜伏了很长时间，绕过安全系统拿到了几个热钱包的私钥<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>多条链同时转出</b>9 月 25 日 18:49（UTC）起，以太坊热钱包的 ETH 和上百种 ERC-20 代币转入同一个攻击者地址；BTC、LTC、XRP、XLM、TRX、BSV 等也各自转到对应链上的地址<a class="ref" href="#s6">[6]</a><a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>KuCoin 抢转剩余资产</b>关闭钱包服务器后仍有异常交易，KuCoin 从 20:20 起把热钱包剩余资产转入冷钱包，弃用旧热钱包<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>抢在冻结之前变现</b>攻击者把代币分转到中间地址，再在 Uniswap、Kyber 上换成 ETH。Chainalysis 估计，在大部分代币被冻结之前，至少有 1,300 万美元的 ERC-20 代币被卖掉<a class="ref" href="#s7">[7]</a>。</li>
+          <li><b>混币</b>BTC 进入混币器；约一个月后，ETH 分批进入 Tornado Cash<a class="ref" href="#s7">[7]</a><a class="ref" href="#s11">[11]</a>。</li>
+        </ol>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>攻击者在以太坊上的主地址是 <span class="addr">0xeb31973e0febf3e3d7058234a5ebbae1ab4b8c23</span>，KuCoin 公布的可疑地址还包括 3 个 BTC 地址和 LTC、XRP、XLM、TRX、BSV 链上各一个地址<a class="ref" href="#s4">[4]</a>。各家统计的被盗资产构成差别不小：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>资产</th><th class="n">CoinDesk（2020-09-26）</th><th class="n">Chainalysis（2020-09-29）</th></tr></thead>
+            <tbody>
+              <tr><td>BTC</td><td class="n"><span class="dispute">2,015 BTC</span></td><td class="n"><span class="dispute">1,008 BTC</span></td></tr>
+              <tr><td>ETH</td><td class="n">11,480 ETH 以上</td><td class="n">11,543 ETH</td></tr>
+              <tr><td>ERC-20 代币（不含 USDT）</td><td class="n">150 多种，超过 1.5 亿美元</td><td class="n">约 1.47 亿美元</td></tr>
+              <tr><td>USDT（以太坊）</td><td class="n">未单列</td><td class="n">19,834,042 枚</td></tr>
+              <tr><td>USDT（Omni）</td><td class="n">999,160 枚</td><td class="n">999,160 枚</td></tr>
+              <tr><td>XRP</td><td class="n">18,495,798 枚</td><td class="n">18,495,798 枚</td></tr>
+              <tr><td>LTC</td><td class="n">26,733 枚</td><td class="n">26,733 枚</td></tr>
+              <tr><td>恒星链资产</td><td class="n">9,588,383 XLM</td><td class="n"><span class="dispute">约 8,700 万美元</span></td></tr>
+              <tr><td>TRX、BSV</td><td class="n">1.99 亿 TRX、14,713 BSV</td><td class="n">未列出</td></tr>
+              <tr><td>合计</td><td class="n">约 2.81 亿美元</td><td class="n">超过 2.75 亿美元</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>来源：CoinDesk<a class="ref" href="#s6">[6]</a>、Chainalysis<a class="ref" href="#s7">[7]</a>。BTC 数量两家相差一倍，原因不明。恒星链一行，按 CoinDesk 当时引用的约 0.07 美元单价，958 万 XLM 只值约 67 万美元；Chainalysis 的 8,700 万美元很可能包含发行在恒星链上的 VELO 代币，KuCoin 后来说保住了约 1.22 亿枚 VELO，价值约 8,500 万美元<a class="ref" href="#s4">[4]</a>，这是本站的推断。KuCoin 自己在 2021 年给出的总数是 154 种代币、约 2.85 亿美元<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>“追回 84%”是怎么算的</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>途径</th><th class="n">金额</th><th class="n">占比</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>与交易所、项目方合作</td><td class="n">2.22 亿美元</td><td class="n">78%</td><td>换币作废旧币、发行方冻结、交易所拦截</td></tr>
+              <tr><td>与执法和安全机构合作</td><td class="n">1,745 万美元</td><td class="n">6%</td><td>具体方式未公开</td></tr>
+              <tr><td>KuCoin 和保险基金补足</td><td class="n">约 4,555 万美元</td><td class="n">16%</td><td>用户没有承担损失</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>以上是 Johnny Lyu 在 2021 年 2 月公开信中的数字<a class="ref" href="#s5">[5]</a>。KuCoin 的持续更新公告逐项列出了各项目“保住”（secured）的数量，金额较大的有：VELO 约 1.22 亿枚（约 8,500 万美元）、USDT 约 2,200 万枚、NWC 约 5,300 万枚（约 1,126 万美元）、AMPL 约 1,482 万枚（约 1,089 万美元）、KAI 约 5.25 亿枚（约 1,020 万美元）、ORN 约 382 万枚（约 950 万美元）<a class="ref" href="#s4">[4]</a>。这些数字都由 KuCoin 按当时的价格估算，换币得来的部分并不是从攻击者手里拿回的资产。</p>
+        <h3>冻结不了的部分</h3>
+        <p>截至 10 月 2 日，Chainalysis 看到：被盗的 1,008 BTC 分在两个地址里没动；攻击者用 LTC 等山寨币在中心化交易所买入并提走了约 875 BTC，其中约 683 BTC 已进入混币服务；26,733 LTC 全部充进了交易所。ERC-20 代币则在 Uniswap 上换成 ETH，例如一个中间地址把 12,552.96 LINK 换成了 360.60 ETH<a class="ref" href="#s7">[7]</a>。</p>
+        <p>ETH 的一条去向在链上可以直接看到。2020 年 10 月 23 日，攻击者主地址分两笔（20 ETH 和 11,500 ETH）转到 <span class="addr">0x34a17418cec67b82d08cf77a987941f99dc87c6b</span>；10 月 23 日到 26 日，这个地址分 115 笔、每笔 100 ETH，把 11,500 ETH 全部存入 Tornado Cash 的 100 ETH 池<a class="ref" href="#s11">[11]</a>。这是本站对公开账本的查阅，只看了主地址往外的第一跳，没有做完整追踪。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>冻结能力的一次集中使用</h3>
+        <p>这起事件把代币的中心化程度摆到了台面上。几十个项目在几天内完成换币，Tether 冻结 USDT，Ampleforth 禁止转出，让一次 2.8 亿美元的盗窃最后主要损失落在了原生币和流动性好的代币上。同一种能力也意味着项目方可以冻结任何人的币。Johnny Lyu 在 9 月 30 日的直播里承认，ORN、KAI、VELO 的处理方式受到了“太中心化”的质疑，他的回应是区块链的价值“从来不能简单概括为所谓的去中心化”<a class="ref" href="#s3">[3]</a>。这个取舍没有标准答案，但持有人至少应该知道自己手里的代币有没有这种开关。</p>
+        <h3>朝鲜开始用 DeFi 洗钱</h3>
+        <p>Chainalysis 称这是 2020 年最大、史上第三大的加密资产盗窃，约 2.75 亿美元，占当年被盗总额的一半以上<a class="ref" href="#s8">[8]</a>。CipherTrace 的统计是，这一案占 2020 年 5.16 亿美元被盗总额的 55%<a class="ref" href="#s13">[13]</a>。Chainalysis 归因的依据之一是一种 Lazarus 常用的洗钱方式：把资金按相同大小、通常略低于整数个 BTC 的金额分批送进混币器，每一笔确认后才送下一笔，混完再转给少数几家交易所上的场外经纪商。KuCoin 的一部分资金就是这样处理的，另有“目前不能公开的其他证据”<a class="ref" href="#s8">[8]</a>。</p>
+        <p>同一份报告指出，Lazarus 使用 DeFi 平台的比例在 2020 年几乎翻了一倍，送往主流交易所的资金比例下降，更多流向混币器<a class="ref" href="#s8">[8]</a>。联合国专家小组的报告也提到，这次攻击和 2020 年 10 月另一起约 2,300 万美元的盗窃在链上有关联，两起攻击都利用了 DeFi 协议<a class="ref" href="#s9">[9]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>行业协作</h3>
+        <p>KuCoin 说，专项小组在事发后 12 小时内通知了 100 多个受影响的项目，其中 90% 在 48 小时内回复<a class="ref" href="#s3">[3]</a>。它同时联系了 20 多家交易所拉黑可疑地址，悬赏最高 10 万美元征集线索，并与各国执法机构联合调查<a class="ref" href="#s2">[2]</a>。随后它推出了“Safeguard Program”，承诺为其他遭遇安全事件的个人和机构提供技术、取证和资产确认方面的协助<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>恢复和赔付</h3>
+        <p>10 月 7 日，BTC、ETH 和 ERC20-USDT 恢复充提，各币种的新充值地址全部重新生成<a class="ref" href="#s10">[10]</a>；完成换币的项目陆续恢复。2021 年 2 月的公开信说，KuCoin 已完全恢复所有功能，所有受影响用户都没有承担损失<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>攻击者是谁</h3>
+        <p>KuCoin 在 2020 年 9 月 30 日说已掌握“实质性线索”，正与多地执法机构联合调查，按执法机构要求，结案后才会公布全部细节<a class="ref" href="#s3">[3]</a>。本站没有找到此后的结案说明，也没有找到相关的逮捕或起诉。“朝鲜 Lazarus 所为”目前来自两个来源：Chainalysis 依据洗钱模式和未公开证据的归因<a class="ref" href="#s8">[8]</a>，以及联合国专家小组“强烈指向朝鲜”的初步分析<a class="ref" href="#s9">[9]</a>。两者都不是司法认定。Chainalysis 还提到 Lazarus 使用的两个充值地址也收到过 Harvest Finance 被盗的资金，并明确说这一点“尚未证实”<a class="ref" href="#s8">[8]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>不要让热钱包私钥以可导出的形式存在。关掉钱包服务器之后链上仍有异常交易，说明“断开服务器”不一定能止损。</li>
+            <li>每条链、每种代币的热钱包余额都要有上限。一次 APT 入侵同时拿走了多条链的私钥，损失是所有热钱包余额之和。</li>
+            <li>事先准备好应急联络名单：发行方、主要项目方、各大交易所的安全联系人。冻结和换币都要抢时间，Chainalysis 估计攻击者在冻结之前已经卖掉了至少 1,300 万美元的代币。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给代币项目和持有人</span>
+          <ul>
+            <li>项目方应公开说明合约里有没有黑名单、暂停、铸造和销毁权限，由谁掌握，在什么条件下使用。</li>
+            <li>持有人应该知道，能救你的开关同样能冻结你。评估一个代币的风险，要把发行方的这部分权力算进去。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">KuCoin，《KuCoin Security Incident Update》，2020-09-26（UTC+8）。<a href="https://www.kucoin.com/announcement/kucoin-security-incident-update">kucoin.com</a></li>
+          <li id="s2">KuCoin，《KuCoin CEO Livestream Recap - Latest Updates About Security Incident》，2020-09-26（UTC+8）。<a href="https://www.kucoin.com/announcement/en-kucoin-ceo-livestream-recap-latest-updates-about-security-incident">kucoin.com</a></li>
+          <li id="s3">KuCoin，《KuCoin CEO Livestream Recap - Latest Updates About Security Incident 0930》，2020-09-30（UTC+8）。<a href="https://www.kucoin.com/news/en-kucoin-ceo-livestream-recap-latest-updates-about-security-incident-0930">kucoin.com</a></li>
+          <li id="s4">KuCoin，《The Latest Updates About the KuCoin Security Incident——Continually Updated》，最后更新 2020-11-21（UTC+8）。<a href="https://www.kucoin.com/announcement/en-the-latest-updates-about-the-kucoin-security-incident">kucoin.com</a></li>
+          <li id="s5">Johnny Lyu，《A Letter from The KuCoin CEO: 2020, 2021 and Beyond》，Medium，2021-02-03。<a href="https://medium.com/kucoinexchange/a-letter-from-the-kucoin-ceo-2020-2021-and-beyond-b9a509f8aa0f">medium.com</a>（存档：<a href="http://web.archive.org/web/20240910121202/https://medium.com/kucoinexchange/a-letter-from-the-kucoin-ceo-2020-2021-and-beyond-b9a509f8aa0f">web.archive.org</a>）</li>
+          <li id="s6">CoinDesk，《Over $280M Drained in KuCoin Crypto Exchange Hack》，2020-09-26，后续更新至 2020-10-08。<a href="https://www.coindesk.com/markets/2020/09/26/over-280m-drained-in-kucoin-crypto-exchange-hack">coindesk.com</a></li>
+          <li id="s7">Chainalysis，《The KuCoin Hack: What We Know So Far and How the Hackers are Using DeFi Protocols to Launder Stolen Funds》，2020-09-29。<a href="https://www.chainalysis.com/blog/kucoin-hack-2020-defi-uniswap/">chainalysis.com</a></li>
+          <li id="s8">Chainalysis，《Lazarus Group Pulled Off 2020’s Biggest Exchange Hack and Appears to be Exploring New Money Laundering Options》（《2021 Crypto Crime Report》节选），2021-02-09。<a href="https://www.chainalysis.com/blog/lazarus-group-kucoin-exchange-hack/">chainalysis.com</a></li>
+          <li id="s9">联合国安理会第 1718（2006）号决议所设委员会专家小组，最终报告 S/2021/211，第 159 段，2021-03。<a href="https://undocs.org/en/S/2021/211">undocs.org</a></li>
+          <li id="s10">KuCoin，《BTC, ETH, USDT Deposits and Withdrawals Now Open!》，2020-10-07（UTC+8）。<a href="https://www.kucoin.com/news/en-btc-eth-usdt-deposits-and-withdrawals-now-open">kucoin.com</a></li>
+          <li id="s11">Blockscout（以太坊主网），攻击者地址 0xeb31…8c23 与中转地址 0x34a1…7c6b 的交易记录，交易 0x4b738df5…623b（区块 10,933,501），2026-10 查阅。<a href="https://eth.blockscout.com/address/0xeb31973e0febf3e3d7058234a5ebbae1ab4b8c23">eth.blockscout.com</a>、<a href="https://eth.blockscout.com/address/0x34a17418cec67b82d08cf77a987941f99dc87c6b">eth.blockscout.com</a></li>
+          <li id="s12">Tether，USDT 合约 TetherToken 已验证源码（0xdAC17F958D2ee523a2206206994597C13D831ec7），Blockscout，2026-10 查阅。<a href="https://eth.blockscout.com/address/0xdAC17F958D2ee523a2206206994597C13D831ec7?tab=contract">eth.blockscout.com</a></li>
+          <li id="s13">Adrian Zmudzinski，《KuCoin hack’s $285M recovered or insured: CEO Johnny Lyu》，Modern Consensus，2021-02-03。<a href="https://modernconsensus.com/cryptocurrencies/kucoin-hacks-285m-recovered-or-insured-ceo-johnny-lyu/">modernconsensus.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

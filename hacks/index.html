@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>区块链被盗事件编年史</title>
+<meta name="description" content="2010–2026 年区块链行业重大被盗与黑客事件：时间线、损失统计、攻击手法的演变，以及每起事件的详细复盘。">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="assets/style.css">
+<script src="../shared/base.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/page.js"></script>
+<script src="assets/index.js" defer></script>
+</head>
+<body class="chron">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="index.html">区块链被盗事件编年史</a>
+  <span class="tb-r"><a class="tb-up" href="../index.html">总览</a><span data-slot="theme"></span></span>
+</div></header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>区块链被盗事件编年史<span class="yr">2010–2026</span></h1>
+    <p class="lede">这里按时间顺序收录了 <span data-slot="count">55</span> 起区块链被盗和黑客事件，从 2010 年比特币的一次整数溢出，到 2026 年交易所和硬件钱包的失守。每一起都有单独的页面，写清楚它怎么发生、为什么能成功、之后发生了什么。</p>
+    <div class="seismo" id="seismo"><div class="tip" hidden aria-live="polite"></div></div>
+    <p class="seismo-cap">每条竖线是一起事件，横轴是时间，高度是损失金额（美元，对数刻度，每格相差 10 倍），颜色表示所在的时代。空心点表示没有可比的被盗金额，虚线表示金额尚未确认。悬停或用方向键查看，点击打开详情；也可以直接看<a href="#chronicle">按时代排列的完整列表</a>。</p>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section class="sec" id="stats">
+    <h2>损失落在哪里</h2>
+    <p class="intro">金额按事发时的市场价格计，不扣除事后追回的部分。少数几起特大事件决定了每年的总量，按攻击手法看，钥匙和人比代码更常出问题。</p>
+    <div class="charts">
+      <div class="chart" id="ch-year">
+        <h3>每年被盗金额</h3>
+        <p class="sub">按事发年份合计，单位亿美元，颜色表示所在的时代</p>
+        <div class="plot"></div>
+        <div class="tip" hidden></div>
+        <p class="foot"></p>
+      </div>
+      <div class="chart" id="ch-vector">
+        <h3>按攻击手法</h3>
+        <p class="sub">合计金额与事件数，金额不含未确认事件</p>
+        <div class="plot"></div>
+      </div>
+      <div class="chart dprk" id="ch-dprk"></div>
+    </div>
+    <details class="tbl"><summary>查看统计表</summary><div class="tbl-wrap" id="stat-table"></div></details>
+  </section>
+
+  <section class="sec" id="chronicle">
+    <h2>编年</h2>
+    <p class="intro">按六个时代排列。每个时代开头一段话概括那几年主要的攻击方式和行业的应对，后面是这一时期的事件。</p>
+    <div class="filters" role="search">
+      <label>攻击手法 <select id="f-vector"><option value="">全部</option></select></label>
+      <label>受害方 <select id="f-victim"><option value="">全部</option></select></label>
+      <label><input type="checkbox" id="f-dprk"> 只看与朝鲜相关</label>
+      <label><input type="search" id="f-q" placeholder="搜索名称、链、攻击者" aria-label="搜索事件"></label>
+      <button type="button" id="f-reset" hidden>清除筛选</button>
+      <span class="count" id="f-count" aria-live="polite"></span>
+    </div>
+    <div id="eras"></div>
+  </section>
+
+  <section class="sec" id="method">
+    <h2>收录与统计口径</h2>
+    <div class="method">
+      <div>
+        <h3>收录范围</h3>
+        <p>2010 年 8 月至 2026 年 10 月，被盗或被黑客攻击、损失按事发时价值不低于 1 亿美元的事件；金额更小、但在攻击手法或行业应对上有里程碑意义的事件也一并收录，例如第一次闪电贷攻击、第一次通过劫持网络路由盗币。</p>
+        <h3>不收录</h3>
+        <p>交易所跑路、内部挪用客户资金和庞氏骗局，例如 <a href="../milestones/events/2019-quadrigacx.html">QuadrigaCX</a>、<a href="../scams/events/2021-thodex.html">Thodex</a>、<a href="../scams/events/2019-plustoken.html">PlusToken</a>，以及 FTX 挪用客户资金本身。FTX 破产当晚被外部盗走的资产属于被盗，单独收录。没有被盗、但影响很大的事件，例如 Terra/UST 崩盘，收录在姊妹站<a href="../milestones/index.html">区块链大事记</a>。</p>
+        <h3>名义金额很大、实际损失小得多的事件</h3>
+        <p>攻击者凭空增发代币、但大部分无法变现的事件，按实际流出的价值判断是否收录。PlayDapp（2024，名义约 2.9 亿美元）和 Gala Games（2024，名义约 2.16 亿美元）实际变现远低于 1 亿美元，未收录。BNB Bridge 实际转出的估计在 7,000 万至 1.37 亿美元之间，考虑到停链等影响仍然收录；金额沿用通行的名义口径，详情页写明两者的差别。</p>
+      </div>
+      <div>
+        <h3>金额</h3>
+        <p>按事发时的市场价格折算成美元，不扣除事后追回、冻结或赔付的部分，以便和其他统计口径比较。不同来源的数字常有出入，详情页会写明分歧。没有可比被盗金额的事件（如协议漏洞未造成直接资金损失）不计入合计。</p>
+        <h3>朝鲜相关</h3>
+        <p>分两档：“官方认定”指 FBI、美国司法部或其他国家政府机构公开认定；“疑似”指区块链分析公司或受害方基于链上特征的归因。</p>
+        <h3>时效</h3>
+        <p>资料截至 2026 年 10 月 31 日。币安 10 月 29 日起的热钱包异常流出仍在发展中，金额和原因都未确认，暂不计入各项合计。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>资料来自各事件页末尾列出的公开来源：受害方公告与事后报告、执法和司法文件、区块链安全公司的分析、新闻报道。如有出入，以详情页中引用的原始资料为准。</p>
+  <p data-slot="updated"></p>
+</div></footer>
+</body>
+</html>

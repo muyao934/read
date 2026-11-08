@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BitGrail 丢失 1,700 万枚 NANO｜区块链被盗事件编年史</title>
+<meta name="description" content="2018 年意大利交易所 BitGrail 宣布约 1,700 万枚 NANO 短缺的经过：提币程序自动重发、节点 send 接口不去重、数月无人对账，Nano 团队与运营者的争执，佛罗伦萨法院的破产判决与仍在进行的刑事审判。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2018-bitgrail">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2018 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>BitGrail 丢失 1,700 万枚 NANO</h1>
+    <p class="lede">2018 年 2 月 9 日，意大利交易所 BitGrail 宣布约 1,700 万枚 NANO 因“未经授权的交易”短缺，按当时价格约 1.7 亿美元。法院委托的技术顾问后来认定，问题出在交易所自己的提币程序：查不到出账记录就自动重发，一次提币可能被付出两次甚至更多，这个漏洞从 2017 年年中起就被人反复利用。这起事故较早由法院认定损失来自交易所软件而非区块链本身，判决也回答了交易所托管的币在法律上归谁。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">BitGrail 把用户充值的 NANO 全部归集在一个热钱包里，用户看到的余额只是交易所数据库里的数字。用户提币时，交易所向 Nano 网络发出转账，再去一个外部区块浏览器确认这笔交易。浏览器还没同步时，后台会误判出账失败，自动再发一笔同样金额的转账。负责出账的节点不会识别重复请求，只要热钱包的总余额够，就照付不误<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <p>结果是用户提一次币，链上可能收到两次甚至更多，账本却只扣一次。法院的技术鉴定认定，2017 年 5 月至 12 月间已有用户发现并利用这一点；运营者 Francesco Firano 最晚在同年 7 月就知道 NANO 有短缺<a class="ref" href="#s9">[9]</a>。交易所没有把热钱包余额和账本核对，也没有停止提币或公开披露，一直运营到 2018 年 2 月。按警方的数字，这几个月里用户数从约 7 万增长到约 21.7 万<a class="ref" href="#s8">[8]</a>。</p>
+        <p>公告时 BitGrail 自报短缺约 <span class="dispute">1,700 万枚</span>，警方 2020 年认定被非法取走的是约 1,150 万枚，公开材料没有解释两者的差额<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。Firano 把责任归于 Nano 协议，并提议修改 Nano 账本来弥补损失，Nano 团队拒绝<a class="ref" href="#s2">[2]</a>。2019 年 1 月，佛罗伦萨法院宣告 BitGrail 公司和 Firano 的个人独资企业破产<a class="ref" href="#s9">[9]</a>。警方指控 Firano 明知漏洞被利用而放任，并在报案前三天把 230 枚 BTC 转入个人账户；他被控计算机诈骗、欺诈性破产和自我洗钱，2022 年起受审，本人否认<a class="ref" href="#s8">[8]</a><a class="ref" href="#s15">[15]</a>。被多付出去的 NANO 没有追回，利用漏洞的人至今没有查明身份。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Nano 原名 RaiBlocks，代币代号 XRB，由 Colin LeMahieu 从 2014 年开始开发。它采用“区块格”（block-lattice）结构：每个账户有自己的一条链，转账不收手续费。代币最初通过一个带验证码的水龙头免费发放，2017 年 10 月水龙头关闭，总量固定在约 1.33 亿枚；2018 年 1 月 31 日更名为 Nano<a class="ref" href="#s3">[3]</a><a class="ref" href="#s23">[23]</a>。</p>
+        <p>BitGrail 由佛罗伦萨的程序员 Francesco Firano（网名 The Bomber）在 2017 年 4 月开办，是最早上线 XRB 的交易所之一，当时也是意大利唯一一家交易 XRB 的交易所<a class="ref" href="#s8">[8]</a><a class="ref" href="#s14">[14]</a>。美国集体诉讼的原告称，Nano 官方推特在 2017 年 4 月 20 日宣布可以在 BitGrail 购买 XRB，此后也多次推荐这家交易所<a class="ref" href="#s11">[11]</a>。</p>
+        <p>2017 年 11 月下旬到 2018 年 1 月初，XRB 从约 0.2 美元涨到 30 美元以上<a class="ref" href="#s19">[19]</a>。事发前，Nano 占 BitGrail 交易量的八成以上，全球约四分之一的 Nano 交易在 BitGrail 完成<a class="ref" href="#s20">[20]</a>；Firano 自称高峰时流通中 60% 的 Nano 存在 BitGrail<a class="ref" href="#s14">[14]</a>。</p>
+        <p>平台最初由 Firano 的个人独资企业经营，2018 年 1 月才转到 BitGrail S.r.l. 名下<a class="ref" href="#s13">[13]</a>。法院查明，用户充值的币每天由一个脚本归集到中心钱包，私钥只有运营者掌握，用户只能通过平台功能提币或转账<a class="ref" href="#s10">[10]</a>。按区块浏览器的数据，2017 年 12 月 16 日之前，BitGrail 只有一个热钱包，存着全部用户的 XRB<a class="ref" href="#s18">[18]</a>。平台不核实注册者身份，也不记录注册和操作时的 IP 地址，这给后来的破产债权确认造成了很大困难<a class="ref" href="#s13">[13]</a>。</p>
+        <p>出事前几个月，提币已经不顺畅。BitGrail 多次以“维护”为由暂停 XRB 提币，随后要求身份验证，每日提币上限从相当于 10 枚 BTC 降到 1 枚<a class="ref" href="#s3">[3]</a><a class="ref" href="#s19">[19]</a>。2018 年 1 月 2 日，Nano 官方推特称正在和 BitGrail 一起处理一个“因 BitGrail 的交易规模而发现的节点问题”，并说“所有资金都是安全的”<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击与资金流出</span><span class="def">防守方、执法与司法</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2017-04</time><div class="ev">BitGrail 上线，Nano 官方推特把 XRB 的购买渠道指向 BitGrail<a class="ref" href="#s11">[11]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="atk"><time>2017-05 起</time><div class="ev">法院技术鉴定认定，最早从这时起有用户发现提一次币能收到两倍甚至更多；警方的说法是 2017 年 6 月起<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="key"><time>2017-07</time><div class="ev">判决认定 Firano 最晚此时已经知道 NANO 有短缺<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2017-10-19 至 23</time><div class="ev">尾号 bbjn 的账户从 BitGrail 大额提走 XRB，其中一笔 100 万枚发生在 10 月 23 日 01:22（GMT），这是 Nano 团队后来按 BitGrail 数据库时间戳推定的<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2017-11 至 2018-01</time><div class="ev">XRB 价格从约 0.2 美元涨到 30 美元以上，BitGrail 用户数从约 7 万增至约 21.7 万<a class="ref" href="#s8">[8]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2017-12-30 至 2018-01-12</time><div class="ev">BitGrail 交易市场维护，XRB 提币以“维护”为由暂停，恢复后提币到个人钱包需做身份验证<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2018-01-02</time><div class="ev">Nano 官方推特称正与 BitGrail 处理一个节点问题，“所有资金都是安全的”<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2018-01-19</time><div class="ev">Nano 区块浏览器迁移服务器，缺少时间戳的交易被统一记成这一天；Firano 后来据此把盗窃时间定在 1 月 19 日<a class="ref" href="#s3">[3]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2018-01-31</time><div class="ev">RaiBlocks 更名为 Nano；2 月 1 日、2 日 OKEx 和 Binance 先后上线 Nano<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2018-02-06 前后</time><div class="ev">警方称，Firano 在报案前三天把 230 枚属于客户的 BTC 转入个人账户<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="key"><time>2018-02-08</time><div class="ev">Firano 告知 Nano 团队 BitGrail 钱包短缺，并提议修改账本弥补损失，被拒绝<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="key"><time>2018-02-09</time><div class="ev">21:30（UTC）BitGrail 公告：内部核查发现未经授权的交易，NANO 短缺约 1,700 万枚，已向警方报案，全站暂停<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2018-02-09</time><div class="ev">Nano 团队发表声明：账本上没有发现双花，问题看起来出在 BitGrail 的软件，已联系执法机构<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2018-02-11</time><div class="ev">Nano 团队发布更新，把 Firano 所说的“未经授权交易”推定到 2017 年 10 月<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2018-02-14</time><div class="ev">nano-node 合并 PR #610，给 <code>send</code> 接口加上用于去重的 <code>id</code> 参数，次日随 V10.0 发布<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2018-03-14</time><div class="ev">Firano 公布退款方案：先补 20%，其余 80% 以自发代币 BGS 计入，条件是放弃追诉<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def"><time>2018-04-06</time><div class="ev">美国纽约东区联邦法院出现第一起针对 Nano 团队的集体诉讼（Brola v. Nano）<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2018-04-09</time><div class="ev">Nano 基金会宣布为受害者法律基金配捐，最高 100 万美元；同月意大利律所 BonelliErede 代表约 3,000 名债权人申请宣告 BitGrail 破产<a class="ref" href="#s4">[4]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def key"><time>2018-05 初</time><div class="ev">BitGrail 试图重新开放，几小时后佛罗伦萨法院下令封停平台、扣押资产并指定管理人<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2018-06-05</time><div class="ev">约 2,295 枚 BTC 从 BitGrail 地址转入为司法机关新建的钱包<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def key"><time>2019-01-21</time><div class="ev">佛罗伦萨法院破产庭第 18/2019 号判决宣告 BG Services S.r.l.（原 BitGrail S.r.l.）破产，另一份判决宣告 Firano 的个人独资企业破产<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2019-10-04</time><div class="ev">美国加州北区联邦法院在 Fabian v. LeMahieu 案中驳回对 Nano 开发者的证券法诉求，保留过失、欺诈等州法诉求<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2020-02</time><div class="ev">破产管理人决定债权一律按欧元申报，按 NANO 申报的要重新提交<a class="ref" href="#s25">[25]</a>。</div></li>
+          <li class="def key"><time>2020-12-21</time><div class="ev">意大利邮政警察公布调查结果。法官对 Firano 采取禁止经营企业的预防措施，涉嫌计算机诈骗、欺诈性破产和自我洗钱<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2021-04</time><div class="ev">佛罗伦萨检察院结束侦查<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2021-07 至 10</time><div class="ev">美国集体诉讼（已改名 Otto v. Nano）原告撤回集体认证申请并撤诉，案件以不可再诉的方式终结<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def key"><time>2022-05</time><div class="ev">预审法官确认全部指控，裁定 Firano 受审，首次开庭定在 9 月 13 日<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2024-05</time><div class="ev">报道称两个破产程序已累计回收超过 7,000 万欧元，向债权人分配超过 5,000 万欧元；刑事审判仍在进行<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>截至 2026-10</time><div class="ev">本站没有检索到刑事一审判决的公开报道。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>BitGrail 没有公开过源码。下面的分析依据三类材料：佛罗伦萨破产判决引用的技术鉴定（由法律评论和律所文章转述）、警方和检方的调查结论、Nano 节点软件的公开源码。</p>
+        <h3>账本上的余额，链上的一个钱包</h3>
+        <p>中心化交易所通常有两本账。用户余额记在交易所自己的数据库里；链上的币归集在交易所控制的少数几个地址里，只有提币时才真正发生链上转账。BitGrail 也是这样，而且全部 XRB 归集在一个中心热钱包里<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。数据库里的余额和链上的币是否对得上，只能靠交易所自己保证，Nano 网络只认得热钱包这一个账户。判决因此指出，币一旦被转走，就无法确定丢的是哪个用户的币<a class="ref" href="#s9">[9]</a>。这也是法院后来认定交易所与用户之间构成“不规则寄托”的事实基础。</p>
+        <h3>一次请求，多次出账</h3>
+        <p>技术鉴定的结论是：BitGrail 的提币程序收到用户的提币请求后，如果没有检测到对应的出账交易，就自动向 Nano 网络再发一笔同样金额的交易，形成多重提币。检测用的是外部区块浏览器 raiblocks.net。这个浏览器本身也是一个 Nano 节点，可能和 BitGrail 自己的节点不同步，已经执行的交易暂时查不到，程序就以为没发出去<a class="ref" href="#s9">[9]</a>。Clifford Chance 对同一份鉴定的概括是：通信机制不具备幂等性，所以 Nano 节点无法察觉这些请求造成了“双重提币”<a class="ref" href="#s10">[10]</a>。</p>
+        <p>重发能成功，是因为出账钱包里装的是全体用户的币。判决写道，即使某个用户在交易所账上的余额不够，NANO 照样会从中心钱包转出<a class="ref" href="#s9">[9]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 470" role="img" aria-labelledby="bg-seq-t bg-seq-d">
+            <title id="bg-seq-t">一次提币请求被付出两次的时序</title>
+            <desc id="bg-seq-d">用户提交一次 100 枚的提币。BitGrail 后台在账本上扣 100，调用自己的 Nano 节点付款，节点从归集热钱包付出 100。后台去外部区块浏览器确认，浏览器尚未同步，返回查无此交易。后台判定失败，自动再次调用节点付款。节点只检查热钱包总余额，余额足够，于是再付 100。用户链上收到 200，账本只扣了 100。</desc>
+            <defs>
+              <marker id="bg-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bg-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="90" y1="66" x2="90" y2="384"/>
+            <line class="d-line dash" x1="290" y1="66" x2="290" y2="384"/>
+            <line class="d-line dash" x1="490" y1="66" x2="490" y2="384"/>
+            <line class="d-line dash" x1="690" y1="66" x2="690" y2="384"/>
+            <rect class="d-box" x="15" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="90" y="35" text-anchor="middle">用户</text>
+            <text class="d-t s" x="90" y="55" text-anchor="middle">只提交一次</text>
+            <rect class="d-box" x="215" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="290" y="35" text-anchor="middle">Nano 节点</text>
+            <text class="d-t s" x="290" y="55" text-anchor="middle">send 接口 · 热钱包</text>
+            <rect class="d-box" x="415" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="490" y="35" text-anchor="middle">BitGrail 后台</text>
+            <text class="d-t s" x="490" y="55" text-anchor="middle">内部账本 · 重试逻辑</text>
+            <rect class="d-box doubt" x="615" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="690" y="35" text-anchor="middle">外部区块浏览器</text>
+            <text class="d-t s m" x="690" y="55" text-anchor="middle">raiblocks.net</text>
+            <line class="d-line" x1="90" y1="105" x2="488" y2="105" marker-end="url(#bg-ah)"/>
+            <text class="d-t halo" x="190" y="97" text-anchor="middle">① 提币 100</text>
+            <rect class="d-box soft" x="440" y="116" width="100" height="26" rx="4"/>
+            <text class="d-t s" x="490" y="134" text-anchor="middle">账本扣 100</text>
+            <line class="d-line" x1="490" y1="175" x2="292" y2="175" marker-end="url(#bg-ah)"/>
+            <text class="d-t halo" x="390" y="167" text-anchor="middle">② send，不带 id</text>
+            <line class="d-line" x1="290" y1="215" x2="92" y2="215" marker-end="url(#bg-ah)"/>
+            <text class="d-t halo" x="190" y="207" text-anchor="middle">③ 链上付出 100</text>
+            <line class="d-line" x1="490" y1="255" x2="688" y2="255" marker-end="url(#bg-ah)"/>
+            <text class="d-t halo" x="590" y="247" text-anchor="middle">④ 查这笔出账</text>
+            <line class="d-line dash" x1="690" y1="295" x2="492" y2="295" marker-end="url(#bg-ah)"/>
+            <text class="d-t halo" x="590" y="287" text-anchor="middle">⑤ 未同步，查无此交易</text>
+            <line class="d-line atk" x1="490" y1="335" x2="292" y2="335" marker-end="url(#bg-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="327" text-anchor="middle">⑥ 判定失败，再调 send</text>
+            <line class="d-line atk" x1="290" y1="375" x2="92" y2="375" marker-end="url(#bg-ah-atk)"/>
+            <text class="d-t atk halo" x="190" y="367" text-anchor="middle">⑦ 余额够，再付 100</text>
+            <rect class="d-box atk" x="110" y="398" width="560" height="60" rx="4"/>
+            <text class="d-t b" x="390" y="422" text-anchor="middle">结果：用户链上收到 200，账本只扣了 100</text>
+            <text class="d-t s" x="390" y="446" text-anchor="middle">节点只检查热钱包的总余额，这个余额属于全体用户，每次重发都能通过</text>
+          </svg>
+          </div>
+          <figcaption>图 1：技术鉴定描述的重复出账路径（示意，金额为举例）。红色是多付的那一次。重发可以不止一次，所以一次请求可能收到数倍。</figcaption>
+        </figure>
+        <h3>节点的 send 接口当时不去重</h3>
+        <p>Nano 节点自带钱包功能，交易所可以通过 RPC 的 <code>send</code> 命令让节点从某个账户付款。下面是 2018 年 2 月修复之前 <code>wallet::send_action</code> 的核心逻辑，取自修复补丁里被删除的旧代码<a class="ref" href="#s5">[5]</a>：</p>
+<pre class="code"><code><span class="c">// rai/node/wallet.cpp，PR #610 之前的 wallet::send_action（节选）</span>
+std::shared_ptr&lt;rai::block&gt; rai::wallet::send_action (rai::account const &amp; source_a,
+  rai::account const &amp; account_a, rai::uint128_t const &amp; amount_a, bool generate_work_a)
+{
+  std::shared_ptr&lt;rai::block&gt; block;
+  {
+    rai::transaction transaction (store.environment, nullptr, false);
+    if (store.valid_password (transaction))
+    {
+      auto existing (store.find (transaction, source_a));
+      if (existing != store.end ())
+      {
+        auto balance (node.ledger.account_balance (transaction, source_a));
+<span class="bad">        if (!balance.is_zero () &amp;&amp; balance &gt;= amount_a)   <span class="c">// 唯一的检查</span></span>
+        {
+          <span class="c">// ……读取账户信息 info 和私钥 prv……</span>
+          <span class="c">// 不管之前有没有付过同一笔，每次调用都签出一个新的 send 块</span>
+<span class="bad">          block.reset (new rai::send_block (info.head, account_a, balance - amount_a, prv,</span>
+<span class="bad">            source_a,</span>
+<span class="bad">            generate_work_a ? work_fetch (transaction, source_a, info.head) : 0));</span>
+        }
+      }
+    }
+  }
+  <span class="c">// ……把新块交给节点处理并广播……</span></code></pre>
+        <p class="code-cap">来源：nanocurrency/nano-node PR #610 的 diff，rai/node/wallet.cpp 中被删除的旧版本（缩进改为两格，长行折开）。</p>
+        <p>唯一的检查是出账账户的链上总余额够不够。这对个人钱包足够了。BitGrail 的所有用户共用同一个出账账户，热钱包没被掏空之前，每一次重复请求都能通过这个检查，节点也没有办法知道第二次请求和第一次是同一笔提币。</p>
+        <p>BitGrail 公告三天后，Nano 开发者提交了 PR #610，给 <code>send</code> 加上一个可选的 <code>id</code> 参数。审阅者称这是“关键修复”，要求尽快发布，2 月 15 日的 V10.0 发布说明写明：<code>send</code> 有了新的 <code>id</code> 参数，使用它时保证幂等<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。修复后的逻辑是，付款前先查这个 id 有没有用过，用过就返回第一次的块，不再付第二次：</p>
+<pre class="code"><code><span class="c">// rai/node/wallet.cpp，PR #610 合并后的 wallet::send_action（节选）</span>
+std::shared_ptr&lt;rai::block&gt; rai::wallet::send_action (rai::account const &amp; source_a,
+  rai::account const &amp; account_a, rai::uint128_t const &amp; amount_a, bool generate_work_a,
+  boost::optional&lt;std::string&gt; id_a)
+{
+  <span class="c">// ……把 id_a 转成 id_mdb_val，开启可写事务……</span>
+<span class="good">    if (id_mdb_val)</span>
+<span class="good">    {</span>
+<span class="good">      rai::mdb_val result;</span>
+<span class="good">      auto status (mdb_get (transaction, node.wallets.send_action_ids, *id_mdb_val, result));</span>
+<span class="good">      if (status == 0)   <span class="c">// 这个 id 以前付过</span></span>
+<span class="good">      {</span>
+<span class="good">        auto hash (result.uint256 ());</span>
+<span class="good">        block = node.store.block_get (transaction, hash);</span>
+<span class="good">        if (block != nullptr)</span>
+<span class="good">        {</span>
+<span class="good">          cached_block = true;   <span class="c">// 只重新广播原来那个块，不签新块</span></span>
+<span class="good">          node.network.republish_block (transaction, block);</span>
+<span class="good">        }</span>
+<span class="good">      }</span>
+<span class="good">    }</span>
+    <span class="c">// ……没有找到旧块时，才做和原来一样的余额检查并签出新块，然后：</span>
+          <span class="c">// 把 id 和新块的哈希记下来，下次同一个 id 直接命中上面的分支</span>
+<span class="good">          if (id_mdb_val)</span>
+<span class="good">          {</span>
+<span class="good">            auto status (mdb_put (transaction, node.wallets.send_action_ids, *id_mdb_val,</span>
+<span class="good">              rai::mdb_val (block-&gt;hash ()), 0));</span>
+<span class="good">          }</span></code></pre>
+        <p class="code-cap">来源：同上，PR #610 新增的代码，2018-02-14 合并（缩进改为两格，长行折开）。</p>
+        <p>今天的 Nano 文档仍把这一条放在 <code>send</code> 命令的最前面：使用节点钱包的集成方必须保证交易幂等，可以在外部自己做，也可以用 <code>id</code> 参数；用同一个 id 调用两次，第二次不会再付款，而是返回第一次的块<a class="ref" href="#s7">[7]</a>。公开材料没有逐字说明 BitGrail 调用的就是节点钱包的 <code>send</code>，但技术鉴定描述的“通信机制不具备幂等性、节点无法察觉重复”，和 Nano 团队事发后几天内紧急修补的正是同一个接口，这一点是吻合的。</p>
+        <h3>交易所这一侧应该怎么写</h3>
+        <p>去重的责任并不只在节点。交易所自己的提币流程也应该保证“一次请求最多付一次”。下面用示意代码对比技术鉴定描述的做法和应有的做法：</p>
+<pre class="code"><code><span class="c">// 示意：按技术鉴定的描述还原的提币流程（BitGrail 源码没有公开）</span>
+function withdraw(user, to, amount) {
+  ledger.debit(user, amount);                 <span class="c">// 账本只扣一次</span>
+  do {
+<span class="bad">    node.send(hotWallet, to, amount);         <span class="c">// 不带 id，每次调用都是一笔新付款</span></span>
+    sleep(WAIT);
+<span class="bad">  } while (!explorer.hasTx(hotWallet, to, amount));   <span class="c">// 外部浏览器没同步就再付一次</span></span>
+}
+
+<span class="c">// 示意：幂等的提币流程</span>
+function withdraw(user, to, amount) {
+  <span class="c">// 唯一 id 与扣账写在同一个数据库事务里</span>
+<span class="good">  const req = db.createWithdrawal(user, to, amount);</span>
+  <span class="c">// 超时可以放心重试：同一个 id 节点只付一次，重复请求返回第一次的块</span>
+<span class="good">  const block = retry(() =&gt; node.send(hotWallet, to, amount, { id: req.id }));</span>
+  <span class="c">// 状态以自己的节点为准，不看外部浏览器</span>
+<span class="good">  db.markSent(req.id, block);</span>
+}
+
+<span class="c">// 示意：定时对账，链上持有量必须覆盖账本负债</span>
+every(10 * MINUTE, () =&gt; {
+<span class="good">  if (onchainBalance(allWallets) &lt; ledger.totalOwed()) pauseWithdrawals();</span>
+});</code></pre>
+        <p class="code-cap">示意代码。<code>id</code> 参数是 Nano 节点 V10.0 起提供的真实接口，其余函数名均为虚构。</p>
+        <h3>没有对账，漏洞就一直开着</h3>
+        <p>每多付一次，热钱包的链上余额就比“全体用户账上余额之和”少一截。判决提到，BitGrail 连定期比较热钱包余额和内部账目这一步都没有做；只要做了，从第一笔多付开始就能发现<a class="ref" href="#s9">[9]</a>。这和 <a href="2014-mt-gox.html">Mt.Gox</a> 在 2011 至 2013 年被持续盗币却无人察觉的原因是一样的。</p>
+        <h3>两种说法</h3>
+        <div class="compare">
+          <div>
+            <h4>Firano 的说法</h4>
+            <p>漏洞在 Nano 官方钱包软件里，盗窃表现为“看起来合法的重复提币”，只有 Nano 被盗<a class="ref" href="#s14">[14]</a>。他报案时称非法交易都发生在 2018 年 1 月<a class="ref" href="#s8">[8]</a>；区块浏览器显示的 1 月 19 日就是盗窃日期，而 Nano 链上没有时间戳，浏览器“完全不可靠”<a class="ref" href="#s18">[18]</a>。</p>
+          </div>
+          <div>
+            <h4>Nano 团队与法院的结论</h4>
+            <p>账本上没有发现双花，问题出在 BitGrail 的软件<a class="ref" href="#s2">[2]</a>。1 月 19 日是浏览器迁移服务器的日子；按 Firano 自己提供的数据库记录，他所说的“未经授权”提币发生在 2017 年 10 月<a class="ref" href="#s3">[3]</a>。技术鉴定认定多次出账是 BitGrail 软件发出的，短缺从 2017 年就开始了<a class="ref" href="#s9">[9]</a>。</p>
+          </div>
+        </div>
+        <blockquote><p>因为少了一项检查，一些用户拿走了一千多万枚 Nano。破产法院认定这项检查应该由我来做，我一直认为这是币本身的问题，证据是我的交易所里其他币都没有被盗。</p><cite>Francesco Firano 接受《La Nazione》采访，2024 年 5 月（本站译自意大利文）<a class="ref" href="#s16">[16]</a></cite></blockquote>
+        <p>这场争执一半是事实问题，一半是责任划分。事实部分可以用数据库时间戳和链上记录回答，结论对 Firano 不利。责任部分更值得开发者留意：节点的 <code>send</code> 当时确实可以被重复触发，Nano 团队一周内就补上了 <code>id</code> 参数；但意大利判决的看法是，交易所一向被建议自行管理交易，盲目信任节点本身就有风险，不只是双重提币，这个风险“应当由平台运营者管理，他可以而且应该在提供服务时限制这种风险”。这段话出自美国集体诉讼诉状对意大利判决的引述<a class="ref" href="#s11">[11]</a>。警方的说法与此一致：Firano 没有采用 Nano 开发团队公布过的任何一种方法来加固平台<a class="ref" href="#s8">[8]</a>。</p>
+        <div class="note doubt">
+          <span class="h">Nano 团队什么时候知道</span>
+          <p>Nano 团队的官方说法是，2018 年 2 月 8 日之前不知道 BitGrail 资不抵债<a class="ref" href="#s2">[2]</a>。美国集体诉讼的原告则引用意大利判决称，Firano 在 2017 年 7 月中旬发现了“重复交易”造成的短缺，并在与 Nano 开发团队的 Telegram 群里描述过这个问题<a class="ref" href="#s11">[11]</a>。“知道有重复交易”和“知道交易所资不抵债”不是一回事，两种说法不一定矛盾。美国法院承认意大利法院文件的真实性，但明确拒绝把其中的事实认定当作已证事实<a class="ref" href="#s11">[11]</a>。</p>
+        </div>
+        <div class="note doubt">
+          <span class="h">社区当时的其他猜测</span>
+          <p>2018 年 2 月，社区还猜测过提币金额只在浏览器端用 JavaScript 校验，或者一个用户提币时扣的是另一个账户的余额<a class="ref" href="#s19">[19]</a>。本站查到的法院和警方材料把损失归因于重复出账，没有确认这两种猜测。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>这起事故里没有服务器被入侵，也没有私钥被盗。调查人员认定，短缺发生在交易所正常运营期间，提币的是和其他人一样正常注册的用户<a class="ref" href="#s11">[11]</a><a class="ref" href="#s17">[17]</a>。下面的步骤依据判决、警方通报和 Nano 团队的追踪整理，利用者的具体操作没有公开。</p>
+        <ol class="steps">
+          <li><b>发现多付</b>技术鉴定认定，2017 年 5 月至 12 月间有用户发现，申请提一笔 NANO，收到的是两倍甚至更多<a class="ref" href="#s9">[9]</a>。《la Repubblica》转述的调查结论是，这些用户似乎发现在特定时刻发起提币，很可能得到两笔相同的转账，一笔记了账，另一笔没有<a class="ref" href="#s17">[17]</a>。</li>
+          <li><b>大额提走</b>Nano 团队用 Firano 提供的 100 多条数据库记录追踪了尾号 bbjn 的账户 <span class="addr">xrb_1fioob7u6ia76rfo1medtrwwdobey1ua8qe7z55qyjimir5b9d95hkdabbjn</span>。它从 BitGrail 提走约 984 万枚 XRB，当时约值 100 万美元；超过 10 万枚的几笔大额提币集中在 2017 年 10 月 19 日至 23 日<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>拆分转移</b>这些币随后被拆分转移。Nano 团队举的一个例子是：35 万枚进入一个账户，该账户把 499,999 枚转给另一个账户，后者分 6 笔把币交替转进 BitGrail 和另一家交易所 Mercatox<a class="ref" href="#s3">[3]</a>。公开材料没有说明转回 BitGrail 的币是否被用来再次触发多付。</li>
+          <li><b>运营方知情不报</b>判决认定 Firano 最晚在 2017 年 7 月已经知道短缺<a class="ref" href="#s9">[9]</a>。警方认为他明知有人非法提币，却没有阻止，继续开放平台、吸引新用户、收取手续费<a class="ref" href="#s8">[8]</a>。检方在预审中披露，调查人员发现一个被删除的程序“Fix balance”，认为它被用来修正记录，让客户看到的余额显得正常；辩护律师否认 Firano 在 2018 年之前察觉了短缺<a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>收紧提币，然后公告</b>2017 年 12 月底起，BitGrail 以维护为由暂停 XRB 提币，随后要求身份验证并降低提币上限<a class="ref" href="#s3">[3]</a><a class="ref" href="#s19">[19]</a>。警方称，报案前三天 Firano 把 230 枚属于客户的 BTC（约 170 万欧元）转入个人账户，2018 年 5 月把其中一部分换成 514,690 欧元，之后多次试图取走<a class="ref" href="#s8">[8]</a>。2 月 8 日他通知 Nano 团队，2 月 9 日报案并公告<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">损失从什么时候开始</span>
+          <p>各方给出的起点不一致。法院技术鉴定：2017 年 5 月起（判决称运营者 7 月已知情）<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>；警方：2017 年 6 月起，多次发生<a class="ref" href="#s8">[8]</a>；检方在预审中：2017 年 7 月和 10 月两次攻击<a class="ref" href="#s15">[15]</a>；Firano 报案时：全部发生在 2018 年 1 月<a class="ref" href="#s8">[8]</a>。能确定的是，公开公告的时间比损失开始晚了至少七个月。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>被多付出去的 NANO 进了利用者自己的地址，此后在链上和各交易所之间流转。2 月 10 日，币安的赵长鹏表示正与 Nano 团队联系，会冻结来自已识别地址的充值<a class="ref" href="#s22">[22]</a>。Nano 团队则说，要让其他交易所冻结，需要 BitGrail 公布与损失有关的全部钱包地址，而 BitGrail 在 2 月 9 日之后就停止了和他们的沟通<a class="ref" href="#s3">[3]</a>。本站没有查到被多付的 NANO 被冻结或追回的公开记录；到 2020 年，警方仍称利用者“尚未查明”<a class="ref" href="#s8">[8]</a>。</p>
+        <p>能追回的是 BitGrail 剩下的资产和 Firano 的个人资产，从公司扣押的 BTC 和 NANO 合计约 3,600 万欧元<a class="ref" href="#s13">[13]</a>，明细见下表。转入司法钱包的 BTC，私钥存放在法院名下的第三方保管处<a class="ref" href="#s14">[14]</a>。</p>
+        <ol class="flow">
+          <li class="atk"><b>重复出账</b>2017 年中至 2018 年 1 月，一次提币请求被付出多次</li>
+          <li class="doubt"><b>利用者地址</b>拆分转移到 BitGrail、Mercatox 等处；身份未查明，没有追回记录</li>
+          <li class="def"><b>扣押剩余资产</b>公司约 2,345 BTC 与 400 万 NANO，Firano 个人约 170 BTC</li>
+          <li class="ok"><b>破产分配</b>截至 2024 年 5 月已向债权人分配超过 5,000 万欧元</li>
+        </ol>
+        <h3>各方给出的数字</h3>
+        <p>短缺数字有多个口径。BitGrail 公告是约 1,700 万枚，后来对媒体有 1,500 万枚的说法；警方认定被非法取走、让利用者获利的是约 1,150 万枚；Firano 2024 年的说法是“一千多万枚”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s16">[16]</a><a class="ref" href="#s18">[18]</a>。1,700 万与 1,150 万之间约 550 万枚的差额，本站查到的公开材料都没有解释。1,500 万和 1,700 万哪个说法在先，媒体的记述也相反<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>出处与说明</th></tr></thead>
+            <tbody>
+              <tr><td>BitGrail 公告的短缺</td><td class="n"><span class="dispute">约 1,700 万 NANO</span></td><td>2018-02-09 公告，自报数字<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>后来的另一种说法</td><td class="n">约 1,500 万 NANO</td><td>Nano 团队称 BitGrail 前后数字不一<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td>警方认定被非法取走</td><td class="n"><span class="dispute">约 1,150 万 XRB</span></td><td>约合 1.2 亿欧元，2020 年警方通报<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>尾号 bbjn 账户提走</td><td class="n">约 984 万 XRB</td><td>Firano 称其为“未经授权”，当时约值 100 万美元<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>公告后交易所剩余</td><td class="n">约 400 万 NANO</td><td>Firano 推文与法院扣押记录<a class="ref" href="#s13">[13]</a><a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td>从公司扣押的 BTC</td><td class="n">约 2,345 BTC</td><td>2018-06-05 转入司法钱包 2,295.077523 枚<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a></td></tr>
+              <tr><td>报案前转入 Firano 个人账户</td><td class="n">230 BTC</td><td>约 170 万欧元，警方通报<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>从 Firano 个人扣押</td><td class="n">约 170 BTC 与 50 多万欧元</td><td>破产判决报道<a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>破产程序回收与分配</td><td class="n">超过 7,000 万欧元</td><td>两个程序合计，其中超过 5,000 万已分配（2024-05）<a class="ref" href="#s16">[16]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>交易所托管的币归谁</h3>
+        <p>佛罗伦萨破产法院的判决首先认定，加密货币可以作为权利的客体，属于意大利民法典第 810 条意义上的“物”，并且是可替代物<a class="ref" href="#s9">[9]</a>。结合 BitGrail 的实际运作方式（统一归集、只有运营者有私钥、用户不能自行处置），法院认定平台对用户的币有完全排他的控制，甚至可以自行使用，双方关系属于“不规则寄托”（deposito irregolare，民法典第 1782 条）：交易所取得币的所有权，负有返还同种同量币的义务<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。即使按一般寄托处理，交易所也要担责，因为第 1780 条只在损失不可归责于保管人、且保管人立即通知了寄托人时才免责，而 BitGrail 两条都不满足<a class="ref" href="#s9">[9]</a>。</p>
+        <p>按这个定性，交易所持有的币是破产财产，无法返还给用户的币是它的负债，二者都可以按市价计量<a class="ref" href="#s10">[10]</a>。判决由寄托关系推出：交易所必须始终保有用户存入的全部数量，即 100% 准备金。Altalex 的评论者不同意“加密货币是物”的论证，但认同寄托的结论，并认为这意味着任何部分准备金的做法在意大利法下都已违法<a class="ref" href="#s9">[9]</a>。Clifford Chance 称这份判决是一份“具有里程碑意义的”裁决<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>节点接口的改变</h3>
+        <p>PR #610 从提交到随 V10.0 发布只用了三天<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。它没有改动共识规则，改的是节点钱包接口：“重试是否安全”原本完全由每个接入方自己负责，现在节点接口有了文档化、带测试的去重功能。文档至今把 <code>id</code> 标为“强烈建议”，并写明将来可能改为必填<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>开发团队和交易所的边界</h3>
+        <p>事发后 Nano 团队的立场是：BitGrail 是独立企业，团队看不到它的组织内部，也无法控制它如何运营<a class="ref" href="#s2">[2]</a>。一部分受害者不接受这种切割，理由是团队曾公开推荐 BitGrail、在双方的联合 Telegram 群里为它提供技术支持<a class="ref" href="#s3">[3]</a>、在 2018 年 1 月公开表示资金安全<a class="ref" href="#s11">[11]</a>。他们在美国提起了两起集体诉讼，都没有走到实体判决（见“后续处置”）。</p>
+        <h3>“以为没发出去，再发一次”</h3>
+        <p>把出账误判为失败、然后重发，这类缺陷并不是 BitGrail 独有的。2014 年 <a href="2014-mt-gox.html">Mt.Gox</a> 停止提币时给出的理由就是交易延展性让它误判提币失败，后来的研究表明那只能解释很小一部分损失。BitGrail 则是这类缺陷确实造成上千万枚币损失、并由法院技术鉴定确认的案例。它对所有托管服务的提示是一样的：出账流程里只要有自动重试，就必须有去重；出账状态要以自己的节点为准。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>修改账本的提议</h3>
+        <p>2 月 8 日的对话中，Firano 提出的一个方案是修改 Nano 账本来弥补他的损失。Nano 团队在声明中回应：这不可能，也绝不是团队会考虑的方向<a class="ref" href="#s2">[2]</a>。Firano 随后公开指责开发者“不合作”，他设想的是让被盗的币作废，把余额补回 BitGrail 的钱包<a class="ref" href="#s19">[19]</a><a class="ref" href="#s21">[21]</a>。Decrypt 的报道称他还主张仿照 <a href="2016-the-dao.html">The DAO</a> 做一次“救援硬分叉”，但从未形成正式提案<a class="ref" href="#s24">[24]</a>。</p>
+        <p>两者的条件很不一样。The DAO 被盗的 ETH 当时锁在攻击者的子 DAO 里，至少 27 天动不了；BitGrail 多付出去的币早已在几个月里流转过多个账户和交易所，作废它们会牵连后来接手的第三方。Nano 每个账户的链由自己的私钥签名，要改写这些余额，只能让全网接受一份改写过的账本。这是本站根据账本结构做的说明，Nano 团队的原话只是“这不可能”。</p>
+        <h3>20% 加 BGS 的退款方案</h3>
+        <p>2018 年 3 月 14 日，Firano 宣布 BitGrail 不关闭，并部分补偿用户。声明仍把问题归于“Nano 软件的缺陷”，称仅凭这一点 BitGrail 就不负退款义务<a class="ref" href="#s20">[20]</a>。方案是：受损用户先补回 20% 的 XRB；其余 80% 以 BitGrail 自发的代币 BGS（BitGrail Shares）按 1:1 计入，共 1,560 万枚；交易所用 50% 的手续费收入，按每枚 10.5 美元回购 BGS。BGS 不能充提，只能在站内交易，而且只发给同意和解条款、放弃法律追索的用户<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>封停、扣押与破产</h3>
+        <p>4 月，代表约 3,000 名债权人的律所 BonelliErede 申请宣告 BitGrail 破产<a class="ref" href="#s14">[14]</a>；同月 Nano 基金会宣布为受害者代表 Espen Enger 管理的法律基金配捐，最高 100 万美元，目标总额 200 万美元，并表示所见的可靠证据都指向 BitGrail 交易所软件里的漏洞<a class="ref" href="#s4">[4]</a>。5 月初 BitGrail 试图重新开放，几小时后佛罗伦萨法院下令封停，理由是继续运营可能使破产财产减少、并使查明短缺原因和责任的证据灭失<a class="ref" href="#s14">[14]</a>。对这道紧急令的申请方，报道说法不一：Clifford Chance 写的是一名用户向民事法院申请的单方命令，《Il Sole 24 Ore》写的是检察院向破产法院申请的扣押<a class="ref" href="#s10">[10]</a><a class="ref" href="#s13">[13]</a>。</p>
+        <p>2019 年 1 月 21 日公布的第 18/2019 号判决宣告 BG Services S.r.l.（原 BitGrail S.r.l.）破产，另一份判决宣告 Firano 的个人独资企业破产<a class="ref" href="#s9">[9]</a>。意大利法下个人独资企业没有独立的法人资格，这也是“Firano 个人资产被扣押、本人被宣告破产”说法的来源<a class="ref" href="#s11">[11]</a><a class="ref" href="#s24">[24]</a>。判决认定他没有设置防止 NANO 被反复提走的保护，并在知情后拖延数月，使损失扩大<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>债权与分配</h3>
+        <p>2020 年 2 月，破产管理人决定不处理以数字资产计的债权，要求一律改按欧元申报，金额按交易所宣告破产当天登记的持仓计算；按 NANO 申报的要在 3 月 6 日前重新提交。部分申报因不符合身份要求或证据不足被驳回<a class="ref" href="#s25">[25]</a>。平台从来没有做过身份核验，用户自证债权因此更难<a class="ref" href="#s13">[13]</a>。</p>
+        <p>据《La Nazione》2024 年 5 月的报道，两个破产程序（BG Services S.r.l. 和 Webcoins Solutions）累计回收超过 7,000 万欧元，主要来自变卖检察院扣押的 NANO，卖出时正值行情较好；已分配超过 5,000 万欧元，5 月 30 日审议第三次也是预计最后一次分配<a class="ref" href="#s16">[16]</a>。本站没有查到每份债权的实际受偿比例。</p>
+        <h3>刑事程序</h3>
+        <p>2020 年 12 月 21 日，意大利邮政警察公布调查结果。调查由罗马的邮政警察总部协调，得到美国 FBI 支持，财政警察参与。佛罗伦萨的预审法官对 Firano 采取预防措施，禁止他经营企业和担任企业管理职务，人身自由不受限制<a class="ref" href="#s8">[8]</a><a class="ref" href="#s26">[26]</a>。涉嫌罪名是 1.2 亿欧元的计算机诈骗、欺诈性破产和自我洗钱，加重情节是滥用系统操作员的身份，受害者超过 23 万人<a class="ref" href="#s8">[8]</a>。警方认定的主要事实见上文“攻击过程”。</p>
+        <p>Firano 否认指控。他在推特上称警方提供了错误信息，并强调自己没有被逮捕<a class="ref" href="#s26">[26]</a>；据《la Repubblica》报道，他一直辩称，指控的前提是他在报案前就知道这些提币，“但这不是真的，我是事件的受害者，没有偷过一欧元”<a class="ref" href="#s17">[17]</a>。检察院在 2021 年 4 月结束侦查<a class="ref" href="#s17">[17]</a>。2022 年 5 月，预审法官 Angela Fantechi 确认全部指控，包括计算机诈骗、欺诈性破产、违反金融中介法规和自我洗钱，裁定 Firano 受审。检方以“间接故意”、与不明身份者共同犯罪的框架提出指控；辩护律师认为，长期收手续费比参与盗窃对他更有利，交易所破产对他本人也是经济损失<a class="ref" href="#s15">[15]</a>。</p>
+        <p>据 2024 年 5 月的报道，审判仍在进行。检方的看法是 Firano 没有“堵住漏洞”，还参与了盗取，并试图把部分币换成现金，报案是为了转移视线；一份鉴定指出他在报案前几天有可疑操作，辩护律师正在反驳<a class="ref" href="#s16">[16]</a>。截至 2026 年 10 月，本站没有检索到一审判决的公开报道。在判决之前，以上都是指控。</p>
+        <h3>美国的两起集体诉讼</h3>
+        <p>2018 年 4 月 6 日，佛罗里达的 Silver Miller 律所代表投资者在纽约东区联邦法院起诉 Nano 及其开发者（Brola v. Nano），同年 9 月 28 日原告自愿撤诉，没有进入实体程序<a class="ref" href="#s11">[11]</a>。2019 年 1 月 3 日，同一律所在加州北区联邦法院提起 Fabian v. LeMahieu，被告包括 Colin LeMahieu、Mica Busch、Zack Shapiro、Troy Retzer，以及 BitGrail 和 Firano，主张 XRB 是未注册证券、Nano 团队把持币者引向了 BitGrail<a class="ref" href="#s11">[11]</a>。</p>
+        <p>2019 年 10 月，法院以一年诉讼时效已过为由驳回证券法诉求，保留了过失、欺诈和过失性虚假陈述三项州法诉求；法院承认意大利法院文件的真实性，但不采纳其中的事实认定<a class="ref" href="#s11">[11]</a>。到 2019 年 10 月，BitGrail 一方还没有应诉或出庭<a class="ref" href="#s11">[11]</a>；2020 年 6 月，法院批准通过 Firano 的意大利律师和破产管理人送达<a class="ref" href="#s12">[12]</a>。案件后来改名 Otto v. Nano。2021 年 7 月，原告撤回集体认证申请，双方同意以不可再诉的方式撤诉；10 月法院驳回被告的制裁申请，认定双方都不需要制裁，案件结束<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <p>这次损失本可以在三处被拦住：提币请求按 id 去重；出账状态以自己的节点为准；每天核对链上余额和账本负债。三者中任何一个在 2017 年生效，一次偶然的多付都不会累积成上千万枚的缺口。</p>
+        <div class="note lesson">
+          <span class="h">给交易所和托管服务的工程师</span>
+          <ul>
+            <li>每笔提币在创建时生成唯一 id，与扣账写进同一个数据库事务；之后的签名、广播和重试都绑定这个 id。节点或钱包接口支持幂等参数的，一律带上。</li>
+            <li>判断一笔出账有没有发出，看自己的节点，不看外部浏览器；状态不明时宁可挂起等人工处理，也不要自动重发。</li>
+            <li>持续对账：热钱包加冷钱包的链上余额，必须覆盖账本上的全部用户余额。差额超过阈值就自动暂停该币种的提币，而不是继续运营。</li>
+            <li>对同一用户的重复出账、短时间内的大额出账设告警和限额。按币种分账户管理，一个币种的缺口不影响其他币种。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所运营者</span>
+          <ul>
+            <li>发现短缺立即暂停相关币种的提币，公开披露并报案。佛罗伦萨法院把“没有立即告知”本身列为不能免责的理由；继续吸纳新用户、用后来者的钱填窟窿，会把一个技术事故变成刑事指控的核心事实。</li>
+            <li>按 100% 准备金管理用户资产，不挪作他用。意大利判决已把这一点和寄托关系联系起来。</li>
+            <li>保留用户身份和操作日志。BitGrail 不做身份核验、不记 IP，出事后不少债权人难以证明自己的损失。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议和钱包开发者</span>
+          <ul>
+            <li>会转出资金的接口应当默认幂等，或者要求调用方提供请求 id。Nano 在事发后几天内补上了这个参数，但已经造成的损失补不回来。</li>
+            <li>当某个交易所成为生态的主要入口时，要在文档里明确节点不提供哪些保证。“所有资金都是安全的”这类公开表态，日后会在诉讼里被逐字引用。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">BitGrail S.r.l.，《Avviso importante / Important notice》，bitgrail.com/news，2018-02-09 21:30 UTC（Internet Archive 存档）。<a href="https://web.archive.org/web/20180209224331/https://bitgrail.com/news">web.archive.org</a></li>
+          <li id="s2">Nano Core Team，《Official Statement Regarding BitGrail Insolvency》，Medium，2018-02-09（Internet Archive 存档）。<a href="https://web.archive.org/web/20180210212851/https://medium.com/@nanocurrency/official-statement-regrading-bitgrail-insolvency-ed4422bf274b">web.archive.org</a></li>
+          <li id="s3">Nano Core Team，《BitGrail Insolvency Update — 2/11/18》，Medium，2018-02-11（Internet Archive 存档）。<a href="https://web.archive.org/web/20180504010745/https://medium.com/@nanocurrency/bitgrail-insolvency-update-2-11-18-9349c9fe1281">web.archive.org</a></li>
+          <li id="s4">Nano Foundation，《Nano Foundation Announces Legal Fund For BitGrail Victims》，Medium，2018-04-09（Internet Archive 存档）。<a href="https://web.archive.org/web/20190624155046/https://medium.com/nanocurrency/nano-foundation-announces-legal-fund-for-bitgrail-victims-b5a39cf02fa8">web.archive.org</a></li>
+          <li id="s5">nanocurrency/nano-node，PR #610《Add RPC send ID for idempotency》，2018-02-12 提交，2018-02-14 合并。<a href="https://github.com/nanocurrency/nano-node/pull/610">github.com</a></li>
+          <li id="s6">nanocurrency/nano-node，《Version 10.0 Released》发布说明，2018-02-15。<a href="https://github.com/nanocurrency/nano-node/releases/tag/V10.0">github.com</a></li>
+          <li id="s7">Nano 文档，《RPC Protocol》中 send 命令一节（nanocurrency/nano-docs 仓库源文件）。<a href="https://github.com/nanocurrency/nano-docs/blob/main/docs/commands/rpc-protocol.md">github.com</a></li>
+          <li id="s8">Polizia di Stato（意大利国家警察），《Scoperto l'autore di una truffa da 120 milioni di euro in cryptovaluta》，2020-12-21。<a href="https://www.poliziadistato.it/articolo/165fe09d895a115662371850">poliziadistato.it</a></li>
+          <li id="s9">Giorgio Maria Mazzoli，《Criptovaluta Nano, fallisce la piattaforma Bitgrail》，Altalex，2019-02-07。对佛罗伦萨法院破产庭 2019-01-21 第 18 号判决的评注（Internet Archive 存档）。<a href="https://web.archive.org/web/20240329160621/https://www.altalex.com/documents/news/2019/02/07/criptovaluta-nano-fallisce-la-piattaforma-bitgrail">web.archive.org</a></li>
+          <li id="s10">Clifford Chance，《Italian court rules that cryptocurrency is "property" and a "means of payment"》，Talking Tech，2019-10-01。<a href="https://www.cliffordchance.com/insights/resources/blogs/talking-tech/en/articles/2019/10/italian-court-rules-that-cryptocurrency-is--property.html">cliffordchance.com</a></li>
+          <li id="s11">美国加州北区联邦地区法院，Fabian v. LeMahieu, et al.，No. 4:19-cv-00054-YGR，《Order Granting in Part and Denying in Part Motion to Dismiss》，2019-10-04。<a href="https://www.govinfo.gov/app/details/USCOURTS-cand-4_19-cv-00054/USCOURTS-cand-4_19-cv-00054-1">govinfo.gov</a></li>
+          <li id="s12">同一法院，同一案件（后改名 Otto v. Nano f/k/a RaiBlocks, et al.），2020-06-19（替代送达）、2021-07-15（撤回集体认证与自愿撤诉）、2021-10-12（驳回制裁申请）裁定。<a href="https://www.govinfo.gov/app/details/USCOURTS-cand-4_19-cv-00054">govinfo.gov</a></li>
+          <li id="s13">Stefano Capaccioli，《Fallisce Bitgrail, la piattaforma italiana per le criptovalute》，Il Sole 24 Ore，2019-01-26。<a href="https://www.ilsole24ore.com/art/fallisce-bitgrail-piattaforma-italiana-le-criptovalute-AE9Dg8LH">ilsole24ore.com</a></li>
+          <li id="s14">Carola Frediani，《Così sono stati sequestrati 15 milioni di euro in bitcoin》，AGI，2018-06-09。<a href="https://www.agi.it/economia/news/2018-06-09/furto_bitcoin_bitgrail-4010463/">agi.it</a></li>
+          <li id="s15">Corriere Fiorentino，《Criptovalute, maxi frode da 120 milioni di euro: a processo l'amministratore di Bitgrail》，2022-05-23。<a href="https://corrierefiorentino.corriere.it/firenze/notizie/cronaca/22_maggio_23/criptovalute-maxi-frode-120-milioni-euro-processo-l-amministratore-piattaforma-aef69cbc-daba-11ec-af96-bd4936e4fc64.shtml">corrierefiorentino.corriere.it</a></li>
+          <li id="s16">Stefano Brogioni，《La bancarotta in criptovaluta. Un tesoro da settanta milioni con i 'Nano' sequestrati dai pm》，La Nazione，2024-05-18。<a href="https://www.lanazione.it/firenze/cronaca/bancarotta-criptovaluta-tesoro-settanta-milioni-5d453894">lanazione.it</a></li>
+          <li id="s17">la Repubblica Firenze，《Il genio fiorentino della criptovaluta e la maxi truffa da 120 milioni di euro, chiuse le indagini sul cyber attacco entrato nella storia》，2021-04-29。<a href="https://firenze.repubblica.it/cronaca/2021/04/29/news/bitcoin_nano_xrp_criptovaluta_hacker_firano_bitgrail-298682008/">firenze.repubblica.it</a></li>
+          <li id="s18">Joseph Young，《BitGrail Vs. Nano: Who Is Responsible For the $150 Million Theft?》，Cointelegraph，2018-02-18。<a href="https://cointelegraph.com/news/bitgrail-vs-nano-who-is-responsible-for-the-150-million-theft">cointelegraph.com</a></li>
+          <li id="s19">Rachel McIntosh，《$170 Million Mistake: BitGrail May Have Been Aware of Bug that Led to Hack》，Finance Magnates，2018-02-14。<a href="https://www.financemagnates.com/cryptocurrency/news/170-million-mistake-bitgrail-may-aware-bug-led-hack/">financemagnates.com</a></li>
+          <li id="s20">The Next Web，《BitGrail will refund $195M worth of stolen Nano – but only if you promise not to sue》，2018-03-15。<a href="https://thenextweb.com/news/bitgrail-nano-hack-cryptocurrency">thenextweb.com</a></li>
+          <li id="s21">David Z. Morris，《BitGrail Cryptocurrency Exchange Claims $195 Million Lost to Hackers》，Fortune，2018-02-11。<a href="https://fortune.com/2018/02/11/bitgrail-cryptocurrency-claims-hack/">fortune.com</a></li>
+          <li id="s22">BleepingComputer，《BitGrail Cryptocurrency Exchange Becomes Insolvent After Losing $170 Million》，2018-02-10。<a href="https://www.bleepingcomputer.com/news/cryptocurrency/bitgrail-cryptocurrency-exchange-becomes-insolvent-after-losing-170-million/">bleepingcomputer.com</a></li>
+          <li id="s23">维基百科，《Nano (cryptocurrency)》。<a href="https://en.wikipedia.org/wiki/Nano_(cryptocurrency)">en.wikipedia.org</a></li>
+          <li id="s24">Tim Copeland，《Court rules against BitGrail's 'The Bomber' over $170 million Nano hack》，Decrypt，2019-01-28。<a href="https://decrypt.co/4679/court-rules-against-bitgrail">decrypt.co</a></li>
+          <li id="s25">CoinGeek，《BitGrail victims won't be allowed to receive compensation in crypto》，2020-02-21。<a href="https://coingeek.com/bitgrail-victims-wont-be-allowed-to-receive-compensation-in-crypto/">coingeek.com</a></li>
+          <li id="s26">Helen Partz，《Bitgrail's founder contributed to $150M loss, Italian authorities allege》，Cointelegraph，2020-12-21。<a href="https://cointelegraph.com/news/bitgrail-s-founder-contributed-to-150m-loss-italian-authorities-allege">cointelegraph.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

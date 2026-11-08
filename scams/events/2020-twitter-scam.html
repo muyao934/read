@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twitter 名人账号被接管后的送币骗局｜区块链诈骗与骗局</title>
+<meta name="description" content="2020 年 7 月 15 日，Obama、Biden、Musk、Gates、Apple 等 Twitter 账号被接管，发出“比特币翻倍返还”的帖子：骗子怎样电话钓鱼拿到 Twitter 的内部工具，受害者转进诈骗地址的钱有多少、去了哪里，交易所怎样拦截，Clark、Sheppard、Fazeli、O'Connor 四人的起诉和判决，以及纽约州金融服务局的调查结论。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2020-twitter-scam">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2020 年　/　<a href="../index.html#cat-pig">杀猪盘与冒充</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Twitter 名人账号被接管后的送币骗局</h1>
+    <p class="lede">2020 年 7 月 15 日，美东时间下午到傍晚，Barack Obama、Joe Biden、Elon Musk、Bill Gates、Apple 等 Twitter 账号接连发出同样的帖子：转来多少比特币，就翻倍返还多少。几个年轻人打电话骗过 Twitter 员工，拿到了能接管任何账号的内部工具。几个小时里，受害者往主诈骗地址转了约 415 笔、约 12.86 枚比特币，一枚也没有还回去。佛州检方称是主谋的 Graham Ivan Clark 被判 3 年，英国人 Joseph James O'Connor 在美国被判 5 年。到 2026 年 11 月，没有查到受害者拿回钱的报道。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">这是一场老式的“送币”骗局，用的却是真账号。骗子冒充 Twitter 的 IT 部门打电话给员工，把他们引到假的 VPN 登录页，拿到凭证和二次验证，再用公司的内部支持工具改掉名人账号绑定的邮箱，登进去发帖<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。Twitter 称，130 个账号被盯上，其中 45 个发了推<a class="ref" href="#s4">[4]</a>。</p>
+        <p>本站按转账是谁签的来分：受害者自己转的账算诈骗，攻击者拿到私钥或账户控制权后自己转走的算被盗（见<a href="../index.html#method">首页“收录与口径”</a>）。这起案子里，骗子接管的是社交账号，不是受害者的钱包；比特币是受害者看了假帖子后自己转出去的，所以写在诈骗站。被骗说出助记词、钱由攻击者转走的社工案，写在被盗站，例如<a href="../../hacks/events/2026-hw-wallet-scam.html">冒充硬件钱包客服骗走 2.82 亿美元</a>。</p>
+        <p>IRS 刑事调查局（IRS-CI）的探员在起诉状里写道，帖子里最常出现的那个地址在 7 月 15 日到 16 日收到约 415 笔转账、约 12.86 枚比特币，按 16 日的币价约 117,457 美元；骗子随后转走了其中的 99.74%，“没有一枚比特币还给受害者”<a class="ref" href="#s2">[2]</a>。纽约州金融服务局（NYDFS）的调查报告写约 11.8 万美元；它统计，Coinbase 一家就拦下约 5,670 笔、约 129.4 万美元的转账<a class="ref" href="#s3">[3]</a>。</p>
+        <p>司法部 7 月 31 日起诉了英国的 Mason Sheppard 和佛州的 Nima Fazeli，第三名被告是未成年人，移交佛州检方<a class="ref" href="#s1">[1]</a>；同一天，佛州 Hillsborough 县检察官以 30 项重罪起诉了 17 岁的 Graham Ivan Clark<a class="ref" href="#s7">[7]</a>。Clark 2021 年认罪，按“青年犯”判 3 年监禁<a class="ref" href="#s8">[8]</a>。买过被盗账号访问权的 Joseph James O'Connor 2023 年在纽约被判 5 年<a class="ref" href="#s6">[6]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>“OG”用户名的地下买卖</h3>
+        <p>NYDFS 写道，攻击者最初看中的是所谓“OG”用户名，也就是早期用户注册的单个单词、字母或数字，例如 @y、@6。这类用户名在圈子里象征资历，被劫持后能卖几千美元<a class="ref" href="#s3">[3]</a>。《纽约时报》采访了参与者，他们说这群人是因为痴迷这类用户名才在 Discord 上认识的<a class="ref" href="#s15">[15]</a>。</p>
+        <p>交易多在 OGUsers 论坛上进行，这是一个专做账号劫持的论坛<a class="ref" href="#s14">[14]</a>。案发前几天，一个叫“Chaewon”的用户在上面发帖，说能改掉任何 Twitter 账号绑定的邮箱，每个 250 美元，直接交出账号要 2,500 到 3,000 美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s14">[14]</a>。Krebs on Security 写道，这个圈子和 SIM 卡劫持（SIM swap）的团伙有交集，SIM 卡劫持就是骗电信公司把受害者的手机号转到自己的卡上，再用短信验证码登进别人的账户<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>冒充名人的送币骗局</h3>
+        <p>“转来多少，翻倍返还”的骗局早就有了。Chainalysis 把这类骗局叫作“信任交易”（trust trading）：骗子冒充名人或公司，在社交媒体上请人先转币，许诺之后返还更多；据开源的 CryptoScamDB，这是用户报告得最多的一类骗局<a class="ref" href="#s13">[13]</a>。NYDFS 引 Bitcoin.com 的报道说，2018 年 6 月以来自报的加密货币骗局里约 71% 是这一类；它还举例，2018 年 11 月有人劫持了几个认证账号，把名字和头像改成 Musk 的样子<a class="ref" href="#s3">[3]</a>。</p>
+        <p>Chainalysis 指出，这次和以往的区别只在一点：帖子是从名人的真账号发出来的，而不是从假冒的账号<a class="ref" href="#s13">[13]</a>。NYDFS 认为，攻击者专挑带蓝色认证标的账号，就是知道认证账号发的帖子显得更可信<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>疫情中的 Twitter</h3>
+        <p>据 NYDFS，Twitter 自 2019 年 12 月起就没有首席信息安全官（CISO）。2020 年 3 月，公司因为疫情全员远程办公，VPN 频繁出问题，员工常要找 IT 部门帮忙；Twitter 没有为此增加补偿性的安全控制<a class="ref" href="#s3">[3]</a>。能用内部账号工具的员工有 1,000 多人，他们负责账号维护和客服、内容审核和处理违规举报<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>7 月 14 日到 16 日的时刻据 NYDFS 报告，原文是美东夏令时，这里换算成 UTC（美东时间加 4 小时）<a class="ref" href="#s3">[3]</a>。</p>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li><time>2019-12</time><div class="ev">Twitter 的首席信息安全官离任，此后七个月这个职位空缺<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2020-03</time><div class="ev">Twitter 全员转为远程办公<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2020-04</time><div class="ev">OGUsers 论坛被黑，数据库被公开。FBI 9 日前后拿到一份，后来用里面的登录 IP 和私信找到 Sheppard<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2020-07-14</time><div class="ev">美东时间下午，有人冒充 IT 部门给几名 Twitter 员工打电话，称要处理 VPN 问题<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2020-07-15</time><div class="ev">约 07:00 至 14:00 UTC，几个人在 Discord 上商量接管和出售 OG 用户名，收比特币<a class="ref" href="#s3">[3]</a>。快到 18:00 UTC 时，被劫持的 OG 账号贴出了内部工具的截图<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2020-07-15</time><div class="ev">18:16 UTC 接管加密货币交易员 @AngeloBTC；19:18 UTC 接管 Binance，发出第一条带诈骗地址的帖子；19:26 至 20:12 UTC 又接管十个加密货币相关账号，包括 Coinbase、Gemini 和 Square<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>2020-07-15</time><div class="ev">20:17 至 22:05 UTC，Musk、Gates、Kanye West、Kim Kardashian、Biden、Buffett、Mayweather、Uber、Apple 等账号发出送币帖，有的反复发<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2020-07-15</time><div class="ev">21:45 UTC，Twitter 首次发声明说“知道发生了安全事件”；22:18 UTC 确认已暂时禁止许多认证账号发推和改密码<a class="ref" href="#s3">[3]</a>。22:59 UTC，NYDFS 要求它监管的加密货币公司封掉骗子的地址<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2020-07-16</time><div class="ev">00:41 UTC，Twitter 说大多数账号恢复发推。当天纽约州州长要求 NYDFS 调查，次日 NYDFS 发出传票<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2020-07-17</time><div class="ev">Twitter 发布第一份事件说明：130 个账号被盯上，45 个发了推<a class="ref" href="#s4">[4]</a>。《纽约时报》刊出对几名参与者的采访<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2020-07-22</time><div class="ev">Chainalysis 公布追踪：三个诈骗地址共收到 13.14 枚比特币<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2020-07-30</time><div class="ev">Twitter 更新说明，称这是“电话鱼叉式钓鱼”<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>2020-07-31</time><div class="ev">司法部起诉 Sheppard 和 Fazeli，一名未成年被告移交佛州检方<a class="ref" href="#s1">[1]</a>。Clark 当天凌晨在坦帕被捕，被控 30 项重罪<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2020-09</time><div class="ev">Twitter 要求员工使用防钓鱼的硬件安全密钥<a class="ref" href="#s25">[25]</a>；月底宣布聘任新的首席信息安全官<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2020-10-14</time><div class="ev">NYDFS 公布调查报告，建议为大型社交媒体公司设专门的网络安全监管<a class="ref" href="#s3">[3]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def key"><time>2021-03-16</time><div class="ev">Clark 在佛州认罪，按“青年犯”判 3 年监禁，之后 3 年缓刑<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2021-07-21</time><div class="ev">O'Connor 应美国请求在西班牙 Estepona 被捕<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2023-04-26</time><div class="ev">O'Connor 从西班牙引渡到美国，5 月 9 日认罪<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-05-18</time><div class="ev">Fazeli 认一项轻罪，当庭判一年无监督缓刑<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2023-06-23</time><div class="ev">O'Connor 在纽约南区被判 5 年监禁<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2025-08</time><div class="ev">Sheppard 的联邦起诉状案卷里，22 日有一份撤案动议，26 日有法院对它的裁定；两份文书都没有公开<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2025-11</time><div class="ev">英国皇家检察署（CPS）拿到民事追缴令，扣下 O'Connor 的 42 枚比特币和其他加密资产，约值 410 万英镑<a class="ref" href="#s24">[24]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>这起骗局有两层。上一层是黑客手段：骗 Twitter 员工，拿到接管账号的工具。下一层是普通的送币骗局：用名人的账号发帖，让读到的人自己把比特币转过来。两层的分界，就是本站把它算作诈骗的原因。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 470" role="img" aria-labelledby="tw-flow-t tw-flow-d">
+            <title id="tw-flow-t">骗子拿到的是账号，钱是受害者自己转的</title>
+            <desc id="tw-flow-d">左列是账号这一层：骗子冒充 IT 部门打电话给 Twitter 员工，把员工引到假 VPN 登录页，拿到凭证和二次验证；用内部支持工具改掉名人账号绑定的邮箱，重置密码后登录。账号发出送币帖。右列是钱这一层：读到帖子的人从自己的钱包或交易所账户转比特币到诈骗地址，约 415 笔、约 12.86 枚；骗子转走 99.74%，部分进了混币服务，没有返还。交易所封掉地址，Coinbase 一家拦下约 129.4 万美元的转账。</desc>
+            <defs>
+              <marker id="tw-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="tw-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="tw-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t b" x="190" y="24" text-anchor="middle">账号这一层：骗子接管</text>
+            <text class="d-t b" x="570" y="24" text-anchor="middle">钱这一层：受害者自己转</text>
+            <line class="d-line dash" x1="380" y1="40" x2="380" y2="440"/>
+            <rect class="d-box" x="30" y="44" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="190" y="68" text-anchor="middle">冒充 IT 部门打电话给员工</text>
+            <text class="d-t s" x="190" y="89" text-anchor="middle">说要处理 VPN 故障，引到假登录页</text>
+            <rect class="d-box" x="30" y="148" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="190" y="172" text-anchor="middle">拿到凭证和二次验证</text>
+            <text class="d-t s" x="190" y="193" text-anchor="middle">同步登录真 VPN，进入内部支持工具</text>
+            <rect class="d-box" x="30" y="252" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="190" y="276" text-anchor="middle">改掉账号绑定的邮箱</text>
+            <text class="d-t s" x="190" y="297" text-anchor="middle">重置密码后登录，130 个账号被盯上</text>
+            <rect class="d-box atk" x="30" y="356" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="190" y="380" text-anchor="middle">名人账号发送币帖</text>
+            <text class="d-t s" x="190" y="401" text-anchor="middle">45 个账号发了推，“转 1,000 返 2,000”</text>
+            <rect class="d-box" x="410" y="356" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="380" text-anchor="middle">读者从自己的钱包转币</text>
+            <text class="d-t s" x="570" y="401" text-anchor="middle">私钥一直在受害者手里</text>
+            <rect class="d-box atk" x="410" y="252" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="276" text-anchor="middle">主诈骗地址 bc1qxy…0wlh</text>
+            <text class="d-t s" x="570" y="297" text-anchor="middle">约 415 笔，约 12.86 枚 BTC</text>
+            <rect class="d-box atk" x="410" y="148" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="172" text-anchor="middle">转走 99.74%，没有返还</text>
+            <text class="d-t s" x="570" y="193" text-anchor="middle">归集后分散，一部分进了混币服务</text>
+            <rect class="d-box def" x="410" y="44" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="68" text-anchor="middle">交易所封掉诈骗地址</text>
+            <text class="d-t s" x="570" y="89" text-anchor="middle">Coinbase 拦下约 129.4 万美元的转账</text>
+            <line class="d-line" x1="190" y1="102" x2="190" y2="144" marker-end="url(#tw-ah)"/>
+            <line class="d-line" x1="190" y1="206" x2="190" y2="248" marker-end="url(#tw-ah)"/>
+            <line class="d-line atk" x1="190" y1="310" x2="190" y2="352" marker-end="url(#tw-ah-atk)"/>
+            <line class="d-line atk" x1="350" y1="385" x2="406" y2="385" marker-end="url(#tw-ah-atk)"/>
+            <line class="d-line atk" x1="570" y1="356" x2="570" y2="314" marker-end="url(#tw-ah-atk)"/>
+            <line class="d-line atk" x1="570" y1="252" x2="570" y2="210" marker-end="url(#tw-ah-atk)"/>
+            <path class="d-line def dash" d="M730,73 H748 V333 H580" marker-end="url(#tw-ah-def)"/>
+          </svg>
+          </div>
+          <figcaption>左列据 NYDFS 报告和 Twitter 的说明<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>，右列据 IRS-CI 探员的宣誓书、Chainalysis 和 NYDFS<a class="ref" href="#s2">[2]</a><a class="ref" href="#s13">[13]</a><a class="ref" href="#s3">[3]</a>。红色是骗局和受害者的钱，蓝色虚线是交易所的拦截。骗子从头到尾没有碰过受害者的私钥。</figcaption>
+        </figure>
+        <h3>电话钓鱼拿到内部工具</h3>
+        <p>NYDFS 调查后写道，骗子打电话给几名 Twitter 员工，自称是 IT 部门的服务台，说是来处理员工报告的 VPN 问题。远程办公以后，VPN 出问题在 Twitter 很常见。骗子把员工引到一个和公司 VPN 登录页一模一样、域名相近的钓鱼网站；员工在假页面输入凭证时，骗子同步在真网站上输入，真网站随之向员工推送二次验证请求，有些员工点了批准<a class="ref" href="#s3">[3]</a>。Twitter 自己的说法是“电话鱼叉式钓鱼”（phone spear phishing），针对的是少数员工<a class="ref" href="#s4">[4]</a><a class="ref" href="#s18">[18]</a>。</p>
+        <p>据一名协助 FBI 调查的研究者，骗子事先在 LinkedIn 上找可能有工具权限的员工，借招聘功能拿到他们的手机号；远程办公也让员工没法当面核实来电的人<a class="ref" href="#s9">[9]</a>。NYDFS 没有发现员工有意配合；有员工把可疑电话报给了内部，但至少一人信了<a class="ref" href="#s3">[3]</a>。</p>
+        <p>第一个被攻破的员工没有接管账号的权限。骗子用他的账号浏览公司内网，学会怎样进入其他内部应用，第二天再去找有权限的员工下手<a class="ref" href="#s3">[3]</a>。拿到工具以后，他们能看到账号绑定的邮箱和电话，能改掉邮箱、重置密码，然后登进账号发推<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>帖子的话术</h3>
+        <p>名人账号的帖子大同小异，下面是 Biden 账号的一条<a class="ref" href="#s8">[8]</a>。</p>
+        <blockquote><p>我在回馈社区。所有转到下面地址的比特币都会翻倍返还。你转 1,000 美元，我返 2,000 美元。只做 30 分钟，祝愉快。</p><cite>Joe Biden 的 Twitter 账号被接管后发出的帖子，据《坦帕湾时报》</cite></blockquote>
+        <p>Gates 账号的版本是：“大家都要我回馈。你转 1,000 美元，我返你 2,000 美元。”<a class="ref" href="#s21">[21]</a> 加密货币公司账号的帖子换了个说法：Binance 账号说和“CryptoForHealth”合作，向社区回馈 5,000 枚比特币，附上一个链接<a class="ref" href="#s14">[14]</a>。IRS-CI 探员写道，有的帖子直接贴出比特币地址，有的引到 cryptoforhealth.com 网站，网站上是同一个地址<a class="ref" href="#s2">[2]</a>。</p>
+        <p>这套话术有三个要素：名人的真账号，翻倍的承诺，很短的期限。Chainalysis 还发现，三个诈骗地址收到的 13.14 枚比特币里，约 2 万美元来自一个疑似骗子自己的地址。它说这是骗子的常用手法：先往诈骗地址里打钱，让在区块链浏览器上查地址的人以为已经有很多人转了<a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>上午：卖用户名</h3>
+        <p>NYDFS 写道，整个事件大约在 24 小时里完成<a class="ref" href="#s3">[3]</a>。7 月 15 日一早，骗子先拿工具接管 OG 用户名卖钱。IRS-CI 探员调取的 Discord 记录里，化名“Kirk#5270”的人对别人说：“我在 Twitter 工作。任何 @ 我都能给你弄到。”他给化名“Rolex#0373”的人看了内部管理工具的截图，对方回了一句“我加入”；他还给化名“ever so anxious#0001”的人看了 @bumblebee、@sc、@vague 等账号的管理页面，后者开始替他找买家，一次报价“@xx 5,000 美元，@dark 3,000 美元”<a class="ref" href="#s2">[2]</a>。司法部称“Rolex”是 Fazeli，“Chaewon”是 Sheppard；探员认定“ever so anxious”和 OGUsers 上的“Chaewon”是同一人<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。TechCrunch 写道，Kirk 就是 Clark<a class="ref" href="#s23">[23]</a>。</p>
+        <p>《纽约时报》采访的两名参与者，“lol”和“ever so anxious”，说他们只帮忙买卖了一些不太知名的账号，美东时间下午约 3:30 Kirk 开始攻击高知名度账号以后，就没再和他合作<a class="ref" href="#s15">[15]</a>。NYDFS 引这篇报道写道，@AngeloBTC 那批私信之后，Sheppard 和 Fazeli 不再参与，继续下去的是 Clark，可能还有一名身份不明的青少年<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>下午：从加密货币账号到名人账号</h3>
+        <p>美东时间下午 2 点前，几个被劫持的 OG 账号贴出了内部工具的截图。2:16（18:16 UTC），骗子接管加密货币交易员 @AngeloBTC，用私信向别人发收款的比特币地址；3:18（19:18 UTC），他们接管 Binance 的账号，从此改为直接发帖要钱。接下来不到一小时，又有十个加密货币相关账号被用来发帖<a class="ref" href="#s3">[3]</a>。</p>
+        <p>4:17 到 6:05（20:17 至 22:05 UTC），目标换成了拥有数百万粉丝的认证账号：Musk、Gates、Kanye West、Kim Kardashian、当时的民主党总统候选人 Biden、Buffett、Mayweather、Uber 和 Apple；有的账号被反复用来发同样的帖子<a class="ref" href="#s3">[3]</a>。起诉状列出的被盗账号还有 Obama、Bezos、Bloomberg 和以色列总理 Netanyahu<a class="ref" href="#s2">[2]</a>。白宫说特朗普的账号没有受影响<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>傍晚：Twitter 关掉认证账号</h3>
+        <p>Twitter 早上就接到员工报告可疑的登录和电话，事件响应团队还在调查，加密货币公司的账号就开始被接管了；花了几个小时，才把骗子赶出系统<a class="ref" href="#s3">[3]</a>。为了止损，它暂时禁止许多认证账号发推和改密码，锁住 30 天内改过密码的账号，还暂时不让用户发比特币地址<a class="ref" href="#s3">[3]</a><a class="ref" href="#s21">[21]</a>。连带的后果是，美国国家气象局的一个办公室发不出龙卷风警报，NYDFS 自己的账号也停了几个小时<a class="ref" href="#s3">[3]</a>。公司内部大幅收回员工的系统权限，每个员工都要在视频会议里当着主管的面改密码，从 CEO Jack Dorsey 开始<a class="ref" href="#s3">[3]</a>。</p>
+        <p>Twitter 后来统计，130 个账号里，45 个被用来发推，36 个的私信箱被打开，其中包括荷兰的一名民选官员，7 个被下载了“你的 Twitter 数据”存档<a class="ref" href="#s4">[4]</a>。NYDFS 说，这名荷兰官员是议员 Geert Wilders<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <h3>主诈骗地址</h3>
+        <p>大部分帖子贴的是同一个地址，<code>bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</code><a class="ref" href="#s13">[13]</a>。IRS-CI 探员在起诉状里写道，7 月 15 日到 16 日，这个地址所在的钱包共有 426 笔交易：约 415 笔转入，合计约 12.86 枚比特币；11 笔转出，合计 12.83 枚，占转入的 99.74%，钱包里只剩约 274 美元。探员写道：“没有一枚比特币还给受害者。”<a class="ref" href="#s2">[2]</a></p>
+        <h3>归集和混币</h3>
+        <p>Chainalysis 一周后的追踪显示，帖子里出现过三个地址，诈骗款大多归集到地址 <code>1Ai52Uw6usjhpcDrwSmkUvjuqLpcznUuyF</code>。这个地址 2020 年 5 月就开始用，7 月 15 日另收了 7.88 枚没在 Twitter 上出现过的比特币，一生共收约 21 枚。到 7 月 23 日美东时间下午 1 点，约 5.5 枚还在骗子控制的 23 个钱包里，10 枚进了 Wasabi Wallet 等混币服务，5.5 枚转到了其他机构<a class="ref" href="#s13">[13]</a>。起诉状里，这个地址正是“Kirk#5270”在 Discord 上反复发给买家的收款地址<a class="ref" href="#s2">[2]</a>，所以它收到的钱里也有卖用户名的钱，不全是受害者的。</p>
+        <h3>顺着钱找到人</h3>
+        <p>IRS-CI 称，它的网络犯罪小组分析区块链，识别出了两名黑客<a class="ref" href="#s1">[1]</a>。起诉状写了一条线索：Sheppard 的比特币簇在 7 月 15 日向 Kirk 的地址转了约 3.69 枚，而他在 Coinbase 和 Binance 开户时都交过自己的英国驾照照片；Fazeli 也用驾照在 Coinbase 做过验证<a class="ref" href="#s2">[2]</a><a class="ref" href="#s20">[20]</a>。另一条线索是 FBI 在 2020 年 4 月拿到的 OGUsers 泄露数据库，里面有用户的私信和登录 IP<a class="ref" href="#s2">[2]</a>。</p>
+        <p>司法部的新闻稿里，Chainalysis 是协助调查的私营公司之一<a class="ref" href="#s1">[1]</a>。本站没有查到执法机构公布诈骗款被扣押或冻结的数额。《纽约时报》报道，特勤局 2020 年 4 月就从 Clark 那里扣押过 70 多万美元的比特币，那是另一宗案子<a class="ref" href="#s16">[16]</a>。英国 CPS 2025 年从 O'Connor 那里追缴的 42 枚比特币，Sky News 只说和这场骗局“有关联”，没有说明其中有多少来自受害者<a class="ref" href="#s24">[24]</a>。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>被骗的人</h3>
+        <p>佛州 Hillsborough 县检察官 Andrew Warren 说，账号被冒用的名人“不是主要的受害者”，这场骗局是冲着全美各地普通人的钱去的<a class="ref" href="#s7">[7]</a>。NYDFS 写道，被盗账号的粉丝动辄数百万，假帖子传到了全球数以百万计的潜在受害者面前<a class="ref" href="#s3">[3]</a>；BBC 估计约 3.5 亿 Twitter 用户看到了这些帖子<a class="ref" href="#s22">[22]</a>。受害者的身份没有公开。转账多是小额的：约 415 笔合计不到 13 枚比特币，平均每笔不到 0.04 枚<a class="ref" href="#s2">[2]</a>。</p>
+        <p>名人和公司的账号本身也受了损失。36 个账号的私信箱被打开，7 个账号的完整数据存档被下载；Twitter 说这 7 个都不是认证账号<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>各方的金额</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>口径</th><th class="n">金额（美元）</th></tr></thead>
+          <tbody>
+            <tr><td>IRS-CI 探员宣誓书</td><td>主地址，7 月 15 至 16 日约 415 笔转入、约 12.86 枚，按 16 日币价</td><td class="n">约 117,458<a class="ref" href="#s2">[2]</a></td></tr>
+            <tr><td>司法部新闻稿</td><td>诈骗地址，400 多笔转入</td><td class="n">10 万多<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>Krebs on Security</td><td>主地址，7 月 15 日 383 笔、近 13 枚</td><td class="n">约 11.7 万<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>NYDFS 报告</td><td>骗子骗走的比特币</td><td class="n">约 11.8 万<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>Chainalysis</td><td>三个地址共 13.14 枚，含约 2 万美元疑似骗子自己转入</td><td class="n">约 12 万<a class="ref" href="#s13">[13]</a></td></tr>
+            <tr><td>《纽约时报》</td><td>骗局拿到的比特币，没有说明口径</td><td class="n">18 万多<a class="ref" href="#s16">[16]</a></td></tr>
+            <tr><td>NYDFS 报告</td><td>Gemini、Square、Coinbase 的客户在地址被封前转出</td><td class="n">约 2.2 万<a class="ref" href="#s3">[3]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">数字为什么对不上</span><p>几家统计的地址数、时间段和币价都不同：IRS-CI 只算主地址两天里的转入，按 7 月 16 日每枚 9,133.56 美元折算<a class="ref" href="#s2">[2]</a>；Krebs 只算 15 日一天<a class="ref" href="#s14">[14]</a>；Chainalysis 算了三个地址，里面约 2 万美元可能是骗子自己转的<a class="ref" href="#s13">[13]</a>，扣掉以后受害者的钱约 10 万美元。《纽约时报》的 18 万多美元没有说明怎么算的<a class="ref" href="#s16">[16]</a>，可能把归集地址当天另外收到的钱也算进去了，本站不能确认。归集地址收到的钱里还有卖用户名的收入<a class="ref" href="#s2">[2]</a>，不能整个算作受害者的损失。本站顶部用 IRS-CI 的数字，它是唯一在法庭文件里写明了笔数、枚数和币价的。</p></div>
+        <h3>被拦下的转账</h3>
+        <p>NYDFS 调查了它监管的 25 家加密货币公司，22 份回复里有 15 家拦截过转向诈骗地址的转账。Coinbase、Gemini 和 Square 都在自家账号被盗后 40 分钟内封掉了骗子的地址<a class="ref" href="#s3">[3]</a>。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>交易所</th><th>拦下的转账</th><th class="n">金额（美元）</th></tr></thead>
+          <tbody>
+            <tr><td>Coinbase</td><td>约 5,670 笔</td><td class="n">约 1,294,000<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>Square</td><td>358 笔</td><td class="n">约 51,000<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>Gemini</td><td>2 笔</td><td class="n">约 1,800<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>Bitstamp</td><td>1 笔</td><td class="n">约 250<a class="ref" href="#s3">[3]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>Coinbase 案发后几天对外的说法小得多：它拦下了 1,000 多名客户、约 28 万美元的转账，约 14 名用户在封地址之前转出了约 3,000 美元<a class="ref" href="#s19">[19]</a>。一个按客户数说，一个按尝试的笔数统计，本站并列，不做取舍。按 NYDFS 的数字，四家公司客户被骗走的钱只占被拦金额的 1.63%<a class="ref" href="#s3">[3]</a>。拦截只对从这些交易所转出的钱有效，从自托管钱包转出的钱没有人能拦。</p>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>案子由 FBI 旧金山分部调查，IRS-CI、特勤局、圣克拉拉县警方和佛州执法局协助，英国国家犯罪调查局（NCA）也参与了<a class="ref" href="#s1">[1]</a>。从案发到起诉只用了两周多。下表只写司法机关和主流媒体公开点名的人；NYDFS 认为至少还有一人参与，没有公开身份<a class="ref" href="#s3">[3]</a>。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>人</th><th>指控</th><th>结果</th></tr></thead>
+          <tbody>
+            <tr><td>Graham Ivan Clark，坦帕，作案时 17 岁</td><td>佛州 Hillsborough 县检察官起诉 30 项重罪：有组织欺诈 1 项，通信欺诈 17 项，冒用个人信息 11 项，未经授权访问计算机 1 项<a class="ref" href="#s7">[7]</a></td><td>2021 年 3 月认罪，按“青年犯”判 3 年监禁、3 年缓刑，已羁押的 229 天折抵<a class="ref" href="#s8">[8]</a><a class="ref" href="#s17">[17]</a></td></tr>
+            <tr><td>Mason Sheppard，英国 Bognor Regis，19 岁</td><td>加州北区联邦起诉状：电信欺诈共谋、洗钱共谋、故意访问受保护计算机<a class="ref" href="#s1">[1]</a></td><td>没有引渡到美国的报道；2025 年 8 月案卷有撤案动议和法院裁定，内容没有公开<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>Nima Fazeli，奥兰多，22 岁</td><td>加州北区联邦起诉状：协助教唆故意访问受保护计算机<a class="ref" href="#s1">[1]</a>；2023 年改为一项轻罪<a class="ref" href="#s11">[11]</a></td><td>2023 年 5 月 18 日认罪，判一年无监督缓刑和 25 美元特别评估费<a class="ref" href="#s11">[11]</a></td></tr>
+            <tr><td>Joseph James O'Connor（PlugwalkJoe），英国人</td><td>加州北区的 7 项罪名，涉及 Twitter、TikTok、Snapchat 账号和网络跟踪；并入纽约南区的 SIM 卡劫持盗币案<a class="ref" href="#s6">[6]</a></td><td>2023 年 6 月 23 日判 5 年监禁、3 年监督释放，没收 794,012.64 美元<a class="ref" href="#s6">[6]</a></td></tr>
+          </tbody>
+        </table></div>
+        <h3>Clark：在州法院受审</h3>
+        <p>司法部说，联邦法院审理未成年人的程序是保密的，所以把第三名被告移交给了佛州第 13 司法区的检察官<a class="ref" href="#s1">[1]</a>。佛州检方说，州法律允许在这类财务欺诈案里把未成年人当成年人起诉，“他住在坦帕，在这里犯罪，也就在这里受审”<a class="ref" href="#s7">[7]</a>。按“青年犯”判刑让他避开了成年人 10 年的最低刑期；认罪协议还规定，没有执法机关的许可和监督，他不能用电脑<a class="ref" href="#s9">[9]</a>。本站没有查到他服刑期满以后的公开报道。</p>
+        <h3>Sheppard 和 Fazeli：中间人</h3>
+        <p>两人都没有被控发送币帖。按 NYDFS 和《纽约时报》的说法，他们在高知名度账号被接管之前就退出了<a class="ref" href="#s3">[3]</a><a class="ref" href="#s15">[15]</a>。Fazeli 的案子拖了近三年，2023 年 5 月检方改提一项轻罪，他当天认罪，当庭判了缓刑<a class="ref" href="#s11">[11]</a>。Sheppard 在英国，起诉状 2020 年 7 月 31 日解封<a class="ref" href="#s10">[10]</a>；本站没有查到他被引渡或在英国受审的报道。</p>
+        <h3>O'Connor：买过账号访问权</h3>
+        <p>司法部说，O'Connor 的同伙用社交工程拿到 Twitter 的管理工具，一部分账号自己拿来行骗，一部分卖给别人；O'Connor 和人商量购买多个 Twitter 账号的非法访问权，同意花 1 万美元买其中一个，他盯上的一些账号随后被转走<a class="ref" href="#s6">[6]</a>。他认的罪里，和 Twitter 有关的是计算机入侵共谋和两项计算机入侵；判决没收的 794,012.64 美元，对应的是 2019 年他用 SIM 卡劫持从曼哈顿一家加密货币公司盗走的币，不是送币骗局的钱<a class="ref" href="#s6">[6]</a>。据 TechCrunch，检方要求至少判 7 年，Rakoff 法官说他此前已羁押两年多，大概会服一半刑期<a class="ref" href="#s23">[23]</a>。</p>
+        <p>2025 年 11 月，英国 CPS 拿到民事追缴令，扣下他的 42 枚比特币和其他加密资产，约 410 万英镑。检察官 Adrian Foster 说，即使一个人没有在英国定罪，也能确保他不从犯罪中获益<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>Twitter 和监管</h3>
+        <p>Twitter 事后大幅收紧了内部工具的权限，说会持续做全公司的钓鱼演练<a class="ref" href="#s4">[4]</a>；9 月起要求员工使用防钓鱼的硬件安全密钥，并给美国选举相关账号默认开启密码重置保护<a class="ref" href="#s25">[25]</a>。据 TechCrunch，事后受聘为安全负责人的 Peiter “Mudge” Zatko 在 2022 年的举报材料里称它是“社交平台史上最大的入侵”<a class="ref" href="#s23">[23]</a>。</p>
+        <p>NYDFS 的结论是，Twitter 被“不复杂的攻击”攻破，说明自律不够；大型社交媒体公司没有专门的联邦或州监管机构，它建议把最大的几家认定为系统重要性机构，设专门的网络安全监管<a class="ref" href="#s12">[12]</a><a class="ref" href="#s3">[3]</a>。这是建议，本站没有查到它被采纳的报道。到 2026 年 11 月，也没有查到受害者从任何扣押或追缴中拿回钱的报道。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">看到“送币”帖子时</span>
+          <ul>
+            <li>不管是谁发的，“转来多少，翻倍返还”都是骗局。这一天的帖子来自真账号，还带着蓝色认证标<a class="ref" href="#s3">[3]</a>；认证标只能说明账号是谁的，不能说明此刻是谁在操作。</li>
+            <li>“只做 30 分钟”这类期限，是为了不让人有时间核实<a class="ref" href="#s8">[8]</a>。真正的活动不会因为你晚到几分钟就取消。</li>
+            <li>这一天连 Binance、Coinbase、Gemini 这些交易所自己的账号也在发同样的帖子<a class="ref" href="#s3">[3]</a>，所以不能拿另一个被盗账号来“核实”。要去官网、官方公告或别的渠道查。</li>
+            <li>在区块链浏览器上看到诈骗地址已经收了很多钱，不代表别人拿到了返还。Chainalysis 认为其中约 2 万美元是骗子自己转进去造势的<a class="ref" href="#s13">[13]</a>；主地址转出的钱也没有一笔回到转入者手里<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">转账之后</span>
+          <ul>
+            <li>比特币转账不能撤回。这次被拦下的，都是交易所在地址被封后挡住的转账；Coinbase 说，封地址之前已有约 14 名用户转了出去<a class="ref" href="#s19">[19]</a>。从自托管钱包转出的钱没有这道检查。</li>
+            <li>被骗了要尽快报案，并告诉交易所诈骗地址。这起案子里，IRS-CI 正是靠交易所的开户资料，把比特币地址和真人对上的<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给管理重要账号的公司和员工</span>
+          <ul>
+            <li>自称 IT 部门、要你在某个链接上登录的来电，先挂掉，再按公司公布的号码打回去核实。这次的骗子事先查过员工的资料，说得出对方的职位和工作内容<a class="ref" href="#s3">[3]</a><a class="ref" href="#s9">[9]</a>。</li>
+            <li>短信验证码和手机推送批准挡不住实时中转凭证的钓鱼页面；Twitter 事后改用的是防钓鱼的硬件安全密钥<a class="ref" href="#s25">[25]</a>。</li>
+            <li>能改账号邮箱、重置密码的工具，用的人越少越好。NYDFS 指出，案发时 Twitter 有 1,000 多名员工能用这套工具<a class="ref" href="#s3">[3]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国司法部，《Three Individuals Charged for Alleged Roles in Twitter Hack》，2020-07-31。<a href="https://www.justice.gov/archives/opa/pr/three-individuals-charged-alleged-roles-twitter-hack">justice.gov</a></li>
+          <li id="s2">United States v. Mason John Sheppard，刑事起诉状及 IRS-CI 探员宣誓书，加州北区联邦法院 3:20-mj-70996，2020-07-23 提交（经 CourtListener RECAP 读取）。<a href="https://storage.courtlistener.com/recap/gov.uscourts.cand.362899/gov.uscourts.cand.362899.1.0_2.pdf">courtlistener.com</a></li>
+          <li id="s3">纽约州金融服务局（NYDFS），《Twitter Investigation Report: Report on Investigation of Twitter’s July 15, 2020 Cybersecurity Incident and the Implications for Election Security》，2020-10-14（Internet Archive 存档）。<a href="https://web.archive.org/web/20201015200917/https://www.dfs.ny.gov/Twitter_Report">web.archive.org</a></li>
+          <li id="s4">Twitter，《An update on our security incident》，2020-07-17 发布，2020-07-30 更新（Internet Archive 存档）。<a href="https://web.archive.org/web/20231205025752/https://blog.twitter.com/en_us/topics/company/2020/an-update-on-our-security-incident">web.archive.org</a></li>
+          <li id="s5">美国司法部加州北区检察官办公室，《Man Arrested in Connection with Alleged Role in July 2020 Twitter Hack》，2021-07-21。<a href="https://www.justice.gov/usao-ndca/pr/man-arrested-connection-alleged-role-july-2020-twitter-hack">justice.gov</a></li>
+          <li id="s6">美国司法部纽约南区检察官办公室，《U.K. Citizen Sentenced To Five Years In Prison For Cybercrime Offenses》，2023-06-23；认罪见同署《U.K. Citizen Extradited And Pleads Guilty To Cybercrime Offenses》，2023-05-09。<a href="https://www.justice.gov/usao-sdny/pr/uk-citizen-sentenced-five-years-prison-cybercrime-offenses">justice.gov</a></li>
+          <li id="s7">佛罗里达州第 13 司法区检察官办公室，《Hillsborough State Attorney’s Office tapped to prosecute worldwide “Bit-Con” hack of prominent Twitter users》，2020-07-31（Internet Archive 存档）。<a href="https://web.archive.org/web/20200731223446/https://www.sao13th.com/2020/07/hillsborough-state-attorneys-office-tapped-to-prosecute-worldwide-bit-con-hack-of-prominent-twitter-users/">web.archive.org</a></li>
+          <li id="s8">Tampa Bay Times，《Tampa Twitter hacker agrees to three years in prison in plea deal》，2021-03-16。<a href="https://www.tampabay.com/news/crime/2021/03/16/tampa-twitter-hacker-agrees-to-three-years-in-prison-in-plea-deal/">tampabay.com</a></li>
+          <li id="s9">Ars Technica（Dan Goodin），《I was a teenage Twitter hacker. Graham Ivan Clark gets 3-year sentence》，2021-03-17。<a href="https://arstechnica.com/tech-policy/2021/03/i-was-a-teenage-twitter-hacker-graham-ivan-clark-gets-3-year-sentence/">arstechnica.com</a></li>
+          <li id="s10">United States v. Sheppard，加州北区联邦法院 3:20-mj-70996 案卷（CourtListener，读取于 2026-11）。<a href="https://www.courtlistener.com/docket/17404542/united-states-v-sheppard/">courtlistener.com</a></li>
+          <li id="s11">United States v. Fazeli，加州北区联邦法院 3:23-cr-00132 案卷（CourtListener，读取于 2026-11）。<a href="https://www.courtlistener.com/docket/67326184/united-states-v-fazeli/">courtlistener.com</a></li>
+          <li id="s12">纽约州金融服务局（NYDFS），《Department of Financial Services Calls for Regulation of Social Media Giants After Twitter Hack Investigation》，新闻稿，2020-10-14（Internet Archive 存档）。<a href="https://web.archive.org/web/20201015200920/https://www.dfs.ny.gov/reports_and_publications/press_releases/pr202010141">web.archive.org</a></li>
+          <li id="s13">Chainalysis，《The Twitter Hack: What We Know One Week Later》，2020-07-22，7-23 更新（Internet Archive 存档）。<a href="https://web.archive.org/web/20200812212620/https://blog.chainalysis.com/reports/twitter-hack-july-2020-update">web.archive.org</a></li>
+          <li id="s14">Brian Krebs，《Who’s Behind Wednesday’s Epic Twitter Hack?》，Krebs on Security，2020-07-16。<a href="https://krebsonsecurity.com/2020/07/whos-behind-wednesdays-epic-twitter-hack/">krebsonsecurity.com</a></li>
+          <li id="s15">The New York Times（Nathaniel Popper、Kate Conger），《Hackers Tell the Story of the Twitter Attack From the Inside》，2020-07-17（Internet Archive 存档）。<a href="https://web.archive.org/web/20200717210005/https://www.nytimes.com/2020/07/17/technology/twitter-hackers-interview.html">web.archive.org</a></li>
+          <li id="s16">The New York Times（Nathaniel Popper、Kate Conger），《Florida Teen Arrested in Twitter Hack》，2020-07-31（Internet Archive 存档）。<a href="https://web.archive.org/web/20200731192620/https://www.nytimes.com/2020/07/31/technology/twitter-hack-arrest.html">web.archive.org</a></li>
+          <li id="s17">The Verge（Nick Statt），《Teen ‘mastermind’ behind the great Twitter hack sentenced to three years in prison》，2021-03-16。<a href="https://www.theverge.com/2021/3/16/22334421/twitter-hacker-bitcoin-plea-deal-agreement-graham-ivan-clark-three-years">theverge.com</a></li>
+          <li id="s18">Ars Technica（Dan Goodin），《Twitter hackers used “phone spear phishing” in mass account takeover》，2020-07-31。<a href="https://arstechnica.com/information-technology/2020/07/twitter-hackers-used-phone-spear-phishing-in-mass-account-takeover/">arstechnica.com</a></li>
+          <li id="s19">The Verge（Makena Kelly），《Coinbase says it halted more than $280,000 in bitcoin transactions during Twitter hack》，2020-07-20。<a href="https://www.theverge.com/2020/7/20/21331499/coinbase-twitter-hack-elon-musk-bill-gates-joe-biden-bitcoin-scam">theverge.com</a></li>
+          <li id="s20">The Verge（Sean Hollister），《Three people have been charged for Twitter’s huge hack, and a Florida teen is in jail》，2020-07-31。<a href="https://www.theverge.com/2020/7/31/21349920/twitter-hack-arrest-florida-teen-fbi-irs-secret-service">theverge.com</a></li>
+          <li id="s21">BBC News，《Major US Twitter accounts hacked in Bitcoin scam》，2020-07-15。<a href="https://www.bbc.com/news/technology-53425822">bbc.com</a></li>
+          <li id="s22">BBC News（Joe Tidy），《Briton pleads guilty in US to 2020 Twitter hack》，2023-05-09。<a href="https://www.bbc.com/news/technology-65540901">bbc.com</a></li>
+          <li id="s23">TechCrunch（Zack Whittaker），《Hacker responsible for 2020 Twitter breach sentenced to prison》，2023-06-23。<a href="https://techcrunch.com/2023/06/23/twitter-hacker-sentenced-prison/">techcrunch.com</a></li>
+          <li id="s24">Sky News，《Joseph James O'Connor ordered to pay back over £4m in Bitcoin after hacking celebrity X accounts》，2025-11-17（Internet Archive 存档）。<a href="https://web.archive.org/web/20251117140813/https://news.sky.com/story/joseph-james-oconnor-ordered-to-pay-back-4-1m-in-bitcoin-after-hacking-celebrity-x-accounts-13471601">web.archive.org</a></li>
+          <li id="s25">Engadget，《Twitter's changes since the June attack include requiring security keys》（标题原文如此，正文说的是 7 月的攻击），2020-09-25。<a href="https://www.engadget.com/twitters-security-changes-july-attack-054328827.html">engadget.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FTX 破产当夜被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 11 月 FTX 申请破产当晚约 4.77 亿美元被转走的经过：SIM 卡劫持如何变成系统访问权、FTX 的密钥管理缺陷、资金经 RenBridge 与 THORChain 的去向、三名被告的认罪与判决进展。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-ftx-drain">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>FTX 破产当夜被盗</h1>
+    <p class="lede">2022 年 11 月 11 日 FTX 申请破产保护，当晚它的钱包在几个小时里被转走约 4.77 亿美元。美国检方后来查明，一个 SIM 卡劫持团伙冒充一名 FTX 员工骗走了他的手机号，再用发到这个号码上的验证码进入公司系统。这起外部盗窃和 FTX 挪用客户资金是两件事。它说明，在一家几乎不用冷钱包、也不强制多因素认证的公司里，一个手机号就能通向数亿美元的资产。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">FTX 在 2022 年 11 月 11 日申请破产。当晚到次日，FTX.com、FTX US 和 Alameda 的钱包被大量转出。Elliptic 按转出时的价格估算约 4.77 亿美元，破产管理方按申请日价格计为约 4.32 亿美元<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。新任 CEO John J. Ray III 的报告说，FTX 几乎把全部加密资产放在热钱包里，数十亿美元资产的私钥存放在 AWS Secrets Manager 和密码库中，能进入这些工具的员工都可以单方面转走资产<a class="ref" href="#s3">[3]</a>。</p>
+        <p>2024 年 1 月，美国司法部起诉 Robert Powell、Carter Rohn 和 Emily Hernandez。按检方在量刑文件中的叙述，2022 年 11 月 11 日，Hernandez 拿着一张印有一名 FTX 员工身份信息、贴着她本人照片的假证件，在得州 El Paso 的手机门店接管了这名员工的手机号。同伙随后用发到这部手机上的多因素认证码进入“受害公司-1”的网络系统，偷走价值超过 4 亿美元的加密资产<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。起诉书没有点名 FTX，媒体和 Elliptic 都认为受害公司就是 FTX<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</p>
+        <p>被盗资产先在去中心化交易所换成 ETH，再经 RenBridge 和 THORChain 换成比特币，进入 ChipMixer、Sinbad 等混币器，其中一部分与俄罗斯背景的犯罪资金混在一起<a class="ref" href="#s4">[4]</a>。Hernandez 认罪后在 2025 年 12 月被判缓刑 12 个月；Powell 签了认罪协议，截至 2026 年 10 月仍未宣判<a class="ref" href="#s1">[1]</a>。被盗资金的绝大部分没有追回。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>FTX 由 Sam Bankman-Fried（SBF）创办，旗下有面向美国以外用户的 FTX.com（FTX Trading）和面向美国用户的 FTX US（West Realm Shires），关联的交易公司 Alameda Research 也由 SBF 控制。2022 年 11 月初，FTX 遭遇挤兑并停止提现。11 月 11 日，FTX 集团在美国特拉华州申请破产保护，重组专家 John J. Ray III 接任 CEO<a class="ref" href="#s3">[3]</a>。</p>
+        <p>此后查明，FTX 挪用了客户资金，经过见大事记的<a href="../../milestones/events/2022-ftx.html">FTX 挪用客户资产与破产</a>。SBF 在 2023 年 11 月 2 日被陪审团认定欺诈罪成立，2024 年 3 月被判 25 年监禁<a class="ref" href="#s7">[7]</a>。那是交易所内部的问题。本页讲的是另一件事：破产当晚，一个外部团伙趁乱从 FTX 钱包里转走了数亿美元。两件事在时间上重叠，但当事人、手法和司法程序都不同。</p>
+        <p>FTX 的内控状况，Ray 在 2023 年 4 月提交法院的第一份中期报告里写得很具体。FTX 对外说“10% 在热钱包，90% 在冷钱包”，实际上除了监管要求冷存储的日本之外，几乎没有用冷钱包；没有用多签或 MPC；一些私钥以明文存放在服务器上；数十亿美元资产的单签私钥放在 AWS Secrets Manager 或密码库里；公司没有对 Google Workspace 和 1Password 强制启用多因素认证；FTX.com、FTX US 和 Alameda 共用一个 AWS 账户；也没有任何机制能及时发现有人读取了中心钱包的私钥<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方、执法与司法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="def"><time>2022-11-11</time><div class="ev">FTX 集团在特拉华州申请破产保护，John J. Ray III 接任 CEO<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2022-11-11</time><div class="ev">Hernandez 在 El Paso 的手机门店用假证件接管一名 FTX 员工的手机号，再到 Apple 门店把号码转到同伙控制的设备上<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk key"><time>2022-11-11 晚</time><div class="ev">按 Elliptic 的记录，当地时间 21:22 起，9,500 枚 ETH 先被转出，几个小时里累计约 4.77 亿美元<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2022-11-11 至 12</time><div class="ev">重组顾问在 Twitter 上看到可疑转账后才通知员工。FTX 员工和破产顾问抢在攻击者之前转移了超过 3 亿美元资产，Tether 冻结 3,150 万枚 USDT<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2022-11-12</time><div class="ev">按巴哈马当局的指示，SBF 和/或 Gary Wang 用手里的私钥把数亿美元的 FTT、SRM 等代币转入巴哈马当局托管的冷钱包，事先没有经过破产管理方授权<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2022-11-20</time><div class="ev">6.5 万枚 ETH 经 RenBridge 换成 4,536 枚 BTC，随后进入 ChipMixer 等混币器<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-01-17</time><div class="ev">破产管理方公布：FTX.com 被未经授权转走 3.23 亿美元，FTX US 9,000 万美元，Alameda 200 万美元<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2023-04-09</time><div class="ev">Ray 向法院提交关于控制缺陷的第一份中期报告，按申请日价格把被盗金额计为约 4.32 亿美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2023-09-30 起</time><div class="ev">沉寂 10 个月的约 18 万枚 ETH 开始移动，其中 72,500 枚经 THORSwap 和 THORChain 换成比特币。10 月 6 日 THORSwap 暂停前端<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2023-11-02</time><div class="ev">SBF 在纽约被认定欺诈罪成立，此案与外部盗窃无关<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def key"><time>2024-01-18</time><div class="ev">华盛顿特区联邦大陪审团起诉 Powell、Rohn 和 Hernandez，罪名为共谋电信欺诈、共谋加重身份盗窃与接入设备欺诈。1 月 24 日 Powell 在伊利诺伊州 Highland Park 被捕<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2024-02-01</time><div class="ev">起诉书公开后，Elliptic 和媒体指出“受害公司-1”很可能就是 FTX<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2024-05-16</time><div class="ev">Hernandez 对两项罪名认罪，并配合检方<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2024-08-07</time><div class="ev">Powell 的认罪协议和犯罪事实陈述以密封方式提交，2025 年 4 月解封<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2025-12-08</time><div class="ev">法官 Ana C. Reyes 判处 Hernandez 两项罪名各缓刑 12 个月，同时执行<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2026-07-01</time><div class="ev">Powell 的量刑先后从 2025 年 9 月、12 月推迟，律师在 2026 年退出。法院要求双方在 60 天内报告能否进入量刑程序。截至 2026 年 10 月，Powell 仍在居家监禁中等待宣判<a class="ref" href="#s1">[1]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起事件没有被利用的代码漏洞。攻击分两段：先通过 SIM 卡劫持拿到一名员工的手机号，再用这个号码突破 FTX 的系统，接触到能签名转账的私钥。前一段有法庭文件支撑，后一段的细节没有公开，只能从结果和 FTX 的内控状况推断。</p>
+        <h3>SIM 卡劫持：骗的是运营商门店</h3>
+        <p>SIM 卡劫持（SIM swap）是让运营商把受害人的手机号从原来的 SIM 卡转到攻击者控制的 SIM 卡上。转移完成后，所有发往这个号码的短信验证码、密码重置链接都会落到攻击者手里。检方在量刑备忘录里描述了这个团伙的做法：他们用受害人的身份信息、配上 Hernandez 的照片制作假证件，由她走进 AT&amp;T 或 Verizon 的门店冒充受害人，说服店员把号码转到新设备上。团伙找她入伙，是因为需要一名女性去冒充女性受害人<a class="ref" href="#s2">[2]</a>。她本人参与了针对 10 多名受害人的 SIM 卡劫持，总共拿到 2,500 美元<a class="ref" href="#s2">[2]</a>。</p>
+        <p>这种攻击绕过的是“短信验证码”这一类多因素认证。认证系统以为手机号代表本人，运营商门店以为证件代表本人，而两者都可以伪造。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 350" role="img" aria-labelledby="ftx-chain-t ftx-chain-d">
+            <title id="ftx-chain-t">从假证件到钱包私钥的攻击链</title>
+            <desc id="ftx-chain-d">第一行是运营商环节：Powell 提供目标员工的姓名和社保号，同伙制作假证件，Hernandez 在门店接管账户并在 Apple 门店把号码转到同伙设备上。第二行是 FTX 环节：验证码发到攻击者手机，同伙进入受害公司网络系统，取得私钥的具体路径没有公开，最后各条链上的钱包被转空。</desc>
+            <defs>
+              <marker id="ftx-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="ftx-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t s" x="20" y="22">运营商环节（有法庭文件）</text>
+            <rect class="d-box" x="20" y="34" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="100" y="60" text-anchor="middle">① 选定目标</text>
+            <text class="d-t s" x="100" y="80" text-anchor="middle">员工姓名和社保号</text>
+            <text class="d-t s" x="100" y="97" text-anchor="middle">经加密通讯传给同伙</text>
+            <rect class="d-box" x="210" y="34" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="290" y="60" text-anchor="middle">② 伪造证件</text>
+            <text class="d-t s" x="290" y="80" text-anchor="middle">受害人信息</text>
+            <text class="d-t s" x="290" y="97" text-anchor="middle">配 Hernandez 照片</text>
+            <rect class="d-box atk" x="400" y="34" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="480" y="60" text-anchor="middle">③ 手机门店</text>
+            <text class="d-t s" x="480" y="80" text-anchor="middle">出示假证件</text>
+            <text class="d-t s" x="480" y="97" text-anchor="middle">接管手机账户</text>
+            <rect class="d-box atk" x="590" y="34" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="670" y="60" text-anchor="middle">④ Apple 门店</text>
+            <text class="d-t s" x="670" y="80" text-anchor="middle">号码转到</text>
+            <text class="d-t s" x="670" y="97" text-anchor="middle">同伙控制的设备</text>
+            <line class="d-line" x1="180" y1="70" x2="208" y2="70" marker-end="url(#ftx-ah)"/>
+            <line class="d-line" x1="370" y1="70" x2="398" y2="70" marker-end="url(#ftx-ah)"/>
+            <line class="d-line atk" x1="560" y1="70" x2="588" y2="70" marker-end="url(#ftx-ah-atk)"/>
+            <path class="d-line atk" d="M670,106 V132 H100 V160" marker-end="url(#ftx-ah-atk)"/>
+            <text class="d-t s halo" x="385" y="150" text-anchor="middle">FTX 环节：⑤ ⑥ 有法庭文件，⑦ 未公开</text>
+            <rect class="d-box atk" x="20" y="162" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="100" y="188" text-anchor="middle">⑤ 收到验证码</text>
+            <text class="d-t s" x="100" y="208" text-anchor="middle">新手机能收发</text>
+            <text class="d-t s" x="100" y="225" text-anchor="middle">多因素认证码</text>
+            <rect class="d-box atk" x="210" y="162" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="290" y="188" text-anchor="middle">⑥ 进入系统</text>
+            <text class="d-t s" x="290" y="208" text-anchor="middle">未经授权访问</text>
+            <text class="d-t s" x="290" y="225" text-anchor="middle">受害公司网络</text>
+            <rect class="d-box doubt" x="400" y="162" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="480" y="188" text-anchor="middle">⑦ 拿到签名能力</text>
+            <text class="d-t s" x="480" y="208" text-anchor="middle">具体路径未公开</text>
+            <text class="d-t s" x="480" y="225" text-anchor="middle">见下方说明</text>
+            <rect class="d-box atk" x="590" y="162" width="160" height="72" rx="4"/>
+            <text class="d-t b" x="670" y="188" text-anchor="middle">⑧ 钱包被转空</text>
+            <text class="d-t s" x="670" y="208" text-anchor="middle">FTX.com、FTX US</text>
+            <text class="d-t s" x="670" y="225" text-anchor="middle">和 Alameda</text>
+            <line class="d-line atk" x1="180" y1="198" x2="208" y2="198" marker-end="url(#ftx-ah-atk)"/>
+            <line class="d-line atk" x1="370" y1="198" x2="398" y2="198" marker-end="url(#ftx-ah-atk)"/>
+            <line class="d-line atk" x1="560" y1="198" x2="588" y2="198" marker-end="url(#ftx-ah-atk)"/>
+            <rect class="d-box soft" x="20" y="256" width="730" height="82" rx="4"/>
+            <text class="d-t s" x="36" y="280">①～⑥：检方量刑备忘录。同伙向 Powell 确认新手机能收发验证码，再用验证码进入受害公司的网络系统。</text>
+            <text class="d-t s" x="36" y="302">⑦：破产管理方报告称，数十亿美元资产的单签私钥放在 AWS Secrets Manager 或密码库里，</text>
+            <text class="d-t s" x="36" y="324">许多员工都能读取；Google Workspace 和 1Password 没有强制启用多因素认证。两者之间的环节没有公开。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：从假证件到钱包私钥的攻击链。红色是有法庭文件支撑的攻击步骤，琥珀色是没有公开、只能推断的一环。</figcaption>
+        </figure>
+        <h3>为什么一个手机号能通向钱包</h3>
+        <p>检方的文件只写到“同伙用这些多因素认证码进入了受害公司-1 的网络系统”<a class="ref" href="#s2">[2]</a>，没有说明登录的是哪个账户、怎样拿到私钥。FTX 和检方都没有公开这部分技术细节。可以确定的是，FTX 的环境里有多处只要突破一个账户就能接触到签名能力的地方。Ray 的报告逐项列出了这些缺陷，并写道“其中任何一项控制都可能阻止 2022 年 11 月的损失”<a class="ref" href="#s3">[3]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>报告指出的缺陷</th><th>和这次盗窃的关系</th></tr></thead>
+            <tbody>
+              <tr><td>除日本外几乎不用冷钱包，资产集中在联网的热钱包</td><td>拿到私钥就能直接转账，没有离线环节需要突破</td></tr>
+              <tr><td>不用多签或 MPC，单个私钥即可签名</td><td>不需要第二个人或第二台设备批准</td></tr>
+              <tr><td>私钥放在 AWS Secrets Manager、密码库，部分以明文放在服务器上</td><td>这些工具不是为保管私钥设计的，许多员工都有读取权限</td></tr>
+              <tr><td>Google Workspace 和 1Password 未强制多因素认证，一个重要邮箱的认证还被管理层绕过</td><td>账户一旦被接管，后续访问不再有拦截</td></tr>
+              <tr><td>FTX.com、FTX US、Alameda 共用一个 AWS 账户</td><td>FTX US 正在迁到独立账户但没完成，因此在这次事件中损失约 1.39 亿美元</td></tr>
+              <tr><td>没有私钥访问告警，没有 root 登录告警</td><td>FTX 是在重组顾问从 Twitter 上看到可疑转账后才知道被盗的</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>表中内容整理自 Ray 的第一份中期报告<a class="ref" href="#s3">[3]</a>。报告还提到，FTX 声称会把热钱包余额控制在两天交易量以内、超出部分自动转入冷钱包，这套机制实际上并不存在<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>金额为什么有好几个</h3>
+        <p>不同来源的数字不一致，主要是计价时点和统计范围不同：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">金额</th><th>口径</th></tr></thead>
+            <tbody>
+              <tr><td>Elliptic</td><td class="n">约 4.77 亿美元</td><td>按转出时的价格，统计攻击者转走的全部资产<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>破产管理方，2023-01</td><td class="n">4.15 亿美元</td><td>FTX.com 3.23 亿、FTX US 9,000 万、Alameda 200 万<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>Ray 中期报告，2023-04</td><td class="n">约 4.32 亿美元</td><td>按 11 月 11 日申请日价格；其中 FTX US 约 1.39 亿美元<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>起诉书与量刑文件</td><td class="n">超过 4 亿美元</td><td>检方指控的受害公司-1 损失<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>SlowMist 事件库</td><td class="n">超过 6 亿美元</td><td>事发当晚的早期估计<a class="ref" href="#s10">[10]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>FTX US 的损失在 2023 年 1 月记为 9,000 万美元，4 月的报告写约 1.39 亿美元，两个数字的差异报告里没有解释，可能是统计口径更新了。本页正文采用 Elliptic 的 <span class="dispute">约 4.77 亿美元</span>，与本站其他页面一致按转出时的价格计算。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下步骤依据检方在 Hernandez 量刑时提交的备忘录和 Elliptic 的链上追踪。被告一方没有公开自己的说法；Hernandez 的认罪只涉及前半段，检方明确说她不知道同伙拿验证码做什么、目标是谁<a class="ref" href="#s2">[2]</a>。</p>
+        <ol class="steps">
+          <li><b>选定目标</b>2022 年 11 月 11 日前后，Powell 通过加密通讯把一名 FTX 员工（“受害人-1”）的全名和社会保障号交给同伙，强调这次很重要，成功的话报酬加倍<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。</li>
+          <li><b>门店接管</b>同伙制作印有受害人-1 信息和 Hernandez 照片的假证件。Hernandez 在 El Paso 的一家手机门店出示证件，取得受害人-1 手机账户的控制权<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>转移号码</b>她和同伙随后到一家 Apple 门店，把号码转到他们控制的实体设备上。量刑备忘录附有这家门店的监控截图<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>进入系统</b>同伙向 Powell 确认，新手机已经能收发多因素认证码。这些验证码让他们进入受害公司-1 的网络系统<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>转出资产</b>当晚起，FTX.com、FTX US 和 Alameda 钱包里的稳定币和各类代币被转走，约 4.34 亿美元是稳定币和其他代币<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>换成难冻结的资产</b>攻击者在 Uniswap、PancakeSwap 上把可被冻结的代币换成 ETH，经 Multichain 和 Wormhole 把 BNB Chain、Solana 上的资产搬到以太坊。三天后，一个地址里集中了约 24.5 万枚 ETH，约合 3.06 亿美元<a class="ref" href="#s4">[4]</a>。</li>
+        </ol>
+        <p>同一天，Hernandez 在约 12 英里外的另一家门店劫持了另一名受害人的号码，那个人被偷走约 59.2 万美元的加密资产<a class="ref" href="#s2">[2]</a>。对这个团伙来说，FTX 员工是他们在 2021 年 3 月到 2023 年 4 月间瞄准的约 50 名受害人之一<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>Elliptic 在 2023 年 10 月发表了完整的追踪<a class="ref" href="#s4">[4]</a>。资金大致分两批走：</p>
+        <ol class="flow">
+          <li class="atk"><b>FTX 钱包</b>约 4.77 亿美元，多为稳定币和代币</li>
+          <li class="atk"><b>DEX 与跨链桥</b>换成约 24.5 万枚 ETH，集中到一个地址</li>
+          <li class="atk"><b>RenBridge</b>2022-11-20，6.5 万枚 ETH 换成 4,536 枚 BTC</li>
+          <li class="doubt"><b>混币后兑现</b>2,849 枚 BTC 主要经 ChipMixer 混币，与俄罗斯背景资金混合后进入交易所</li>
+        </ol>
+        <ol class="flow">
+          <li class="atk"><b>沉寂的约 18 万枚 ETH</b>2023-09-30 前一直未动</li>
+          <li class="atk"><b>THORSwap / THORChain</b>72,500 枚 ETH 换成比特币</li>
+          <li class="atk"><b>Sinbad 等</b>ChipMixer 在 2023 年 4 月被查封后改用 Sinbad</li>
+          <li class="doubt"><b>下落</b>是否仍在被告控制下不明</li>
+        </ol>
+        <p>RenBridge 背后的公司当时由 Alameda Research 持有<a class="ref" href="#s4">[4]</a>，也就是说，攻击者用 FTX 自己旗下的服务洗出了从 FTX 偷走的钱。Elliptic 还注意到，资金在进入交易所之前和勒索软件团伙、暗网市场等俄罗斯背景的资金大量混在一起，据此推测有一个与俄罗斯有关的中间商参与。它也比较过朝鲜 Lazarus 的手法，认为这次的洗钱方式“不同且不成熟”<a class="ref" href="#s4">[4]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>被转走</td><td class="n">约 4.77 亿美元</td><td>Elliptic 按转出时价格估算</td></tr>
+              <tr><td>员工和顾问抢先保护</td><td class="n">超过 3 亿美元</td><td>不在被盗金额之内</td></tr>
+              <tr><td>Tether 冻结</td><td class="n">3,150 万 USDT</td><td>攻击者来不及换走的部分</td></tr>
+              <tr><td>头几天的冻结和兑换损耗</td><td class="n">约 9,400 万美元</td><td>包括发行方冻结和 DEX、跨链桥的成本</td></tr>
+              <tr><td>经 RenBridge 换成 BTC</td><td class="n">4,536 BTC</td><td>由 6.5 万枚 ETH 换得</td></tr>
+              <tr><td>经 THORChain 换成 BTC</td><td class="n">72,500 ETH</td><td>2023 年 9 月底起</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">表中数据均来自 Elliptic 2023 年 10 月的追踪报告<a class="ref" href="#s4">[4]</a>。</p>
+        <p>起诉书公开时，Elliptic 写道，不清楚三名被告被指控的是盗窃和洗钱的全过程，还是只负责打开最初的入口；也不清楚被盗资产是否仍在他们控制下、能否追回<a class="ref" href="#s5">[5]</a>。此后公开的法庭记录中，没有看到针对这笔资金的没收或返还。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>两笔损失，两套程序</h3>
+        <div class="compare">
+          <div>
+            <h4>FTX 挪用客户资金</h4>
+            <p>FTX 管理层把客户资金和公司资金混用并挪作他用，造成数十亿美元的缺口。SBF 在纽约被定罪，判 25 年<a class="ref" href="#s7">[7]</a>。损失通过破产程序清偿。</p>
+          </div>
+          <div>
+            <h4>破产当夜的外部盗窃</h4>
+            <p>外部团伙利用 SIM 卡劫持和 FTX 的内控缺陷转走约 4.77 亿美元。案子在华盛顿特区联邦法院审理，被告是三名与 FTX 无关的美国人<a class="ref" href="#s1">[1]</a>。被盗资产是破产财产损失的一部分。</p>
+          </div>
+        </div>
+        <p>在破产程序里，这笔被盗资金算作债务人财产的损失。Ray 后来估计，客户和数字资产借贷债权人可以按申请日债权价值拿回 118% 到 142%<a class="ref" href="#s7">[7]</a>。用户最终的受偿取决于破产财产整体的追回情况，而不是这笔被盗资金的下落。这里的比例以申请日的债权美元价值为基数。</p>
+        <h3>对行业的提醒</h3>
+        <p>这起案件让“短信验证码不可靠”从个人用户的安全常识变成了机构的教训：攻击者没有碰任何一行 FTX 的代码，只是骗过了一家手机门店的店员。它也说明，交易所倒闭、被收购或大规模裁员时的混乱期本身就是攻击窗口，员工疲惫、权限交接不清，异常转账更难被注意到。资金经过 THORSwap 时，该服务在 2023 年 10 月 6 日暂停了前端，但攻击者仍通过其他方式使用 THORChain<a class="ref" href="#s4">[4]</a>，去中心化跨链协议在拦截被盗资金上能做什么，成了此后反复讨论的问题。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>当夜的抢救</h3>
+        <p>FTX 没有及时发现入侵的手段。按 Ray 的报告，是重组顾问从 Twitter 等公开信息里看到可疑转账后通知了员工<a class="ref" href="#s3">[3]</a>。随后员工和破产顾问把超过 3 亿美元资产抢先转走<a class="ref" href="#s4">[4]</a>。由于 FTX 从来没做过相应的工程开发，很多资产甚至没有现成的方法转入冷存储，破产管理方只能临时开发转移路径<a class="ref" href="#s3">[3]</a>。第二天，SBF 和/或 Gary Wang 又按巴哈马当局的指示，用自己手里的私钥把数亿美元的代币转进巴哈马当局托管的钱包，事先没有经过破产管理方授权<a class="ref" href="#s3">[3]</a>。这件事从另一面说明了同一个问题：谁手里有私钥，谁就能单方面转走资产。</p>
+        <h3>刑事案件</h3>
+        <p>起诉书在 2024 年 1 月 18 日提交，案号 1:24-cr-00038，由华盛顿特区联邦地区法院法官 Ana C. Reyes 审理<a class="ref" href="#s1">[1]</a>。截至 2026 年 10 月，三名被告的进展如下：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>被告</th><th>状态</th><th>依据</th></tr></thead>
+            <tbody>
+              <tr><td>Emily Hernandez</td><td>2024-05-16 对两项罪名认罪并配合检方；检方以配合调查为由请求低于量刑指南的刑罚；2025-12-08 被判缓刑 12 个月</td><td>案卷与量刑备忘录<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>Robert Powell</td><td>最初作无罪答辩；2024-08-07 认罪协议和犯罪事实陈述密封提交，2025 年 4 月解封；量刑一再推迟，2026 年仍居家监禁并佩戴定位设备</td><td>案卷<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>Carter Rohn</td><td>2024-02-20 作无罪答辩；2024 年 11 月检方与 Powell、Rohn 共同申请把审判日期改为状况会议，以便“继续推进最终处置”；公开案卷摘要中没有看到认罪或判决记录</td><td>案卷<a class="ref" href="#s1">[1]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note doubt">
+          <span class="h">没有公开的部分</span>
+          <p>Powell 认罪协议和犯罪事实陈述的全文、他承认了哪些具体行为，没有在公开渠道看到。检方也没有说明被告是否参与了后续洗钱、被盗资产现在由谁控制。本页关于 Rohn 的状态依据的是 CourtListener 上的公开案卷摘要，可能有未收录的条目。</p>
+        </div>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所和托管机构</span>
+          <ul>
+            <li>大部分资产放冷存储，热钱包只留日常周转所需的额度，并让“超额自动转冷”真的在运行，而不是只写在给监管的材料里。</li>
+            <li>大额钱包用多签或 MPC，让任何一个人、一个账户都无法单独转账。</li>
+            <li>私钥放进 HSM 或专门的托管系统，不要放在云端通用的密钥管理服务、密码库或服务器明文文件里。</li>
+            <li>对私钥读取、云账户 root 登录和异常大额转出设置实时告警。被盗当晚最先发现问题的，不应该是看 Twitter 的外部顾问。</li>
+            <li>破产、并购、裁员这类混乱时期要加强而不是放松监控，提前想好权限交接和紧急冻结的流程。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给所有公司和员工</span>
+          <ul>
+            <li>员工账户的多因素认证改用硬件安全密钥或 passkey，不用短信验证码，也不允许用短信重置密码。</li>
+            <li>把员工的手机号当成可能被劫持的东西。可以在运营商处开启号码转移锁，但要知道门店店员仍可能被假证件骗过。</li>
+            <li>不同业务实体、不同资产池用独立的云账户和独立的权限体系，避免一处失守波及全部。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国哥伦比亚特区联邦地区法院，United States v. Powell 等，案号 1:24-cr-00038（ACR），案卷记录（起诉、认罪、量刑与 2026 年的状况报告），CourtListener。<a href="https://www.courtlistener.com/docket/68215144/united-states-v-powell/">courtlistener.com</a></li>
+          <li id="s2">美国检方，《United States’ Motion for Departure from Guidelines Sentence and Memorandum in Aid of Sentencing》（Emily Hernandez），ECF 79，2025-11-24。<a href="https://storage.courtlistener.com/recap/gov.uscourts.dcd.264136/gov.uscourts.dcd.264136.79.0.pdf">courtlistener.com</a></li>
+          <li id="s3">John J. Ray III，《First Interim Report to the Independent Directors on Control Failures at the FTX Exchanges》，In re FTX Trading Ltd.，案号 22-11068（JTD），Doc 1242-1，2023-04-09。<a href="https://storage.courtlistener.com/recap/gov.uscourts.deb.188450/gov.uscourts.deb.188450.1242.1.pdf">courtlistener.com</a></li>
+          <li id="s4">Elliptic，《The $477 million FTX hack: following the blockchain trail》，2023-10-10。<a href="https://www.elliptic.co/blog/the-477-million-ftx-hack-following-the-blockchain-trail">elliptic.co</a></li>
+          <li id="s5">Elliptic，《Three individuals implicated in the $477 million FTX heist?》，2024-02-01。<a href="https://www.elliptic.co/blog/three-individuals-implicated-in-the-477-million-ftx-heist">elliptic.co</a></li>
+          <li id="s6">Brian Krebs，《Arrests in $400M SIM-Swap Tied to Heist at FTX?》，Krebs on Security，2024-02-01。<a href="https://krebsonsecurity.com/2024/02/arrests-in-400m-sim-swap-tied-to-heist-at-ftx/">krebsonsecurity.com</a></li>
+          <li id="s7">维基百科，《Bankruptcy of FTX》（SBF 定罪与判决、118%–142% 的受偿估计）。<a href="https://en.wikipedia.org/wiki/Bankruptcy_of_FTX">en.wikipedia.org</a></li>
+          <li id="s8">CNBC，《FTX says $415 million of crypto was hacked》，2023-01-17。<a href="https://www.cnbc.com/2023/01/17/ftx-says-415-million-of-crypto-was-hacked.html">cnbc.com</a></li>
+          <li id="s9">Chicago Tribune（Yahoo Finance 转载），《Guilty plea in $400 million FTX SIM swap scheme allegedly run by Highland Park man》，2024-05-17。<a href="https://finance.yahoo.com/news/guilty-plea-400-million-ftx-185700701.html">finance.yahoo.com</a></li>
+          <li id="s10">SlowMist Hacked 事件库，FTX 条目（2022-11-11）。<a href="https://hacked.slowmist.io/">hacked.slowmist.io</a></li>
+          <li id="s11">CoinDesk，《FTX Hack Mystery Possibly Solved: U.S. Charges Trio With Theft, Including Infamous Attack on Crypto Exchange》，2024-02-01。<a href="https://www.coindesk.com/policy/2024/02/01/ftx-hack-mystery-possibly-solved-us-charges-trio-with-theft-including-infamous-attack-on-crypto-exchange">coindesk.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

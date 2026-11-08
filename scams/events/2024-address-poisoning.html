@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地址投毒骗走 1,155 枚 WBTC｜区块链诈骗与骗局</title>
+<meta name="description" content="2024 年 5 月 3 日，一个以太坊地址把 1,155 枚 WBTC（约 6,800 万美元）转到首尾字符和常用地址相同的假地址。本页讲地址投毒怎样往转账记录里塞假记录、零额 transferFrom 为什么能伪造受害者转出、钱包截断地址的显示，以及链上谈判和归还约 22,960 枚 ETH 的经过。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2024-address-poisoning">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2024 年　/　<a href="../index.html#cat-phish">钓鱼与授权盗币</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>地址投毒骗走 1,155 枚 WBTC</h1>
+    <p class="lede">2024 年 5 月 3 日，一个以太坊地址把 1,155 枚 WBTC 转到了骗子手里，按当时的价格约 6,800 万美元。收款地址和受害者真正想转去的地址开头、结尾都一样，只有中间不同；骗子事先往受害者的转账记录里塞了一条假记录，受害者照着记录复制了地址。受害者在链上喊话、谈判，5 月 10 日起骗子把约 22,960 枚 ETH 还了回来。Chainalysis 把它列为 2024 年最大的几起骗局之一。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">地址投毒利用的是人看长地址的习惯。以太坊地址是 40 位十六进制字符，钱包和区块浏览器通常只显示开头和结尾几位，用户转账时又常常从最近的转账记录里复制地址。骗子先用程序生成一个首尾和受害者常用地址相同的“靓号”地址，再设法让这个地址出现在受害者的转账记录里，等受害者自己复制错<a class="ref" href="#s10">[10]</a>。受害者的私钥没有泄露，转账是受害者自己签的。</p>
+        <p>2024 年 5 月 3 日，受害者先向自己要转的地址做了一笔转账；几分钟后，骗子的假地址就在受害者的记录里留下了一笔看似由受害者转出的记录<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。约 10:31 UTC，受害者把 1,155 枚 WBTC 转到了假地址<a class="ref" href="#s6">[6]</a>。安全公司 Cyvers 最先在 X 上发出警报，CertiK、PeckShield、ZachXBT 随后确认<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。据 CoinStats 的数据，这个钱包损失了 97% 以上的资产<a class="ref" href="#s4">[4]</a>。</p>
+        <p>骗子当天把 WBTC 换成约 22,955 枚 ETH，几天后分散到数百个地址<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。受害者在链上留言，同意骗子留下 10% 作赏金，要求归还 90%<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。5 月 9 日骗子先还了 51 枚 ETH；5 月 10 日起，200 多笔转账把约 22,960 枚 ETH 送回受害者的地址，按当时价格约 6,570 万美元<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。参与谈判的 Match Systems 称骗子归还了全部资金<a class="ref" href="#s7">[7]</a>。到 2026 年 11 月，没有查到任何起诉或逮捕的公开报道，骗子的身份也没有公开。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>一种两年前就有的骗术</h3>
+        <p>按卡内基梅隆大学 Tsuchiya 等人的测量，他们追踪的几个主要团伙里，最早的一个 2022 年 12 月开始在以太坊上投毒，2023 年初又有几个团伙入场；几个大团伙 2024 年 5 月前后停手，但这种攻击到论文发表时仍在继续<a class="ref" href="#s10">[10]</a>。SlowMist 说，它在 2022 年就分析过“transferFrom 零额转账”和“尾号相同的空投”这两种手法<a class="ref" href="#s1">[1]</a>。2023 年 1 月，有开发者在 OpenZeppelin 的代码库里提议从合约层面堵住零额转账，理由是这种攻击“最近被大量利用”<a class="ref" href="#s13">[13]</a>。</p>
+        <p>这种骗术成本很低。论文估计，一次投毒转账在以太坊上只花约 1 美元手续费，在 BSC 上约 1 美分；攻击合约可以反复用，甚至可以直接用别人部署好的<a class="ref" href="#s10">[10]</a>。Chainalysis 说，暗网市场上有现成的地址投毒工具包出售，里面有生成相似地址的软件、批量撒小额转账的脚本和教程，有的卖家还提供客服<a class="ref" href="#s2">[2]</a>。骗人签授权的工具包也是这样出租的，见 <a href="2023-inferno-drainer.html">Inferno Drainer</a>。</p>
+        <h3>这起案子背后的团伙</h3>
+        <p>据 SlowMist 的追踪，骗走 1,155 枚 WBTC 的假地址，手续费来自另一个地址；这个“手续费地址”从 4 月 19 日到 5 月 3 日发出了两万多笔小额 ETH，给大量钓鱼地址充值，说明骗子撒的是一张大网<a class="ref" href="#s1">[1]</a>。SlowMist 还说，这个团伙先在 Tron 上做首尾相同的地址钓鱼，赚到钱后再转到以太坊上作案<a class="ref" href="#s1">[1]</a>。</p>
+        <p>Chainalysis 从同一个地址往上追，找到 8 个负责发起投毒的“播种”钱包，和 82,031 个可能是它们生成的相似地址，数量略低于同期以太坊新地址的 1%。按它的数据，这轮活动从 2024 年 2 月 28 日持续到 5 月 4 日，共 66 天，5 月 3 日这一笔发生在快要收尾的时候<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>受害者</h3>
+        <p>受害者是一个以太坊地址，开头是 0x1E227<a class="ref" href="#s2">[2]</a>。它的主人始终没有公开身份；Match Systems 说，受害者不愿露面，通过一个第三方和它联系<a class="ref" href="#s9">[9]</a>。被转走的是 WBTC（Wrapped Bitcoin），以太坊上的包装比特币<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li><time>2022-12</time><div class="ev">Tsuchiya 等人追踪的主要投毒团伙里，最早的一个开始在以太坊上活动<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2023-02-15</time><div class="ev">OpenZeppelin 关闭“在 ERC20 里禁止地址投毒”的提议，决定不改代码<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk"><time>2024-02-28</time><div class="ev">按 Chainalysis 的数据，这个团伙的这轮投毒活动开始<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2024-04-19 至 05-03</time><div class="ev">团伙的手续费地址发出两万多笔小额 ETH，给钓鱼地址充值<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2024-05-03 09:14</time><div class="ev">受害者向自己要转的地址 0xd9A1b… 转了一笔，Chainalysis 认为可能是测试转账<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2024-05-03 09:17</time><div class="ev">骗子的假地址 0xd9A1C… 在受害者的记录里留下一笔看似由受害者转出的记录<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk key"><time>2024-05-03 10:31</time><div class="ev">受害者把 1,155 枚 WBTC 转到假地址，约 6,800 万美元<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2024-05-03</time><div class="ev">Cyvers 在 X 上发出警报；CertiK、ZachXBT 确认<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk"><time>2024-05-03 14:44</time><div class="ev">到这时，骗子已把 WBTC 转到另一个地址<a class="ref" href="#s2">[2]</a>，随后换成约 22,955 枚 ETH，分到 10 个地址<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2024-05-04 至 05</time><div class="ev">受害者在链上留言，同意骗子留 10%，要求还 90%，限 5 月 6 日 10:00 UTC 前答复<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2024-05-07 至 08</time><div class="ev">骗子开始移动 ETH，逐层拆分，分散到 400 多个钱包<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2024-05-08</time><div class="ev">SlowMist 发布分析，列出 10 个疑似骗子使用的香港移动网络 IP<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2024-05-09 11:37</time><div class="ev">骗子的另一个地址向受害者转 51 枚 ETH，留言要受害者的 Telegram<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="key"><time>2024-05-10 08:47</time><div class="ev">多个钱包开始向受害者转 ETH，一天里 200 多笔，共约 22,960 枚<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2024-05-23</time><div class="ev">Match Systems 的 CEO 对 Cointelegraph 讲述谈判经过<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2024-10-23</time><div class="ev">Chainalysis 发布对这轮投毒活动的分析<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2025-12-20</time><div class="ev">另一名交易者因地址投毒把约 5,000 万枚 USDT 转给骗子<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-11</time><div class="ev">没有查到针对本案骗子的起诉、逮捕或制裁的公开报道。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>地址投毒分四步：盯上一个经常转大额的地址，生成一个和它的常用收款地址首尾相同的地址，把这个假地址塞进它的转账记录，等它下次从记录里复制地址<a class="ref" href="#s2">[2]</a><a class="ref" href="#s10">[10]</a>。前三步都由骗子做，最后一步由受害者自己完成。</p>
+        <ol class="flow">
+          <li><b>盯上目标</b>从链上公开数据里找余额大、转账频繁的地址，看它常和哪些地址来往</li>
+          <li class="atk"><b>生成靓号</b>不停地随机生成私钥，直到地址首尾和目标的常用地址相同</li>
+          <li class="atk"><b>投毒</b>在目标每次转账后几分钟内，用假地址制造一条转账记录</li>
+          <li><b>等复制</b>目标下次转账时，从记录里复制了假地址，自己签名转出</li>
+        </ol>
+        <h3>生成首尾相同的地址</h3>
+        <p>以太坊地址由私钥推导出来，不能指定。想要一个特定开头和结尾的地址，只能不停地换私钥试，每多要求一位十六进制字符相同，平均要试的次数就乘以 16。Tsuchiya 等人估算，规模最大的一个团伙生成的地址首尾合计约 20 位相同，按 AWS 的 GPU 价格最多花 170 万美元，低于它约 400 万美元的获利；其他团伙多是合计 14 位左右，用 CPU 算的成本约 43 美元，比发投毒交易的手续费还低<a class="ref" href="#s10">[10]</a>。生成靓号的工具本身也出过事：2022 年做市商 Wintermute 的管理员地址是用 Profanity 生成的，私钥被人倒推出来，见被盗站的<a href="../../hacks/events/2022-wintermute.html">Wintermute 靓号地址被破解</a>。</p>
+        <p>本案的假地址 0xd9A1C3…4853a91 和受害者要转的地址 0xd9A1b0…2853a91，去掉“0x”后开头 4 位、结尾 6 位相同<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 466" role="img" aria-labelledby="ap-rec-t ap-rec-d">
+            <title id="ap-rec-t">真地址和假地址怎样出现在受害者的转账记录里</title>
+            <desc id="ap-rec-d">2024 年 5 月 3 日受害者的转账记录，按时间从上到下。09:14 受害者向真地址 0xd9A1b0…2853a91 转了一笔。09:17 骗子用合约制造了一条看似由受害者转给假地址 0xd9A1C3…4853a91 的记录，受害者没有签过这一笔。10:31 受害者从第二条记录复制了地址，把 1,155 枚 WBTC 转到假地址。在只显示首尾几位的钱包里，三条记录的收款方都显示成 0xd9A1…853a91。下方并列两个完整地址：开头 4 位和结尾 6 位相同，中间 30 位是另一串字符。</desc>
+            <defs>
+              <marker id="ap-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="40" y="28">受害者钱包里的转账记录（钱包只显示收款地址的首尾几位）</text>
+            <rect class="d-box" x="40" y="44" width="690" height="58" rx="3"/>
+            <text class="d-t b" x="58" y="68">09:14　转出　→　<tspan class="m">0xd9A1…853a91</tspan></text>
+            <text class="d-t s" x="58" y="90">真地址 <tspan class="m">0xd9A1b0B1…2853a91</tspan>：受害者自己签的，可能是测试转账</text>
+            <text class="d-t s" x="712" y="68" text-anchor="end">受害者签名</text>
+            <rect class="d-box atk" x="40" y="118" width="690" height="58" rx="3"/>
+            <text class="d-t b" x="58" y="142">09:17　转出　→　<tspan class="m">0xd9A1…853a91</tspan></text>
+            <text class="d-t s" x="58" y="164">假地址 <tspan class="m">0xd9A1C378…4853a91</tspan>：骗子用合约伪造，受害者没有签过</text>
+            <text class="d-t s" x="712" y="142" text-anchor="end">骗子发起</text>
+            <rect class="d-box atk" x="40" y="192" width="690" height="58" rx="3"/>
+            <text class="d-t b" x="58" y="216">10:31　转出 1,155 WBTC　→　<tspan class="m">0xd9A1…853a91</tspan></text>
+            <text class="d-t s" x="58" y="238">受害者从上一条记录复制了地址，自己签名转到假地址</text>
+            <text class="d-t s" x="712" y="216" text-anchor="end">受害者签名</text>
+            <path class="d-line atk dash" d="M40,150 C14,150 14,220 36,220" marker-end="url(#ap-ah-atk)"/>
+            <text class="d-t b" x="40" y="290">截断后一样的两个完整地址</text>
+            <rect class="d-box soft" x="40" y="304" width="690" height="104" rx="3"/>
+            <text class="d-t s" x="58" y="334">真地址</text>
+            <text class="d-t m" x="130" y="334"><tspan class="d-t m b">0xd9A1</tspan>b0B1e1aE382DbDc898Ea68012FfcB2<tspan class="d-t m b">853a91</tspan></text>
+            <text class="d-t s" x="58" y="362">假地址</text>
+            <text class="d-t m" x="130" y="362"><tspan class="d-t m b">0xd9A1</tspan><tspan class="d-t m atk">C3788D81257612E2581A6ea0aDa244</tspan><tspan class="d-t m b">853a91</tspan></text>
+            <text class="d-t s" x="58" y="392">去掉 0x 后开头 4 位、结尾 6 位相同（加粗），中间 30 位是另一串字符（假地址标红）</text>
+            <text class="d-t s" x="40" y="438">钱包过去多只显示首尾 3 到 5 位，Etherscan 显示首尾 6 到 7 位</text>
+            <text class="d-t s" x="40" y="458">在这样的显示下，两个地址看起来是同一个</text>
+          </svg>
+          </div>
+          <figcaption>三条记录的时刻和内容据 Chainalysis、SlowMist 和 Cointelegraph<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>，第二条记录的金额各方说法不同，见下方的说明。两个完整地址据 SlowMist<a class="ref" href="#s1">[1]</a>，钱包和浏览器的显示位数据 Tsuchiya 等人的论文<a class="ref" href="#s10">[10]</a>。</figcaption>
+        </figure>
+        <h3>把假地址塞进转账记录</h3>
+        <p>任何人都可以给任何地址转账，钱包会把收到的转账都列进记录。骗子正是利用这一点。Tsuchiya 等人把投毒转账分成三种<a class="ref" href="#s10">[10]</a>：</p>
+        <ul>
+          <li>小额转账：从假地址给受害者转一点和受害者之前转出的同一种代币。记录里出现的是“假地址转入”。</li>
+          <li>零额转账：以受害者的名义，记一笔从受害者到假地址、金额为 0 的同种代币转账。记录里出现的是“转出到假地址”，看上去受害者以前给这个地址转过钱，所以论文认为它比小额转账更危险。</li>
+          <li>假币转账：骗子自己发一个名字、符号和真代币一样的假币，从受害者到假地址转一笔和受害者原转账金额相同的假币。假币合约由骗子写，想替谁转就替谁转。</li>
+        </ul>
+        <p>以太坊上 2022 年 7 月到 2024 年 6 月的 1,730 万次投毒转账里，零额转账 720 万次，假币转账 990 万次，小额转账 30 万次<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>零额 transferFrom 为什么不用授权</h3>
+        <p>ERC-20 标准里，<code>transferFrom</code> 让第三方在得到授权后替持有人转币。标准一方面说，<code>from</code> 账户没有刻意授权调用者时，函数“应当”（SHOULD）报错；另一方面又说，金额为 0 的转账“必须”（MUST）当作正常转账处理，并发出 <code>Transfer</code> 事件<a class="ref" href="#s11">[11]</a>。常用的 OpenZeppelin 实现只在授权额度小于转账金额时报错：</p>
+<pre class="code"><code><span class="c">// openzeppelin-contracts v5.0.0，contracts/token/ERC20/ERC20.sol（节选）</span>
+function transferFrom(address from, address to, uint256 value) public virtual returns (bool) {
+    address spender = _msgSender();
+    _spendAllowance(from, spender, value);
+    _transfer(from, to, value);
+    return true;
+}
+
+function _spendAllowance(address owner, address spender, uint256 value) internal virtual {
+    uint256 currentAllowance = allowance(owner, spender);
+    if (currentAllowance != type(uint256).max) {
+        <span class="c">// 骗子从没得到授权，currentAllowance 是 0；value 也是 0，0 &lt; 0 不成立，不报错</span>
+<span class="bad">        if (currentAllowance &lt; value) {</span>
+            revert ERC20InsufficientAllowance(spender, currentAllowance, value);
+        }
+        unchecked {
+            _approve(owner, spender, currentAllowance - value, false);
+        }
+    }
+}</code></pre>
+        <p class="code-cap">出处：OpenZeppelin/openzeppelin-contracts，v5.0.0 标签，contracts/token/ERC20/ERC20.sol，节选<a class="ref" href="#s12">[12]</a>。中文注释为本站所加。之后 <code>_transfer</code> 照常执行，发出一条从受害者到假地址、金额为 0 的 <code>Transfer</code> 事件。</p>
+        <p>这样，骗子不需要受害者的私钥，也不需要授权，就能在受害者的记录里留下一条“受害者转出”的记录。2023 年 1 月，有开发者在 OpenZeppelin 提议：金额为 0 时也要求有非零的授权<a class="ref" href="#s13">[13]</a>。讨论里有人担心，一些合约会在两个合约之间以 0 金额调用 <code>transferFrom</code>，改了会出错；也有人认为该由 Etherscan 这类链下工具把零额转账藏起来。2 月 15 日，OpenZeppelin 关闭了提议，理由是改动可能给整个 ERC20 生态带来问题<a class="ref" href="#s13">[13]</a>。已经部署、不能升级的代币合约本来也改不了。</p>
+        <h3>钱包截断地址的显示</h3>
+        <p>Tsuchiya 等人写道，MetaMask、Phantom 等钱包过去大多只显示地址首尾 3 到 5 位，Etherscan 显示首尾 6 到 7 位<a class="ref" href="#s10">[10]</a>。Cointelegraph 2026 年的一篇特稿把投毒得手的原因归到三处：人只核对首尾，钱包在每条记录旁边放了复制按钮，钱包把所有转入、包括垃圾转账都列出来<a class="ref" href="#s16">[16]</a>。</p>
+        <p>时机也有讲究。论文发现投毒多发生在受害者原转账后 20 分钟内；在以太坊上得手的案例里，79% 有不止一个假地址同时针对同一个受害者<a class="ref" href="#s10">[10]</a>。受害者刚转完一笔，最可能马上再转下一笔，这时假记录正排在记录的最上面。</p>
+        <div class="note doubt"><span class="h">本案的假记录是哪一种</span><p>各方对 5 月 3 日那条假记录的描述不一致。SlowMist 说，骗子在受害者转账约 3 分钟后，用假地址跟了一笔“向用户地址发送 0 ETH”的交易<a class="ref" href="#s1">[1]</a>。Cointelegraph 说，9:17 UTC 骗子用合约把 0.05 枚一种没有名字、Etherscan 上只显示为“ERC-20”的代币从受害者账户转到骗子的地址<a class="ref" href="#s6">[6]</a>。CoinDesk 说，骗子模仿的是一笔 0.05 ether 的交易<a class="ref" href="#s3">[3]</a>。Cointelegraph 的描述接近上面的“假币转账”，SlowMist 的描述接近“零额转账”。本站不做链上取证，三种说法并列。</p></div>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>5 月 3 日：转错地址</h3>
+        <p>按 Chainalysis 的梳理，5 月 3 日 9:14 UTC，受害者 0x1E227 向地址 0xd9A1b 转了一笔，Chainalysis 认为这可能是一笔测试转账，大额转账前先试一小笔本是常见的做法<a class="ref" href="#s2">[2]</a>。约 3 分钟后，骗子的假地址在受害者的记录里留下了一笔记录<a class="ref" href="#s1">[1]</a>。10:31 UTC，受害者把 1,155 枚 WBTC 转到了假地址 0xd9A1C<a class="ref" href="#s6">[6]</a>。Chainalysis 写的是测试转账后“仅仅几分钟”就转出了大额<a class="ref" href="#s2">[2]</a>，和 Cointelegraph 按链上时间写的 10:31 相差一个多小时，本页采用 Cointelegraph 的时刻。</p>
+        <p>Cointelegraph 推测，受害者看到自己以前似乎给这个地址转过 0.05 枚代币，就以为它是安全的；实际上那笔是骗子发起的，只是看起来像受害者转出<a class="ref" href="#s6">[6]</a>。SlowMist 说，用户常常从钱包的最近记录里复制转账信息，受害者看到跟在后面的那条假记录，没有仔细核对就复制了地址<a class="ref" href="#s1">[1]</a>。</p>
+        <p>最先公开这件事的是安全公司 Cyvers。它在 X 上写道：“是我们看错了，还是真有人丢了价值 6,800 万美元的 WBTC？我们的系统检测到又一个地址成了地址投毒的受害者，损失 1,155 枚 WBTC。”<a class="ref" href="#s4">[4]</a> SlowMist 则说最早监测到的是反诈骗平台 Scam Sniffer<a class="ref" href="#s1">[1]</a>。CertiK 说它检测到一笔价值 6,930 万美元的转账，收款地址和地址投毒有关<a class="ref" href="#s5">[5]</a>；ZachXBT 也确认了这起损失<a class="ref" href="#s3">[3]</a>。Business Insider 报道，受害者的账户只剩 160 多万美元<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>链上喊话</h3>
+        <p>受害者找不到骗子是谁，只能通过链上交易附带的留言和对方说话。据 SlowMist，5 月 4 日受害者写道：“你赢了，兄弟。你可以留 10%，还 90%，我们可以当什么都没发生。我们都知道 700 万美元足够过得很舒服，7,000 万会让你睡不着觉。”<a class="ref" href="#s1">[1]</a></p>
+        <p>5 月 5 日，受害者又给一个以 dA6D 结尾的地址发了三条留言。Cointelegraph 说，这个地址经过几层中转收到过骗子地址的钱，很可能也由骗子控制。留言称：“我们都知道这些钱洗不干净。你会被追踪到。”受害者表示正式承认对方有权拿 10%，要求在 5 月 6 日 10:00 UTC 之前把 90% 还回来<a class="ref" href="#s6">[6]</a>。Chainalysis 称这是一句“几乎不加掩饰的威胁”<a class="ref" href="#s2">[2]</a>。</p>
+        <p>同一时间，区块链调查公司 Match Systems 也在链上给受害者留言：“如果黑客不退款，请联系我们帮忙。”据它的 CEO Andrey Kutin 说，随后一个“第三方”联系了他们，受害者本人不愿露面，由这个人居中传话；加密交易所 Cryptex 也参与进来，帮忙促成谈判<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>骗子回话，还钱</h3>
+        <p>5 月 8 日，SlowMist 发布分析，列出 10 个疑似骗子使用的 IP，来自香港的移动基站，不排除用了 VPN<a class="ref" href="#s1">[1]</a>。5 月 9 日 11:37 UTC，一个以 72F1 结尾、同样经几层中转收过骗子资金的地址，向受害者转了 51 枚 ETH，约 15.3 万美元，附言请受害者留下 Telegram 账号，第一条附言的词没有用空格隔开，6 分钟后又加上空格重发了一遍。受害者随后在链上留了一个 Telegram 用户名<a class="ref" href="#s6">[6]</a>。</p>
+        <p>5 月 10 日 8:47 UTC 起，多个钱包开始向受害者的地址转 ETH，第一笔 29.999 枚。一天里来了 225 笔以上，每笔 29 到 67 枚，合计约 22,960 枚，按当时价格约 6,570 万美元<a class="ref" href="#s7">[7]</a>。Match Systems 发表声明说，在它和 Cryptex 参与的谈判下，“黑客归还了全部被盗的 22,960 枚 ETH”，受害者对攻击者已无追诉<a class="ref" href="#s7">[7]</a>。链上分析账号 Lookonchain 指出，骗子是在 SlowMist 公布疑似 IP 之后回复受害者并还钱的<a class="ref" href="#s8">[8]</a>。</p>
+        <p>5 月 23 日，Kutin 对 Cointelegraph 说，他们从香港的 IP 出发，找到了“设备指纹”等更多数字证据。他承认这些证据是“间接的”，不能确定骗子是谁，只能证明经手赃款的人没有尽到审查资金来源的义务，这增加了谈判的筹码<a class="ref" href="#s9">[9]</a>。这些说法只来自 Match Systems 自己。</p>
+        <div class="note doubt"><span class="h">哪天还的，还了多少</span><p>Cointelegraph 5 月 10 日的报道按链上数据写，大额归还从 5 月 10 日 8:47 UTC 开始，约 22,960 枚 ETH，价值约 6,570 万美元，超过被骗时美元价值的 96%，差额来自 ETH 价格下跌<a class="ref" href="#s7">[7]</a>。Cointelegraph 5 月 13 日的另一篇写成 5 月 12 日归还、价值 7,100 万美元<a class="ref" href="#s8">[8]</a>。Chainalysis 写的是 5 月 9 日归还，金额是“原来的 6,800 万美元”<a class="ref" href="#s2">[2]</a>，5 月 9 日其实只到了 51 枚 ETH<a class="ref" href="#s6">[6]</a>。本页按 5 月 10 日记。按 ETH 数量，归还的 22,960 枚和 SlowMist 说的换出的 22,955 枚基本相同<a class="ref" href="#s1">[1]</a>；受害者答应的 10% 赏金，按这些报道看骗子没有留下。</p></div>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <h3>换成 ETH，逐层拆散</h3>
+        <p>Chainalysis 说，到 5 月 3 日 14:44 UTC，骗子已把这批 WBTC 转到另一个地址，这时 BTC 涨了，价值约 7,100 万美元<a class="ref" href="#s2">[2]</a>。据 SlowMist 用 MistTrack 的追踪，1,155 枚 WBTC 被换成 22,955 枚 ETH，分到 10 个地址；5 月 7 日起，骗子开始移动这些 ETH，每个地址最多留 100 枚，其余大致平分，转到下一层地址。到 SlowMist 发报告时，这些 ETH 还没有换成别的币，也没有转进任何平台<a class="ref" href="#s1">[1]</a>。PeckShield 的追踪图显示，这些钱 5 月 8 日起分散到 400 多个钱包，最后停在 150 多个钱包里<a class="ref" href="#s8">[8]</a>。</p>
+        <p>归还时，钱也是绕回来的。Cointelegraph 和 Chainalysis 都指出，向受害者转钱和留言的地址，都是经过几层中转、从骗子的地址收到过钱的地址<a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>。</p>
+        <h3>团伙其他赃款的去向</h3>
+        <p>这笔钱还回去了，团伙之前骗到的钱没有。SlowMist 查了骗子 3 月底以来的其他赃款，发现两种洗钱方式：把 ETH 换成门罗币，或者跨链转到 Tron，再转进疑似场外交易（OTC）商的地址<a class="ref" href="#s1">[1]</a>。Chainalysis 说，这轮活动的大部分时间里，骗子把骗到的钱经 DeFi 协议或中心化交易所洗出去；其中一部分归集后转进一家位于东欧、执行 KYC 的中心化交易所，活动开始和结束时都有大笔资金进了这家交易所，中段则多走 DeFi<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Chainalysis 算了这轮活动的账：如果骗子留下 6,800 万美元，投入的回报率是 58,363%；还掉之后仍净赚 149 万美元，回报率约 1,148%<a class="ref" href="#s2">[2]</a>。同一篇文章另一处又说，扣除归还的 6,800 万美元，这轮活动获利 300 万美元<a class="ref" href="#s2">[2]</a>。两个数字出自同一篇，没有说明差别在哪里。</p>
+        <h3>能不能冻结</h3>
+        <p>被骗的币种不同，结果可以很不一样。Tsuchiya 等人记录的稳定币投毒里，最大的一笔得手后，Tether 在一小时内冻结了骗子的地址，钱没能转走<a class="ref" href="#s10">[10]</a>。2025 年 12 月 20 日那起约 5,000 万美元的 USDT 投毒，据链上调查者 Specter，骗子在 30 分钟内把 USDT 换成了 DAI，再换成约 16,690 枚 ETH，转进了 Tornado Cash<a class="ref" href="#s14">[14]</a>。本案的 WBTC 当天就被换成了 ETH<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>本案</h3>
+        <p>受害者只有一个地址，被转走的 1,155 枚 WBTC 占这个钱包资产的 97% 以上<a class="ref" href="#s4">[4]</a>。按当时价格，各方给出的金额是 6,800 万美元（CoinDesk、Cointelegraph）<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>、6,930 万美元（CertiK）<a class="ref" href="#s5">[5]</a>和约 7,000 万美元（SlowMist）<a class="ref" href="#s1">[1]</a>，差别来自取价的时刻。本站按 6,800 万美元记。骗子后来还回约 22,960 枚 ETH，约 6,570 万美元<a class="ref" href="#s7">[7]</a>，按本站口径，这笔钱仍算作被骗走的损失。</p>
+        <h3>同一团伙的其他受害者</h3>
+        <p>Chainalysis 统计，在它找到的 82,031 个相似地址里，有 2,774 个地址向它们转过钱，合计 69,720,993 美元。这些受害钱包的平均余额超过 33.89 万美元，中位数约 1,000 美元，平均有过 598 笔转账，在链上活跃了约 512 天，比一般的以太坊个人钱包更活跃、钱更多<a class="ref" href="#s2">[2]</a>。</p>
+        <p>单个假地址的得手率很低。只有 0.03% 的相似地址从受害者那里收到过 100 美元以上；不算本案那一笔，82,000 多个地址里只有 22 个收到过 100 美元以上。另有 756 个地址收到过 1 到 100 美元，Chainalysis 认为多半是受害者的测试转账，测试转错了地方，后面的大额就没有发出去<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>地址投毒整体</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>出处</th><th>范围</th><th class="n">数字</th></tr></thead>
+          <tbody>
+            <tr><td>Chainalysis，2024 年 10 月</td><td>本案团伙，2024 年 2 月 28 日至 5 月 4 日，转入相似地址的金额</td><td class="n">6,972 万美元<a class="ref" href="#s2">[2]</a></td></tr>
+            <tr><td>Tsuchiya 等，2025 年</td><td>以太坊和 BSC，2022 年 7 月至 2024 年 6 月，投毒尝试</td><td class="n">2.7 亿次<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>同上</td><td>同期被投毒的地址</td><td class="n">1,700 万个<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>同上</td><td>得手的 6,633 起，只统计稳定币</td><td class="n">至少 8,380 万美元<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>同上</td><td>其中以太坊：1,502 名受害者</td><td class="n">近 8,000 万美元<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>Andrey Sergeenkov，2026 年 1 月</td><td>以太坊，Fusaka 升级后的一波投毒，116 名受害者</td><td class="n">74 万美元以上<a class="ref" href="#s15">[15]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>论文的测量是目前公开范围最大的：以太坊上 1,730 万次投毒转账，针对 130 万个地址，用了 650 万个相似地址；BSC 上 2.52 亿次，针对 1,600 万个地址。以太坊上的得手率是 0.01%，单笔被骗的中位数是 2,169 美元<a class="ref" href="#s10">[10]</a>。研究员 Sergeenkov 认为，2025 年 12 月 Fusaka 升级让以太坊手续费下降 60% 以上，地址投毒变得更划算；他找到的大“撒灰”地址里，有的给 40 万以上的地址发过灰尘转账<a class="ref" href="#s15">[15]</a>。</p>
+        <p>本案之后的大额单案，公开报道里有：2025 年 12 月 20 日一名交易者转错 49,999,950 枚 USDT，他先用 50 枚 USDT 做了测试，假地址首尾各 4 位相同<a class="ref" href="#s14">[14]</a>；2026 年 2 月，有人经 Phantom 钱包的聊天功能被投毒，损失约 3.5 枚 WBTC<a class="ref" href="#s16">[16]</a>；2026 年 3 月 5 日，加密评论人 Sillytuna 损失约 2,400 万美元的 aEthUSDC，PeckShield 等标记了这起事件<a class="ref" href="#s17">[17]</a>。</p>
+        <div class="note doubt"><span class="h">这些数字口径不同</span><p>论文只统计几种主要稳定币的转账，作者明确说本案的 WBTC 不在 8,380 万美元里，所以这是下限<a class="ref" href="#s10">[10]</a>。Chainalysis 的 6,972 万美元只算一个团伙，从数额看包含了本案后来归还的约 6,800 万美元<a class="ref" href="#s2">[2]</a>。Sergeenkov 的数字只覆盖他识别出的几个撒灰地址<a class="ref" href="#s15">[15]</a>。几组数字的时段和链都不同，不能相加。</p></div>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>到 2026 年 11 月，本站没有查到针对本案骗子的起诉、逮捕、制裁或扣押的公开报道，也没有执法机构公开说过在调查这起案子。追回钱靠的是受害者的链上喊话和几家私营公司：SlowMist 公布了疑似 IP<a class="ref" href="#s1">[1]</a>，Match Systems 说它用 IP 和“设备指纹”等证据促成了谈判<a class="ref" href="#s9">[9]</a>。按 Match Systems 的声明，钱还回来以后，受害者对攻击者已无追诉<a class="ref" href="#s7">[7]</a>。骗子的身份没有公开，SlowMist 和 Match Systems 都没有确认骗子是谁。</p>
+        <p>Chainalysis 说，骗子归还 6,800 万美元的做法不寻常，也标志着这一系列攻击的结束<a class="ref" href="#s2">[2]</a>。Tsuchiya 等人也观察到，几个大的投毒团伙在 2024 年 5 月前后停手<a class="ref" href="#s10">[10]</a>，论文没有把这和本案联系起来。</p>
+        <h3>行业的改动</h3>
+        <p>合约层面没有改。OpenZeppelin 2023 年决定不在 ERC20 实现里禁止零额 <code>transferFrom</code><a class="ref" href="#s13">[13]</a>；已经部署的代币大多也不能改。防线落到了显示层：Tsuchiya 等人写道，到 2025 年 1 月 13 日，Etherscan 能识别他们样本里的全部投毒转账<a class="ref" href="#s10">[10]</a>。论文建议钱包和浏览器显示更多位地址，隐藏疑似投毒的转账，或者在用户向相似地址转账时要求再确认一次；协议层面，可以用人能读的域名代替地址，但域名又有抢注和过期被重新注册的问题<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">转账之前</span>
+          <ul>
+            <li>不要从转账记录里复制收款地址。本案受害者就是从记录里复制的<a class="ref" href="#s1">[1]</a>。常用地址存进钱包的地址簿，或者每次从对方给出的原始来源（交易所的充值页、对方本人）重新获取<a class="ref" href="#s1">[1]</a><a class="ref" href="#s16">[16]</a>。</li>
+            <li>核对完整地址，至少别只看首尾。本案假地址开头 4 位、结尾 6 位都和真地址一样<a class="ref" href="#s1">[1]</a>；SlowMist 建议至少核对“0x”后的前 6 位和后 8 位，最好逐位核对<a class="ref" href="#s1">[1]</a>。</li>
+            <li>做完测试转账，最危险的时候才开始。投毒多发生在原转账后 20 分钟内<a class="ref" href="#s10">[10]</a>，本案的假记录在测试转账后约 3 分钟出现<a class="ref" href="#s1">[1]</a>，2025 年 12 月那起 5,000 万美元的案子也是先测试、后转错<a class="ref" href="#s14">[14]</a>。大额转账要用和测试转账同一个来源的地址，不要回到记录里去找。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">看记录的时候</span>
+          <ul>
+            <li>记录里出现一笔自己不记得签过的“转出”，尤其是金额为 0、代币没有名字、或者收款地址和常用地址只差中间几位，就是有人在投毒<a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a>。</li>
+            <li>莫名其妙收到的小额转账同理<a class="ref" href="#s16">[16]</a>。投毒要靠受害者以后来复制，不理会它就不会有损失。钱包有过滤小额、零额转账的选项，可以打开<a class="ref" href="#s1">[1]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">已经转错了</span>
+          <ul>
+            <li>本案能拿回钱是少见的结果，Chainalysis 也说这样做不寻常<a class="ref" href="#s2">[2]</a>。2025 年 12 月那起，受害者在链上开出 100 万美元的赏金，到报道时钱也没追回来<a class="ref" href="#s14">[14]</a>。</li>
+            <li>转出的如果是 USDT 这类发行方能冻结的币，要尽快联系发行方；Tether 曾在一小时内冻结骗子的地址<a class="ref" href="#s10">[10]</a>。本案的 WBTC 当天就被换成 ETH<a class="ref" href="#s1">[1]</a>，2025 年 12 月那起的 USDT 在 30 分钟内被换成 DAI<a class="ref" href="#s14">[14]</a>，留给受害者的时间很短。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">SlowMist，《Small Bait, Big Fish| Unveiling the 1155 WBTC Phishing Incident》，2024-05-08。<a href="https://slowmist.medium.com/small-bait-big-fish-unveiling-the-1155-wbtc-phishing-incident-22bf53b6fe60">slowmist.medium.com</a></li>
+          <li id="s2">Chainalysis，《Anatomy of an Address Poisoning Scam》，2024-10-23。<a href="https://www.chainalysis.com/blog/address-poisoning-scam/">chainalysis.com</a></li>
+          <li id="s3">CoinDesk（Oliver Knight），《Exploiter Steals $68M Worth of Crypto Through Address Poisoning》，2024-05-03。<a href="https://www.coindesk.com/business/2024/05/03/exploiter-steals-68m-worth-of-crypto-through-address-poisoning">coindesk.com</a></li>
+          <li id="s4">Cointelegraph（Zoltan Vardai），《Trader loses $68M in address poisoning scam》，2024-05-03。<a href="https://cointelegraph.com/news/trader-loses-68-million-address-poisoning-scam">cointelegraph.com</a></li>
+          <li id="s5">Business Insider（Kenneth Niemeyer），《Bitcoin trader loses almost $70 million after sending crypto to wrong online account address》，2024-05-05。<a href="https://www.businessinsider.com/bitcoin-trader-loses-millions-address-poisoning-scam-crypto-eth-finance-2024-5">businessinsider.com</a></li>
+          <li id="s6">Cointelegraph（Allen Scott），《Address poisoning attacker sends $153K ETH to victim and agrees to negotiate》，2024-05-09。<a href="https://cointelegraph.com/news/address-poisoning-attacker-sends-153-k-ethereum-negotiate">cointelegraph.com</a></li>
+          <li id="s7">Cointelegraph（Allen Scott），《WBTC address poisoner sends nearly all funds back to victim after negotiations》，2024-05-10（2024-05-11 更新）。<a href="https://cointelegraph.com/news/wbtc-address-poisoner-all-funds-negotiations">cointelegraph.com</a></li>
+          <li id="s8">Cointelegraph（Zoltan Vardai），《WBTC thief returns $71 million worth of stolen funds》，2024-05-13。<a href="https://cointelegraph.com/news/wbtc-thief-returns-71-million">cointelegraph.com</a></li>
+          <li id="s9">Cointelegraph（Allen Scott），《WBTC address poisoner was exposed through ‘digital evidence’ — Match Systems》，2024-05-28。<a href="https://cointelegraph.com/news/wbtc-address-poisoner-was-exposed-through-digital-evidence">cointelegraph.com</a></li>
+          <li id="s10">Taro Tsuchiya、Jin-Dong Dong、Kyle Soska、Nicolas Christin，《Blockchain Address Poisoning》，USENIX Security 2025（arXiv:2501.16681v3，2025-07-02）。<a href="https://arxiv.org/abs/2501.16681">arxiv.org</a></li>
+          <li id="s11">Fabian Vogelsteller、Vitalik Buterin，《ERC-20: Token Standard》，2015-11-19。<a href="https://eips.ethereum.org/EIPS/eip-20">eips.ethereum.org</a></li>
+          <li id="s12">OpenZeppelin，openzeppelin-contracts v5.0.0，contracts/token/ERC20/ERC20.sol。<a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/token/ERC20/ERC20.sol">github.com</a></li>
+          <li id="s13">OpenZeppelin/openzeppelin-contracts，issue #3931《Disallow Address Poisoning in ERC20》，2023-01-05 提出，2023-02-15 关闭。<a href="https://github.com/OpenZeppelin/openzeppelin-contracts/issues/3931">github.com</a></li>
+          <li id="s14">Bitcoin.com News（Terence Zimwara），《加密交易员因地址投毒骗局损失5000万美元USDT》，2025-12-21。<a href="https://news.bitcoin.com/zh/jiami-jiaoyiyuan-yin-dizhi-dudu-pianju-sunshi-5000wan-meiyuan-usdt/">news.bitcoin.com</a></li>
+          <li id="s15">Cointelegraph，《Ethereum activity surge could be linked to dusting attacks: Researcher》，2026-01-20。<a href="https://cointelegraph.com/news/address-poisoning-attack-adding-record-ethereum-network-activity-says-researcher">cointelegraph.com</a></li>
+          <li id="s16">Cointelegraph，《Why address poisoning works without stealing private keys》，2026-02-19。<a href="https://cointelegraph.com/features/why-address-poisoning-works-without-stealing-private-keys">cointelegraph.com</a></li>
+          <li id="s17">CCN（Prashant Jha），《Crypto Influencer Sillytuna Loses $24M in Address Poisoning Scam — How It Happened》，2026-03-05（Yahoo Finance 转载）。<a href="https://finance.yahoo.com/news/crypto-influencer-sillytuna-loses-24m-071842352.html">finance.yahoo.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

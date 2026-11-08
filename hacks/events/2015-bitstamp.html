@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitstamp 热钱包被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2015 年 Bitstamp 热钱包被盗 18,866 枚 BTC 的经过：泄露的内部事故报告、针对六名员工的定向钓鱼、钱包文件和口令如何被取走、停业重建与改用多签。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2015-bitstamp">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2015 年　/　交易所的荒野时代</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Bitstamp 热钱包被盗</h1>
+    <p class="lede">2015 年 1 月 4 日，当时全球第三大比特币交易所 Bitstamp 的热钱包被转空。泄露出来的内部事故报告显示，攻击者在此前五周里用 Skype 和邮件分别接触了六名员工，每个诱饵都按对象的兴趣量身定做，最后让能访问热钱包的系统管理员打开了一份带恶意宏的文档。这是交易所因员工被定向钓鱼而失守的早期案例，也是少有的完整入侵过程被公开的案例。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Bitstamp 把绝大部分比特币放在离线的冷钱包里，热钱包按设计最多只存 5,000 枚。热钱包的文件 <code>wallet.dat</code> 和解锁它的口令分别放在数据中心的两台服务器上，但同一个系统管理员账号可以登录这两台机器。攻击者攻破了这名管理员的笔记本，借它在后台连上数据中心，把文件和口令一起拷走，六天后把钱包转空<a class="ref" href="#s1">[1]</a>。</p>
+        <p>被盗当天仍不断有用户往旧的充值地址存币，这些币也落入攻击者手中，最终损失 18,866 枚 BTC，按当时每枚约 279 美元计约 526 万美元<a class="ref" href="#s1">[1]</a>。Bitstamp 1 月 5 日暂停服务，用自有资金承担全部损失，在全新的硬件上重建系统，1 月 9 日恢复营业并改用多签钱包<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>本页的入侵细节主要来自一份 2015 年 2 月 20 日的内部事故报告。它由 Bitstamp 的法律总顾问撰写，汇总了公司自己的调查和数字取证公司 Stroz Friedberg 的分析，2015 年 7 月被一个匿名账户发到 Reddit<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。Bitstamp 没有对报告的真伪发表评论<a class="ref" href="#s3">[3]</a>。攻击者的身份至今没有公开。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Bitstamp 由 Nejc Kodrič 和 Damijan Merlak 于 2011 年 8 月在斯洛文尼亚创立，2013 年 4 月把注册地迁到英国<a class="ref" href="#s7">[7]</a>。事发时公司在斯洛文尼亚有约 25 名支持人员和服务器，有约 6.5 万名通过身份验证的客户，主要在欧洲<a class="ref" href="#s1">[1]</a>。按当时的统计，它是全球第三大的比特币交易所<a class="ref" href="#s4">[4]</a>。</p>
+        <p>Mt.Gox 倒闭后，冷热钱包分离成了交易所的标准说法。Kodrič 公开说过，Bitstamp 把 85% 至 90% 的客户资金放在冷钱包里<a class="ref" href="#s4">[4]</a>。2014 年 5 月，比特币开发者 Mike Hearn 为 Bitstamp 做过一次审计，证实它的冷钱包里有 18 万多枚 BTC<a class="ref" href="#s6">[6]</a>。事后来看，这套设计在“限制损失规模”上起了作用，在“保护热钱包本身”上没有。</p>
+        <p>热钱包的结构是这样的：钱包文件放在数据中心的一台服务器上，解锁钱包所需的口令放在另一台服务器上。连接数据中心的 VPN 只允许三个 IP 地址：公司办公室、CTO 家里和系统管理员家里。从这三个地址连进数据中心时不需要二次验证；从外部连进办公室网络则需要<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与执法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2014-11-04</time><div class="ev">CTO 在 Skype 上被人联系，对方以赠送 2015 年一个朋克音乐节的门票为由搭讪。11 月 20 日对方发来“参与者表格”，文档里有混淆过的恶意宏，但宏没有成功运行<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2014-11-18</time><div class="ev">COO 被冒充记者的人联系，对方谈起他多年前在希腊当记者时写的文章，26 日试图发来一份 Word 文档，COO 没有接收<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2014-11-24</time><div class="ev">一名兼职合作者被问起他在另一家公司的项目，他把对话转到了那家公司的账号上，电脑上没有发现恶意文件<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2014-12-05</time><div class="ev">另一名员工以“工作机会”为由收到一份问卷文档，打开后下载了恶意程序，但程序没能正常运行<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2014-12-09</time><div class="ev">又一名员工被冒充其前雇主的人联系，此后收到的文档下载了恶意程序，但程序被电脑的软件限制策略和杀毒软件拦下，没能运行；此人本来也没有热钱包权限。同一天，系统管理员的私人 Gmail 收到一封伪造成 acm.org 发出的邮件，邀请他加入计算机领域的荣誉学会 Upsilon Pi Epsilon<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2014-12-11</time><div class="ev">系统管理员打开了邮件附件中的“入会申请表”，宏自动运行，从外部服务器下载恶意程序，电脑被控制<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2014-12-17–22</time><div class="ev">攻击者在这台电脑上陆续放入更多恶意程序；23 日，管理员的账号多次登录存放钱包文件的服务器<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2014-12-29</time><div class="ev">11:29–12:01（CET），管理员账号登录存放钱包文件和存放口令的两台服务器，约 3.5 GB 数据被传到一个德国托管商的 IP 地址，大小与钱包文件相当<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2015-01-04 09:32</time><div class="ev">有人从罗马尼亚的 IP 地址用管理员的账号远程登录办公室网络，管理员手机在 23 分钟里收到 9 次二次验证请求<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2015-01-04</time><div class="ev">热钱包被转空，当天陆续存入的充值也被转走，合计 18,866 枚 BTC<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2015-01-04 23:00</time><div class="ev">身在美国的 CTO 约在 23:00（CET）发现钱包余额减少，通知同事排查，公司启动应急预案<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2015-01-05 09:00</time><div class="ev">Bitstamp 于 09:00（UTC）暂停服务，提醒用户不要再往旧的充值地址存币，承诺此前的余额全额兑付；当天向媒体确认被盗“不到 19,000 枚 BTC”<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2015-01-08</time><div class="ev">Stroz Friedberg 团队抵达斯洛文尼亚办公室，为 22 台笔记本和数据中心的服务器制作取证镜像，首轮采集约 13 TB 数据<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2015-01-09</time><div class="ev">Bitstamp 在新硬件上恢复营业，宣布采用 BitGo 的多签技术<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2015-02-20</time><div class="ev">内部事故报告完成<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2015-07-01</time><div class="ev">报告被一个匿名账户发到 Reddit 的 r/Bitcoin 版块，原件托管在 Scribd 上，后被删除<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+        </ol>
+        <p>报告里的时刻多为欧洲中部时间（CET，比 UTC 早 1 小时），Bitstamp 的公告用 UTC，这里照原样标注。</p>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次没有代码漏洞。攻击者也没有正面攻击 Bitstamp 的服务器，而是沿着一串“默认信任”的关系一路走过去：信任员工打开的文档，信任员工的电脑，信任从白名单 IP 来的连接，信任能登录服务器的账号。下图按事故报告把这条路径拆成六步<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 340" role="img" aria-labelledby="bs-path-t bs-path-d">
+            <title id="bs-path-t">从一封钓鱼邮件到热钱包被转空</title>
+            <desc id="bs-path-d">六个步骤：定制化的钓鱼邮件附带恶意宏文档；系统管理员的笔记本在 12 月 11 日被控制；攻击者借这台电脑在后台连上数据中心 VPN，白名单 IP 不需要二次验证；同一个账号登录存放钱包文件和存放口令的两台服务器；12 月 29 日约 3.5 GB 数据被传到德国的一个 IP；1 月 4 日攻击者用副本转空热钱包并收走后续充值，共 18,866 枚 BTC。每一步旁边标出了本可拦截的控制措施。</desc>
+            <defs>
+              <marker id="bs-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t s def" x="125" y="40" text-anchor="middle">拦截点：默认禁用宏、沙箱检查附件</text>
+            <text class="d-t s def" x="380" y="40" text-anchor="middle">拦截点：管理钱包的电脑专机专用</text>
+            <text class="d-t s def" x="635" y="40" text-anchor="middle">拦截点：每次连接都要二次验证</text>
+            <rect class="d-box atk" x="20" y="54" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="125" y="80" text-anchor="middle">① 定制化钓鱼</text>
+            <text class="d-t s" x="125" y="101" text-anchor="middle">邀请函附带恶意宏文档</text>
+            <rect class="d-box atk" x="275" y="54" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="380" y="80" text-anchor="middle">② 管理员电脑被控</text>
+            <text class="d-t s" x="380" y="101" text-anchor="middle">12 月 11 日打开附件</text>
+            <rect class="d-box atk" x="530" y="54" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="635" y="80" text-anchor="middle">③ 后台连上数据中心</text>
+            <text class="d-t s" x="635" y="101" text-anchor="middle">白名单 IP，不需二次验证</text>
+            <line class="d-line atk" x1="230" y1="85" x2="273" y2="85" marker-end="url(#bs-ah-atk)"/>
+            <line class="d-line atk" x1="485" y1="85" x2="528" y2="85" marker-end="url(#bs-ah-atk)"/>
+            <line class="d-line atk" x1="635" y1="116" x2="635" y2="212" marker-end="url(#bs-ah-atk)"/>
+            <rect class="d-box atk" x="530" y="214" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="635" y="240" text-anchor="middle">④ 登录两台服务器</text>
+            <text class="d-t s" x="635" y="261" text-anchor="middle">钱包文件和口令，同一账号</text>
+            <rect class="d-box atk" x="275" y="214" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="380" y="240" text-anchor="middle">⑤ 数据外传</text>
+            <text class="d-t s" x="380" y="261" text-anchor="middle">12 月 29 日，约 3.5 GB</text>
+            <rect class="d-box atk" x="20" y="214" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="125" y="240" text-anchor="middle">⑥ 转空热钱包</text>
+            <text class="d-t s" x="125" y="261" text-anchor="middle">1 月 4 日，共 18,866 BTC</text>
+            <line class="d-line atk" x1="530" y1="245" x2="487" y2="245" marker-end="url(#bs-ah-atk)"/>
+            <line class="d-line atk" x1="275" y1="245" x2="232" y2="245" marker-end="url(#bs-ah-atk)"/>
+            <text class="d-t s def" x="635" y="300" text-anchor="middle">拦截点：文件和口令由不同的人掌管</text>
+            <text class="d-t s def" x="380" y="300" text-anchor="middle">拦截点：异常出站流量实时报警</text>
+            <text class="d-t s def" x="125" y="300" text-anchor="middle">拦截点：多签、限额与延时</text>
+            <text class="d-t s" x="125" y="324" text-anchor="middle">这一步已不需要进入公司网络</text>
+          </svg>
+          </div>
+          <figcaption>图 1：根据泄露的事故报告还原的入侵路径。红色是攻击步骤，蓝色是本可拦截这一步的控制措施。到第 ⑥ 步，攻击者手里已有钱包文件和口令，网络层的防护不再起作用，只能靠钱包本身的结构（多签、限额）止损。</figcaption>
+        </figure>
+        <h3>每一环的“默认信任”</h3>
+        <ol class="steps">
+          <li><b>私人通讯和钱包管理在同一台电脑上</b>系统管理员用这台笔记本收私人 Gmail、用 Skype 聊天，同一台电脑又能连进存放热钱包的服务器。报告最后的整改措施之一，正是要求能接触充值或敏感数据的管理人员笔记本“单一用途”，不能收邮件、用 Skype 或随意上网<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>IP 白名单代替了二次验证</b>从三个白名单 IP 连进数据中心不需要二次验证。管理员的笔记本当时就在办公室，连着办公网络，所以 Bitstamp 推断攻击者是在他工作时，在后台悄悄建立了 VPN 连接<a class="ref" href="#s1">[1]</a>。二次验证只防住了“从外面进来”，没有防住“从里面被控制的机器出发”。</li>
+          <li><b>文件和口令分开放，却由同一个账号管</b>钱包文件和口令放在两台服务器上，看起来是分权，但同一个系统管理员账号可以登录这两台机器。攻击者拿下一个账号，就同时拿到了两样东西<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>单签热钱包</b>从结果看，有了钱包文件和口令就能把余额全部转走。报告没有提到任何单笔或单日限额、延时或第二人批准的机制，多签批准是事后整改才加上的<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>大量数据外传没有报警</b>12 月 29 日约 3.5 GB 数据被传到一个陌生的德国 IP，这在网络日志里有记录，但直到 1 月 4 日钱被转走之后才被人翻出来。此前 23 日已有可疑登录，管理员本人也无法确定那是不是自己<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>被盗的钱包仍在收款</b>热钱包里同一时间最多只有 5,000 枚，但被盗地址仍是用户的充值地址。当天充值量又异常地大，攻击者把陆续存入的币也一并收走，最终拿走 18,866 枚<a class="ref" href="#s1">[1]</a>。发现被盗后，Bitstamp 发布的第一条提醒就是不要再往旧地址存币<a class="ref" href="#s4">[4]</a>。</li>
+        </ol>
+        <div class="note">
+          <span class="h">诱饵是怎样定制的</span>
+          <p>六个目标收到的诱饵各不相同：喜欢朋克、自己玩过乐队的 CTO 收到音乐节门票；曾在希腊当过记者的 COO 被“记者”请教旧文章；有人收到“工作机会”，有人被冒充前雇主的人联系，系统管理员收到计算机荣誉学会的入会邀请。报告说，攻击者每次只同时接触少数几个人，对方不理睬也会坚持，CTO 有一次在第 11 次提醒后才回复<a class="ref" href="#s1">[1]</a>。发给管理员的邮件伪造成 acm.org 发出，邮件头里的 SPF 检查结果是 softfail，说明发信服务器并未获得这个域名的授权，但邮件仍然进了收件箱<a class="ref" href="#s1">[1]</a>。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面的经过按事故报告转述。报告由 Bitstamp 的法律总顾问撰写，取证部分来自 Stroz Friedberg<a class="ref" href="#s1">[1]</a>。</p>
+        <ol class="steps">
+          <li><b>研究目标</b>每个诱饵都对应目标的个人经历。报告举例说，一名员工的 LinkedIn 资料上写着他以前工作过的公司，攻击者就冒充那家公司的人联系他<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>持续五周的钓鱼</b>2014 年 11 月 4 日到 12 月中旬，六名员工被接触，四人收到带恶意宏的文档。宏代码与之前流传的大规模钓鱼工具结构相似，但被大幅修改过，当时主流杀毒软件都检测不出<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>攻破一台关键的电脑</b>多数目标并没有热钱包权限，他们的电脑要么没中招，要么恶意程序没有正常运行。系统管理员是唯一完全被攻破的人：12 月 11 日附件里的宏自动运行，下载了一个功能很多的远程控制程序，并设置成开机自启<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>进入数据中心</b>此后攻击者借这台电脑访问数据中心。12 月 23 日，管理员的账号多次登录存放钱包文件的服务器；29 日，同一账号登录两台服务器，随后约 3.5 GB 数据外传。日志只记录了流量大小，没有内容，Bitstamp 是根据大小与钱包文件吻合，推断钱包文件和口令在这时被拷走<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>转走资金</b>1 月 4 日钱包被转空。报告指出，这一步已经不需要进入办公室或数据中心的网络，因为攻击者手里已经有了钱包文件和口令<a class="ref" href="#s1">[1]</a>。同一天上午，有人用管理员的账号从罗马尼亚的 IP 尝试登录办公室网络，触发了 9 次二次验证请求，没有成功<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+        <p>报告的结论是，这是一次目标明确、执行坚决的攻击，攻击者有很强的操作安全意识和技术能力。所有的 Skype 和邮件联系都经过匿名代理，投递恶意程序的服务器和接收钱包文件的服务器分布在多个司法辖区的托管服务上，留给进一步调查的线索很少<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>Bitstamp 没有公开被盗资金流向的地址，报告也没有记录攻击者此后如何处理这些币。事发当天，Reddit 和论坛上的用户注意到 1 月 4 日清晨有一笔约 18,866 枚 BTC 的大额转账，猜测就是 Bitstamp 热钱包被转走的币<a class="ref" href="#s4">[4]</a>；Fortune 当时也报道，有一个地址收到了与被盗金额大致相当的一笔存款<a class="ref" href="#s6">[6]</a>。这笔钱此后的去向，本站没有找到可靠的公开分析。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">金额</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>被盗比特币</td><td class="n">18,866 BTC</td><td>热钱包被拷走时约有 5,000 枚，其余是之后存入的充值</td></tr>
+              <tr><td>按当时价格</td><td class="n">5,263,614 美元</td><td>按 Bitstamp 当时的成交价每枚 279 美元计算</td></tr>
+              <tr><td>声誉损失（估计）</td><td class="n">超过 200 万美元</td><td>流失的客户，包括提供比特币支付服务的大客户</td></tr>
+              <tr><td>重建平台</td><td class="n">约 25 万美元</td><td>支付给外聘的程序员</td></tr>
+              <tr><td>取证调查</td><td class="n">约 25 万美元</td><td>支付给 Stroz Friedberg，报告写作时仍在增加</td></tr>
+              <tr><td>其他顾问</td><td class="n">至少 15 万美元</td><td>安全审查、法律与财务顾问</td></tr>
+              <tr><td>客户损失</td><td class="n">0</td><td>Bitstamp 用自有资本和比特币储备承担全部损失</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">表中数字均来自事故报告，截至 2015 年 2 月<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>冷热分离限制了损失，没有防住入侵</h3>
+        <p>被盗的 18,866 枚和冷钱包里审计确认过的 18 万多枚相比，只是一小部分<a class="ref" href="#s6">[6]</a>。Bitstamp 在报告里把这一点总结为热冷钱包系统“按设计起了作用”：只丢了一小部分币，全部损失由自有储备承担，客户资金和数据都没有损失<a class="ref" href="#s1">[1]</a>。但热钱包本身没有任何额外保护，一旦文件和口令被拿走，里面的币和之后存进来的币都保不住。冷热分离决定了损失的上限，决定不了会不会被偷。</p>
+        <h3>“攻人”成为交易所入侵的主要入口</h3>
+        <p>Bitstamp 的攻击者用了五周时间、六个定制身份，只为攻破一台有权限的电脑。此后同样的套路反复出现，2022 年 <a href="2022-ronin-bridge.html">Ronin 跨链桥</a>被盗的起点，就是一名员工被鱼叉式钓鱼攻破。攻破一个有权限的人，往往比攻破一套系统容易。</p>
+        <h3>一份罕见的完整事故报告</h3>
+        <p>报告开头特别强调，为了不“教会其他黑客”，任何部分都不得公开<a class="ref" href="#s1">[1]</a>。五个月后它还是流了出来。正因为如此，外界才能看到一次交易所入侵从第一封钓鱼邮件到最后一笔转账的完整过程，包括每个员工收到的诱饵、哪些电脑没有中招以及为什么没有中招。这样详细的公开材料，在早期交易所事件里很少见。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>在新硬件上重建</h3>
+        <p>发现被盗后，Bitstamp 让员工关掉笔记本，服务器断网但保持通电，以保留证据。它没有尝试修复旧系统，而是从一份按灾备流程保存在“洁净室”环境里的备份出发，把整个交易平台和配套系统在全新的硬件上重新部署，分发网络改用位于欧洲的 Amazon 云服务器；旧的服务器和笔记本全部保留，用于取证<a class="ref" href="#s1">[1]</a>。1 月 9 日恢复营业时，Kodrič 在博客里写道，网站和后台系统已经重新部署，“比以往任何时候都更安全”，并称公司保全了证据，以便对这起犯罪做全面的取证调查<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>整改措施</h3>
+        <ol class="steps">
+          <li><b>热钱包改用多签</b>恢复营业时，Bitstamp 宣布采用 BitGo 的多签技术<a class="ref" href="#s5">[5]</a>。报告说，换成多签之后，“这次的转账今天不可能再发生”，并称热钱包和冷钱包都已用多签保护<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>冷钱包交给专业托管商</b>请 Xapo 协助管理冷钱包，并着手为所有比特币存款购买保险<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>终端和流程</b>上线 FireEye 的邮件与网页过滤；要求任何对热钱包的访问都经过多签批准；能接触充值或敏感客户信息的管理人员，笔记本必须单一用途，不能收发邮件、使用 Skype 或随意上网；请第三方做全面的安全审查<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+        <h3>执法</h3>
+        <p>Bitstamp 通知了美国特勤局、FBI 和英国伦敦的网络犯罪调查人员，并聘请 Stroz Friedberg 调查<a class="ref" href="#s1">[1]</a>。报告称，他们相信已经识别出至少一名黑客，正在设“诱饵”引他进入英国以便逮捕，并说“已经非常接近”<a class="ref" href="#s1">[1]</a>。截至 2026 年 10 月，本站没有找到任何与此案有关的逮捕或起诉的公开报道。</p>
+        <div class="note doubt">
+          <span class="h">关于报告的真实性</span>
+          <p>这份报告是由一个只发过这一帖的匿名账户发到 Reddit 的，Bitstamp 对 CoinDesk 拒绝置评<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。报告中的损失数字、暂停服务的时刻与 Bitstamp 事发时的公开声明一致<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>，但其余细节没有经过 Bitstamp 或执法部门的公开确认。</p>
+        </div>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所的安全团队</span>
+          <ul>
+            <li>能动用资金的人，就是攻击者的第一目标。这些人管理钱包用的设备，要和日常通讯、上网的设备彻底分开。</li>
+            <li>不要把“来自白名单 IP”当成“来自可信的设备”。攻击者控制内网的一台电脑，就继承了它的全部网络权限。每一次进入关键系统，都要做与设备无关的二次验证，最好是硬件密钥。</li>
+            <li>分权要落到人：钱包文件、口令或签名私钥交给不同的人和不同的审批流程，任何一个账号都不能单独集齐。</li>
+            <li>热钱包用多签，再加单日限额和大额延时。即使钱包文件被偷，也不能一次转空。</li>
+            <li>对异常出站流量、异常时间的登录、连续的二次验证请求设置实时报警，有人看、有人处理。这次从数据外传到资金被转走隔了六天。</li>
+            <li>一旦怀疑私钥可能泄露，立即停用旧的充值地址并把资金转到新密钥，避免用户的新充值继续流进被盗的钱包。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给每一名员工</span>
+          <ul>
+            <li>Office 文档里的宏默认禁用，陌生人发来的附件先在隔离环境里打开。</li>
+            <li>越是贴合你个人兴趣的“邀请”，越要先核实对方身份。发件人地址可以伪造，邮件客户端显示的 SPF 或 DMARC 失败提示不要忽略。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">George Frost（Bitstamp 法律总顾问），《Bitstamp Incident Report》，2015-02-20，标注“Privileged and Confidential”，2015 年 7 月泄露；Internet Archive 保存的 PDF 副本。<a href="https://web.archive.org/web/20150702021804/http://filebin.ca/277tUgsL0QJ5/270137312-Bitstamp-Incident-Report-2-20-15.pdf">web.archive.org</a></li>
+          <li id="s2">匿名用户，《Bitstamp incident report 2-20-15》，Reddit r/Bitcoin，2015-07-01，Internet Archive 存档。<a href="https://web.archive.org/web/20150701191627/http://www.reddit.com/r/Bitcoin/comments/3bpdb4/bitstamp_incident_report_22015/">web.archive.org</a></li>
+          <li id="s3">Stan Higgins，《Details of $5 Million Bitstamp Hack Revealed》，CoinDesk，2015-07-01。<a href="https://www.coindesk.com/markets/2015/07/01/details-of-5-million-bitstamp-hack-revealed">coindesk.com</a></li>
+          <li id="s4">Zack Whittaker，《Bitstamp exchange hacked, $5M worth of bitcoin stolen》，ZDNet，2015-01-05。<a href="https://www.zdnet.com/article/bitstamp-bitcoin-exchange-suspended-amid-hack-concerns-heres-what-we-know/">zdnet.com</a></li>
+          <li id="s5">Sydney Ember，《Bitcoin Exchange Bitstamp Resumes Services》，The New York Times DealBook，2015-01-09，Internet Archive 存档。<a href="https://web.archive.org/web/20170824181121/https://dealbook.nytimes.com/2015/01/09/bitcoin-exchange-bitstamp-resumes-services/">web.archive.org</a></li>
+          <li id="s6">Robert Hackett，《Hackers steal $5 million from major bitcoin exchange》，Fortune，2015-01-05，Internet Archive 存档。<a href="https://web.archive.org/web/20240318155451/https://fortune.com/2015/01/05/bitstamp-bitcoin-freeze-hack/">web.archive.org</a></li>
+          <li id="s7">维基百科，《Bitstamp》。<a href="https://en.wikipedia.org/wiki/Bitstamp">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>零碎知识点｜区块链基础知识</title>
+<meta name="description" content="稳定币、地址、gas、确认数、授权、多签、代理合约等基础词">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="basics">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　入门</p>
+    <h1>零碎知识点</h1>
+    <p class="lede">读后面各章之前，先把这些“大家默认你知道”的基础词补上。带“播放”按钮的卡片是分步动画。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="bits">
+  <h2 class="eyebrow">补课 · 零碎知识点</h2>
+  <p class="sub">那些“大家默认你知道”的事</p>
+  <p class="lead">18 个基础概念，分成四组。带“播放”按钮的卡片是分步动画，可以一步一步点，也可以自动播放。</p>
+
+  <div class="bgroup">
+    <h3>钱和代币 <small>MONEY · TOKEN</small></h3>
+    <div class="bgrid">
+      <div class="bit wide">
+        <div class="bh"><span class="term">Stablecoin</span><h4>稳定币是一类东西，USDC 只是其中一个品牌</h4></div>
+        <p>稳定币是“价格锚定 1 美元的代币”的统称。<b>USDC 特指 Circle 公司发行的那一种</b>，就像“可乐”是一类饮料，“可口可乐”是一个牌子。不同稳定币的发行方不同，靠什么维持 1 美元也不同。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>名字</th><th>发行方</th><th>靠什么值 1 美元</th><th>备注</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">USDT</td><td>Tether</td><td>公司持有的美元、美债等储备</td><td>Tether 公司自己发行</td></tr>
+            <tr><td class="mono t-usdc">USDC</td><td>Circle</td><td>现金、短期美债和隔夜回购，储备基金由 BlackRock 管理，每月出第三方鉴证报告</td><td>CCTP 最初就是为它做的</td></tr>
+            <tr><td class="mono">DAI / USDS</td><td>MakerDAO / Sky</td><td>链上超额抵押的加密资产等</td><td>没有一家公司替你兑付，靠合约清算</td></tr>
+            <tr><td class="mono">PYUSD</td><td>Paxos Trust Company（为 PayPal 发行，不是 PayPal 自己发）</td><td>美元储备</td><td>名字里没有 C，也是美元稳定币</td></tr>
+            <tr><td class="mono">FDUSD</td><td>First Digital Labs</td><td>美元储备</td><td>—</td></tr>
+            <tr><td class="mono t-warn">USDC（BSC 上）</td><td>Binance-Peg，不是 Circle</td><td>托管与背书方式<span class="unv">未核实</span></td><td>名字叫 USDC，但精度是 18 位，不是 6 位</td></tr>
+          </tbody>
+        </table></div>
+        <p><a class="chap-link" href="usdc.html">USDC 合约本身怎么运作（谁能印钱、冻结、升级）：第 02 章 →</a></p>
+        <p>还有一类“算法稳定币”不靠真实储备、只靠机制维持价格。最有名的 UST 在 2022 年 5 月脱锚崩盘，蒸发了近 450 亿美元，所以“叫稳定币”不等于“一定稳定”。</p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Mint / Redeem</span><h4>USDC 是怎么“印”出来、怎么“收回”的</h4></div>
+        <p>中心化稳定币的规则很简单：存 1 美元进去，链上多 1 枚；交回 1 枚，链上少 1 枚，美元还给你。链上总量应当一直等于储备金。</p>
+        <div class="anim" data-anim="stable"></div>
+              <p class="note">深入：<a class="chap-link" href="usdc.html#allowance">第 02 章：铸币额度</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Contract Address</span><h4>认币要认合约地址，不认名字</h4></div>
+        <p>任何人都能部署一个叫“USDC”的合约，名字和图标都可以抄。唯一可靠的身份证是<b>合约地址</b>，而且每条链上的地址都不一样，例如以太坊上 Circle 的 USDC 是 <code>0xA0b8…eB48</code>。下面以 OP Mainnet 钱包为例。</p>
+        <div class="anim" data-anim="fake"></div>
+              <p class="note">深入：<a class="chap-link" href="bsc.html#assets">第 07 章：BSC 上同名不同源的 USDC / USDT</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Decimals</span><h4>链上没有小数</h4></div>
+        <p>合约里只存整数。<b>decimals</b> 告诉钱包“小数点往左挪几位”再显示给你。USDC 是 6 位，ETH 和大多数代币是 18 位。桥写错精度，就会差出 10<sup>12</sup> 倍。</p>
+        <div class="tool">
+          <div class="row">
+            <label for="decAmt">你看到的数量<input id="decAmt" type="text" inputmode="decimal" value="1.5"></label>
+            <label for="decSel">代币<select id="decSel"><option value="6">USDC（6 位）</option><option value="18">ETH / WETH（18 位）</option><option value="8">WBTC（8 位）</option><option value="18">BSC 上的 Binance-Peg USDC（18 位）</option></select></label>
+          </div>
+          <div class="out" id="decOut" aria-live="polite"></div>
+        </div>
+              <p class="note">深入：<a class="chap-link" href="bsc.html#assets">第 07 章：BSC 上 USDC 是 18 位</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Native vs Token</span><h4>原生币和代币存在不同的地方</h4></div>
+        <p><b>原生币</b>（ETH、BNB、QTUM）记在链协议本身的账户余额里。<b>代币</b>（USDC、WBTC）记在各自合约的账本里。所以转 USDC 时还得有一点 ETH 付 gas，钱包里只有 USDC 是转不动的。</p>
+        <p><b>WETH</b> 是把 ETH 包成 ERC-20 的合约，1:1 随存随取。DeFi 合约更喜欢统一按 ERC-20 处理，所以经常看到它。</p>
+              <p class="note">深入：<a class="chap-link" href="ethereum.html#fees">第 05 章：gas 和基础费</a></p>
+      </div>
+    </div>
+  </div>
+  <div class="bgroup">
+    <h3>钱包和地址 <small>WALLET · ADDRESS</small></h3>
+    <div class="bgrid">
+      <div class="bit">
+        <div class="bh"><span class="term">Seed → Key → Address</span><h4>助记词、私钥、地址是一条单向链</h4></div>
+        <p>钱包里其实没有“币”，只有<b>钥匙</b>。币一直在链上，谁握有私钥，谁就能动对应地址上的资产。</p>
+        <div class="anim" data-anim="seed"></div>
+              <p class="note">深入：<a class="chap-link" href="qtum.html#addr">第 01 章：Qtum 地址</a>；<a class="chap-link" href="bitcoin.html#upgrades">第 08 章：比特币地址类型</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Same Address</span><h4>同一个地址，在每条 EVM 链上都有一份账本</h4></div>
+        <p>EVM 地址是从私钥算出来的，和链无关，所以你在 Ethereum、Base、BSC 上的地址一模一样。但每条链的余额各算各的。</p>
+        <div class="anim" data-anim="multi"></div>
+              <p class="note">深入：<a class="chap-link" href="qtum.html#addr">第 01 章：同一私钥在 Qtum 上地址不同</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">CEX vs On-chain</span><h4>交易所里的余额不在链上</h4></div>
+        <p>币放在 Binance、Coinbase 这类<b>中心化交易所</b>里时，私钥在交易所手里，你看到的余额只是它数据库里的一行。只有点“提现”，它才会用自己的钱包在链上给你转账。</p>
+        <p>提现时选的“网络”（ERC20 / BEP20 / Base…）就是选在哪条链上转。<b>选错网络是最常见的丢币原因之一</b>：收款地址如果是只在某条链上有效的交易所充值地址或合约，币可能找不回来。</p>
+              <p class="note">深入：<a class="chap-link" href="atlas.html#central">图鉴：中心化方案</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">RPC</span><h4>钱包不存区块链，它只是在“问节点”</h4></div>
+        <p>MetaMask 显示余额、发送交易，都是通过 <b>RPC</b> 接口问某个节点：<code>eth_getBalance</code>、<code>eth_sendRawTransaction</code>。在钱包里“添加网络”填的就是 RPC 地址、chainId 和币种符号。</p>
+        <p>Qtum 节点原生不讲 <code>eth_*</code> 这套方言，需要 Janus 这类翻译层，以太坊工具才能连上它。</p>
+              <p class="note">深入：<a class="chap-link" href="qtum.html#janus">第 01 章：Janus</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bgroup">
+    <h3>交易和区块 <small>TX · BLOCK · GAS</small></h3>
+    <div class="bgrid">
+      <div class="bit">
+        <div class="bh"><span class="term">Confirmations · Reorg · Finality</span><h4>为什么桥要“等几个块”</h4></div>
+        <p>交易发出后先进候选池，被打包进区块后才算发生。后面每多叠一个块就多一个<b>确认</b>，被推翻的可能也越小。</p>
+        <div class="anim" data-anim="blocks"></div>
+              <p class="note">深入：<a class="chap-link" href="ethereum.html#finality">第 05 章：以太坊最终性</a>；<a class="chap-link" href="bitcoin.html#forks">第 08 章：比特币分叉</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Gas</span><h4>gas 是“工作量”，gas price 是“单价”</h4></div>
+        <p>手续费 = 用掉的 gas × 每单位 gas 的价格。转 ETH 固定 21,000 gas，调用合约越复杂用得越多。价格单位 <b>gwei</b> = 10<sup>-9</sup> ETH，随拥堵程度涨跌。</p>
+        <div class="tool">
+          <div class="row">
+            <label for="gasType">操作<select id="gasType"><option value="21000">转 ETH（21,000 gas）</option><option value="45000">转 USDC（常见约 40,000–65,000）</option><option value="120000">DEX 兑换（常见约 100,000–200,000）</option></select></label>
+            <label for="ethPx">假设 ETH 价格（美元）<input id="ethPx" type="number" min="0" step="100" value="3000"></label>
+          </div>
+          <label for="gasPx">gas price：<span id="gasPxV" class="mono"></span><input id="gasPx" type="range" min="0.5" max="100" step="0.5" value="10"></label>
+          <div class="out" id="gasOut" aria-live="polite"></div>
+        </div>
+              <p class="note">深入：<a class="chap-link" href="ethereum.html#fees">第 05 章：EIP-1559</a>；<a class="chap-link" href="evm.html#evm">第 09 章：每条指令的 gas</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">L2 Fee</span><h4>Base、OP 为什么便宜</h4></div>
+        <p>L2 把几千笔交易压缩成一批，作为数据一次性发到 Ethereum，L1 的费用由这一批人分摊。所以 L2 手续费主要是两部分：L2 执行费（很低）+ 分摊的 L1 数据费。较新的 OP Stack 还可以多收一项“operator fee”。2024-03-13 以太坊 Dencun 升级加入 blob 数据（EIP-4844）后，L1 数据费降了一大截。</p>
+              <p class="note">深入：<a class="chap-link" href="l2.html">第 06 章：L2</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Explorer · Testnet</span><h4>区块浏览器和测试网</h4></div>
+        <p><b>区块浏览器</b>是查链的网站，输入交易哈希、地址或合约地址就能看到一切：Etherscan（Ethereum）、Basescan、BscScan、qtum.info。一条交易是否成功，以浏览器为准，不以 DApp 页面为准。</p>
+        <p><b>测试网</b>（如 Ethereum 的 Sepolia）是练习场，从“水龙头”免费领测试币，测试币不值钱。上主网前，合约和桥都应先在测试网完整跑一遍。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bgroup">
+    <h3>合约和安全 <small>CONTRACT · SECURITY</small></h3>
+    <div class="bgrid">
+      <div class="bit">
+        <div class="bh"><span class="term">ERC-20 Ledger</span><h4>“转账”其实是合约改了两行数字</h4></div>
+        <p>代币合约内部就是一张表：<code>mapping(address =&gt; uint256) balanceOf</code>。没有任何东西在“移动”。</p>
+        <div class="anim" data-anim="ledger"></div>
+              <p class="note">深入：<a class="chap-link" href="evm.html#events">第 09 章：事件与日志</a>；<a class="chap-link" href="usdc.html#roles">第 02 章：USDC 合约</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">approve / transferFrom</span><h4>为什么存进桥要点两次确认</h4></div>
+        <p>合约不能直接从你的余额里拿钱。你得先<b>授权</b>它最多能拿多少，它再自己来取。</p>
+        <div class="anim" data-anim="approve"></div>
+              <p class="note">深入：<a class="chap-link" href="evm.html#abi">第 09 章：ABI 和函数选择器</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Multisig M-of-N</span><h4>多签：N 把钥匙里凑够 M 把</h4></div>
+        <p>重要操作要求多把私钥共同签名，丢一把、被偷一把都不至于出事。</p>
+        <div class="anim" data-anim="multisig"></div>
+              <p class="note">深入：<a class="chap-link" href="bridges.html#sig">第 03 章：签名验证</a>；<a class="chap-link" href="cctp-ccip.html#cctp-verify">第 04 章：CCTP 的验签</a></p>
+      </div>
+      <div class="bit">
+        <div class="bh"><span class="term">Proxy / Upgradeable</span><h4>合约部署后不能改，但可以“换芯”</h4></div>
+        <p>合约代码一旦部署就固定了。想升级，常用做法是放一个<b>代理合约</b>：地址和数据都在代理里，真正的逻辑放在另一个“实现合约”里，代理指向谁就执行谁。USDC 本身就是这样部署的。</p>
+        <div class="anim" data-anim="proxy"></div>
+              <p class="note">深入：<a class="chap-link" href="usdc.html#contract">第 02 章：USDC 的代理结构</a>；<a class="chap-link" href="evm.html#calls">第 09 章：DELEGATECALL</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="faq">
+  <h2 class="eyebrow">常见误解</h2>
+  <div class="faq">
+    <details><summary>EVM 兼容，就等于能直接互通吗？</summary><p>不等于。EVM 兼容只说明同一份合约代码能在两条链上跑。两条链的账本依然各自独立，Ethereum 上的合约读不到 BSC 的状态。互通必须靠桥。</p></details>
+    <details><summary>BSC 上的 USDC 和以太坊上的 USDC 是一回事吗？</summary><p>不是。Circle 的官方地址表里没有 BSC，Circle 不在 BSC 上发原生 USDC（BSC 虽然是 CCTP 成员，但只用于 USYC）。BSC 上主流的“USDC”是 Binance-Peg 版本，链上精度是 18 位，以太坊上的 USDC 是 6 位。名字一样，发行方和兑付责任都不同。同理，Qtum 上的 USDC.e 是 Qtum 桥铸的，兑付靠以太坊上桥合约里锁着的 USDC。</p></details>
+  </div>
+</section>
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li><a href="https://developers.circle.com/stablecoins/usdc-contract-addresses" rel="noopener">Circle：USDC 合约地址</a>（各链原生 USDC，BSC 不在表内）</li>
+    <li><a href="https://raw.githubusercontent.com/ethereum-optimism/ethereum-optimism.github.io/master/data/BridgedUSDC/data.json" rel="noopener">Optimism 代币列表：Bridged USDC（USDC.e）</a></li>
+    <li><a href="https://www.circle.com/transparency" rel="noopener">Circle 透明度页面</a>（储备构成、BlackRock 管理、月度鉴证）；<a href="https://www.paxos.com/pyusd" rel="noopener">Paxos：PYUSD</a></li>
+    <li><a href="https://ethereum.org/en/developers/docs/gas/" rel="noopener">ethereum.org：Gas</a>（21,000 gas、base fee 销毁）；gas 常见区间来自 2026-10-27 以太坊主网区块 26284489–26284494 的实测样本，仅作量级参考</li>
+    <li><a href="https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/" rel="noopener">ethereum.org：Proof-of-stake</a>（slot 12 秒、epoch 32 个 slot）</li>
+    <li>Terra（UST）脱锚：Wikipedia “Terra (blockchain)”</li>
+    <li><a href="https://github.com/circlefin/stablecoin-evm" rel="noopener">circlefin/stablecoin-evm</a>（FiatToken 代理合约、黑名单）</li>
+  </ol>
+  <p>核查日期 2026-10-27。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // ---------- 零碎知识点：小动画数据 ----------
+  // b = 区域框 [id, x, y, w, h, 标签]（百分比）；it = 元素 {id, h: html, x, y, cls, hide}
+  // s = 每一步，增量修改：{c: 说明, set: {元素id: {x, y, h, cls, hide}}, lit: [框id], bad: [框id]}
+  A.stable = {h:210,
+    b:[['bank',2,6,96,38,'链下 · 银行账户'],['chain',2,54,96,40,'链上 · Ethereum']],
+    it:[
+      {id:'ua', h:'<div class="lbl">Alice</div>', x:12, y:22}, {id:'ci', h:'<div class="lbl"><b>Circle</b><br>储备金</div>', x:50, y:24},
+      {id:'ub', h:'<div class="lbl">Bob</div>', x:88, y:22},
+      {id:'wa', h:'<div class="lbl m">Alice 钱包</div>', x:22, y:69}, {id:'wb', h:'<div class="lbl m">Bob 钱包</div>', x:78, y:69},
+      {id:'usd', h:chip('$100','--ok'), x:12, y:34}, {id:'coin', h:chip('100 USDC','--usdc'), x:50, y:82, hide:1},
+      {id:'sup', h:'<div class="lbl m">总量 +0</div>', x:50, y:64, hide:1}],
+    s:[
+      {c:'Alice 手里有 100 美元，链上还没有她的 USDC。'},
+      {c:'Alice 把 100 美元打给 Circle（要先通过 KYC）。钱进了 Circle 的储备账户。', set:{usd:{x:50,y:36}}, lit:['bank']},
+      {c:'Circle 调用 USDC 合约的 mint，给 Alice 的钱包铸 100 USDC。链上总量 +100，储备 +100，两边相等。', set:{coin:{hide:0,x:22,y:82}, sup:{hide:0,h:'<div class="lbl g">总量 +100</div>'}}, lit:['chain']},
+      {c:'Alice 把 USDC 转给 Bob。这只是链上转账，Circle 不参与，储备不变。', set:{coin:{x:78,y:82}, sup:{hide:1}}, lit:['chain']},
+      {c:'Bob 把 USDC 交回 Circle 赎回。Circle 调用 burn 销毁这 100 枚，从储备里付 100 美元给 Bob。总量和储备又一起 −100。', set:{coin:{x:50,y:82,hide:1}, usd:{x:88,y:34}, sup:{hide:0,h:'<div class="lbl w">总量 −100</div>'}}, lit:['bank','chain']},
+    ]};
+  A.fake = {h:200,
+    b:[['r1',3,6,94,26,''],['r2',3,37,94,26,''],['r3',3,68,94,26,'']],
+    it:[
+      {id:'n1', h:chip('USDC','--usdc'), x:13, y:19}, {id:'a1', h:'<span class="cell">0x0b2C…Ff85</span>', x:45, y:19},
+      {id:'n2', h:chip('USDC.e','--usdc','wr'), x:13, y:50}, {id:'a2', h:'<span class="cell">0x7F5c…2607</span>', x:45, y:50},
+      {id:'n3', h:chip('USDC','--usdc'), x:13, y:81}, {id:'a3', h:'<span class="cell">0x9a1F…13cE</span>', x:45, y:81},
+      {id:'t1', h:'<div class="lbl g">Circle 原生</div>', x:82, y:19, hide:1},
+      {id:'t2', h:'<div class="lbl m">官方桥接<br>非 Circle 发行</div>', x:82, y:50, hide:1},
+      {id:'t3', h:'<div class="lbl w">假币 · 钓鱼</div>', x:82, y:81, hide:1}],
+    s:[
+      {c:'钱包里出现三个“USDC”。名字、图标都一样，余额看起来都是 100。'},
+      {c:'第一个：地址和 Circle 官方文档对得上，这是 OP Mainnet 上的原生 USDC。', set:{t1:{hide:0}}, lit:['r1']},
+      {c:'第二个：USDC.e，是早期通过 OP 官方桥从以太坊搬来的，背后锁着以太坊上的 USDC。能用，但它不是 Circle 直接发行，CCTP 也不认它。另外它的链上 symbol 其实仍然是“USDC”，“.e”只是钱包和代币列表加的标签。', set:{t2:{hide:0}}, lit:['r2']},
+      {c:'第三个：陌生人“空投”的同名合约，一文不值，常配合钓鱼网站诱导你去“兑换”。地址查不到官方出处的，一律当假币。（这里的 0x9a1F…13cE 是编的示例地址）', set:{t3:{hide:0}}, bad:['r3']},
+    ]};
+  A.seed = {h:180,
+    b:[['k1',1,22,22,52,'助记词'],['k2',26,22,22,52,'私钥'],['k3',51,22,22,52,'公钥'],['k4',76,22,23,52,'地址']],
+    it:[
+      {id:'v1', h:'<div class="lbl">apple river<br>… 共 12/24 词</div>', x:12, y:54}, {id:'v2', h:'<div class="lbl">0x4c0e…<br>256 位数字</div>', x:37, y:54, hide:1},
+      {id:'v3', h:'<div class="lbl">0x04a3…<br>椭圆曲线点</div>', x:62, y:54, hide:1}, {id:'v4', h:'<div class="lbl">0x71C7…<br>20 字节</div>', x:87.5, y:54, hide:1},
+      {id:'ar1', h:'<div class="lbl m">→</div>', x:24.5, y:48, hide:1}, {id:'ar2', h:'<div class="lbl m">→</div>', x:49.5, y:48, hide:1}, {id:'ar3', h:'<div class="lbl m">→</div>', x:74.5, y:48, hide:1},
+      {id:'no', h:'<div class="lbl w">← ✕ 不能反推</div>', x:50, y:88, hide:1}],
+    s:[
+      {c:'创建钱包时生成 12 或 24 个英文单词，这就是助记词。它是所有钥匙的根。'},
+      {c:'按标准（BIP-39 / BIP-44）从助记词推出私钥。同一组助记词可以推出很多个私钥，对应钱包里的“账户 1、账户 2…”。', set:{v2:{hide:0}, ar1:{hide:0}}, lit:['k2']},
+      {c:'私钥通过椭圆曲线乘法得到公钥。', set:{v3:{hide:0}, ar2:{hide:0}}, lit:['k3']},
+      {c:'公钥做 keccak256 哈希，取最后 20 字节，就是 0x 开头的地址。地址可以公开给任何人。', set:{v4:{hide:0}, ar3:{hide:0}}, lit:['k4']},
+      {c:'每一步都只能正向计算。知道地址算不出私钥，知道私钥也算不出助记词。所以地址随便发，助记词和私钥绝不能给任何人；丢了也没有“找回密码”。', set:{no:{hide:0}}, bad:['k1','k2']},
+    ]};
+  A.multi = {h:200,
+    b:[['e',2,8,30,84,'Ethereum'],['ba',35,8,30,84,'Base'],['bs',68,8,30,84,'BSC']],
+    it:[
+      {id:'ad1', h:'<span class="cell">0x71C7…976F</span>', x:17, y:34}, {id:'ad2', h:'<span class="cell">0x71C7…976F</span>', x:50, y:34}, {id:'ad3', h:'<span class="cell">0x71C7…976F</span>', x:83, y:34},
+      {id:'bl1', h:'<div class="lbl">100 USDC</div>', x:17, y:60}, {id:'bl2', h:'<div class="lbl">20 USDC</div>', x:50, y:60}, {id:'bl3', h:'<div class="lbl">0 USDC</div>', x:83, y:60},
+      {id:'mv', h:chip('50 USDC','--usdc'), x:17, y:82, hide:1}],
+    s:[
+      {c:'同一个地址出现在三条链上，因为地址只由私钥决定。'},
+      {c:'但三条链的账本互相独立：同一个地址，余额分别是 100、20、0。', lit:['e','ba','bs']},
+      {c:'在 Ethereum 上转出 50 USDC。只有 Ethereum 的账本变了，Base 和 BSC 完全不知道这件事。', set:{mv:{hide:0,x:17,y:82}, bl1:{h:'<div class="lbl w">50 USDC</div>'}}, lit:['e']},
+      {c:'想让钱真正到 Base，必须走桥或 CCTP。直接在 Base 上“查”这个地址，余额还是 20。', set:{mv:{hide:1}, bl1:{h:'<div class="lbl">50 USDC</div>'}}, lit:['ba']},
+    ]};
+  A.blocks = {h:210,
+    b:[['pool',2,8,24,84,'候选池 mempool'],['ch',29,8,69,84,'区块链']],
+    it:[
+      {id:'tx1', h:chip('tx A','--accent'), x:14, y:32}, {id:'tx2', h:chip('tx B','--muted'), x:14, y:52}, {id:'tx3', h:chip('tx C','--muted'), x:14, y:72},
+      {id:'b99', h:blk('99'), x:36, y:40}, {id:'b100', h:blk('100'), x:48, y:40},
+      {id:'b101', h:blk('101','new'), x:60, y:40, hide:1}, {id:'b102', h:blk('102'), x:72, y:40, hide:1}, {id:'b103', h:blk('103'), x:84, y:40, hide:1},
+      {id:'fk', h:blk("101′"), x:60, y:74, hide:1},
+      {id:'cf', h:'<div class="lbl g">1 确认</div>', x:60, y:20, hide:1}],
+    s:[
+      {c:'你发出的交易 tx A 先进入候选池，此时它还没有“发生”，钱包里通常显示 pending。'},
+      {c:'出块者把 tx A 打包进第 101 个区块。现在它有 1 个确认。', set:{tx1:{x:60,y:40,hide:1}, b101:{hide:0}, cf:{hide:0}}, lit:['ch']},
+      {c:'后面又接上 102、103。tx A 现在有 3 个确认。上面压的块越多，想推翻它就越难。', set:{b102:{hide:0}, b103:{hide:0}, cf:{h:'<div class="lbl g">3 确认</div>'}}},
+      {c:'但在确认很少的时候，可能有人同时出了另一个 101′，里面装的是别的交易。链短暂分叉了。', set:{b102:{hide:1}, b103:{hide:1}, fk:{hide:0}, cf:{h:'<div class="lbl w">分叉</div>'}}, bad:['ch']},
+      {c:'网络最终只认一条链，另一条被丢弃，这叫重组（reorg）。如果你的交易在被丢弃的块里，就会退回候选池。桥正是因此要等足确认数或“最终性”：以太坊每 12 秒一个 slot，32 个 slot 为一个 epoch，大约两个 epoch（约 13–15 分钟）后区块最终确定。这也是 CCTP 标准模式要等 15–19 分钟的原因。最终性的完整机制见第 05 章。', set:{b102:{hide:0}, b103:{hide:0}, fk:{h:blk("101′",'dead'), hide:1}, cf:{h:'<div class="lbl g">最终确定</div>'}}, lit:['ch']},
+    ]};
+  A.ledger = {h:200,
+    b:[['ct',3,6,94,88,'USDC 合约 · balanceOf']],
+    it:[
+      {id:'hd', h:'<div class="lbl m">地址 → 余额</div>', x:50, y:22},
+      {id:'ra', h:'<span class="cell">Alice 0x71C7…</span>', x:30, y:42}, {id:'va', h:'<span class="cell">100</span>', x:72, y:42},
+      {id:'rb', h:'<span class="cell">Bob   0x3f5C…</span>', x:30, y:60}, {id:'vb', h:'<span class="cell">20</span>', x:72, y:60},
+      {id:'rc', h:'<span class="cell">桥合约 0xBr1d…</span>', x:30, y:78}, {id:'vc', h:'<span class="cell">5,000,000</span>', x:72, y:78}],
+    s:[
+      {c:'USDC 合约里有一张表，记着每个地址有多少 USDC。所有持有人的“余额”都在这一张表里。'},
+      {c:'Alice 调用 transfer(Bob, 30)。合约检查 Alice 余额够不够，签名是不是她本人。', lit:['ct'], set:{ra:{h:'<span class="cell" style="color:var(--accent)">Alice 0x71C7…</span>'}}},
+      {c:'表里 Alice 那一行减 30，Bob 那一行加 30。这就是转账的全部。', set:{va:{h:'<span class="cell" style="color:var(--warn)">70（−30）</span>'}, vb:{h:'<span class="cell" style="color:var(--ok)">50（+30）</span>'}}},
+      {c:'钱包、区块浏览器显示的余额，都是来读这张表（调用 balanceOf）。桥合约的“储备”也只是表里的一行，所以“锁在桥里”= 那一行的数字很大。', set:{ra:{h:'<span class="cell">Alice 0x71C7…</span>'}, va:{h:'<span class="cell">70</span>'}, vb:{h:'<span class="cell">50</span>'}, vc:{h:'<span class="cell" style="color:var(--warn)">5,000,000</span>'}}},
+    ]};
+  A.approve = {h:220,
+    b:[['bal',3,6,94,40,'USDC 合约 · balanceOf'],['alw',3,54,94,40,'USDC 合约 · allowance']],
+    it:[
+      {id:'k1', h:'<span class="cell">你</span>', x:30, y:22}, {id:'v1', h:'<span class="cell">100</span>', x:72, y:22},
+      {id:'k2', h:'<span class="cell">桥合约</span>', x:30, y:36}, {id:'v2', h:'<span class="cell">0</span>', x:72, y:36},
+      {id:'k3', h:'<span class="cell">你 → 桥合约 可花</span>', x:34, y:76}, {id:'v3', h:'<span class="cell">0</span>', x:72, y:76},
+      {id:'call', h:'', x:50, y:98, hide:1}],
+    s:[
+      {c:'你想把 100 USDC 存进桥。桥合约不能直接改你那一行的余额。'},
+      {c:'第一次确认：你调用 USDC.approve(桥, 100)。授权表里记下“桥最多可以花你 100”。钱还在你这里。', set:{v3:{h:'<span class="cell" style="color:var(--accent)">100</span>'}}, lit:['alw']},
+      {c:'第二次确认：你调用桥的 deposit。桥合约在内部调用 USDC.transferFrom(你, 桥, 100)，自己把钱拿走，授权额度同时用掉。', set:{v1:{h:'<span class="cell" style="color:var(--warn)">0</span>'}, v2:{h:'<span class="cell" style="color:var(--ok)">100</span>'}, v3:{h:'<span class="cell">0</span>'}}, lit:['bal']},
+      {c:'风险：很多 DApp 默认请求“无限授权”。如果那个合约日后被黑或本身是骗局，它可以随时拿走你全部的 USDC。用 revoke.cash 这类工具定期清理授权。', set:{v3:{h:'<span class="cell" style="color:var(--warn)">∞ 无限</span>'}}, bad:['alw']},
+    ]};
+  const ks = n => Array.from({length:5}, (_, i) => ({id:'k' + i, h:`<div class="keyi">${i + 1}</div>`, x:14 + i * 18, y:28}));
+  A.multisig = {h:190,
+    b:[['vault',24,52,52,40,'金库 / 桥管理权']],
+    it:[...ks(), {id:'cnt', h:'<div class="lbl">0 / 5 签名 · 需要 4</div>', x:50, y:70}],
+    s:[
+      {c:'5 个签名者各自保管一把私钥。设定的规则是 4-of-5：至少 4 把签名，操作才能执行。'},
+      {c:'签名者 1、2、3 签了，还差一个，金库仍然打不开。', set:{k0:{h:'<div class="keyi on">1</div>'}, k1:{h:'<div class="keyi on">2</div>'}, k2:{h:'<div class="keyi on">3</div>'}, cnt:{h:'<div class="lbl">3 / 5 签名 · 需要 4</div>'}}},
+      {c:'签名者 4 签了，达到门槛，操作执行。剩下 1 个人不在线也不影响。', set:{k3:{h:'<div class="keyi on">4</div>'}, cnt:{h:'<div class="lbl g">4 / 5 · 已执行</div>'}}, lit:['vault']},
+      {c:'但只有 2 个签名者在线时，永远凑不够 4 个，桥就停摆了。', set:{k0:{h:'<div class="keyi on">1</div>'}, k1:{h:'<div class="keyi on">2</div>'}, k2:{h:'<div class="keyi">3</div>'}, k3:{h:'<div class="keyi">4</div>'}, cnt:{h:'<div class="lbl w">2 / 5 · 无法执行</div>'}}, bad:['vault']},
+      {c:'反过来，如果 1、2、3、4 号钥匙其实都在同一个人或同一台服务器上，“4-of-5”就形同虚设。多签的安全性看的是持有人是否真正独立，不看地址数量。', set:{k0:{h:'<div class="keyi same">1</div>'}, k1:{h:'<div class="keyi same">2</div>'}, k2:{h:'<div class="keyi same">3</div>'}, k3:{h:'<div class="keyi same">4</div>'}, cnt:{h:'<div class="lbl w">实际只有 1 个人</div>'}}, bad:['vault']},
+    ]};
+  A.proxy = {h:200,
+    b:[['px',30,10,32,80,'代理合约'],['i1',70,8,28,36,'实现 V1'],['i2',70,56,28,36,'实现 V2']],
+    it:[
+      {id:'u', h:'<div class="lbl">用户</div>', x:12, y:50}, {id:'ua', h:'<div class="lbl m">→</div>', x:25, y:50},
+      {id:'addr', h:'<span class="cell">0xA0b8…eB48</span>', x:46, y:36}, {id:'data', h:'<div class="lbl m">余额数据<br>存在这里</div>', x:46, y:64},
+      {id:'ptr', h:'<div class="lbl m">→</div>', x:66, y:26}, {id:'l1', h:'<div class="lbl">transfer<br>mint · burn</div>', x:84, y:28}, {id:'l2', h:'<div class="lbl m">新逻辑</div>', x:84, y:76, hide:1}],
+    s:[
+      {c:'用户永远调用代理合约这一个地址。USDC 在以太坊上的地址 0xA0b8…eB48 就是一个代理。'},
+      {c:'代理通过 delegatecall 把调用转给实现合约 V1 执行，但读写的是代理自己的存储。所以数据留在代理里，逻辑在 V1 里。', set:{ptr:{h:'<div class="lbl g">→</div>'}}, lit:['px','i1']},
+      {c:'管理员执行升级，把指针改到 V2。地址不变，余额不变，逻辑换了。', set:{ptr:{x:66,y:74}, l2:{hide:0}}, lit:['px','i2']},
+      {c:'这就是“谁有升级权，谁就能改规则”。桥合约的 owner 能升级实现，就等于能改验签逻辑。', bad:['px']},
+    ]};
+  Guide.mount(A);
+  // ---------- 小工具：精度换算 ----------
+  const decAmt = document.getElementById('decAmt'), decSel = document.getElementById('decSel'), decOut = document.getElementById('decOut');
+  function toRaw(str, dec){
+    // 字符串运算，避免浮点误差
+    const m = String(str).trim().match(/^(\d*)(?:\.(\d*))?$/);
+    if (!m || (m[1] === '' && !m[2])) return null;
+    const frac = (m[2] || '');
+    if (frac.length > dec) return {err:`超过 ${dec} 位小数，链上无法表示`};
+    return {raw:((m[1] || '0') + frac.padEnd(dec, '0')).replace(/^0+(?=\d)/, '')};
+  }
+  function decRender(){
+    const dec = +decSel.value, r = toRaw(decAmt.value, dec);
+    if (!r) { decOut.innerHTML = '<span class="m">请输入一个数字，比如 1.5</span>'; return; }
+    if (r.err) { decOut.innerHTML = `<span style="color:var(--warn)">${r.err}</span>`; return; }
+    decOut.innerHTML = `<span class="m">合约里实际存的整数</span><b>${r.raw}</b><span class="m">= 你看到的数量 × 10^${dec}</span>`;
+  }
+  decAmt.addEventListener('input', decRender); decSel.addEventListener('change', decRender); decRender();
+
+  // ---------- 小工具：gas 计算 ----------
+  const gT = document.getElementById('gasType'), gP = document.getElementById('gasPx'), gPV = document.getElementById('gasPxV'), eP = document.getElementById('ethPx'), gO = document.getElementById('gasOut');
+  function gasRender(){
+    const units = +gT.value, gwei = +gP.value, px = Math.max(0, +eP.value || 0);
+    const eth = units * gwei / 1e9;
+    gPV.textContent = gwei + ' gwei';
+    gO.innerHTML = `<span class="m">${units.toLocaleString()} gas × ${gwei} gwei</span>
+      <b>= ${eth.toFixed(6)} ETH ≈ $${(eth * px).toFixed(2)}</b>
+      <span class="m">按 ETH = $${px.toLocaleString()} 估算，仅为示意。同样的操作在 Base / OP 上通常只要几美分。</span>`;
+  }
+  [gT, gP, eP].forEach(e => e.addEventListener('input', gasRender)); gasRender();
+})();
+</script>
+</body>
+</html>

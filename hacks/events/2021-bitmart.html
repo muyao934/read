@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BitMart 热钱包被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2021 年 12 月 BitMart 以太坊和 BSC 热钱包被盗的经过：1.5 亿与 1.96 亿美元两种估计、几十种小市值代币经 1inch 换成 ETH 和 BNB 后进入 Tornado Cash、迟迟兑现的赔付承诺、FTC 调查，以及 2026 年的停业。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-bitmart">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>BitMart 热钱包被盗</h1>
+    <p class="lede">2021 年 12 月 4 日 21:31（UTC）起，BitMart 在以太坊和 BNB Smart Chain 上的两个热钱包被大量转出。攻击者拿走的多是 SHIB、SAFEMOON 这类小市值代币，安全公司 PeckShield 估计损失约 1.96 亿美元，BitMart 自己说约 1.5 亿美元。这些代币没有发行方能冻结，攻击者直接用 1inch 换成 ETH 和 BNB，再送进 Tornado Cash。BitMart 承诺用自有资金赔付，一个多月后仍有大量用户没拿到钱，美国 FTC 随后立案调查。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">BitMart 对原因的全部说明是：一把被盗的私钥影响了它在以太坊和 BNB Smart Chain（BSC）上的两个热钱包<a class="ref" href="#s4">[4]</a>。私钥怎样被盗，它没有公布，也没有发布任何事后报告。</p>
+        <p>攻击从以太坊开始。21:31:09（UTC）第一笔转出约 8,938 亿枚 SHIB，到 22:41 共有约 80 种代币进入攻击者地址；约 30 分钟后，BSC 热钱包也开始被转出，第一笔是约 4,100 万美元的 SAFEMOON<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。最先公开发现异常的是 PeckShield，BitMart 的 Telegram 管理员起初还称这是“假新闻”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>攻击者用 DEX 聚合器 1inch 把代币换成 ETH 和 BNB，再存入 Tornado Cash，PeckShield 称之为典型的“转出、兑换、清洗”<a class="ref" href="#s3">[3]</a>。仅以太坊一侧，两个攻击者地址就向 Tornado Cash 存入了约 21,270 ETH<a class="ref" href="#s9">[9]</a>。BitMart CEO Sheldon Xia 承诺用自有资金赔付，12 月 7 日起逐步恢复充提<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>；到 2022 年 1 月，CNBC 采访的许多用户仍未拿到钱<a class="ref" href="#s5">[5]</a>。FTC 在 2022 年就 BitMart 的宣传、用户无法提币和账户安全问题展开调查<a class="ref" href="#s6">[6]</a>。2026 年 7 月，BitMart 宣布停止运营<a class="ref" href="#s8">[8]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>BitMart 是一家中心化交易所，上架了大量小市值的社区代币。据 FTC 的文件，BitMart 由新泽西州的 Bachi.Tech 公司（员工在新泽西和纽约）和另一家美国公司 Spread Technologies 运营<a class="ref" href="#s6">[6]</a>。</p>
+        <p>BitMart 的安全页面声称，热钱包里的资产不到总资产的 0.5%。rekt.news 指出，如果这句话属实，被盗的约 1.96 亿美元意味着 BitMart 的总资产超过 390 亿美元<a class="ref" href="#s1">[1]</a>。这个规模与它的实际体量相去甚远，热钱包的上限要么没有执行，要么只是一句宣传。</p>
+        <p>2021 年 12 月是私钥和前端接连失守的一个月。两天前，<a href="2021-badgerdao.html">BadgerDAO</a> 的网站被注入恶意脚本，Celsius 的一个热钱包因此损失约 5,000 万美元<a class="ref" href="#s1">[1]</a>。此后一周内，8ight Finance、AscendEX 和 <a href="2021-vulcan-forged.html">Vulcan Forged</a> 也相继因私钥泄露被盗<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与监管行动</span><span>其他事件</span></p>
+        <p>时刻均为 UTC。</p>
+        <ol class="timeline">
+          <li class="atk key"><time>2021-12-04 21:31</time><div class="ev">以太坊热钱包第一笔转出：约 8,938 亿枚 SHIB（约 3,300 万美元）转入攻击者地址<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>12-04 22:00 前后</time><div class="ev">约 30 分钟后，BSC 热钱包开始被转出，第一笔是约 4,100 万美元的 SAFEMOON<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>12-04 22:41</time><div class="ev">以太坊一侧最后一笔转出，约 70 分钟内共约 80 种代币<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>12-04</time><div class="ev">PeckShield 最先公开发现异常。BitMart 的 Telegram 管理员称相关消息是“假新闻”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>12-04 23:51</time><div class="ev">第二个攻击者地址开始向 Tornado Cash 存入 ETH<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>12-04 晚</time><div class="ev">BitMart 确认发生“大规模安全事件”，暂停所有提币，称其他钱包安全<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>12-05 15:01</time><div class="ev">最后一笔存入 Tornado Cash。两个攻击者地址合计存入约 21,270 ETH<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def key"><time>12-05 至 12-06</time><div class="ev">Sheldon Xia 发推：原因是一把被盗的私钥影响了两个热钱包，损失约 1.5 亿美元，BitMart 用自有资金赔付，“不会有用户资产受损”，12 月 7 日起逐步恢复充提<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2022-01-07</time><div class="ev">CNBC 报道：五周后许多用户仍未获赔，约 6,800 名持有人考虑集体诉讼；BitMart 拒绝回答保险和内部审计的问题<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2022-05-11</time><div class="ev">FTC 向 Bachi.Tech 和 Spread Technologies 发出内容几乎相同的民事调查令<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2022-07-18</time><div class="ev">FTC 驳回 Spread 撤销或限制调查令的申请<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2022-08-09</time><div class="ev">FTC 驳回 Bachi.Tech 的同类申请（档案号 222-3050），要求其 8 月 19 日前全部履行<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2026-07-26</time><div class="ev">BitMart 宣布停业：停止新注册、充值和下单，8 月 26 日停止交易，2027 年 1 月 31 日停止运营；随后用户报告提币延迟<a class="ref" href="#s8">[8]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>BitMart 只说是“一把被盗的私钥”影响了两个热钱包<a class="ref" href="#s4">[4]</a>。两条链上的钱包同时失守，私钥怎样被盗、是不是同一把，都没有说明，本站无法确认入侵路径。能说清楚的是私钥丢失之后，为什么几乎什么都没能追回来。</p>
+        <h3>没有人能冻结的代币</h3>
+        <p>与一年前的 <a href="2020-kucoin.html">KuCoin</a> 不同，BitMart 被盗的主要是 SHIB、SAFEMOON（项目 CEO 后来因挪用交易池资金等被定罪，见诈骗站的 <a href="../../scams/events/2023-safemoon.html">SafeMoon</a>）、SAITAMA、KISHU 这类社区代币<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。它们的合约大多不带黑名单，也没有一个能说服市场改认新合约的发行方，KuCoin 当年靠的冻结和换币在这里都用不上。BitMart 在 2022 年 1 月说正与多个项目方商量换币等方案<a class="ref" href="#s5">[5]</a>，但这时攻击者早已把代币卖掉了。</p>
+        <h3>聚合器让“卖不掉”不再成立</h3>
+        <p>小币种的流动性分散在许多交易池里，一次性卖出几千万美元通常会把价格砸穿。DEX 聚合器 1inch 会把一笔大单拆开，分别路由到多个池子，降低滑点；它不托管资金，也不要求身份信息。链上记录显示，第一个攻击者地址调用 1inch 的 AggregationRouterV4 共 78 次，第二个地址 48 次<a class="ref" href="#s9">[9]</a>。真正卖不掉的是 BitMart 自己的平台币：rekt.news 发现，以太坊热钱包里仍剩约 4,000 万美元的 BMX，推测是因为在交易所以外很难脱手<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>Tornado Cash 切断资金链</h3>
+        <p>Tornado Cash 按固定面额（0.1、1、10、100 ETH）设池。存款人把 ETH 存进池子，拿到一张只有自己知道的凭证；取款时用零知识证明说明自己持有池中某一张有效凭证，但不透露是哪一张。只要池子里有足够多的其他存款，就无法从链上判断哪笔取款对应哪笔存款。第二个攻击者地址通过 Tornado 的路由合约存入 218 笔、共 21,170 ETH，第一个地址存入 100 ETH<a class="ref" href="#s9">[9]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 360" role="img" aria-labelledby="bm-fig1-t bm-fig1-d">
+            <title id="bm-fig1-t">BitMart 被盗资产的转出、兑换和清洗路径</title>
+            <desc id="bm-fig1-d">以太坊一侧：BitMart 热钱包约 70 分钟内把约 80 种代币转到攻击者地址一，攻击者通过 1inch 聚合器换成 ETH，把 18,085 ETH 转到攻击者地址二，地址二分 218 笔把 21,170 ETH 存入 Tornado Cash。BSC 一侧约 30 分钟后开始，代币经 1inch 换成 BNB 后同样进入 Tornado Cash。</desc>
+            <defs>
+              <marker id="bm-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bm-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="20" y="24">以太坊</text>
+            <rect class="d-box" x="20" y="38" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="115" y="62" text-anchor="middle">BitMart 热钱包</text>
+            <text class="d-t s m" x="115" y="83" text-anchor="middle">0x68b2…85f7</text>
+            <rect class="d-box atk" x="295" y="38" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="390" y="62" text-anchor="middle">攻击者地址一</text>
+            <text class="d-t s m" x="390" y="83" text-anchor="middle">0x39fb…f270</text>
+            <rect class="d-box soft" x="570" y="38" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="665" y="62" text-anchor="middle">1inch 聚合器</text>
+            <text class="d-t s" x="665" y="83" text-anchor="middle">78 次兑换</text>
+            <line class="d-line atk" x1="210" y1="68" x2="293" y2="68" marker-end="url(#bm-ah-atk)"/>
+            <text class="d-t s atk halo" x="252" y="60" text-anchor="middle">约 80 种</text>
+            <line class="d-line" x1="485" y1="60" x2="568" y2="60" marker-end="url(#bm-ah)"/>
+            <text class="d-t s halo" x="527" y="52" text-anchor="middle">代币</text>
+            <line class="d-line" x1="568" y1="78" x2="487" y2="78" marker-end="url(#bm-ah)"/>
+            <text class="d-t s halo" x="527" y="94" text-anchor="middle">ETH</text>
+            <line class="d-line atk" x1="390" y1="98" x2="390" y2="150" marker-end="url(#bm-ah-atk)"/>
+            <text class="d-t s atk halo" x="400" y="128">5 笔，18,085 ETH</text>
+            <rect class="d-box atk" x="295" y="152" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="390" y="176" text-anchor="middle">攻击者地址二</text>
+            <text class="d-t s m" x="390" y="197" text-anchor="middle">0x4bb7…7091</text>
+            <rect class="d-box atk" x="570" y="152" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="665" y="176" text-anchor="middle">Tornado Cash</text>
+            <text class="d-t s" x="665" y="197" text-anchor="middle">100 ETH 面额池</text>
+            <line class="d-line atk" x1="485" y1="182" x2="568" y2="182" marker-end="url(#bm-ah-atk)"/>
+            <text class="d-t s atk halo" x="527" y="174" text-anchor="middle">218 笔</text>
+            <text class="d-t s atk halo" x="527" y="200" text-anchor="middle">21,170 ETH</text>
+            <line class="d-line dash" x1="20" y1="236" x2="760" y2="236"/>
+            <text class="d-t b" x="20" y="262">BNB Smart Chain（约 30 分钟后开始）</text>
+            <rect class="d-box" x="20" y="276" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="115" y="300" text-anchor="middle">BitMart 热钱包</text>
+            <text class="d-t s m" x="115" y="321" text-anchor="middle">0x8c12…5da8</text>
+            <rect class="d-box atk" x="295" y="276" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="390" y="300" text-anchor="middle">攻击者地址</text>
+            <text class="d-t s m" x="390" y="321" text-anchor="middle">0x25fb…6c61</text>
+            <rect class="d-box atk" x="570" y="276" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="665" y="300" text-anchor="middle">1inch 换成 BNB</text>
+            <text class="d-t s" x="665" y="321" text-anchor="middle">再进 Tornado Cash</text>
+            <line class="d-line atk" x1="210" y1="306" x2="293" y2="306" marker-end="url(#bm-ah-atk)"/>
+            <text class="d-t s atk halo" x="252" y="298" text-anchor="middle">SAFEMOON</text>
+            <line class="d-line atk" x1="485" y1="306" x2="568" y2="306" marker-end="url(#bm-ah-atk)"/>
+          </svg>
+          </div>
+          <figcaption>图 1：PeckShield 所说的“转出、兑换、清洗”。地址取自 rekt.news，以太坊一侧的笔数和金额是本站查阅链上公开记录的统计；BSC 一侧的路径依据 rekt.news，本站没有逐笔核对。</figcaption>
+        </figure>
+        <h3>哪一步本可以拦住</h3>
+        <p>以太坊一侧的转出持续了约 70 分钟，BSC 一侧晚了约 30 分钟才开始<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。如果 BitMart 对热钱包的异常流出有实时告警，并且事先准备好把剩余资产转入冷钱包的应急流程，至少 BSC 一侧的损失有机会减少。2020 年 KuCoin 在第一笔异常转账后约 90 分钟就开始把剩余资产转入冷钱包。BitMart 的情况是，第一个公开发现异常的是外部的 PeckShield，客服渠道还在否认。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>BitMart 没有公布入侵细节。下面的经过依据 rekt.news、PeckShield 的说法和链上公开记录，从私钥被盗之后开始。</p>
+        <ol class="steps">
+          <li><b>取得私钥</b>攻击者拿到了 BitMart 以太坊和 BSC 热钱包的私钥<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>以太坊一侧转出</b>12 月 4 日 21:31:09（UTC）起，先转走约 3,300 万美元的 SHIB，随后约 70 分钟内又转走几十种代币，进入同一个攻击者地址<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。</li>
+          <li><b>BSC 一侧转出</b>约 30 分钟后，BSC 热钱包开始被转出，先是约 4,100 万美元的 SAFEMOON，然后是其他社区代币<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>兑换</b>攻击者通过 1inch 把代币换成 ETH 和 BNB<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>清洗</b>以太坊一侧，第一个攻击者地址把 18,085 ETH 分 5 笔转到第二个地址，两个地址在 12 月 4 日 23:51 至 5 日 15:01 之间共向 Tornado Cash 存入约 21,270 ETH<a class="ref" href="#s9">[9]</a>。</li>
+        </ol>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>rekt.news 给出了被盗的两个热钱包和攻击者地址<a class="ref" href="#s1">[1]</a>：</p>
+        <ul>
+          <li>以太坊热钱包：<span class="addr">0x68b22215ff74e3606bd5e6c1de8c2d68180c85f7</span></li>
+          <li>以太坊攻击者地址：<span class="addr">0x39fb0dcd13945b835d47410ae0de7181d3edf270</span>、<span class="addr">0x4bb7d80282f5e0616705d7f832acfc59f89f7091</span></li>
+          <li>BSC 热钱包：<span class="addr">0x8c128dba2cb66399341aa877315be1054be75da8</span></li>
+          <li>BSC 攻击者地址：<span class="addr">0x25fb126b6c6b5c8ef732b86822fa0f0024e16c61</span></li>
+        </ul>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数额</th><th>来源与说明</th></tr></thead>
+            <tbody>
+              <tr><td>以太坊一侧损失</td><td class="n">约 1 亿美元</td><td>PeckShield 估计<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>BSC 一侧损失</td><td class="n">约 9,600 万美元</td><td>PeckShield 估计<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>合计</td><td class="n"><span class="dispute">约 1.96 亿美元</span></td><td>PeckShield 估计；BitMart 自称约 1.5 亿美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>以太坊一侧代币种类</td><td class="n">约 80 种</td><td>2021-12-04 21:31 至 22:41，本站统计<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>存入 Tornado Cash</td><td class="n">约 21,270 ETH</td><td>两个攻击者地址合计 219 笔，本站统计<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>留在热钱包里的 BMX</td><td class="n">约 4,000 万美元</td><td>BitMart 平台币，难以在交易所以外卖出<a class="ref" href="#s1">[1]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>1.96 亿与 1.5 亿美元之间相差约 4,600 万美元，BitMart 没有解释差异从哪里来。可能的原因包括小市值代币的估价方法不同，以及是否计入了攻击者没能卖掉的代币，这是本站的推测。海峡时报的标题写作“2.05 亿美元”，那是 1.5 亿美元换算成新加坡元的数字<a class="ref" href="#s4">[4]</a>，并不是第三种估计。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>用户：承诺与兑现之间</h3>
+        <p>BitMart 暂停的只是提币，受影响代币的交易并没有停<a class="ref" href="#s5">[5]</a>。2022 年 1 月，CNBC 采访的用户说他们“没有收到任何更新”，客服只给出机器人式的回复。一名多伦多的拖车司机有约 5.3 万美元的 SAFEMOON 提不出来，其中 4 万美元是借款；约 6,800 名持有人在考虑对交易所提起集体诉讼。BitMart 对 CNBC 表示会支持所有用户提币，正在和多个项目方商量换币等方案，但拒绝回答是否有保险、是否做了内部审计<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>监管：安全事件成为消费者保护问题</h3>
+        <p>FTC 的调查范围包括 BitMart 对其服务的宣传、用户被拒绝访问账户的投诉，以及客户账户的安全，“特别是鉴于 2021 年公开报道的一起导致消费者损失超过 2 亿美元加密资产的安全事件”<a class="ref" href="#s6">[6]</a>。调查令要求提供 BitMart 对安全事件的了解、参与和防范能力，欺诈报告和客服流程，以及其服务和安全宣传是否属实等材料。BitMart 的两家美国运营公司以材料在境外、要求过宽、负担过重等理由申请撤销或限制，FTC 认为它们没有提供任何证据，两次都予以驳回<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。这意味着在美国，交易所关于“安全”的宣传本身就要受到消费者保护法的审视。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <p>BitMart 从 12 月 7 日起逐步恢复充提<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>，受影响代币的提币则拖了更久<a class="ref" href="#s5">[5]</a>。Sheldon Xia 原定在 12 月 6 日晚（纽约时间）通过 Telegram 直播说明赔付安排<a class="ref" href="#s4">[4]</a>。本站没有找到 BitMart 宣布赔付全部完成的公告，也没有找到 FTC 调查的公开结论、执法机构的追查进展或任何逮捕记录。CoinGeek 评论说，这起事件涉及一个能接触公司私钥的人，理论上嫌疑范围应该很小，但公开的后续追查远不如 BitMart 在另一起 BSV 相关案件中积极<a class="ref" href="#s7">[7]</a>。</p>
+        <p>2026 年 7 月，BitMart 以“经营环境、市场环境和未来战略方向”为由宣布停业：7 月 26 日 01:30（UTC）起停止新注册、充值和下单，8 月 26 日停止交易，2027 年 1 月 31 日停止运营。链上监测机构报告提币处理缓慢，BitMart 没有给出已批准提币的最长处理时间<a class="ref" href="#s8">[8]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>热钱包要按资产逐项设上限，小市值代币尤其要少放。这类代币被盗后既没人能冻结，也很难追回。</li>
+            <li>对热钱包异常流出做实时告警，并预先演练“一键把剩余资产转入冷钱包”。BSC 一侧晚了约 30 分钟才被转出，这段时间本可以利用。</li>
+            <li>出事先承认。“假新闻”的说法让用户错过了反应时间，也让后来的赔付承诺更难被相信。</li>
+            <li>赔付承诺要有时间表和可核验的进度。在美国，关于安全和赔付的说法会被当作消费者保护问题审视。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>放在交易所里的小市值代币，出事后既没有发行方冻结，也排不到赔付的前面。长期持有的部分放进自托管钱包。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">rekt.news，《BitMart - REKT》，2021-12-05。<a href="https://rekt.news/bitmart-rekt/">rekt.news</a></li>
+          <li id="s2">CNBC，《BitMart says it will compensate victims of $196 million hack and restore trading by Tuesday》，2021-12-05。<a href="https://www.cnbc.com/2021/12/05/hackers-take-196-million-from-crypto-exchange-bitmart-in-large-breach.html">cnbc.com</a></li>
+          <li id="s3">NBC News，《Hackers take $196 million from crypto exchange Bitmart, security firm says》，2021-12-06。<a href="https://www.nbcnews.com/tech/security/hackers-take-196-million-crypto-exchange-bitmart-security-firm-says-rcna7713">nbcnews.com</a></li>
+          <li id="s4">Bloomberg（海峡时报转载），《Crypto exchange BitMart vows to compensate for $205 million hack》，2021-12-07。<a href="https://www.straitstimes.com/tech/tech-news/crypto-exchange-bitmart-vows-to-compensate-for-205-million-hack">straitstimes.com</a></li>
+          <li id="s5">CNBC，《Iranian immigrant lost $53,000 in crypto hack, says he faces ruin if BitMart doesn't pay him back》，2022-01-07。<a href="https://www.cnbc.com/2022/01/07/cryptocurrency-theft-bitmart-still-owes-victims-of-200-million-hack.html">cnbc.com</a></li>
+          <li id="s6">美国联邦贸易委员会（FTC），《In the Matter of Civil Investigative Demand to Bachi.Tech Corporation, dated May 11, 2022》，File No. 222-3050，驳回撤销调查令申请的命令，2022-08-09。<a href="https://www.ftc.gov/system/files/ftc_gov/pdf/2223050CommissionPTQOrderBachiTech.pdf">ftc.gov</a>（存档：<a href="http://web.archive.org/web/20261015143635/https://www.ftc.gov/system/files/ftc_gov/pdf/2223050CommissionPTQOrderBachiTech.pdf">web.archive.org</a>）</li>
+          <li id="s7">CoinGeek，《BitMart loses bid to limit FTC probe of deceptive/unlawful acts》，2022-08-15。<a href="https://coingeek.com/bitmart-loses-bid-to-limit-ftc-probe-of-deceptive-unlawful-acts/">coingeek.com</a></li>
+          <li id="s8">CryptoSlate，《BitMart’s sudden shutdown triggers withdrawal delays and on-chain panic, echoing the ghosts of 2022》，2026-07-27。<a href="https://cryptoslate.com/bitmarts-sudden-shutdown-triggers-withdrawal-delays-and-on-chain-panic-echoing-the-ghosts-of-2022/">cryptoslate.com</a></li>
+          <li id="s9">Blockscout（以太坊主网），攻击者地址 0x39fb…f270、0x4bb7…7091 的代币转入与交易记录，2026-10 查阅。<a href="https://eth.blockscout.com/address/0x39fb0dcd13945b835d47410ae0de7181d3edf270">eth.blockscout.com</a>、<a href="https://eth.blockscout.com/address/0x4bb7d80282f5e0616705d7f832acfc59f89f7091">eth.blockscout.com</a></li>
+          <li id="s10">rekt.news，《Vulcan Forged - REKT》，2021-12-13。<a href="https://rekt.news/vulcan-forged-rekt/">rekt.news</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

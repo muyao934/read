@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atomic Wallet 用户钱包被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2023 年 6 月非托管钱包 Atomic Wallet 的 5,000 多个钱包被盗走超过 1 亿美元：官方从未公布的根因、Least Authority 早年的审计警告、Elliptic 对 Lazarus 的归因与 Sinbad、Garantex 洗钱路径，以及两轮集体诉讼。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-atomic-wallet">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Atomic Wallet 用户钱包被盗</h1>
+    <p class="lede">2023 年 6 月 2 日深夜（UTC）起，非托管钱包 Atomic Wallet 的 5,000 多个钱包在几天内被陆续清空，损失超过 1 亿美元。Atomic Wallet 至今没有公布根因，区块链分析公司 Elliptic 依据洗钱路径把它归因于朝鲜 Lazarus 组织。早在一年多以前，审计公司 Least Authority 就公开警告过，这款钱包不足以保护用户资产。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Atomic Wallet 是一款跨平台的非托管钱包，私钥和助记词只保存在用户自己的设备上，公司称自己无法接触。2023 年 6 月 2 日 21:45（UTC）起，大量用户发现钱包里的币被转走，涉及比特币、以太坊、Tron、BSC、XRP、Polkadot、Cosmos 等十几条链<a class="ref" href="#s7">[7]</a>。Elliptic 统计，被盗钱包超过 5,000 个，总损失超过 1 亿美元，平均每个钱包约 2,800 美元，至少 10 个地址各损失超过 100 万美元<a class="ref" href="#s3">[3]</a>。</p>
+        <p>Atomic Wallet 称受影响的用户不到 0.1%，并列出四种可能的原因：用户设备上的病毒、基础设施被入侵、恶意代码注入和中间人攻击，但“没有一种被确认”<a class="ref" href="#s1">[1]</a>。截至 2026 年 10 月，它没有发布过技术事后分析。安全公司和集体诉讼的原告则怀疑问题出在钱包软件或公司的服务器、架构上，但都没有公开能确定具体环节的证据<a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <p>Elliptic 根据洗钱步骤与 Lazarus 过往案件一致、使用了 Lazarus 偏爱的 Sinbad 混币器等理由，“高度确信”这是 Lazarus 所为<a class="ref" href="#s4">[4]</a>。被盗资产先换成比特币再进入 Sinbad，部分资金被冻结后，攻击者转向俄罗斯交易所 Garantex<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。美国财政部 2023 年 11 月制裁 Sinbad 时点名了这起盗窃<a class="ref" href="#s8">[8]</a>。用户在美国发起的第一起集体诉讼因法院缺乏属人管辖权被驳回，第二起截至 2026 年 10 月仍在审理<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Atomic Wallet 支持上千种加密资产，有桌面端和移动端，Elliptic 引用的用户数是全球 500 万<a class="ref" href="#s4">[4]</a>。科罗拉多联邦法院的裁定书转述原告的起诉内容：运营方 Atomic Protocol Systems OÜ 在爱沙尼亚注册，负责开发和更新的软件公司 Evercode Infinite（Evercode Lab）在阿联酋注册；创始人兼 CEO Konstantin Gladyshev（又名 Gladych）持有约 74.4% 的股份，另两名股东 Ilia Brusov 和 Pavel Sokolov 是 Evercode 的联合创始人<a class="ref" href="#s9">[9]</a>。</p>
+        <p>它的安全承诺很直接：12 个词的备份短语在设备上随机生成，私钥和数据用 AES 加密后只保存在本地，“不保存在任何服务器上”，团队“不保存私钥，也无法访问它们”<a class="ref" href="#s11">[11]</a>。集体诉讼的起诉书还引用了 Evercode Lab 网站的说法：助记词“只由用户保存”，“不可能被盗”<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>一份事先公开的警告</h3>
+        <p>2021 年 3 月 3 日至 4 月 7 日，Least Authority 对 Atomic Wallet 的系统设计以及核心、桌面和移动端代码做了审计。Atomic 直到 2021 年 11 月 16 日才回复审计意见；复核时，审计方发现大量问题仍未解决。2022 年 2 月 10 日，Least Authority 发文公开警告，认为这款钱包“不足以保护用户资产和隐私数据”，并“强烈建议”在问题修复并经过新的审计之前，不要部署和使用它<a class="ref" href="#s5">[5]</a>。</p>
+        <p>文章列出的问题包括：密码学的使用和实现方式让用户资金面临更高风险；没有遵循钱包系统的设计和开发规范；缺少完善的文档和测试；Electron 框架的错误用法可能带来大量问题；使用了大量过时、无人维护的依赖库。为防止被恶意利用，Least Authority 没有公开最终审计报告<a class="ref" href="#s5">[5]</a>。据集体诉讼起诉书，Gladyshev 当时回复审计方称“我们已经充分考虑了 Least Authority 发现的所有问题”，部分已发布补丁，其余需要重做应用核心架构的一部分，并称这些问题都不构成安全风险<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">Atomic Wallet、安全公司与执法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-03 至 04</time><div class="ev">Least Authority 审计 Atomic Wallet，4 月 7 日交付初审报告<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2021-11-16</time><div class="ev">Atomic Wallet 回复审计意见，复核发现大量问题仍未解决<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def key"><time>2022-02-10</time><div class="ev">Least Authority 公开警告用户，建议在问题修复和重新审计之前不要使用 Atomic Wallet<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk key"><time>2023-06-02</time><div class="ev">21:45（UTC），已知最早的一笔被盗交易出现<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2023-06-03</time><div class="ev">Atomic Wallet 发推承认收到钱包被盗的报告，称受影响用户“不到 1%”；暂停应用下载和更新，联系交易所和区块链分析公司<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2023-06-04</time><div class="ev">ZachXBT 统计被盗超过 3,500 万美元，涉及十几条链<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2023-06-05</time><div class="ev">Elliptic 追踪到被盗资金换成比特币后进入 Sinbad.io 混币器<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2023-06-06</time><div class="ev">Elliptic 发文，“高度确信”攻击者是朝鲜 Lazarus 组织<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>2023-06-13</time><div class="ev">Elliptic 统计损失超过 1 亿美元、被盗钱包超过 5,000 个；超过 100 万美元被冻结后，攻击者开始转向 Garantex<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2023-06-21</time><div class="ev">用户在科罗拉多联邦地区法院提起集体诉讼 Meany v. Atomic Protocol Systems OÜ<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2023-09-12</time><div class="ev">Atomic Wallet 的事件声明最后一次更新：受影响用户“不到 0.1%”，四种可能原因均未确认<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2023-11-29</time><div class="ev">美国财政部 OFAC 制裁 Sinbad，称其洗白了 Atomic Wallet 被盗 1 亿美元中的“相当大一部分”<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2023-12-18</time><div class="ev">Atomic Wallet 推出总额 100 万美元的漏洞赏金计划<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2024-09-10</time><div class="ev">科罗拉多法院以缺乏属人管辖权为由驳回对 Atomic Wallet 和 Evercode 的起诉（不妨碍另行起诉）<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2025-03-06</time><div class="ev">美国等多国执法机构查封 Garantex 域名，起诉其两名管理人员<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2025-06-03</time><div class="ev">原告在加州北区联邦法院重新起诉（Alasu v. Atomic Protocol Systems OÜ），截至 2026 年 10 月仍在证据开示阶段<a class="ref" href="#s10">[10]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>根因没有公开，这一节只能分开写清楚三件事：已经确定的事实、各方提出的假设，以及为什么查不清。</p>
+        <h3>已经确定的事实</h3>
+        <p>非托管钱包里的币，只有用对应私钥签名的交易才能转走。Atomic Wallet 自己也说明，任何拿到用户助记词的人都可以把它导入另一款钱包，取得全部资金<a class="ref" href="#s1">[1]</a>。所以，攻击者一定通过某种方式拿到了数千名用户的私钥或助记词，然后用正常的转账交易把币转走。问题是他们怎么拿到的。</p>
+        <ul>
+          <li>受害者分布在比特币、以太坊、Tron、BSC、Cardano、XRP、Polkadot、Cosmos、Algorand、Avalanche、Stellar、Litecoin、Dogecoin 等十几条链上<a class="ref" href="#s7">[7]</a>。</li>
+          <li>BleepingComputer 当时报道，有受害者说是在最近一次更新后被盗，也有人说自己从未更新过同样被盗<a class="ref" href="#s7">[7]</a>。</li>
+          <li>Atomic Wallet 事发后立即暂停了应用下载和更新，下载服务器 get.atomicwallet.io 随后下线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。</li>
+          <li>它通过表单向受害者收集操作系统、下载渠道、被盗前做过什么、备份短语存放在哪里等信息<a class="ref" href="#s10">[10]</a>。</li>
+        </ul>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 330" role="img" aria-labelledby="aw-t aw-d">
+            <title id="aw-t">软件钱包的助记词可能在哪些环节泄露</title>
+            <desc id="aw-d">上排是公司侧：下载与更新渠道、构建时打包的第三方依赖、后端服务器与 API。下排是用户设备上的 Atomic Wallet 应用：生成助记词、本地加密存储、解锁后在内存中使用并签名。安装和更新从公司侧流向设备，应用与后端之间有网络通信。每个框都标注了提出这一假设的一方，所有假设均未被确认。</desc>
+            <defs>
+              <marker id="aw-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <text class="d-t b" x="15" y="20">Atomic Wallet 公司侧</text>
+            <rect class="d-box doubt" x="15" y="32" width="230" height="70" rx="4"/>
+            <text class="d-t b" x="130" y="56" text-anchor="middle">下载与更新渠道</text>
+            <text class="d-t s" x="130" y="78" text-anchor="middle">安装包被篡改、恶意代码注入</text>
+            <text class="d-t s" x="130" y="95" text-anchor="middle">（Atomic 列出的可能）</text>
+            <rect class="d-box doubt" x="275" y="32" width="230" height="70" rx="4"/>
+            <text class="d-t b" x="390" y="56" text-anchor="middle">第三方依赖</text>
+            <text class="d-t s" x="390" y="78" text-anchor="middle">过时、无人维护的库</text>
+            <text class="d-t s" x="390" y="95" text-anchor="middle">（2021 年审计提出的风险）</text>
+            <rect class="d-box doubt" x="535" y="32" width="230" height="70" rx="4"/>
+            <text class="d-t b" x="650" y="56" text-anchor="middle">后端服务器与 API</text>
+            <text class="d-t s" x="650" y="78" text-anchor="middle">基础设施被入侵、中间人</text>
+            <text class="d-t s" x="650" y="95" text-anchor="middle">（Atomic 列出；诉讼原告主张）</text>
+            <line class="d-line" x1="130" y1="102" x2="130" y2="168" marker-end="url(#aw-ah)"/>
+            <text class="d-t s halo" x="140" y="140">安装、更新</text>
+            <line class="d-line" x1="390" y1="102" x2="390" y2="168" marker-end="url(#aw-ah)"/>
+            <text class="d-t s halo" x="400" y="140">打包进应用</text>
+            <line class="d-line dash" x1="650" y1="168" x2="650" y2="104" marker-end="url(#aw-ah)"/>
+            <text class="d-t s halo" x="660" y="140">网络通信</text>
+            <text class="d-t b" x="15" y="190">用户设备上的 Atomic Wallet 应用</text>
+            <rect class="d-box" x="15" y="200" width="230" height="62" rx="4"/>
+            <text class="d-t b" x="130" y="225" text-anchor="middle">生成助记词</text>
+            <text class="d-t s" x="130" y="247" text-anchor="middle">12 词，在设备上生成</text>
+            <rect class="d-box doubt" x="275" y="200" width="230" height="62" rx="4"/>
+            <text class="d-t b" x="390" y="225" text-anchor="middle">本地加密存储</text>
+            <text class="d-t s" x="390" y="247" text-anchor="middle">AES；审计称密码学实现有风险</text>
+            <rect class="d-box doubt" x="535" y="200" width="230" height="62" rx="4"/>
+            <text class="d-t b" x="650" y="225" text-anchor="middle">解锁、签名</text>
+            <text class="d-t s" x="650" y="247" text-anchor="middle">设备上的病毒（Atomic 列出）</text>
+            <line class="d-line" x1="245" y1="231" x2="273" y2="231" marker-end="url(#aw-ah)"/>
+            <line class="d-line" x1="505" y1="231" x2="533" y2="231" marker-end="url(#aw-ah)"/>
+            <rect class="d-box soft" x="15" y="280" width="750" height="36" rx="4"/>
+            <text class="d-t s" x="390" y="303" text-anchor="middle">链上看到的只是用受害者私钥正常签名的转账，从中看不出助记词是在哪一环泄露的</text>
+          </svg>
+          </div>
+          <figcaption>图 1：琥珀色框是各方提出过的泄露环节，没有一个被证实。括号里写明了提出者。</figcaption>
+        </figure>
+        <h3>各方提出的假设</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>假设</th><th>提出者</th><th>公开的支持或反对理由</th></tr></thead>
+            <tbody>
+              <tr><td>用户设备中了病毒</td><td>Atomic Wallet<a class="ref" href="#s1">[1]</a></td><td>数千名用户在不同平台上几天内同时被盗，难以用各自的设备问题解释</td></tr>
+              <tr><td>基础设施被入侵</td><td>Atomic Wallet；集体诉讼原告称黑客“显然渗透了被告的服务器和/或架构”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s10">[10]</a></td><td>原告没有公开技术证据；公司事发后立即更换了所有服务器的访问权限，内部流程切到“受攻击模式”<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>恶意代码注入（如安装包或更新被篡改）</td><td>Atomic Wallet<a class="ref" href="#s1">[1]</a></td><td>下载服务器下线；但有受害者称从未更新过应用<a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>中间人攻击</td><td>Atomic Wallet<a class="ref" href="#s1">[1]</a></td><td>没有公开证据</td></tr>
+              <tr><td>应用本身的漏洞暴露私钥，或私钥被意外泄露</td><td>Halborn<a class="ref" href="#s6">[6]</a></td><td>Least Authority 2021 年指出密码学实现、Electron 用法和依赖库存在风险<a class="ref" href="#s5">[5]</a>；审计报告未公开，无法确认这些问题到 2023 年是否仍存在</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note doubt">
+          <span class="h">为什么查不清</span>
+          <p>Atomic Wallet 称自己不收集个人信息、不保存用户账户，“不追踪用户的地址、余额和交易”，因此“无法准确识别 Atomic 用户和最初的钱包所有者”，调查根因更加复杂<a class="ref" href="#s1">[1]</a>。这种设计保护了隐私，代价是出事时公司手里没有任何遥测数据，只能靠受害者自己填表来拼凑版本、平台和下载渠道。它最终也没有公布这些数据的分析结果。Least Authority 的完整审计报告同样从未公开。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击者如何拿到助记词不得而知。下面按 Elliptic、BleepingComputer 等来源，整理从链上可以看到的部分。</p>
+        <ol class="steps">
+          <li><b>批量转走</b>已知最早的被盗交易发生在 2023 年 6 月 2 日 21:45（UTC），此后几天里，十几条链上的钱包被陆续清空<a class="ref" href="#s7">[7]</a>。Elliptic 统计，被盗钱包超过 5,000 个，平均损失约 2,800 美元，至少 164 个地址各损失超过 10 万美元，至少 10 个超过 100 万美元<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>换成比特币，进入混币器</b>被盗资产被换成比特币，再送进 Sinbad.io 混币。Elliptic 此前的研究显示，Sinbad 已经替 Lazarus 洗过 1 亿多美元，包括 Axie Infinity（<a href="2022-ronin-bridge.html">Ronin 跨链桥</a>）和 <a href="2022-harmony-horizon.html">Harmony Horizon 跨链桥</a>两起案件的赃款；它很可能是被美国制裁的混币器 Blender.io 改名后的版本<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>被冻结后换路</b>Elliptic 与调查人员和多家交易所合作，冻结了超过 100 万美元。攻击者随即改变做法，转向俄罗斯交易所 Garantex；Garantex 2022 年 4 月已被美国财政部制裁，但仍在运营<a class="ref" href="#s3">[3]</a>。</li>
+        </ol>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>5,000 多个受害钱包</b>十几条链上的原生币和代币</li>
+          <li class="atk"><b>换成比特币</b>跨链汇集</li>
+          <li class="atk"><b>Sinbad.io 混币</b>2023-11 被美国制裁</li>
+          <li class="doubt"><b>Garantex 等出口</b>2025-03 被多国执法机构查封</li>
+        </ol>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数字</th><th>来源</th></tr></thead>
+            <tbody>
+              <tr><td>总损失</td><td class="n">超过 1 亿美元</td><td>Elliptic<a class="ref" href="#s3">[3]</a>；美国财政部<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>受影响钱包</td><td class="n"><span class="dispute">5,000 多个至约 5,500 个</span></td><td>Elliptic 称超过 5,000<a class="ref" href="#s3">[3]</a>；诉讼文件称约 5,500<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>平均每个钱包损失</td><td class="n">约 2,800 美元</td><td>Elliptic<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>损失超过 100 万美元的地址</td><td class="n">至少 10 个</td><td>Elliptic<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>损失超过 10 万美元的地址</td><td class="n">至少 164 个</td><td>Elliptic<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>被冻结</td><td class="n">超过 100 万美元</td><td>截至 2023-06-13<a class="ref" href="#s3">[3]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>最初几天的统计只有 3,500 万美元左右，一周后升到 1 亿美元以上<a class="ref" href="#s3">[3]</a><a class="ref" href="#s7">[7]</a>。受害者是分散的个人，统计要靠他们陆续上报地址，数字随之上涨。美国财政部 2023 年 11 月制裁 Sinbad 时写道，Sinbad 洗白了 2023 年 6 月 3 日从 Atomic Wallet 客户处被盗的 1 亿美元中的“相当大一部分”，并称 Sinbad 是 Lazarus 偏爱的混币服务；但这份公告没有直接说 Atomic Wallet 的盗窃是朝鲜所为<a class="ref" href="#s8">[8]</a>。2025 年 3 月，美国、德国、荷兰、芬兰、爱沙尼亚等国执法机构查封了 Garantex 的域名，司法部称它自 2019 年 4 月以来处理了至少 960 亿美元的交易；这份公告没有提到 Atomic Wallet 或 Lazarus<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>“非托管”不等于安全</h3>
+        <p>非托管钱包的卖点是“只有你自己掌握私钥”，这让用户不必信任交易所。但所有用户都在运行同一家公司发布的同一套代码，代码的构建、分发和更新渠道仍然掌握在公司手里。这个环节一旦出问题，就和交易所热钱包被盗一样，是一次性波及数千人的单点故障。区别在于，交易所被盗后往往会动用自有资金或保险赔付，而 Atomic Wallet 的事件声明里没有任何关于赔偿的内容<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>Lazarus 把目标转向个人用户</h3>
+        <p>Elliptic 称，这是自 2022 年 6 月 <a href="2022-harmony-horizon.html">Harmony Horizon 跨链桥</a>被盗 1 亿美元以来，第一起被公开归因于 Lazarus 的大型盗窃<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。此前 Lazarus 的大案多针对跨链桥和交易所，这一次的受害者是几千名普通用户，单个钱包平均只有几千美元。</p>
+        <h3>审计的作用和边界</h3>
+        <p>Least Authority 的公开警告在行业里并不常见。它说明审计报告不是“通过证书”：项目方可以拿到报告后不修复，也可以继续上线。审计方能做的，是在项目方不作为时直接警告用户；它同时选择不公开细节，以免给攻击者递工具<a class="ref" href="#s5">[5]</a>。这次警告发出一年零四个月后，大规模被盗发生，至今没有证据把两者直接联系起来。</p>
+        <h3>跨国追责的难度</h3>
+        <p>科罗拉多法院驳回起诉时认为，原告没有证明 Atomic Wallet“有意”把营销对准科罗拉多，Evercode 与该州的联系则“更加间接”<a class="ref" href="#s13">[13]</a>。钱包开发商注册在爱沙尼亚和阿联酋、软件面向全球免费下载，用户想在本国法院起诉，首先就要跨过管辖权这一关。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Atomic Wallet 的回应</h3>
+        <p>事件声明称，公司在 6 月 3 日收到报告后暂停了下载和更新，聘请区块链调查公司 Chainalysis 和 Crystal 追踪资金，更换了所有服务器的访问权限，并在准备一个安全更新；声明还说“每个版本都经过外部安全团队验证”<a class="ref" href="#s1">[1]</a>。受影响比例从最初推文里的“不到 1%”改为“不到 0.1%”<a class="ref" href="#s2">[2]</a><a class="ref" href="#s1">[1]</a>。按 Elliptic 引用的 500 万用户计算，0.1% 约为 5,000 人，与 Elliptic 统计的被盗钱包数相当。</p>
+        <p>2023 年 12 月 18 日，Atomic Wallet 推出总额 100 万美元的漏洞赏金，其中最高一档 10 万美元，奖励“无需物理接触、恶意软件或社会工程即可清空钱包”的漏洞；条款同时写明，不为第三方依赖组件中未公开的漏洞付款<a class="ref" href="#s12">[12]</a>。截至 2026 年 10 月，它的安全介绍页面没有提到这次事件<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>两轮集体诉讼</h3>
+        <p>2023 年 6 月 21 日，用户在科罗拉多联邦地区法院提起集体诉讼（Meany v. Atomic Protocol Systems OÜ，1:23-cv-01582），起初的被告是 Atomic Wallet 和 Gladyshev，8 月的修正起诉书又加上 Evercode 和另外两名股东。2024 年 9 月 10 日，首席法官 Philip A. Brimmer 以缺乏属人管辖权为由驳回了对 Atomic Wallet、Evercode 和两名个人被告的起诉，不妨碍原告另行起诉<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>。2025 年 6 月 3 日，原告方在加州北区联邦法院重新起诉（Alasu v. Atomic Protocol Systems OÜ，3:25-cv-04684），原告增加到数十人，主张被告明知 Least Authority 的审计发现而未修复，“未能提供足够的安全措施”<a class="ref" href="#s10">[10]</a>。被告 2026 年 1 月提出驳回动议；截至 2026 年 10 月，案卷显示双方仍在就证据开示提交文件，尚无判决<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>洗钱渠道的命运</h3>
+        <p>Sinbad 在 2023 年 11 月 29 日被 OFAC 制裁<a class="ref" href="#s8">[8]</a>。Garantex 在 2025 年 3 月被查封，两名管理人员被起诉，执法机构冻结了超过 2,600 万美元<a class="ref" href="#s14">[14]</a>。除事发初期冻结的 100 多万美元外，本站没有查到其他追回资金的公开报道，也没有查到与此案有关的逮捕。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给钱包开发者</span>
+          <ul>
+            <li>出事后即使查不出根因，也要发布技术说明：排除了哪些可能、受影响的版本、平台和下载渠道是什么、还在查什么。三年没有答案，用户就无从判断自己的助记词是否还安全。</li>
+            <li>让发布可验证：可复现构建、对安装包和更新签名、公开哈希，让第三方能确认用户装的就是源码编出来的那一份。</li>
+            <li>依赖要少、要锁版本、要定期审查。Electron 应用要开启上下文隔离、关闭渲染进程的 Node 集成，并设置严格的内容安全策略。</li>
+            <li>审计发现的问题要修复，并请独立机构复审、公开结果。对审计方说“这些问题都不构成安全风险”，不等于问题不存在。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>软件热钱包适合放日常小额资金。大额资产放在硬件钱包或多签里，私钥不经过联网的通用电脑。</li>
+            <li>钱包厂商发生原因不明的大规模被盗时，把资金转到在另一套软件或硬件上新生成的助记词下。旧助记词是否已经泄露，没有人能告诉你。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给审计方</span>
+          <ul>
+            <li>客户拿到报告后长期不修复严重问题时，可以像 Least Authority 那样，事先通知客户、公开发出警告，同时不公开可被利用的细节。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Atomic Wallet，《June 3rd Event Statement》，2023-09-12 更新（另参照 Internet Archive 2023-09-30 存档）。<a href="https://atomicwallet.io/blog/articles/june-3rd-event-statement">atomicwallet.io</a></li>
+          <li id="s2">Tom Robinson（Elliptic），《$35 Million Atomic Wallet hacker funnels crypto to North Korea's favored mixer》，2023-06-05。<a href="https://www.elliptic.co/insights/35-million-atomic-wallet-hacker-funnels-crypto-to-north-korea-s-favored-mixer/">elliptic.co</a></li>
+          <li id="s3">Tom Robinson（Elliptic），《North Korea-linked Atomic Wallet heist tops $100 million》，2023-06-13。<a href="https://www.elliptic.co/insights/north-korea-linked-atomic-wallet-heist-tops-100-million/">elliptic.co</a></li>
+          <li id="s4">Elliptic，《North Korea's Lazarus Group likely responsible for $35 million Atomic crypto theft》，2023-06-06。<a href="https://www.elliptic.co/insights/north-korea-s-lazarus-group-likely-responsible-for-35-million-atomic-crypto-theft/">elliptic.co</a></li>
+          <li id="s5">Least Authority，《Disclosure of Security Vulnerabilities in Atomic Wallet, Audited by Least Authority》，2022-02-10（经 Internet Archive 读取）。<a href="https://web.archive.org/web/20220210/https://leastauthority.com/blog/disclosure-of-security-vulnerabilities-in-atomic-wallet/">web.archive.org</a></li>
+          <li id="s6">Halborn，《Explained: The Atomic Wallet Hack (June 2023)》，2023-06-07。<a href="https://www.halborn.com/blog/post/explained-the-atomic-wallet-hack-june-2023">halborn.com</a></li>
+          <li id="s7">BleepingComputer，《Atomic Wallet hacks lead to over $35 million in crypto stolen》，2023-06-04。<a href="https://www.bleepingcomputer.com/news/security/atomic-wallet-hacks-lead-to-over-35-million-in-crypto-stolen/">bleepingcomputer.com</a></li>
+          <li id="s8">美国财政部，《Treasury Sanctions Mixer Used by the DPRK to Launder Stolen Virtual Currency》（制裁 Sinbad.io），2023-11-29。<a href="https://home.treasury.gov/news/press-releases/jy1933">treasury.gov</a></li>
+          <li id="s9">Meany v. Atomic Protocol Systems OÜ，1:23-cv-01582（D. Colo.），案卷及 2024-09-10 裁定书（Docket No. 110）。<a href="https://www.courtlistener.com/docket/67520833/meany-v-atomic-protocol-systems-ou/">courtlistener.com</a></li>
+          <li id="s10">Alasu v. Atomic Protocol Systems OÜ，3:25-cv-04684（N.D. Cal.），案卷及 2025-06-03 起诉书。<a href="https://www.courtlistener.com/docket/70449923/alasu-v-atomic-protocol-systems-ou/">courtlistener.com</a></li>
+          <li id="s11">Atomic Wallet，《Atomic Wallet Security》，2025-09-01 更新。<a href="https://atomicwallet.io/blog/articles/atomic-wallet-security">atomicwallet.io</a></li>
+          <li id="s12">Atomic Wallet，《Security Bounty》，2026-01-22 更新（计划于 2023-12-18 推出）。<a href="https://atomicwallet.io/blog/articles/security-bounty">atomicwallet.io</a></li>
+          <li id="s13">Consumer Financial Services Law Monitor，《Colorado Federal Court Grants Motions to Dismiss in Cryptocurrency Theft Case Citing Lack of Personal Jurisdiction》，2024-09-18。<a href="https://www.consumerfinancialserviceslawmonitor.com/2024/09/colorado-federal-court-grants-motions-to-dismiss-in-cryptocurrency-theft-case-citing-lack-of-personal-jurisdiction/">consumerfinancialserviceslawmonitor.com</a></li>
+          <li id="s14">美国司法部，《Garantex Cryptocurrency Exchange Disrupted in International Operation》，2025-03-07。<a href="https://www.justice.gov/opa/pr/garantex-cryptocurrency-exchange-disrupted-international-operation">justice.gov</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

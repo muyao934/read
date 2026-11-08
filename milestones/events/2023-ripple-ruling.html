@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEC 诉 Ripple 案：XRP 的销售是否构成证券发行｜区块链大事记</title>
+<meta name="description" content="2020 年 12 月 SEC 起诉 Ripple 及两名高管，称出售 XRP 是未注册的证券发行。2023 年 7 月 Torres 法官部分简易判决：直接卖给机构的 XRP 构成投资合同，交易所的程序化销售和其他分发不构成。本页写法院怎样按 Howey 测试逐类看交易，Rakoff 法官的不同看法，2024 年的罚款和禁令，以及 2025 年 SEC 换了方向后案件怎样收尾。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-ripple-ruling">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　<a href="../index.html#cat-policy">监管与政策</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>SEC 诉 Ripple 案：XRP 的销售是否构成证券发行</h1>
+    <p class="lede">2020 年 12 月，美国 SEC 起诉 Ripple Labs 和两名高管，称他们出售 XRP 是一场未注册的证券发行，筹得 13 亿多美元。2023 年 7 月 13 日，Analisa Torres 法官作出部分简易判决：Ripple 按书面合同直接卖给机构的 XRP 构成投资合同，在交易所匿名卖出的、发给员工和开发者的 XRP 不构成。据 Reuters，这是加密公司第一次在 SEC 提起的案件里胜诉，SEC 也赢了一部分。2024 年法院判 Ripple 罚款约 1.25 亿美元并发出禁令；2025 年 SEC 换了方向，双方想把罚款减到 5,000 万美元、解除禁令，被法官拒绝，最后撤回上诉，原判决生效。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">XRP 是 XRP Ledger 的原生代币，2012 年上线时一次生成 1,000 亿枚，其中 800 亿枚给了 Ripple<a class="ref" href="#s1">[1]</a>。SEC 称，Ripple 从 2013 年起把 XRP 卖给机构和交易所里的买家，联合创始人 Chris Larsen 和 CEO Brad Garlinghouse 也卖出个人持有的 XRP，都没有向 SEC 注册<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。Garlinghouse 说 XRP 是一种货币，不需要作为投资合同注册<a class="ref" href="#s20">[20]</a>。</p>
+        <p>Torres 法官写道，XRP 作为数字代币，本身不是体现 Howey 要件的“合同、交易或安排”，要看每一类销售的经济实质<a class="ref" href="#s1">[1]</a>。按书面合同直接买币的机构知道钱付给了 Ripple，Ripple 的宣传让它们期待价格随 Ripple 的努力上涨，这部分销售构成未注册的证券发行；在交易所里匿名撮合的买家不知道卖家是谁，和二级市场上的买家处境一样，这部分不构成<a class="ref" href="#s1">[1]</a>。据 Reuters，判决当天下午 XRP 涨了 75%，Coinbase 宣布恢复 XRP 交易<a class="ref" href="#s19">[19]</a>。18 天后，同一法院的 Jed Rakoff 法官在 SEC 诉 Terraform 案里明确拒绝按销售方式区分<a class="ref" href="#s16">[16]</a>。</p>
+        <p>2024 年 8 月，法院驳回 SEC 返还所得的请求，判 Ripple 罚款 125,035,150 美元，永久禁止它违反注册规定；SEC 要求的返还、利息和罚款合计约 19.5 亿美元（本站加总）<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。双方都上诉。2025 年 SEC 调整了对加密行业的执法，与 Ripple 达成和解，条件是法院把罚款减到 5,000 万美元、解除禁令<a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。Torres 法官两次拒绝，第二次写道，双方无权约定不受法院最终判决的约束<a class="ref" href="#s10">[10]</a><a class="ref" href="#s13">[13]</a>。2025 年 8 月 7 日，双方撤回上诉；罚款连同利息从托管账户付给了 SEC<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>Ripple 和 XRP</h3>
+        <p>2011 年到 2012 年初，Arthur Britto、Jed McCaleb 和 David Schwartz 写出了后来叫 XRP Ledger 的区块链代码，想做一条比比特币更快、更便宜、更省电的链。2012 年上线时，代码一次生成固定总量的 1,000 亿枚 XRP；XRP Ledger 运行需要 XRP<a class="ref" href="#s1">[1]</a>。同年，Britto、Larsen 和 McCaleb 创办 Ripple，前身叫 NewCoin、OpenCoin。三位创始人留下 200 亿枚，其中 Larsen 90 亿枚，其余 800 亿枚给了公司；上线之前他们没有卖过 XRP<a class="ref" href="#s1">[1]</a>。</p>
+        <p>Larsen 任 CEO 到 2016 年 12 月，之后任执行董事长。Garlinghouse 2015 年 4 月加入任 COO，2017 年 1 月 1 日接任 CEO<a class="ref" href="#s1">[1]</a>。Ripple 的跨境结算产品 RippleNet 有一项功能叫 ODL（on demand liquidity）：客户先把一种法币换成 XRP，再把 XRP 换成另一种法币，例如美元换墨西哥比索<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>三种卖法</h3>
+        <p>2020 年底之前，Ripple 一直持有 500 亿到 800 亿枚 XRP。判决书把它的卖法分成三类<a class="ref" href="#s1">[1]</a>：</p>
+        <ul>
+          <li><b>机构销售。</b>经子公司按书面合同直接卖给机构买家、对冲基金和 ODL 客户，SEC 称约 7.289 亿美元。</li>
+          <li><b>程序化销售。</b>用交易算法在数字资产交易所卖出，是匿名的买卖撮合：Ripple 不知道买家是谁，买家也不知道卖家是谁。SEC 称约 7.576 亿美元。</li>
+          <li><b>其他分发。</b>把 XRP 作为报酬发给员工，或者通过 Xpring 计划发给在 XRP Ledger 上开发应用的第三方。SEC 称 Ripple 为此确认了 6.09 亿美元的收入。</li>
+        </ul>
+        <p>前两类的收入用于公司运营。Larsen 也在交易所程序化卖出个人的 XRP，所得至少 4.5 亿美元；SEC 称 Garlinghouse 2017 年 4 月到 2020 年卖了约 1.5 亿美元。被告从没有为任何一次 XRP 的发售或出售提交注册声明，Ripple 也没有公开过财务报表或定期报告<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>Howey 测试</h3>
+        <p>1933 年《证券法》第 5 条要求，证券在发售之前要向 SEC 注册，除非适用豁免。Torres 法官后来写道，注册是为了让投资者拿到作出投资决定所需的信息<a class="ref" href="#s13">[13]</a>。“投资合同”是证券的一种。最高法院 1946 年在 Howey 案里定义：一个人把钱投入共同事业，期待完全靠发起人或第三方的努力获利，这样的合同、交易或安排就是投资合同；判断时看经济实质，不看形式。Howey 案的标的是柑橘园，后来被认定为投资合同标的的还有威士忌酒桶、公用电话、公寓、河狸，2020 年的 Telegram 案是数字代币<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>上线前的法律意见</h3>
+        <p>2012 年 2 月，XRP Ledger 公开上线之前，律所 Perkins Coie 给 Ripple 的备忘录写道，XRP 如果卖给投资者，“很可能是证券”。后一份备忘录说，可以有力地论证 XRP 不是证券，但 SEC 不同意的风险虽小，仍然存在；Ripple 越把 XRP 当作投资机会推广，SEC 越可能采取行动。Larsen 作证说，收到后一份备忘录后，公司按其建议采取了合规措施<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>起诉</h3>
+        <p>2020 年 12 月 22 日，SEC 在曼哈顿联邦地区法院起诉 Ripple、Larsen 和 Garlinghouse 违反《证券法》的注册规定，要求禁令、返还所得加判决前利息和民事罚款<a class="ref" href="#s3">[3]</a>。起诉书称，被告从 2013 年起卖出 146 亿多枚 XRP，换来价值 13.8 亿多美元的现金和其他对价，用于 Ripple 的运营，也让 Larsen 和 Garlinghouse 获利<a class="ref" href="#s2">[2]</a>。执法部门主任 Stephanie Avakian 说，想享有公开发行的好处，包括接触散户、广泛分销和二级市场，就要遵守联邦证券法<a class="ref" href="#s3">[3]</a>。2021 年 2 月 18 日，SEC 提交修订起诉书<a class="ref" href="#s6">[6]</a>。</p>
+        <p>Garlinghouse 在起诉前一晚的声明里说，这起诉讼“在法律和事实上都根本错误”，“XRP 是一种货币，不必作为投资合同注册”。CNBC 写道，当时 XRP 比 2017 年底的高点低 80% 以上；Ripple 上一轮私募估值 100 亿美元<a class="ref" href="#s20">[20]</a>。12 月 28 日，Coinbase 以 SEC 起诉为由，把 XRP 交易改为只能挂限价单，2021 年 1 月 19 日完全暂停，钱包仍可存取<a class="ref" href="#s21">[21]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">违法行为与损失</span><span class="def">立法、监管、法院与执法</span><span>市场与其他</span></p>
+        <ol class="timeline">
+          <li><time>2012-02</time><div class="ev">Perkins Coie 的备忘录提醒 Ripple，XRP 卖给投资者很可能是证券<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2012</time><div class="ev">XRP Ledger 上线，生成 1,000 亿枚 XRP，800 亿枚给 Ripple<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2013 至 2020</time><div class="ev">Ripple 按书面合同把 XRP 直接卖给机构，没有注册；法院后来认定这部分违反第 5 条<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2017-01-01</time><div class="ev">Garlinghouse 接任 CEO，Larsen 任执行董事长<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2020-12-22</time><div class="ev">SEC 起诉 Ripple、Larsen 和 Garlinghouse，称未注册发行筹得 13 亿多美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2020-12-28</time><div class="ev">Coinbase 把 XRP 改为只能挂限价单，2021 年 1 月 19 日暂停交易<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2021-02-18</time><div class="ev">SEC 提交修订起诉书<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def key"><time>2023-07-13</time><div class="ev">Torres 法官部分简易判决：机构销售构成投资合同；程序化销售、其他分发和两名高管的出售不构成<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2023-07-13</time><div class="ev">XRP 到下午涨了 75%；Coinbase 宣布恢复 XRP 交易，股价收涨 24%<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2023-07-31</time><div class="ev">Rakoff 法官在 SEC 诉 Terraform 案驳回撤案动议，拒绝按销售方式区分<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2023-10-03</time><div class="ev">法院驳回 SEC 8 月提出的中途上诉申请，定 2024 年 4 月 23 日开庭<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-10-19</time><div class="ev">SEC 撤回对两名高管协助违法的指控，以后不能再诉<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def key"><time>2024-08-07</time><div class="ev">救济判决和最终判决：永久禁令，罚款 125,035,150 美元，驳回返还所得<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2024-09-04</time><div class="ev">法院暂缓执行罚款，Ripple 把罚款的 111% 存入托管账户<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2024-10-02</time><div class="ev">SEC 向第二巡回法院上诉<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2024-10-10</time><div class="ev">Ripple 交叉上诉<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2025-01-21</time><div class="ev">代理主席 Mark Uyeda 成立加密工作组<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2025-02 至 03</time><div class="ev">SEC 与 Coinbase、Consensys、Payward、Cumberland DRW 约定撤诉<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2025-04-16</time><div class="ev">第二巡回法院暂停审理上诉，等 SEC 报批和解<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2025-05-08</time><div class="ev">SEC 与 Ripple、两名高管签署和解协议：以法院解除禁令、罚款减到 5,000 万美元为条件<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2025-05-15</time><div class="ev">Torres 法官驳回第一次请求<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2025-06-26</time><div class="ev">Torres 法官驳回第二次请求：双方无权约定不受最终判决约束<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def key"><time>2025-08-07</time><div class="ev">双方向第二巡回法院联合约定，撤回上诉和交叉上诉<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2025-08-18</time><div class="ev">Ripple 的律师告知法院，罚款加法定利息已从托管账户付给 SEC<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2025-11-13</time><div class="ev">第一只现货 XRP ETF，Canary 的 XRPC，在 Nasdaq 上市<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="def"><time>2026-03-17</time><div class="ev">SEC 发布解释，把 XRP 列为“数字商品”的例子；CFTC 同时发布指引<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2026-10-30</time><div class="ev">据 SoSoValue，现货 XRP ETF 累计净流入 18.1 亿美元<a class="ref" href="#s23">[23]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="content">
+        <h2>判决与救济</h2>
+        <h3>看交易，不看代币</h3>
+        <p>Ripple 主张 XRP 像黄金、白银、糖一样是普通资产，没有证券的“商业特征”。法院认为这没有抓住要点：普通资产也可以作为投资合同出售，要看出售时的情形。判决书引用 Telegram 案：证券不只是那串加密字符，而是围绕代币销售的整套合同、预期和理解。XRP 作为数字代币，本身不是体现 Howey 要件的“合同、交易或安排”，法院逐类看被告出售和分发 XRP 的交易<a class="ref" href="#s1">[1]</a>。被告还提出一个“基本要素”测试：投资合同必须有确立投资者权利的合同，让发起人承担售后义务，并给投资者分享利润的权利。法院说这是在 Howey 的文字之外另加条件，不采纳<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>机构销售：三项都满足</h3>
+        <p>投入资金：机构用法币等换 XRP，被告不争。共同事业：Ripple 把机构销售的收入集中在子公司名下的一组银行账户里，会计也记在一起；机构买家拿到的是同一种可互换的 XRP，Ripple 用这笔钱开发 XRP 的用途、维护交易市场，XRP 涨价时机构买家都按持币量获利，构成横向共同性。期待利润：法院认为，从 Ripple 的沟通、宣传和销售方式看，处在机构买家位置的理性投资者会期待从 Ripple 的努力中获利，它们会明白 Ripple“在推销一个投机性的价值主张”。部分合同有锁定期，或按交易量限制转售，这与把 XRP 当货币或其他消费用途不符；买家又都是机构投资者、对冲基金这样的成熟主体<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>程序化销售：第三项不满足</h3>
+        <p>法院没有讨论前两项，只认定第三项不成立。机构买家可以合理期待 Ripple 用卖币的钱改善 XRP 生态、推高价格，程序化买家不能：匿名撮合下，他们不知道钱付给了 Ripple 还是别的卖家。2017 年以来，Ripple 的程序化销售不到全球 XRP 交易量的 1%，在交易所买 XRP 的人绝大多数根本没有把钱投给 Ripple。法院写道，从经济实质看，程序化买家和不知道把钱付给了谁的二级市场买家处境相同<a class="ref" href="#s1">[1]</a>。</p>
+        <p>SEC 说 Ripple 明确瞄准投机者。法院认为投机动机本身不能证明存在投资合同：许多程序化买家也许期待获利，但这种期待来自加密市场的整体行情等因素，不来自 Ripple 的努力，何况他们不知道自己买的是 Ripple 卖的币。脚注 16 写明，二级市场上的 XRP 买卖是否构成投资合同，不在本案范围之内，要看每笔交易的具体情形<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 446" role="img" aria-labelledby="xrp-split-t xrp-split-d">
+            <title id="xrp-split-t">同一种 XRP，四类交易，两种结论</title>
+            <desc id="xrp-split-d">2023 年 7 月的简易判决按 Howey 测试逐类看四种 XRP 交易：按书面合同直接卖给机构的，SEC 称约 7.29 亿美元，法院认定构成投资合同、违反第 5 条；在交易所程序化卖出的，SEC 称约 7.58 亿美元，买家不知道卖家是谁，不构成；作为报酬发给员工和 Xpring 资助的公司的，SEC 称确认收入约 6.09 亿美元，接收者没有付钱，不构成；Larsen 和 Garlinghouse 在交易所的出售，同样是匿名撮合，不构成。其他持有者之间的二级市场买卖，判决写明不在本案范围之内。</desc>
+            <defs>
+              <marker id="xrp-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box soft" x="150" y="16" width="460" height="54" rx="3"/>
+            <text class="d-t b" x="380" y="39" text-anchor="middle">同一种代币 XRP</text>
+            <text class="d-t s" x="380" y="59" text-anchor="middle">代币本身不是投资合同，逐类看交易的经济实质（Howey 测试）</text>
+            <text class="d-t s" x="190" y="98" text-anchor="middle">卖法和 SEC 所称金额</text>
+            <text class="d-t s" x="570" y="98" text-anchor="middle">法院的结论（2023 年 7 月）</text>
+            <rect class="d-box" x="30" y="110" width="320" height="58" rx="3"/><text class="d-t b" x="190" y="134" text-anchor="middle">机构销售，约 7.29 亿美元</text><text class="d-t s" x="190" y="155" text-anchor="middle">书面合同直接卖给机构，部分有锁定期</text>
+            <rect class="d-box" x="410" y="110" width="320" height="58" rx="3"/><text class="d-t b" x="570" y="134" text-anchor="middle">构成投资合同，违反第 5 条</text><text class="d-t s" x="570" y="155" text-anchor="middle">买家期待 Ripple 的努力推高价格</text>
+            <line class="d-line" x1="352" y1="139" x2="406" y2="139" marker-end="url(#xrp-ah)"/>
+            <rect class="d-box" x="30" y="186" width="320" height="58" rx="3"/><text class="d-t b" x="190" y="210" text-anchor="middle">程序化销售，约 7.58 亿美元</text><text class="d-t s" x="190" y="231" text-anchor="middle">交易所里用算法卖出，买卖双方互不知道</text>
+            <rect class="d-box soft" x="410" y="186" width="320" height="58" rx="3"/><text class="d-t b" x="570" y="210" text-anchor="middle">不构成</text><text class="d-t s" x="570" y="231" text-anchor="middle">买家不知道钱是否付给了 Ripple</text>
+            <line class="d-line" x1="352" y1="215" x2="406" y2="215" marker-end="url(#xrp-ah)"/>
+            <rect class="d-box" x="30" y="262" width="320" height="58" rx="3"/><text class="d-t b" x="190" y="286" text-anchor="middle">其他分发，约 6.09 亿美元</text><text class="d-t s" x="190" y="307" text-anchor="middle">作为报酬发给员工和 Xpring 资助的公司</text>
+            <rect class="d-box soft" x="410" y="262" width="320" height="58" rx="3"/><text class="d-t b" x="570" y="286" text-anchor="middle">不构成</text><text class="d-t s" x="570" y="307" text-anchor="middle">接收者没有付钱，谈不上投入资金</text>
+            <line class="d-line" x1="352" y1="291" x2="406" y2="291" marker-end="url(#xrp-ah)"/>
+            <rect class="d-box" x="30" y="338" width="320" height="58" rx="3"/><text class="d-t b" x="190" y="362" text-anchor="middle">两名高管的出售</text><text class="d-t s" x="190" y="383" text-anchor="middle">Larsen 至少 4.5 亿美元，也是匿名撮合</text>
+            <rect class="d-box soft" x="410" y="338" width="320" height="58" rx="3"/><text class="d-t b" x="570" y="362" text-anchor="middle">不构成</text><text class="d-t s" x="570" y="383" text-anchor="middle">理由与程序化销售相同</text>
+            <line class="d-line" x1="352" y1="367" x2="406" y2="367" marker-end="url(#xrp-ah)"/>
+            <text class="d-t s" x="380" y="426" text-anchor="middle">其他持有者之间的二级市场买卖：判决写明不在本案范围之内</text>
+          </svg>
+          </div>
+          <figcaption>Torres 法官按 Howey 测试逐类看 XRP 的交易<a class="ref" href="#s1">[1]</a>。金额是判决书引用的 SEC 的说法，不是法院的认定；程序化销售和高管的出售，法院只认定第三项“期待靠他人的努力获利”不成立，没有讨论前两项<a class="ref" href="#s1">[1]</a>。</figcaption>
+        </figure>
+        <h3>其他分发和两名高管的出售</h3>
+        <p>员工和 Xpring 资助的公司没有向 Ripple 支付金钱或“有形、可确定的对价”，相反是 Ripple 付给他们 XRP，第一项“投入资金”不成立。法院也认为，没有证据显示 Ripple 把 XRP 转给第三方、再让他们卖出，用这种办法为项目融资<a class="ref" href="#s1">[1]</a>。Larsen 和 Garlinghouse 在交易所的出售同样是匿名撮合，买卖双方互不知道，法院按程序化销售的理由认定第三项不成立<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>公平通知与协助责任</h3>
+        <p>被告主张 SEC 没有给出公平通知，违反正当程序。法院只就机构销售驳回这一抗辩：Howey 和此后的判例，足以让普通人合理理解它管什么<a class="ref" href="#s1">[1]</a>。Reuters 引述判决书说，法律不要求 SEC 逐个或按行业警告所有潜在的违法者<a class="ref" href="#s19">[19]</a>。脚注写明，结论只限于机构销售，因为 SEC 对其他销售的理论，可能与它以前在数字资产案件里的执法不一致<a class="ref" href="#s1">[1]</a>。SEC 请求就两名高管协助违法作出简易判决，法院驳回。例如 Larsen 2017 年起不再负责日常运营，但仍在批准 XRP 销售的委员会里；陪审团可能认定，他从那时起没有“有意识地积极协助”<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>2024 年的救济判决</h3>
+        <p>2024 年 3 月，SEC 请求法院作出最终判决<a class="ref" href="#s13">[13]</a>。双方的主张和法院的结论如下<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>项目</th><th>SEC 的请求</th><th>Ripple 的主张</th><th>法院</th></tr></thead>
+          <tbody>
+            <tr><td>禁令</td><td>永久禁止违反第 5 条，并禁止以机构销售的方式未注册发行 XRP</td><td>不需要</td><td>只禁止违反第 5 条</td></tr>
+            <tr><td>返还所得</td><td>8.763 亿美元，另加判决前利息 1.982 亿美元</td><td>不需要</td><td>驳回</td></tr>
+            <tr><td>民事罚款</td><td>8.763 亿美元</td><td>不超过 1,000 万美元</td><td>约 1.25 亿美元</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>禁令。</b>SEC 说，判决之后 Ripple 仍在按 ODL 合同直接卖 XRP，没有注册。Ripple 承认还在做 ODL 销售，但说这些销售没有法院当初依据的那些特征，比如锁定期。法院认为，判决并没有说缺少这些条款的合同就合法；Ripple 一边重提 ODL 该不该算机构销售，一边又说救济阶段不是细看 ODL 的时候，“不能两头都要”。法院明确说，不认定起诉之后的销售违法；但 Ripple“愿意试探判决的边界”，表明它迟早会越界（如果还没有越界的话），所以有再违法的合理可能。SEC 提出的第二项禁令措辞过于绝对，又与第一项重复，没有采纳<a class="ref" href="#s6">[6]</a>。最终判决禁止 Ripple 违反第 5 条，也约束它的高管、代理人、员工和与之协同行事的人<a class="ref" href="#s7">[7]</a>。</p>
+        <p><b>返还所得。</b>最高法院 2020 年在 Liu 案里说，返还不能超过违法者的净利润，而且要用于受害者。第二巡回法院 2023 年在 Govil 案里说，“受害者”是因证券欺诈受到金钱损失的人；被骗而失去知情决定的权利，不算金钱损失。SEC 称，机构买家如果知道别人拿到了折扣，也许能谈到更好的价格。法院认为这不能证明它们按标价买入受了金钱损失，驳回返还所得和判决前利息<a class="ref" href="#s6">[6]</a>。</p>
+        <p><b>罚款。</b>SEC 要求的罚款，等于它算出的机构销售净利润。法院在讨论禁令时写道，SEC 援引 Perkins Coie 的备忘录，主张 Ripple 至少轻率地无视法律，但没有拿出新的事实，Ripple 的主观状态无法确定。罚款按 Ripple 一方专家报告列出的 1,278 份销售合同逐份计算：按签约日期，每份 75,000、80,000 或 115,231 美元，合计 125,035,150 美元。法院说，这是对第一档罚款上限的估计，合同清单可能不全，也可能多算<a class="ref" href="#s6">[6]</a>。</p>
+        <div class="note doubt"><span class="h">几个金额不能混用</span><p>SEC 的新闻稿说筹得“超过 13 亿美元”<a class="ref" href="#s3">[3]</a>。起诉书写的是 13.8 亿多美元，由 2014 年到 2019 年约 7.63 亿美元的“市场销售”，加上到 2020 年第三季度约 6.24 亿美元的机构销售<a class="ref" href="#s2">[2]</a>。简易判决书在 2013 年到 2020 年底的销售之下，引用 SEC 的说法：机构销售约 7.289 亿美元，程序化销售约 7.576 亿美元<a class="ref" href="#s1">[1]</a>。救济阶段 SEC 要求返还的 8.763 亿美元，是它算出的机构销售净利润<a class="ref" href="#s6">[6]</a>。这几组数字的时间范围和算法不同，不能相加，也不能互换。罚款按合同份数计算，和销售金额无关；首页和事件要素用法院判的罚款。</p></div>
+      </section>
+      <section id="reaction">
+        <h2>各方反应</h2>
+        <h3>市场</h3>
+        <p>据 Reuters 引 Refinitiv Eikon 的数据，7 月 13 日下午 XRP 涨了 75%。美国最大的加密交易所 Coinbase 宣布恢复 XRP 交易，首席法务官 Paul Grewal 在 Twitter 上写道：“我们读了 Torres 法官深思熟虑的判决，仔细复核了我们的分析。是时候重新上架了。”Coinbase 的股价当天收涨 24%，报 107 美元<a class="ref" href="#s19">[19]</a>。</p>
+        <p>Reuters 写道，这是加密公司第一次在 SEC 提起的案件里胜诉，SEC 也赢了一部分。SEC 提起过 100 多起加密执法案件，许多以和解结束；少数进入法庭的，法官此前都同意 SEC 的看法，认定涉案的加密资产是证券<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>SEC、Ripple 和国会</h3>
+        <p>SEC 发言人说，SEC 对判决中认定 Ripple 直接向成熟投资者出售 XRP 违法的部分感到满意，正在审阅判决。Garlinghouse 在采访中说，这“对 Ripple 是巨大的胜利，更重要的是对美国整个行业”。众议院多数党党鞭、共和党人 Tom Emmer 在 Twitter 上说，判决确立了代币“与它可能属于、也可能不属于的投资合同是分开的”，“现在让我们把它写进法律”。Coinbase 自己也被 SEC 起诉；Katten Muchin Rosenman 的律师 Gary DeWaal 说，判决应该会帮到 Coinbase<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>Rakoff 法官的不同看法</h3>
+        <p>7 月 31 日，同一法院的 Jed Rakoff 法官在 SEC 诉 Terraform Labs 和 Do Kwon 一案中全部驳回被告的撤案动议，SEC 关于涉案代币是证券的主张可以继续审理。他写道，本院不按销售方式区分这些代币，不把直接卖给机构投资者的算作证券、把在二级市场卖给散户的排除在外，并以此“拒绝本区另一位法官最近在一起类似案件中采用的方法”，指的就是 Ripple 案。他的理由是 Howey 测试没有这样区分购买者：买家直接从被告手里买，还是在二级市场转手买，不影响一个理性的人怎样客观地看待被告的言行是否承诺了靠他们的努力获利<a class="ref" href="#s16">[16]</a>。那一案处在驳回动议阶段，法院要假定起诉书的指控为真；指控之一是被告宣传，无论代币在哪里买，销售所得都会回流到 Terraform 的区块链，为所有持有者带来更多利润<a class="ref" href="#s16">[16]</a>。Terraform 和 Do Kwon 后来的结局见 <a href="2022-terra-ust.html">Terra/UST 崩盘</a>一篇。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>交易所上架</h3>
+        <p>Coinbase 因 SEC 起诉暂停 XRP 交易<a class="ref" href="#s21">[21]</a>，判决当天宣布恢复，理由是读了判决、复核了自己的分析<a class="ref" href="#s19">[19]</a>。Reuters 当天写道，判决只针对本案的事实，但很可能给其他与 SEC 争论自己的产品是否归它管的加密公司提供论据<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>只是一位地区法官的意见</h3>
+        <p>简易判决出自纽约南区的一位地区法官，没有经过上诉法院审查。Ripple 2025 年在信里写道，这份判决“对双方有约束力，对其他法院有说服力”<a class="ref" href="#s12">[12]</a>。同一法院的 Rakoff 法官 18 天后就没有采纳它的区分<a class="ref" href="#s16">[16]</a>；SEC 想借这一分歧提前上诉，没有获准<a class="ref" href="#s4">[4]</a>；双方 2025 年撤回上诉，本案这些问题没有得到上诉法院的判决<a class="ref" href="#s14">[14]</a>。SEC 2026 年的解释写道，市场参与者、金融监管机构和法院对怎样把 Howey 测试用于加密资产看法不一，二级市场交易尤其如此<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>返还所得的门槛</h3>
+        <p>救济判决把返还所得限于受了金钱损失的受害者<a class="ref" href="#s6">[6]</a>。SEC 没能证明机构买家受了损失，请求返还的 8.763 亿美元加利息落空，Ripple 要付的只有罚款。Ripple 在救济阶段拿 Terraform 案作对比：那一案陪审团认定了欺诈，SEC 请法院批准的和解判决要求返还约 35.87 亿美元、罚款 4.2 亿美元；Ripple 的通知写道，这笔罚款约占被告 330 亿美元销售总额的 1.27%，以此说明 SEC 对它的罚款请求不合理<a class="ref" href="#s17">[17]</a>。法院判的罚款约为 SEC 请求的罚款额的七分之一（本站计算）<a class="ref" href="#s6">[6]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>提前上诉没有获准</h3>
+        <p>2023 年 8 月 18 日，SEC 申请就程序化销售和其他分发两项结论提前上诉，理由之一是 Terraform 案说明法官之间看法有重大分歧。10 月 3 日，Torres 法官驳回：SEC 没能证明这两项结论涉及“起控制作用的法律问题”，没能证明存在重大分歧，也没能证明提前上诉会实质推进诉讼的终结。对 Terraform 案，她写道，那一案的法院没有讨论她的推理，也不需要讨论，因为两案的程序阶段不同；她的判决依据全部情形认定，客观、理性的程序化买家没有被引导去期待来自 Ripple 努力的利润，结论并不取决于这些销售发生在二级市场。庭审定在 2024 年 4 月 23 日<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>撤回对高管的指控</h3>
+        <p>要开庭审的只剩两名高管协助违法的指控。10 月 19 日，SEC 与 Larsen、Garlinghouse 约定撤回这项指控，以后不能再诉，各方不承担对方的费用<a class="ref" href="#s5">[5]</a>。救济判决写道，这项约定免去了开庭<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>上诉</h3>
+        <p>2024 年 9 月 4 日，法院暂缓执行判决里的罚款，条件是 Ripple 把罚款的 111% 存入以其律所名义开设的计息账户，没有法院的命令或双方同意不得动用；禁令不在暂缓之列<a class="ref" href="#s8">[8]</a>。SEC 10 月 2 日上诉，Ripple 10 月 10 日交叉上诉，第二巡回法院的案号是 24-2648 和 24-2705；SEC 2025 年 1 月 15 日提交了上诉理由书<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>SEC 换了方向</h3>
+        <p>2025 年 1 月 21 日，代理主席 Mark Uyeda 成立加密工作组，帮助 SEC 进一步制定加密资产的监管框架。此后，SEC 出于裁量和政策考虑，与多名被告约定撤诉：2 月 28 日的 Coinbase 案，3 月 27 日的 Consensys、Payward、Cumberland DRW 三案<a class="ref" href="#s11">[11]</a>。SEC 2023 年起诉 Binance，也在 2025 年 5 月撤诉，见 <a href="2023-binance-plea.html">Binance 与赵长鹏在美国认罪</a>一篇。Ripple 和 SEC 请第二巡回法院暂停审理上诉，好让 SEC 的工作人员报批一份原则性协议；法院 4 月 16 日同意<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>法官两次拒绝</h3>
+        <p>5 月 8 日，SEC 与 Ripple、两名高管签署和解协议：先由地区法院解除禁令，并把托管账户里的钱拆开，5,000 万美元付给 SEC 作为罚款的全部清偿，其余退给 Ripple；双方再撤回上诉<a class="ref" href="#s9">[9]</a>。案件已在上诉之中，双方依《联邦民事诉讼规则》第 62.1 条请地区法院先表态会怎样裁决。5 月 15 日，Torres 法官驳回：这等于请求撤销最终判决的重要部分，罚款减少六成，应当依第 60 条证明存在“例外情形”，双方没有论证<a class="ref" href="#s10">[10]</a>。6 月 12 日，双方再次请求，理由包括 SEC 的政策变化和节省司法资源<a class="ref" href="#s11">[11]</a>；Ripple 另函说明，减少的罚款考虑了上诉的风险，和解也让它与早早被撤诉的同行处境相当<a class="ref" href="#s12">[12]</a>。</p>
+        <p>6 月 26 日，她第二次驳回。她引用 SEC 自己 2024 年 3 月的话：罚款不能只是“打一下手腕”或“做生意的成本”；如果公司能像 Ripple 那样，把几乎零成本生成的几十亿单位计算机代码变成几十亿美元，又不注册、不披露，金融市场的法律结构就会受到威胁。她写道，“这些都没有变”。双方援引的撤诉案件都没有禁令或罚款，SEC 都是在法院认定违法之前撤诉的。法院尊重当事人和解的自由，SEC 也可以在执法之后改变方向，但双方“无权约定不受法院最终判决的约束”；如果真想今天就结束诉讼，他们可以撤回上诉<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>撤回上诉</h3>
+        <p>8 月 7 日，SEC、Ripple 和两名高管依《联邦上诉程序规则》第 42(b)(1) 条向第二巡回法院联合约定，撤回 SEC 的上诉和 Ripple 的交叉上诉，各自承担费用；SEC 当天把这份约定附在诉讼公告 LR-26369 里发布<a class="ref" href="#s14">[14]</a>。8 月 18 日，Ripple 的律师告知地区法院：双方同意从托管账户放款，法院判的全额罚款加法定利息转给 SEC，余额退还 Ripple<a class="ref" href="#s15">[15]</a>。禁令没有解除<a class="ref" href="#s24">[24]</a>。据 CoinDesk，双方正式撤回上诉后，到 8 月 13 日的 24 小时里 XRP 从 3.15 美元涨到 3.25 美元<a class="ref" href="#s22">[22]</a>。据 Cryptonews，Garlinghouse 说 Ripple 为这起诉讼花了约 1.5 亿美元，还把这个结局说成 SEC 迟来已久的投降<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>2026 年的解释</h3>
+        <p>2026 年 3 月 17 日，SEC 发布关于联邦证券法怎样适用于几类加密资产的解释，CFTC 同时发布指引，3 月 23 日刊登在 Federal Register 上。解释把一类资产称为“数字商品”：价值来自一个已经能运作（functional）的加密系统的程序化运行和供求关系，不来自期待靠他人重要的管理努力获利。它列了 16 个例子，包括比特币、ETH、Solana、Stellar 和 XRP<a class="ref" href="#s18">[18]</a>。解释还写道，不是证券的加密资产可以成为投资合同的标的，但不会因此变成证券；在二级市场上，买方如果不会合理地期待发行人的陈述或承诺仍与这项资产相连，交易就不再受那份投资合同约束，反之仍受约束<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>现货 ETF 和立法</h3>
+        <p>2025 年 11 月 13 日，Canary Capital 的现货 XRP ETF（XRPC）在 Nasdaq 上市，Bitwise、Grayscale、Franklin Templeton 和 21Shares 随后跟进。24/7 Wall St 引 SoSoValue 的数据，到 2026 年 10 月 30 日，这些基金累计净流入 18.1 亿美元，净资产 14.2 亿美元；XRP 从上市当天收盘的 2.32 美元跌到文章发表时的 1.25 美元，跌了 46.1%<a class="ref" href="#s23">[23]</a>。据 Cryptonews，Garlinghouse 2026 年 8 月仍以 Ripple 的诉讼花费为例，说明华盛顿对数字资产的做法有实实在在的代价；该报道认为，他的意思是用市场结构法案 CLARITY 在法律里划分 SEC 和 CFTC 的管辖，取代逐案诉讼<a class="ref" href="#s24">[24]</a>。这部法案 2026 年 9 月在参议院的终结辩论表决中没有通过，见 <a href="2025-genius-act.html">美国签署 GENIUS 稳定币法案</a>一篇；那一篇也写了 OCC 2025 年 12 月有条件批准 Ripple 新设的国民信托银行。</p>
+      </section>
+      <section id="lessons">
+        <h2>启示</h2>
+        <div class="note lesson">
+          <span class="h">给发行代币的公司</span>
+          <ul>
+            <li>同一种代币，卖法不同，法律后果不同。法院认定机构销售构成投资合同，依据是书面合同、钱直接付给 Ripple、宣传把价格和 Ripple 的努力连在一起，以及锁定期和转售限制<a class="ref" href="#s1">[1]</a>。</li>
+            <li>早年的法律意见会留在案卷里。2012 年的备忘录已经提醒 XRP 卖给投资者很可能是证券；救济阶段 SEC 拿它来证明 Ripple 至少轻率，法院认为证据不足以下这个结论<a class="ref" href="#s6">[6]</a>。</li>
+            <li>判决之后的做法也会被审查。Ripple 继续按 ODL 合同直接卖 XRP，法院据此认定有再违法的合理可能，发出永久禁令<a class="ref" href="#s6">[6]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所和投资者</span>
+          <ul>
+            <li>判决只处理 Ripple 和两名高管自己的出售，其他持有者之间的二级市场买卖没有判<a class="ref" href="#s1">[1]</a>。</li>
+            <li>一位地区法官的判决不约束其他法官。Rakoff 法官 18 天后就拒绝了同样的区分<a class="ref" href="#s16">[16]</a>，SEC 2026 年也承认法院之间看法不一<a class="ref" href="#s18">[18]</a>。</li>
+            <li>交易所的上架跟着诉讼走。Coinbase 起诉后暂停 XRP、判决当天恢复<a class="ref" href="#s21">[21]</a><a class="ref" href="#s19">[19]</a>；现货 XRP ETF 上市近一年累计净流入 18.1 亿美元，XRP 的价格仍跌了 46.1%<a class="ref" href="#s23">[23]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给监管者</span>
+          <ul>
+            <li>执法方向可以改，最终判决不会跟着改。Torres 法官引用最高法院的话，判决属于整个法律界；双方可以撤回上诉，但不能约定不受它约束<a class="ref" href="#s13">[13]</a>。</li>
+            <li>前后的说法会被放在一起看。SEC 2024 年说罚款不能是做生意的成本，2025 年请求把罚款减少六成，法官在裁定里把两种说法并列<a class="ref" href="#s13">[13]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">纽约南区联邦地区法院，SEC v. Ripple Labs, Inc., Bradley Garlinghouse, and Christian A. Larsen（No. 20 Civ. 10832），Doc. 874，Torres 法官对双方简易判决动议的命令，2023-07-13。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.874.0.pdf">courtlistener.com</a></li>
+          <li id="s2">同案 Doc. 4，SEC 的起诉书，2020-12-22。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.4.0.pdf">courtlistener.com</a></li>
+          <li id="s3">美国 SEC，《SEC Charges Ripple and Two Executives with Conducting $1.3 Billion Unregistered Securities Offering》，新闻稿 2020-338，2020-12-22（Internet Archive 存档）。<a href="https://web.archive.org/web/20220105165448/https://www.sec.gov/news/press-release/2020-338">web.archive.org</a></li>
+          <li id="s4">同案 Doc. 917，驳回 SEC 提前上诉申请的命令，2023-10-03。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.917.0.pdf">courtlistener.com</a></li>
+          <li id="s5">同案 Doc. 921，《Stipulation of Partial Dismissal》，2023-10-19 签署，10-23 登记。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.921.0.pdf">courtlistener.com</a></li>
+          <li id="s6">同案 Doc. 973，对 SEC 救济请求和最终判决动议的命令，2024-08-07。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.973.0.pdf">courtlistener.com</a></li>
+          <li id="s7">同案 Doc. 974，最终判决（Judgment），2024-08-07。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.974.0.pdf">courtlistener.com</a></li>
+          <li id="s8">同案 Doc. 977，《Order Staying Enforcement of Monetary Portion of Final Judgment》，2024-09-04。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.977.0.pdf">courtlistener.com</a></li>
+          <li id="s9">同案 Doc. 983，SEC 与 Ripple 依第 62.1 条请求指示性裁决的联合信函（附和解协议），2025-05-08。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.983.0.pdf">courtlistener.com</a></li>
+          <li id="s10">同案 Doc. 984，驳回第一次请求的命令，2025-05-15。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.984.0.pdf">courtlistener.com</a></li>
+          <li id="s11">同案 Doc. 987，SEC 与 Ripple 再次请求的联合信函，2025-06-12。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.987.0.pdf">courtlistener.com</a></li>
+          <li id="s12">同案 Doc. 988，Ripple 的补充信函，2025-06-17。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.988.0.pdf">courtlistener.com</a></li>
+          <li id="s13">同案 Doc. 989，驳回第二次请求的命令，2025-06-26。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.989.0.pdf">courtlistener.com</a></li>
+          <li id="s14">美国第二巡回上诉法院，SEC v. Ripple Labs, Inc.（No. 24-2648(L)、24-2705(XAP)），DktEntry 64.1，《Joint Stipulation of Dismissal》，2025-08-07；SEC 作为诉讼公告 LR-26369 的附件发布（Internet Archive 存档）。<a href="https://web.archive.org/web/20251224054933/https://www.sec.gov/files/litigation/complaints/2025/26369-joint-stipulation.pdf">web.archive.org</a></li>
+          <li id="s15">纽约南区 SEC v. Ripple Labs 案 Doc. 992，Ripple 律师关于托管账户放款的信函，2025-08-18。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.992.0.pdf">courtlistener.com</a></li>
+          <li id="s16">纽约南区联邦地区法院，SEC v. Terraform Labs Pte. Ltd. and Do Hyeong Kwon（No. 23-cv-1346），Doc. 51，Rakoff 法官的 Opinion and Order，2023-07-31。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.594150/gov.uscourts.nysd.594150.51.0.pdf">courtlistener.com</a></li>
+          <li id="s17">纽约南区 SEC v. Ripple Labs 案 Doc. 969，Ripple 的补充法律依据通知（附 Terraform 案的和解判决草案），2024-06-13。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.551082/gov.uscourts.nysd.551082.969.0.pdf">courtlistener.com</a></li>
+          <li id="s18">美国 SEC、CFTC，《Application of the Federal Securities Laws to Certain Types of Crypto Assets and Certain Transactions Involving Crypto Assets》，Release No. 33-11412、34-105020，2026-03-17（91 FR 13714，2026-03-23 刊登）。<a href="https://www.federalregister.gov/documents/2026/03/23/2026-05635/application-of-the-federal-securities-laws-to-certain-types-of-crypto-assets-and-certain">federalregister.gov</a></li>
+          <li id="s19">Reuters，《Ripple Labs notches landmark win in SEC case over XRP cryptocurrency》，2023-07-13（Internet Archive 存档）。<a href="https://web.archive.org/web/20230714233037/https://www.reuters.com/legal/us-judge-says-sec-lawsuit-vs-ripple-labs-can-proceed-trial-some-claims-2023-07-13/">web.archive.org</a></li>
+          <li id="s20">CNBC，《SEC charges cryptocurrency firm Ripple, 2 executives》，2020-12-22。<a href="https://www.cnbc.com/2020/12/22/sec-charges-cryptocurrency-firm-ripple-2-executives.html">cnbc.com</a></li>
+          <li id="s21">Coinbase，《Coinbase will suspend trading in XRP on January 19》，2020-12-28（Internet Archive 存档）。<a href="https://web.archive.org/web/20221027134649/https://www.coinbase.com/blog/coinbase-will-suspend-trading-in-xrp-on-january-19">web.archive.org</a></li>
+          <li id="s22">CoinDesk，《XRP Gains 4% as Ripple-SEC Settlement Spurs Institutional Buying》，2025-08-13（Internet Archive 存档）。<a href="https://web.archive.org/web/20250814151925/https://www.coindesk.com/markets/2025/08/13/xrp-gains-4-as-ripple-sec-settlement-spurs-institutional-buying">web.archive.org</a></li>
+          <li id="s23">24/7 Wall St（Yahoo Finance 转载），《XRP ETFs Mark Their First Year This Month. Have They Delivered What XRP Holders Expected?》，2026-11-02。<a href="https://finance.yahoo.com/markets/crypto/articles/xrp-etfs-mark-first-month-175730206.html">finance.yahoo.com</a></li>
+          <li id="s24">Cryptonews（Yahoo Finance 转载），Ahmed Barakat，《Ripple SEC Case Becomes a Warning for Crypto Lawmakers》，2026-08-21。<a href="https://finance.yahoo.com/markets/crypto/articles/ripple-sec-case-becomes-warning-070246769.html">finance.yahoo.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

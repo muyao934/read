@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liquid Network 凭空铸造 L-BTC｜区块链被盗事件编年史</title>
+<meta name="description" content="2026 年 9 月 Liquid 侧链被铸出约 4,000 枚无储备支撑的 L-BTC 并赎回真实比特币的完整经过：Elements 范围证明缓存键碰撞的代码、联盟赎回为何放行、3,400 枚归还与约 600 枚的赎金之争、储备缺口与分阶段恢复。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2026-liquid-network">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2026 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Liquid Network 凭空铸造 L-BTC</h1>
+    <p class="lede">2026 年 9 月 6 日，攻击者在 Liquid 侧链上凭空铸出约 4,000 枚没有比特币支撑的 L-BTC，随后通过正常的赎回通道，在 36 分钟内从联盟储备换走约 3,996 枚真实比特币，储备从约 4,205 枚降到 197 枚。漏洞在 Elements 的范围证明缓存里，是 8 月修补上一个缓存漏洞时新引入的；整个过程没有私钥被盗，每一个签名都按设计执行。侧链上的假币可以回滚，已经付到比特币主链上的真币不能。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Liquid 用保密交易（Confidential Transactions）隐藏金额，每个保密输出都附带一个范围证明（rangeproof），证明金额不是负数。验证范围证明很耗时，Elements 就把验证通过的结果按一个哈希键缓存起来。2026 年 8 月，开发者为了修补上一个缓存键漏洞，把资产承诺和输出脚本加进了键里，但四个字段是不带长度前缀直接拼接的。攻击者构造出一笔交易，它拼接出的字节与一条已缓存的合法记录逐字节相同，伪造的范围证明因此从未被真正验证。</p>
+        <p>这笔交易凭空造出约 4,000 枚 L-BTC。攻击者 12 分钟后把它们存进联盟成员 SideSwap 的赎回服务，联盟 15 个功能节点中的 11 个签名，放出 3,996.02 枚比特币，SideSwap 在同一个比特币区块里自动转给了攻击者<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。比特币离开储备约四小时后，Blockstream 才让桥节点下线、暂停网络，次日凌晨部署紧急补丁。</p>
+        <p>攻击者在链上自称“白帽”，补丁上线后归还 3,400 枚，留下约 600 枚并索要 10% 的赏金。Blockstream 拒绝付款，称这是盗窃<a class="ref" href="#s14">[14]</a>。Liquid 通过侧链回滚清除了无效的 L-BTC，9 月 9 日恢复出块；截至 10 月 28 日，联盟储备仍比流通的 L-BTC 少约 550 枚，联盟的直接赎回还没有恢复<a class="ref" href="#s20">[20]</a>。攻击者身份至今不明，也没有公开的执法行动。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Liquid 是 Blockstream 在 2018 年推出的比特币侧链，主要供交易所和交易商更快地结算比特币<a class="ref" href="#s11">[11]</a>。它运行 Elements Core，这是 Blockstream 开发的、从 Bitcoin Core 派生出来的开源区块链软件，Liquid 用自己的链参数和共识配置运行它。网络由分布在各地的 15 个功能节点（functionary）运营，一个区块至少要有其中 11 个的签名才会被接受<a class="ref" href="#s1">[1]</a>。按 Blockstream 的说法，联盟成员有 80 多家交易所、基础设施公司和资产管理机构<a class="ref" href="#s11">[11]</a>。</p>
+        <p>比特币和 L-BTC 之间是双向锚定。挂入（peg-in）时，用户把 BTC 锁进联盟控制的多签钱包，等 102 个比特币确认后，在 Liquid 上得到等量的 L-BTC<a class="ref" href="#s6">[6]</a>。赎回（peg-out）时，L-BTC 在 Liquid 上被销毁，联盟从储备里放出等量的 BTC。Blockstream 的事故评估写得很直白：1:1 储备完全依赖共识正确地验证“没有凭空产生的 L-BTC”，赎回时没有独立的链下储备核对，赎回机制信任侧链自己验证过的状态<a class="ref" href="#s1">[1]</a>。</p>
+        <p>能直接发起赎回的只有持有赎回授权密钥（Peg-out Authorization Key，PAK）的联盟成员。每个 PAK 条目有两把密钥。离线密钥是从成员冷钱包派生的扩展公钥，功能节点的 HSM 用它确认赎回目的地址属于已登记的条目，放出的 BTC 只能付到由它派生的地址。在线密钥放在运行中的 Elements 节点上，用来签署赎回请求。联盟章程要求成员让比特币收款钱包保持离线。Blockstream 解释，这是为上游故障准备的安全网：即使共识错误地接受了坏的 L-BTC，放出的 BTC 也还在冷钱包里，要有人手动取出才能动，这段时间可以让联盟发现问题<a class="ref" href="#s1">[1]</a>。</p>
+        <p>普通用户一般不直接赎回，而是通过 SideSwap 这样的服务。SideSwap 是 Liquid 上的非托管钱包和交易平台，也是持有 PAK 的联盟成员。它称自 2021 年以来处理了超过 11.1 万次挂入和 20.5 万次赎回，占 Liquid 全部挂入交易的 95%。为了让用户少等，它先垫付挂入，赎回则用一个预先充值的钱包自动付款<a class="ref" href="#s6">[6]</a>。事发前，联盟储备约有 4,205 枚 BTC<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>时间均为 UTC。链上事件用区块时间，Blockstream 内部操作用其事故评估中的记录<a class="ref" href="#s1">[1]</a>，9 月 5 日至 6 日攻击者的准备与赎回步骤来自 SideSwap 公布的时间线<a class="ref" href="#s6">[6]</a>。</p>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2018-04-25</time><div class="ev">Elements 的一次提交“简化”范围证明缓存，缓存键里去掉了资产承诺和输出脚本，漏洞 A 由此引入。该提交随 Elements v0.14.1 于 5 月 30 日合入<a class="ref" href="#s5">[5]</a><a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2019-03-19</time><div class="ev">保密资产（Confidential Assets）验证代码重构，沿用了同样的两字段缓存键<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-08-02</time><div class="ev">外部研究者 stutxo 通过 Blockstream 安全邮箱报告漏洞 A，当天先后提交两种修复：直接字节拼接，以及更彻底的带长度前缀的序列化<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-08-03</time><div class="ev">Blockstream 采用直接拼接的方案修复，当天部署到生产网和测试网的桥节点。这个修复同时埋下了漏洞 B<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2026-08-05</time><div class="ev">在测试网用一笔缓存投毒交易验证修复有效。测试只针对漏洞 A<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-08-07</time><div class="ev">外部安全团队 Bitcoin Red Team 独立报告同一漏洞，附带可用的概念验证，另有五个较低严重性的发现<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-08-11</time><div class="ev">15 个功能节点中已有 13 个更新，其余随后跟上。8 月 12 日，安全版本私下分发给 Liquid 成员，SideSwap 应联盟要求于 13 日部署<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="key"><time>2026-09-01</time><div class="ev">09:39，漏洞 A 的修复以一个描述了漏洞的标题合入公开的 Elements 仓库，此时还没有正式版本包含它。从这时起，含漏洞 B 的代码对所有人可见<a class="ref" href="#s6">[6]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2026-09-03</time><div class="ev">Blockstream 内部把跟踪这些外部报告的事项标记为已解决<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2026-09-05</time><div class="ev">20:55，攻击者向 SideSwap 挂入 0.001 BTC，资金经跨链桥追溯到以太坊上 Tornado Cash 的一笔提款。21:42 起，把换到的 L-BTC 拆成 20 个输出，反复发送形态几乎相同、都能配平的交易，到次日共 70 笔<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk key"><time>2026-09-06 13:53</time><div class="ev">Liquid 区块 4,050,336 中的一笔交易利用漏洞 B，凭空造出约 4,000 枚 L-BTC<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2026-09-06 14:00</time><div class="ev">先用 2.5 L-BTC 试探赎回，SideSwap 约一分钟后从自有库存付出 2.49749857 BTC<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2026-09-06 14:05</time><div class="ev">把约 4,000 L-BTC 存入 SideSwap 的赎回服务，14:06 被 SideSwap 用有效授权销毁<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2026-09-06 14:10</time><div class="ev">Blockstream 的监控在内部报告 Liquid 出块停滞<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2026-09-06 14:28</time><div class="ev">联盟签名者在比特币主链放出 3,996.02 BTC（比特币区块 965,783），SideSwap 在同一区块把 3,995.99999857 BTC 转给攻击者<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2026-09-06 18:26</time><div class="ev">Blockstream 协调关停 Liquid 桥节点，网络暂停，同时通知交易所暂停 L-BTC 充提<a class="ref" href="#s1">[1]</a>。SideSwap 的时间线把暂停记在约 20:25<a class="ref" href="#s6">[6]</a>，与 Liquid 公开披露的时间相同。</div></li>
+          <li class="atk"><time>2026-09-06 18:30</time><div class="ev">攻击者在一笔比特币交易的 OP_RETURN 里留言：“we are whitehats. contact us on chain.”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a></div></li>
+          <li class="def"><time>2026-09-06 19:31</time><div class="ev">Blockstream 在链上回复：“Please contact security@blockstream.com.”<a class="ref" href="#s1">[1]</a></div></li>
+          <li class="def"><time>2026-09-06 20:25</time><div class="ev">Liquid 在 X 上公开事故，称“自称白帽的黑客”从联盟钱包取走约 4,000 BTC（约 3.2 亿美元）<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2026-09-07 01:09</time><div class="ev">Blockstream 向桥节点部署紧急补丁<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2026-09-07 16:09</time><div class="ev">攻击者把 3,400 BTC 归还到联盟锚定钱包（比特币区块 965,950），约 600 BTC 未还<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-09-08</time><div class="ev">修复漏洞 B 的加固补丁合入 Elements 23.3.x 发布分支。Liquid 发布事故报告，称与“白帽”的谈判仍在继续<a class="ref" href="#s1">[1]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk"><time>2026-09-09</time><div class="ev">攻击者在链上留言，要求 Blockstream“用自己的钱”支付 10% 赏金，否则“让所有持有人承担 15% 的损失”<a class="ref" href="#s14">[14]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2026-09-09</time><div class="ev">Elements v23.3.4 发布，Liquid 公布分阶段恢复计划。21:05，修正后的链在攻击前的区块 4,050,335 之后接上替换区块，恢复出块并开始重放有效交易，锚定操作仍暂停<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2026-09-10</time><div class="ev">用户交易恢复，SideSwap 市场重新开放；挂入于 9 月 11 日恢复<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2026-09-11</time><div class="ev">Blockstream 公开表示不会支付赎金，称这“不是白帽行为，是盗窃”<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。同日，Bitcoin Red Team 与前 Blockstream 高管 Samson Mow 就“警告是否被忽视”公开争论<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2026-09-23</time><div class="ev">Blockstream 发布事故评估，9 月 25 日转载到 Liquid 博客<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-09-29</time><div class="ev">Liquid 宣布对 Elements v23.3.4 做独立的外部安全审计，同时更新 PAK 名单，替换现有条目，把所有赎回密钥放进冷存储<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2026-10-11</time><div class="ev">赎回冻结第 35 天，储备覆盖率约 86%，攻击者地址里的 598.5 BTC 没有移动<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def key"><time>2026-10-20</time><div class="ev">联盟宣布进入恢复的最后阶段：管理储备的联盟软件已在足够多的功能节点上更新，BTC 与 L-BTC 的半自动兑换恢复，协议不设额度。SideSwap 当天重开赎回，次日称已处理约 600 笔<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2026-10-27</time><div class="ev">联盟钱包收到一笔 2.53048101 BTC 的测试转账，覆盖率约 85.88%，缺口约 600 BTC。JAN3 CEO Samson Mow 称余下部分几天内转入<a class="ref" href="#s19">[19]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2026-10-28</time><div class="ev">又转入 50 BTC。联盟持有 3,703.43 BTC，流通 4,253.43 L-BTC，覆盖率约 87.07%，缺口约 550 BTC。联盟的直接赎回仍受限<a class="ref" href="#s20">[20]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <h3>范围证明防的是什么</h3>
+        <p>保密交易用 Pedersen 承诺把金额藏起来，验证者看不到具体数字，只检查输入承诺之和是否等于输出承诺之和。问题在于这些运算发生在一个有限的循环群里，足够大的数会“溢出”，表现得像负数。Elements 的技术文档举过一个例子：(1 + 1) − (−5 + 7) == 0，也就是花掉 2 个币，得到一个“−5”的输出和一个 7 的输出，账照样配平，却凭空多出 5 个币<a class="ref" href="#s22">[22]</a>。</p>
+        <p>范围证明就是为了堵住这一点：它在不暴露金额的前提下，证明承诺里的值落在合法区间内。Elements 还把范围证明和这个输出的资产生成元、输出脚本绑定在一起，同一个证明只对那个位置的那个输出有意义<a class="ref" href="#s1">[1]</a>。9 月 6 日的攻击交易创建了一个金额没有输入支撑的保密输出，这正是范围证明要防止的情况<a class="ref" href="#s1">[1]</a>。评估没有公开它在金额上的具体构造。</p>
+        <h3>缓存为什么危险</h3>
+        <p>验证范围证明很耗时，同一个证明在交易进内存池和打包进区块时各要验一次。Elements 因此把验证结果缓存起来，第二次直接查表<a class="ref" href="#s1">[1]</a>。下面是事发时最新正式版 23.3.3 中的这段代码<a class="ref" href="#s5">[5]</a>：</p>
+<pre class="code"><code><span class="c">// src/script/sigcache.cpp（Elements 23.3.3），中间的承诺解析从略</span>
+bool CachingRangeProofChecker::VerifyRangeProof(
+        const std::vector&lt;unsigned char&gt;&amp; vchRangeProof,
+        const std::vector&lt;unsigned char&gt;&amp; vchValueCommitment,
+        const std::vector&lt;unsigned char&gt;&amp; vchAssetCommitment,
+        const CScript&amp; scriptPubKey,
+        const secp256k1_context* secp256k1_ctx_verify_amounts) const
+{
+    uint256 entry;
+    <span class="c">// 缓存键只用了证明和金额承诺两项（漏洞 A）</span>
+<span class="bad">    rangeProofCache.ComputeEntryRangeProof(entry, vchRangeProof, vchValueCommitment);</span>
+
+    if (rangeProofCache.Get(entry, !store)) {
+        return true;    <span class="c">// 查到就直接返回“有效”，下面的验证一行都不执行</span>
+    }
+    <span class="c">// ……（解析金额承诺 commit 和资产生成元 tag）……</span>
+
+    <span class="c">// 真正的验证同时用到证明、金额承诺、输出脚本和资产生成元</span>
+    if (!secp256k1_rangeproof_verify(secp256k1_ctx_verify_amounts, &amp;min_value, &amp;max_value,
+            &amp;commit, vchRangeProof.data(), vchRangeProof.size(),
+            scriptPubKey.size() ? &amp;scriptPubKey.front() : NULL, scriptPubKey.size(),
+            &amp;tag)) {
+        return false;
+    }
+    <span class="c">// ……（可花费的输出不允许最小值为 0）……</span>
+
+    if (store) {
+        rangeProofCache.Set(entry);    <span class="c">// 真正验证通过，才把键记入缓存</span>
+    }
+    return true;
+}</code></pre>
+        <p class="code-cap">来源：ElementsProject/elements 仓库 elements-23.3.3 标签（2026-04-13 发布），src/script/sigcache.cpp 第 176–216 行，节选；函数签名和过长的行做了折行。</p>
+        <p>这段代码的逻辑是：先用几个字段算出一个键去查表，查到就当作有效；查不到才真正验证，验证通过后把键记进表里。它要成立，前提是键必须覆盖验证用到的全部输入。真正的验证用了证明、金额承诺、输出脚本和资产生成元四样东西，键里却只有前两样，这就是漏洞 A。一个节点只要缓存过某个“证明 + 金额承诺”的组合，就可能在资产承诺或输出脚本不同的场合把它当成已验证。缓存是每个节点自己的，有缓存的节点会接受一笔冷缓存节点拒绝的交易，网络因此可能分叉或停止出块。Blockstream 把它定为严重的共识漏洞<a class="ref" href="#s1">[1]</a>。2018 年“简化”之前，键里本来包含资产承诺和输出脚本<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>修漏洞 A 时引入的漏洞 B</h3>
+        <p>8 月 3 日的修复把缺的两个字段补进了键里。下面是合入 23.x 生产分支的版本<a class="ref" href="#s3">[3]</a>：</p>
+<pre class="code"><code><span class="c">// src/script/sigcache.cpp（23.x 生产分支，2026-08-03 修复漏洞 A 之后）</span>
+void ComputeEntryRangeProof(uint256&amp; entry,
+        const std::vector&lt;unsigned char&gt;&amp; proof,
+        const std::vector&lt;unsigned char&gt;&amp; commitment,
+<span class="good">        const std::vector&lt;unsigned char&gt;&amp; asset_commitment,   <span class="c">// 新增</span></span>
+<span class="good">        const CScript&amp; scriptPubKey) {                         <span class="c">// 新增</span></span>
+    CSHA256 hasher = m_salted_hasher_range_proof;   <span class="c">// 已预先写入随机 nonce 和填充</span>
+    <span class="c">// 四段原始字节首尾相接，没有长度前缀，也没有分隔符（漏洞 B）</span>
+<span class="bad">    hasher.Write(proof.data(), proof.size())                         <span class="c">// 变长</span></span>
+<span class="bad">          .Write(commitment.data(), commitment.size())               <span class="c">// 固定 33 字节</span></span>
+<span class="bad">          .Write(asset_commitment.data(), asset_commitment.size())   <span class="c">// 固定 33 字节</span></span>
+<span class="bad">          .Write(scriptPubKey.data(), scriptPubKey.size())           <span class="c">// 变长</span></span>
+          .Finalize(entry.begin());
+}</code></pre>
+        <p class="code-cap">来源：ElementsProject/elements 提交 212c43f（2026-08-03，cherry-pick 自 6253d7e），src/script/sigcache.cpp；同一修复在 master 分支是提交 c26d719。原代码的函数签名和链式调用各在一行，这里做了折行。</p>
+        <p>人工审查和 AI 辅助审查都确认补上的字段是对的<a class="ref" href="#s1">[1]</a>。问题出在四个字段怎么拼。金额承诺和资产承诺固定 33 字节，范围证明和输出脚本是变长的。范围证明自带一个编码长度的头部，可这个头部只在 <code>secp256k1_rangeproof_verify</code> 里才被检查，而缓存的用途恰恰是跳过这一步。从缓存的角度看，范围证明只是一段没有边界的字节<a class="ref" href="#s1">[1]</a>。攻击者可以把证明加长、把脚本缩短同样的长度，拼出来的字节串不变，键也就不变。道理和 "ab" + "c" 等于 "a" + "bc" 一样。</p>
+        <p>每个节点启动时会随机生成一个 nonce，作为所有缓存键的前缀<a class="ref" href="#s5">[5]</a>。它能防止外人预先算出某个节点的缓存键，却挡不住这种碰撞：在同一个节点上，同样的前缀加同样的字节串，SHA256 必然相同。Bitcoin Core 的签名缓存同样把变长的公钥和签名直接拼接，却没有这个问题，因为这两种对象内嵌的长度前缀在查缓存之前就已经检查过了<a class="ref" href="#s1">[1]</a>。</p>
+        <p>评估描述的实际做法是：攻击者沿用一条已经验证并缓存的合法交易所用的资产承诺，以及它目标脚本的最后一个字节，把问题化成让范围证明与键的其余部分对上。最终拼出的字节流与原记录逐字节相同，尽管证明和承诺的内容都不一样。缓存命中就跳过验证，所以伪造的范围证明根本不需要能通过验证，只需要拼出对得上的字节<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 350" role="img" aria-labelledby="lq-key-t lq-key-d">
+            <title id="lq-key-t">不带长度前缀的拼接如何让两组不同的输入得到同一个缓存键</title>
+            <desc id="lq-key-d">上一行是已经缓存的合法记录：nonce、真实范围证明 P1、金额承诺 C1、资产承诺 A、输出脚本 S1。下一行是攻击交易：nonce、更长的伪造范围证明 P2、改过的金额承诺 C2、沿用的资产承诺 A、更短的输出脚本 S2。两行字段边界不同，但总长度相同、字节逐个相同，SHA256 结果相同，缓存命中，伪造的证明从未进入真正的验证函数。</desc>
+            <defs>
+              <marker id="lq-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="30" y="24">已缓存的合法记录（真实验证过）</text>
+            <rect class="d-box soft" x="30" y="36" width="60" height="48" rx="3"/>
+            <text class="d-t s" x="60" y="65" text-anchor="middle">nonce</text>
+            <rect class="d-box ok" x="90" y="36" width="250" height="48" rx="3"/>
+            <text class="d-t" x="215" y="58" text-anchor="middle">范围证明 P1</text>
+            <text class="d-t s" x="215" y="76" text-anchor="middle">真实，变长</text>
+            <rect class="d-box" x="340" y="36" width="70" height="48" rx="3"/>
+            <text class="d-t m" x="375" y="65" text-anchor="middle">C1</text>
+            <rect class="d-box" x="410" y="36" width="70" height="48" rx="3"/>
+            <text class="d-t m" x="445" y="65" text-anchor="middle">A</text>
+            <rect class="d-box ok" x="480" y="36" width="250" height="48" rx="3"/>
+            <text class="d-t" x="605" y="58" text-anchor="middle">输出脚本 S1</text>
+            <text class="d-t s" x="605" y="76" text-anchor="middle">变长，较长</text>
+            <line class="d-line dash" x1="340" y1="84" x2="340" y2="136"/>
+            <line class="d-line dash" x1="410" y1="84" x2="410" y2="136"/>
+            <line class="d-line dash" x1="480" y1="84" x2="480" y2="136"/>
+            <line class="d-line dash" x1="530" y1="84" x2="530" y2="136"/>
+            <line class="d-line dash" x1="600" y1="84" x2="600" y2="136"/>
+            <line class="d-line dash" x1="670" y1="84" x2="670" y2="136"/>
+            <text class="d-t s halo" x="215" y="115" text-anchor="middle">虚线：两行的字段边界互不对齐</text>
+            <rect class="d-box soft" x="30" y="136" width="60" height="48" rx="3"/>
+            <text class="d-t s" x="60" y="165" text-anchor="middle">nonce</text>
+            <rect class="d-box atk" x="90" y="136" width="440" height="48" rx="3"/>
+            <text class="d-t atk" x="310" y="158" text-anchor="middle">伪造的范围证明 P2（更长）</text>
+            <text class="d-t s" x="310" y="176" text-anchor="middle">内部的长度头部只在真正验证时才检查，缓存不看</text>
+            <rect class="d-box atk" x="530" y="136" width="70" height="48" rx="3"/>
+            <text class="d-t m" x="565" y="165" text-anchor="middle">C2</text>
+            <rect class="d-box" x="600" y="136" width="70" height="48" rx="3"/>
+            <text class="d-t m" x="635" y="165" text-anchor="middle">A</text>
+            <rect class="d-box atk" x="670" y="136" width="60" height="48" rx="3"/>
+            <text class="d-t m" x="700" y="165" text-anchor="middle">S2</text>
+            <text class="d-t b atk" x="30" y="204">攻击交易（伪造）</text>
+            <rect class="d-box doubt" x="130" y="220" width="500" height="40" rx="4"/>
+            <text class="d-t" x="380" y="245" text-anchor="middle">总长度相同、字节逐个相同 → SHA256 相同 → 缓存键相同</text>
+            <line class="d-line atk" x1="380" y1="260" x2="380" y2="290" marker-end="url(#lq-ah-atk)"/>
+            <rect class="d-box atk" x="130" y="292" width="500" height="48" rx="4"/>
+            <text class="d-t atk b" x="380" y="313" text-anchor="middle">缓存命中，VerifyRangeProof 直接返回“有效”</text>
+            <text class="d-t s" x="380" y="331" text-anchor="middle">P2 从未进入 secp256k1_rangeproof_verify</text>
+          </svg>
+          </div>
+          <figcaption>图 1：漏洞 B 的原理示意，字段长度不按比例。C 是 33 字节的金额承诺，A 是 33 字节的资产承诺，攻击交易沿用了原记录的 A。字段之间的对应关系按评估描述的长度关系推算，评估没有公开攻击交易的字节级构造。</figcaption>
+        </figure>
+        <div class="note doubt">
+          <span class="h">被借用的“合法记录”从哪里来</span>
+          <p>评估没有给出攻击交易的字节级构造。按上图的长度关系推算，攻击交易沿用的资产承诺 A，必须原样出现在那条合法记录的输出脚本 S1 里；改过的金额承诺 C2 也必须和 S1 中相应位置的字节完全一致。普通转账的输出脚本装不下这样一段数据，所以那条“合法记录”很可能是专门构造、先让节点验证并缓存下来的。这与 SideSwap 观察到的情况相符：攻击前有 70 笔形态几乎相同、能配平的交易，每笔都在一个不可花费的输出上带着隐藏的金额<a class="ref" href="#s6">[6]</a>。这一段是本站根据公开描述做的推断，不是 Blockstream 的说法。</p>
+        </div>
+        <h3>为什么有的节点接受，有的拒绝</h3>
+        <p>缓存只有在节点手里已经有一条匹配的、真实验证过的记录时，才会给出错误的“有效”。事发时 15 个功能节点运行的都是同一个修复版本，差别只在各自缓存里碰巧存了什么。缓存里有那条记录的节点接受了区块；缓存是冷的节点，以及仍带着漏洞 A 的节点，都执行了真正的验证，验证失败，于是拒绝了区块<a class="ref" href="#s1">[1]</a>。带漏洞 A 的节点只用两个字段算键，与四字段算出的记录对不上，反而被迫做了真检查。SideSwap 说，它运行安全版本的节点接受了这笔交易，而标准的 Liquid 节点，包括它自己的一个独立节点，都以金额不平衡为由拒绝<a class="ref" href="#s6">[6]</a>。</p>
+        <p>造币交易所在的区块凑够签名、进入链上状态以后，这约 4,000 枚 L-BTC 在其他节点看来就和真的 L-BTC 没有区别。保密交易隐藏的是金额和资产类型，不是地址和交易图，所以事后可以追查；但在事发当时，单看链上数据发现不了异常<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="note warn">
+          <span class="h">早期分析与官方结论不一致</span>
+          <p>Halborn 在 9 月 9 日的分析中认为，问题在于漏洞的补丁已经进了代码库、但还没进正式发布版本，运行旧版本的节点因此暴露<a class="ref" href="#s10">[10]</a>。两周后 Blockstream 的评估给出的情况正好相反：被利用的是补丁本身引入的漏洞 B，所有功能节点当时都已运行修复版本，带漏洞 A 的旧版本节点反而拒绝了攻击交易<a class="ref" href="#s1">[1]</a>。本页以官方评估为准。</p>
+        </div>
+        <h3>修复</h3>
+        <p>9 月 8 日合入、随 Elements v23.3.4 发布的修复，把范围证明和满射证明（surjection proof）两个缓存的哈希方式，从直接拼接原始字节改为用 <code>CHashWriter</code> 序列化。序列化会在每个字段前写入长度，不同的参数组合不再可能拼出同样的字节流。四个字段都加了长度前缀，包括目前长度固定的两个，这样即使以后字段长度改变，代码仍然正确<a class="ref" href="#s1">[1]</a>。同一提交还把满射证明缓存原本完全没有放进键里的 <code>vTags</code> 补了进去<a class="ref" href="#s4">[4]</a>。新版本另外加了 <code>-norangeproofcache</code> 启动选项，运营者可以整个关掉这个缓存<a class="ref" href="#s1">[1]</a>。</p>
+<pre class="code"><code><span class="c">// src/script/sigcache.cpp（Elements 23.3.4）</span>
+void ComputeEntryRangeProof(uint256&amp; entry,
+                            const std::vector&lt;unsigned char&gt;&amp; proof,
+                            const std::vector&lt;unsigned char&gt;&amp; commitment,
+                            const std::vector&lt;unsigned char&gt;&amp; asset_commitment,
+                            const CScript&amp; script_pub_key) const
+{
+<span class="good">    CHashWriter hasher = m_salted_hasher_range_proof;   <span class="c">// 由 CSHA256 改为 CHashWriter</span></span>
+    <span class="c">// ……（原有注释说明为什么要包含两个承诺和输出脚本，从略）……</span>
+    // Serialization length-prefixes every field, including the variable-length
+    // proof and script, so distinct argument tuples cannot share an encoding.
+<span class="good">    hasher &lt;&lt; proof &lt;&lt; commitment &lt;&lt; asset_commitment &lt;&lt; script_pub_key;</span>
+    entry = hasher.GetSHA256();
+}
+
+<span class="c">// 同一提交在 VerifyRangeProof 开头加的注释</span>
+bool CachingRangeProofChecker::VerifyRangeProof(<span class="c">/* 参数从略 */</span>) const
+{
+    // ELEMENTS: NOTE FOR FUTURE EDITORS: every argument to this function that
+    // carries data (i.e. everything except the secp256k1 context, which is
+    // stateless) MUST be included in ComputeEntryRangeProof. Omitting any
+    // argument risks returning a cached positive result for a proof that was
+    // verified with different inputs.</code></pre>
+        <p class="code-cap">来源：ElementsProject/elements 提交 9400096（2026-09-08，PR #1600），src/script/sigcache.cpp，节选；英文注释为原文，去掉了一层缩进。</p>
+        <p>最后那段注释写下的规则，正是 2018 年那次“简化”违反的规则。按版本对照，缓存键的变化如下<a class="ref" href="#s5">[5]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时期</th><th>键里的字段</th><th>拼接方式</th><th>问题</th></tr></thead>
+            <tbody>
+              <tr><td>2018-04 之前</td><td>由金额承诺构造的 <code>CPubKey</code>、证明、资产承诺、输出脚本</td><td>原始字节拼接</td><td>评估未提及</td></tr>
+              <tr><td>2018-04 至 2026-08（含 23.3.3）</td><td>证明、金额承诺</td><td>原始字节拼接</td><td>漏洞 A：缓存结果可以被搬到资产或脚本不同的场合</td></tr>
+              <tr><td>2026-08 至 09（未进正式版本的修复）</td><td>证明、金额承诺、资产承诺、输出脚本</td><td>原始字节拼接</td><td>漏洞 B：字段边界有歧义，可以构造碰撞</td></tr>
+              <tr><td>2026-09-09 起（v23.3.4）</td><td>同上</td><td>每个字段带长度前缀</td><td>另可用 <code>-norangeproofcache</code> 关闭缓存</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>为什么几轮审查都没发现</h3>
+        <p>按 Blockstream 的说法，从修复写成到被利用，有三道检查看过相关代码，每道都有工程师人工复核。第一道是内部 QA 中的 AI 辅助代码审查，确认缓存键里加对了字段。第二道是测试网功能测试，确认修复挡住了针对漏洞 A 的缓存投毒交易。第三道是用当时较新的开放权重模型 Kimi-K3（通过 PremAI 使用）对 Elements 29.x 分支做的补充 AI 扫描，那个分支已经含有同样的无前缀拼接<a class="ref" href="#s1">[1]</a>。三道检查问的都是“漏洞 A 修好了没有”，没有一道在问新的拼接方式本身有没有歧义。</p>
+        <p>最先报告漏洞 A 的 stutxo 当天提交的第二个修复，用的正是带长度前缀的序列化，但它针对的是一个非生产分支。Blockstream 当时判断这个更大的改动超出了所报问题的范围，生产分支选了改动更小的直接拼接<a class="ref" href="#s1">[1]</a>。评估同时强调，包括 stutxo 自己的分析在内，事发前没有任何审查者发现漏洞 B。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击者没有公开过自己的代码。下面的经过来自 SideSwap 根据自己的服务记录和链上数据整理的时间线，以及 Blockstream 的评估<a class="ref" href="#s6">[6]</a><a class="ref" href="#s1">[1]</a>。</p>
+        <ol class="steps">
+          <li><b>补丁公开</b>9 月 1 日漏洞 A 的修复合入公开仓库，含漏洞 B 的代码从此人人可读。随后几天，有少数钱包通过 SideSwap 反复做小额挂入、卖出 L-BTC、再小额赎回。其中一个钱包 2025 年 4 月经受监管的交易所注资，闲置 17 个月后在 9 月 1 日第一次动用。SideSwap 说无法在链上证明这些钱包属于攻击者，已把细节交给 Blockstream。</li>
+          <li><b>准备启动资金</b>9 月 5 日 20:55，攻击者向 SideSwap 挂入 0.001 BTC。这笔钱经一个跨链桥追溯到以太坊上 Tornado Cash 的一笔提款，是攻击钱包得到过的唯一一笔资金。</li>
+          <li><b>预演</b>攻击者把换到的 L-BTC 拆成 20 个输出，从 22:01 起发送一长串几乎相同的交易，每笔都在一个不可花费的输出上带着隐藏的金额，再合并、再拆开。这 70 笔交易全部配平、没有造币，所以标准节点都接受了。最后一笔在 9 月 6 日 13:52，比真正的造币早一分钟。SideSwap 扫描了 9 月 1 日到网络暂停之间的全部区块，这种交易形态正好出现 71 次：70 次预演，1 次造币。</li>
+          <li><b>造币</b>13:53，区块 4,050,336 中的一笔交易创建了一个金额没有输入支撑的保密输出，约 4,000 L-BTC。缓存里存有匹配记录的节点把伪造的范围证明当成了已验证。</li>
+          <li><b>试探出口</b>14:00，攻击者先赎回 2.5 L-BTC，SideSwap 约一分钟后从自有库存付出 2.49749857 BTC。这 2.5 枚和随后的 4,000 枚都来自同一笔造币交易。</li>
+          <li><b>大额赎回</b>14:05，攻击者把 4,000 L-BTC 存入赎回服务，14:06 被销毁。订单超出 SideSwap 自己赎回钱包的余额，付款两次因余额不足失败；14:28，联盟签名者放出 3,996.02 BTC，SideSwap 在同一区块把 3,995.99999857 BTC 转到攻击者的地址。从造币到比特币离开储备，大约 36 分钟。</li>
+        </ol>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 510" role="img" aria-labelledby="lq-seq-t lq-seq-d">
+            <title id="lq-seq-t">9 月 6 日从造币到比特币流出的调用顺序</title>
+            <desc id="lq-seq-d">攻击者在 Liquid 上造出约 4,000 L-BTC，先用 2.5 L-BTC 试探 SideSwap 的赎回，再存入约 4,000 L-BTC。SideSwap 销毁 L-BTC 并申请赎回，联盟看到的是签名有效、链上状态合法的请求，放出 3,996.02 BTC，SideSwap 在同一区块自动转给攻击者。14:10 监控已报出块停滞，18:26 桥节点才下线。9 月 7 日攻击者归还 3,400 BTC。</desc>
+            <defs>
+              <marker id="lq-sq-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="lq-sq-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="lq-sq-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <line class="d-line dash" x1="85" y1="66" x2="85" y2="500"/>
+            <line class="d-line dash" x1="285" y1="66" x2="285" y2="500"/>
+            <line class="d-line dash" x1="485" y1="66" x2="485" y2="500"/>
+            <line class="d-line dash" x1="685" y1="66" x2="685" y2="500"/>
+            <rect class="d-box atk" x="10" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="85" y="35" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="85" y="55" text-anchor="middle">钱包与比特币地址</text>
+            <rect class="d-box" x="210" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="285" y="35" text-anchor="middle">Liquid 侧链</text>
+            <text class="d-t s" x="285" y="55" text-anchor="middle">功能节点验证并出块</text>
+            <rect class="d-box" x="410" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="485" y="35" text-anchor="middle">SideSwap</text>
+            <text class="d-t s" x="485" y="55" text-anchor="middle">持有 PAK 的赎回服务</text>
+            <rect class="d-box" x="610" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="685" y="35" text-anchor="middle">联盟储备</text>
+            <text class="d-t s" x="685" y="55" text-anchor="middle">比特币主链多签</text>
+            <line class="d-line atk" x1="85" y1="105" x2="283" y2="105" marker-end="url(#lq-sq-atk)"/>
+            <text class="d-t atk halo" x="185" y="97" text-anchor="middle">① 13:53 造出 4,000 L-BTC</text>
+            <line class="d-line atk" x1="85" y1="148" x2="483" y2="148" marker-end="url(#lq-sq-atk)"/>
+            <text class="d-t atk halo" x="185" y="140" text-anchor="middle">② 14:00 试赎 2.5 L-BTC</text>
+            <line class="d-line" x1="485" y1="191" x2="87" y2="191" marker-end="url(#lq-sq-ah)"/>
+            <text class="d-t halo" x="385" y="183" text-anchor="middle">③ 先垫付 2.497 BTC</text>
+            <line class="d-line atk" x1="85" y1="234" x2="483" y2="234" marker-end="url(#lq-sq-atk)"/>
+            <text class="d-t atk halo" x="185" y="226" text-anchor="middle">④ 14:05 存入 4,000 L-BTC</text>
+            <line class="d-line" x1="485" y1="277" x2="287" y2="277" marker-end="url(#lq-sq-ah)"/>
+            <text class="d-t halo" x="385" y="269" text-anchor="middle">⑤ 14:06 销毁并申请赎回</text>
+            <line class="d-line" x1="285" y1="320" x2="683" y2="320" marker-end="url(#lq-sq-ah)"/>
+            <text class="d-t halo" x="485" y="312" text-anchor="middle">⑥ PAK 签名有效，链上状态合法</text>
+            <line class="d-line atk" x1="685" y1="363" x2="487" y2="363" marker-end="url(#lq-sq-atk)"/>
+            <text class="d-t atk halo" x="585" y="355" text-anchor="middle">⑦ 14:28 放出 3,996.02 BTC</text>
+            <line class="d-line atk" x1="485" y1="406" x2="87" y2="406" marker-end="url(#lq-sq-atk)"/>
+            <text class="d-t atk halo" x="285" y="398" text-anchor="middle">⑧ 同一区块自动转出 3,995.99999857 BTC</text>
+            <rect class="d-box soft" x="110" y="420" width="560" height="36" rx="4"/>
+            <text class="d-t s" x="390" y="443" text-anchor="middle">14:10 监控报出块停滞；18:26 桥节点才下线；① 到 ⑦ 约 36 分钟</text>
+            <line class="d-line def" x1="85" y1="484" x2="683" y2="484" marker-end="url(#lq-sq-def)"/>
+            <text class="d-t def halo" x="385" y="476" text-anchor="middle">⑨ 9 月 7 日归还 3,400 BTC，约 598.5 BTC 未还</text>
+          </svg>
+          </div>
+          <figcaption>图 2：9 月 6 日的赎回路径（UTC）。红色是攻击者获利的步骤，蓝色是归还。⑤ 到 ⑦ 都是正常的赎回流程，每一方只核对了自己负责的那一项。数据来自 Blockstream 评估和 SideSwap 的时间线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</figcaption>
+        </figure>
+        <h3>联盟的赎回流程为什么放行</h3>
+        <p>Blockstream 把损失归结为两个独立的问题：Elements 的共识漏洞，以及一个成员的 PAK 签名流程在配置上的缺口<a class="ref" href="#s1">[1]</a>。把赎回拆开看，资金先后经过四道关口：</p>
+        <ol class="flow">
+          <li class="atk"><b>共识验证</b>缓存命中，伪造的范围证明被当成已验证，约 4,000 L-BTC 进入链上状态</li>
+          <li class="ok"><b>PAK 授权</b>SideSwap 的在线密钥签名，目的地是已登记的地址，授权本身合法</li>
+          <li class="doubt"><b>联盟 11/15 签名</b>只核对侧链状态，没有链下储备核对，也不看订单规模</li>
+          <li class="atk"><b>“离线”收款钱包</b>实际在线，同一区块自动转出，没有延迟和人工复核</li>
+        </ol>
+        <p>第一道关口失守以后，后面每一道都只核对了自己那一项。Liquid 在事故报告中说，功能节点没有被黑，私钥没有泄露，按白名单地址授权提款的赎回机制“按设计运行”<a class="ref" href="#s13">[13]</a>。评估的说法是，PAK 机制核验的是一个真实的签名请求，背后的 L-BTC 在请求被评估之前就已经被共识错误地当成了真的<a class="ref" href="#s1">[1]</a>。</p>
+        <p>本可以把损失挡在可追回范围内的是第四道。章程要求成员让比特币收款钱包保持离线，这样即使共识出错，放出的 BTC 也还在成员手里。SideSwap 事后承认了两点：它的赎回授权密钥放在线上服务器，每笔联盟付款都在同一个比特币区块里自动转给客户，这一设计把 Liquid 上一个可以逆转的事件变成了比特币上不可逆转的付款；它的赎回流水线没有规模上限、速度控制、相对 L-BTC 总量的上限，也不检查存款钱包的年龄和历史，一个只存在了几个小时的钱包下了约 4,000 L-BTC 的订单，没有经过任何人工复核<a class="ref" href="#s6">[6]</a>。Blockstream 在评估中转述了这两点，并写明联盟章程要求这把密钥离线保管<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>凭空铸出</b>约 4,000 L-BTC，Liquid 区块 4,050,336</li>
+          <li class="atk"><b>SideSwap 赎回</b>销毁约 4,000 L-BTC，另有 2.5 L-BTC 的试探</li>
+          <li class="atk"><b>联盟放款，转给攻击者</b>3,996.02 BTC（区块 965,783）；连同试探，攻击者共收到约 3,998.5 BTC</li>
+          <li class="doubt"><b>部分归还</b>9 月 7 日 3,400 BTC 回到联盟锚定钱包（区块 965,950），约 598.5 BTC 未还</li>
+        </ol>
+        <p>数字来自 Blockstream 的评估和 SideSwap 的时间线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。未归还的数额有两种口径。TRM Labs、Decrypt 和 Bitcoin.com News 报的是攻击者地址里剩下的 598.5 BTC<a class="ref" href="#s9">[9]</a><a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>，与 SideSwap 公布的两笔付款之和减去 3,400 BTC 大致相符。Blockstream 的评估写的是“约 602 BTC 仍待追回”，口径是储备中可归因于未授权交易的部分<a class="ref" href="#s1">[1]</a>。</p>
+        <p>事发当天的早期报道写的是“从储备转出 4,019.4 BTC”“剩下 207 BTC 多一点”<a class="ref" href="#s12">[12]</a>，与官方后来公布的 3,996.02 BTC 放款和 197 BTC 余额不同。储备从约 4,205 BTC 降到 197 BTC，差额里还包括网络暂停前已在处理的正常赎回<a class="ref" href="#s1">[1]</a>。本页统一使用官方数字。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th class="n">储备 BTC</th><th class="n">流通量</th><th class="n">覆盖率</th></tr></thead>
+            <tbody>
+              <tr><td>事发前<a class="ref" href="#s1">[1]</a></td><td class="n">约 4,205</td><td class="n">未公布</td><td class="n">1:1</td></tr>
+              <tr><td>9 月 6 日<a class="ref" href="#s1">[1]</a></td><td class="n">197</td><td class="n">未公布</td><td class="n">未公布</td></tr>
+              <tr><td>9 月 8 日<a class="ref" href="#s9">[9]</a></td><td class="n">约 3,597</td><td class="n">约 4,200</td><td class="n">约 86%</td></tr>
+              <tr><td>10 月 27 日<a class="ref" href="#s19">[19]</a></td><td class="n">3,649.00</td><td class="n">4,249.00</td><td class="n">约 85.88%</td></tr>
+              <tr><td>10 月 28 日<a class="ref" href="#s20">[20]</a></td><td class="n">3,703.43</td><td class="n">4,253.43</td><td class="n">约 87.07%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>表中“储备”是联盟钱包里的 BTC，“流通量”是流通的 L-BTC。事发前的 1:1 是设计上的锚定比例，不是当天公布的数字。9 月 6 日是网络暂停时的余额。9 月 8 日一行是 TRM Labs 在归还之后的估算，流通量也是估算，TRM 提醒这不是完整的储备与负债对账<a class="ref" href="#s9">[9]</a>。10 月的两行是 The Defiant 按 mempool 浏览器的数据计算的<a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a>。从 9 月到 10 月底，储备与流通量之间一直差约 600 BTC，大致等于攻击者留下的数额。</p>
+        <p>攻击钱包唯一的资金来源是 9 月 5 日那笔 0.001 BTC 的挂入，可以追溯到以太坊上的 Tornado Cash<a class="ref" href="#s6">[6]</a>。TRM Labs 在一天之内标记了攻击者的地址，并持续追踪没有归还的资金<a class="ref" href="#s9">[9]</a>。截至 10 月 11 日，那个地址里的 598.5 BTC 没有动过，倒是不断收到<a href="../../scams/events/2024-address-poisoning.html">地址投毒</a>尝试和写在 OP_RETURN 里的各种留言<a class="ref" href="#s17">[17]</a>。10 月 20 日的报道仍称攻击者持有约 600 BTC<a class="ref" href="#s21">[21]</a>。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>L-BTC 持有人</h3>
+        <p>网络暂停期间，Liquid 上的一切都停了。USDt、DePix 等由各自发行方背书的资产没有受漏洞影响，但同样用不了<a class="ref" href="#s1">[1]</a>。受影响最大的是 L-BTC 持有人。交易所暂停了 L-BTC 的充提，部分交易所到 10 月下旬仍未恢复<a class="ref" href="#s8">[8]</a>。9 月 10 日交易恢复后，储备只覆盖流通量的约 86%，联盟的直接赎回一直关闭<a class="ref" href="#s9">[9]</a><a class="ref" href="#s17">[17]</a>。有用户在 X 上说，他经 SideSwap 和 SideShift.ai 绕道换回比特币，前后花了几周，价差和手续费合计约 5%<a class="ref" href="#s17">[17]</a>。直到 10 月 20 日兑换商通道恢复，持有人才重新有了按 1:1（扣 0.1% 手续费）换回比特币的路径<a class="ref" href="#s7">[7]</a>；联盟自己的直接赎回到 10 月底还没开。</p>
+        <h3>规模</h3>
+        <p>按事发时的价格，被取走的比特币价值约 3.19 亿至 3.2 亿美元<a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。TRM Labs 称这是有记录以来针对比特币侧链的最大一次攻击，也是截至 9 月 8 日 2026 年最大的一起加密货币盗窃，排在 4 月的 <a href="2026-kelpdao.html">KelpDAO</a> 和 <a href="2026-drift-protocol.html">Drift</a> 之前<a class="ref" href="#s9">[9]</a>。这个“年度之最”没有保持多久：本站收录的 9 月 24 日 <a href="2026-bitget.html">Bitget</a> 事件，以及 10 月 29 日的<a href="2026-binance.html">币安</a>事件，规模都更大。</p>
+        <h3>联盟模式的信任边界</h3>
+        <p>Liquid 的锚定钱包由 15 个身份公开的成员控制<a class="ref" href="#s12">[12]</a>，安全依赖的是一组已知的功能节点，而不是去中心化的验证者集合。这次事故说明，签名门槛设得再高，联盟能核实的也只有侧链告诉它的东西。TRM Labs 把它和以往的跨链事件做了对比：<a href="2022-ronin-bridge.html">Ronin</a> 是验证者私钥被盗，<a href="2021-poly-network.html">Poly Network</a> 是跨链合约有缺陷，<a href="2022-wormhole.html">Wormhole</a> 是签名被伪造，Liquid 则是验证软件的漏洞让攻击者直接伪造了资产本身<a class="ref" href="#s9">[9]</a>。保密交易隐藏金额的特性，又让这种伪造在当时更难从外部看出来<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>AI 审查的两面</h3>
+        <p>漏洞 A 在五天内被外部研究者、Blockstream 的内部审查和一个外部团队分别确认，评估认为 AI 辅助工具正在改变审查旧代码库的方式<a class="ref" href="#s1">[1]</a>。可同样有 AI 参与的审查和补充扫描，都看过含漏洞 B 的代码，都没有发现问题。Adam Back 在 X 上说，漏洞 B 是“对一个 AI 发现的、本身也不严重的漏洞做了错误修复”引入的<a class="ref" href="#s16">[16]</a>；而 Blockstream 的正式评估把漏洞 A 定为严重的共识漏洞<a class="ref" href="#s1">[1]</a>，两种说法对漏洞 A 严重程度的判断并不一致。</p>
+        <h3>同类事件</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th>失效的检查</th><th>多出来的币有没有流出</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2010-bitcoin-overflow.html">比特币价值溢出</a></td><td>2010-08</td><td>输出金额求和溢出，绕过“输出不大于输入”</td><td>没有，当天修复，问题区块被分叉作废</td></tr>
+              <tr><td>CVE-2018-17144</td><td>2018-09</td><td>为提速省掉的重复输入检查</td><td>没有，被利用之前修复<a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td><a href="2022-wormhole.html">Wormhole</a></td><td>2022-02</td><td>守护者签名校验被伪造账户绕过</td><td>流出，Jump Crypto 次日补足 12 万 ETH 储备</td></tr>
+              <tr><td><a href="2022-bnb-bridge.html">BNB Bridge</a></td><td>2022-10</td><td>伪造的 IAVL 证明通过校验</td><td>部分流出，约 1 亿美元，其余在链上被冻结</td></tr>
+              <tr><td>Liquid</td><td>2026-09</td><td>范围证明缓存命中，跳过验证</td><td>流出，约 3,996 BTC，侧链回滚只能清掉假币</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>最接近的先例是 CVE-2018-17144。Bitcoin Core 0.14 为了加快区块预验证，省掉了一项“单笔交易的多个输入不能花同一个输出”的检查；到 0.15.x 至 0.16.2，这变成了一个可以增发的漏洞。Bitcoin Core 称不知道有任何利用尝试<a class="ref" href="#s23">[23]</a>。两次都是为了性能绕过了一道不该绕过的检查，区别在于 Liquid 这次被利用了，而且多出来的币换成了另一条链上的真币。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>止损</h3>
+        <p>9 月 6 日 18:26，Blockstream 协调让 Liquid 的桥节点下线。用户的交易几乎都先经过桥节点再到出块节点，桥节点一停，新交易和赎回就都停了。Blockstream 同时通知交易所暂停 L-BTC 充提。9 月 7 日 01:09，紧急补丁先于正式版本部署到桥节点<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>链上谈判与 3,400 BTC 的归还</h3>
+        <p>攻击者用 OP_RETURN 留言自称白帽之后，双方通过链上的加密消息沟通。攻击者承诺，等所有节点修补了漏洞就归还资金；补丁上线后，资金开始回流<a class="ref" href="#s9">[9]</a>。9 月 7 日 16:09，3,400 BTC 回到联盟锚定钱包<a class="ref" href="#s1">[1]</a>。</p>
+        <p>剩下的约 600 BTC 成了争议。9 月 9 日，攻击者在一笔比特币交易里写道，Blockstream 只拿出“150 万美元（甚至可能是 0）来保护 50 亿美元的资产”，是“明目张胆的安全疏忽”，要求 Blockstream“用自己的钱”付 10% 作为漏洞赏金，否则“你们会因为自己的不负责任和吝啬，让所有持有人承担 15% 的损失”<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a><a class="ref" href="#s21">[21]</a>。另一条留言称 Blockstream“妄想、贪婪、傲慢”，并威胁公开双方全部的加密通信，除非对方付这 10%<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>Blockstream 拒绝付款</h3>
+        <blockquote>
+          <p>未经授权拿走资产并扣着不还，是犯罪，不是负责任的披露。这不是白帽行为，这是盗窃。</p>
+          <cite>Blockstream 在 X 上的声明，2026-09-11，据 Decrypt 与 Bitcoin.com News 转引<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a></cite>
+        </blockquote>
+        <p>Blockstream 说，它参与谈判“不应被误解为接受对方的行为或条件”；它不会成为一个先例的一方，让为比特币社区开发开源软件的人去付一笔远超自身经济参与的赎金。它也不打算让用户承担：“比特币是硬通货，不能无成本地铸造。比特币不会为了付赎金而让用户打折。”如果资金不归还，它将与执法机构、交易所和取证专家一起走“一切合法途径”<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <p>Ledger CTO Charles Guillemet 此前就说，如果这是在链上用加密合约谈下来的报酬，“看起来更像勒索，而不是白帽黑客”<a class="ref" href="#s13">[13]</a>。社交媒体上也有人站在攻击者一边，指责 Blockstream 代码写得差，出了事又去找执法机构<a class="ref" href="#s15">[15]</a>。截至本文写作时，本站没有查到公开的执法行动或起诉。Blockstream 在评估的结尾向攻击者喊话：如果动机是暴露弱点而不是造成持久的伤害，就归还剩下的比特币。它同时宣布为 Elements 等关键开源基础设施设立正式的漏洞赏金计划，明确范围并提供安全港<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>回滚侧链</h3>
+        <p>因为问题出在缓存，Blockstream 可以关掉范围证明缓存、重放受影响的那段链：没有缓存，Elements 就会正确拒绝依赖漏洞 A 或 B 的交易。团队再用独立实现 rust-elements 交叉核对，确认了两个无效的原始输出和由它们派生的四笔交易<a class="ref" href="#s1">[1]</a>。9 月 9 日 21:05，修正后的链在攻击前最后一个区块 4,050,335 之后接上替换的 4,050,336 号区块，下一个区块重放了 329 笔经核实有效的交易。Blockstream 称，当前的 Liquid 链上已没有漏洞 A 或 B 造成的增发<a class="ref" href="#s1">[1]</a>。</p>
+        <p>回滚只对侧链有效。已经付到比特币主链上的 3,996 BTC 不受影响。一周前 <a href="2026-tectonic.html">Cronos 为 Tectonic 回滚</a>链状态时，损失还留在同一条链上，大部分追了回来；Liquid 的损失已经过桥，回滚只能清掉假币。</p>
+        <h3>分阶段恢复</h3>
+        <p>恢复计划分三步：恢复出块并暂停锚定操作，重放经独立核实的有效交易，网络状态完全恢复后再重开锚定<a class="ref" href="#s1">[1]</a>。前两步从 9 月 9 日开始，9 月 10 日用户交易恢复。9 月 29 日，Liquid 宣布对 Elements v23.3.4 做独立的外部安全审计，并更新 PAK 名单，替换现有条目，确保所有赎回密钥都放在冷存储里<a class="ref" href="#s17">[17]</a>。</p>
+        <p>10 月 20 日，联盟说管理储备的联盟软件已经更新，能适应事故后的账目状态；BTC 与 L-BTC 的半自动兑换开始恢复，协议不设额度。最后一步是恢复完整的 1:1 储备，再为 PAK 持有人有控制地重开联盟赎回，并通过区块浏览器公开监测储备，没有给出日期<a class="ref" href="#s2">[2]</a>。SideSwap 当天重开赎回，付款全部来自它自己的比特币钱包，次日称已处理约 600 笔、付出 60 多 BTC<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。10 月 27 日的联盟更新说，独立安全审计接近完成<a class="ref" href="#s20">[20]</a>；Crypto Briefing 则报道外部审计在 10 月 20 日前已经完成<a class="ref" href="#s18">[18]</a>，两者说法不一。</p>
+        <p>填补缺口的比特币从 10 月 27 日开始转入。当天一笔 2.53048101 BTC 的交易进了 Samson Mow 公布的联盟钱包，Mow 称这是测试，“剩下的 600 BTC 会在几天内转入”<a class="ref" href="#s19">[19]</a>。Crypto Briefing 报道，Blockstream 承诺自己补上缺口、不让用户承担，称这是“何时”而不是“是否”的问题<a class="ref" href="#s18">[18]</a>。10 月 28 日又转入 50 BTC，缺口降到约 550 BTC<a class="ref" href="#s20">[20]</a>。公开报道没有说明这些比特币由谁转出。</p>
+        <h3>责任之争</h3>
+        <div class="compare">
+          <div>
+            <h4>SideSwap 承认的</h4>
+            <p>赎回授权密钥在线运行，联盟付款在同一区块自动转给客户；赎回订单没有规模、速度和来源检查。它把这笔订单约 4 BTC 的 0.1% 手续费全额退给了联盟，并说会采用联盟安全审查后制定的规则，而不是自行零散修改<a class="ref" href="#s6">[6]</a>。</p>
+          </div>
+          <div>
+            <h4>SideSwap 同时指出的</h4>
+            <p>联盟多年来知道它的密钥在线运行；发现漏洞后，没有人告诉它细节，也没有人要它改变做法或暂停赎回；它应要求部署的安全版本没能阻止攻击；联盟自己的 11/15 签名也没有检查订单规模。“单个成员不能为整个网络的完整性负责。”<a class="ref" href="#s6">[6]</a></p>
+          </div>
+        </div>
+        <p>披露过程也有争议。Bitcoin Red Team 联合负责人 Calle 回应 Adam Back 时说：“原来无视红队的一封邮件只要 600 BTC。”他称 Blockstream 对补丁历史的说法有选择性且不准确。前 Blockstream 高管 Samson Mow 否认有邮件被无视。Calle 说，会等 Blockstream 发布事后报告再公布自己的完整记录<a class="ref" href="#s16">[16]</a>。Blockstream 的评估则称，它在首次报告后 24 小时内完成了漏洞 A 的分级和修复，一周内又从两个渠道独立确认，“没有漏掉报告，没有无视警告”<a class="ref" href="#s1">[1]</a>。截至 10 月底，本站没有找到 Bitcoin Red Team 公布的完整记录。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给写验证缓存的人</span>
+          <ul>
+            <li>缓存键必须覆盖验证函数的全部输入。Elements 后来把这条写成了注释：除了无状态的上下文，每个携带数据的参数都必须进键。</li>
+            <li>多字段做哈希，用带长度前缀的序列化或其他无歧义的编码，不要直接拼接原始字节。只要有一个变长字段没有边界，就可能拼出同样的字节串。</li>
+            <li>对象内部带长度头的，在查缓存之前先检查它。Bitcoin Core 的签名缓存同样是拼接，因为先检查了长度前缀才没有出事。</li>
+            <li>给缓存留一个关闭开关，并定期不走缓存重新验证全链。这次正是靠关掉缓存重放，确定了哪些交易无效。Blockstream 表示会把事故中写的零缓存复验工具和缓存碰撞搜索工具保留为常设工具<a class="ref" href="#s1">[1]</a>。</li>
+            <li>用差分测试比较“走缓存”和“不走缓存”的验证结果，两者不一致就是漏洞。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给修漏洞的人</span>
+          <ul>
+            <li>修复本身也是新代码，要按漏洞的类别测试，而不是只重放报告里的那一个概念验证。漏洞 B 漏过的三道检查，问的都是“漏洞 A 修好了没有”。</li>
+            <li>有多种修复方案时，默认选结构上最安全的那个。Blockstream 事后把这定为共识关键问题的默认规则，偏离要有理由并经批准<a class="ref" href="#s1">[1]</a>。</li>
+            <li>修复合入公开仓库就等于公开了漏洞。先确认生产节点都已部署，提交标题也不要直接描述可利用的问题。这次的修复是以描述漏洞的标题合入的，当时还没有任何正式版本包含它<a class="ref" href="#s6">[6]</a>。</li>
+            <li>修复期间，把操作风险告诉最可能放大损失的成员。SideSwap 说它没有拿到漏洞细节，也没有被要求暂停赎回<a class="ref" href="#s6">[6]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给跨链桥和侧链运营者</span>
+          <ul>
+            <li>放行赎回要有不依赖共识状态的检查：单笔上限、速度上限、相对流通总量的比例上限、大额订单人工审核。共识是第一道防线，不能是唯一一道。</li>
+            <li>收款钱包真正离线，付款延迟、人工转出。PAK 离线密钥原本就是为“共识出错”准备的安全网，自动转发让它失效了。</li>
+            <li>把共识异常和赎回暂停联动起来。这次内部监控在 14:10 报出块停滞，比比特币离开储备早 18 分钟，网络在四个多小时后才暂停。</li>
+            <li>持续公开核对储备与流通量，偏差超过阈值就自动暂停赎回。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Blockstream，《Liquid Network Security Incident Assessment》，Blockstream 博客，2026-09-23；Liquid 博客 2026-09-25 转载（本站读的是转载版）。<a href="https://blog.liquid.net/liquid-network-security-incident-assessment/">blog.liquid.net</a></li>
+          <li id="s2">Liquid Federation，《Liquid Network Staged Recovery Update》，Liquid 博客，2026-10-20。<a href="https://blog.liquid.net/liquid-network-staged-recovery-update/">blog.liquid.net</a></li>
+          <li id="s3">ElementsProject/elements，提交 212c43f《fix: range proof cache bind to asset and scriptpubkey》（23.x 分支，2026-08-03）；master 分支对应提交 c26d719。<a href="https://github.com/ElementsProject/elements/commit/212c43f475fc202b5b9e6dbb1f1c616e1a06a6f7">github.com</a></li>
+          <li id="s4">ElementsProject/elements，提交 9400096《sigcache: harden proof cache keys with length-prefixed hashing》（PR #1600，2026-09-08），及 elements-23.3.4 发布说明（2026-09-09）。<a href="https://github.com/ElementsProject/elements/commit/94000967f6dc05b1afd435e79b1bbc597e29f816">github.com</a></li>
+          <li id="s5">ElementsProject/elements，elements-23.3.3 标签的 src/script/sigcache.cpp（2026-04-13 发布），及 2018-04-25 的提交 9572165《simplify rangeproof validation caching》。<a href="https://github.com/ElementsProject/elements/blob/elements-23.3.3/src/script/sigcache.cpp">github.com</a></li>
+          <li id="s6">SideSwap，《Statement on the Liquid Network incident of 6 September 2026》，2026-09-09。<a href="https://sideswap.io/news/statement-on-the-liquid-network-incident-of-6-september-2026/">sideswap.io</a></li>
+          <li id="s7">SideSwap，《Peg-out is open again on SideSwap》，2026-10-20。<a href="https://sideswap.io/news/peg-out-is-open-again-on-sideswap/">sideswap.io</a></li>
+          <li id="s8">SideSwap，《Peg-out on SideSwap, an update》，2026-10-21。<a href="https://sideswap.io/news/peg-out-update-21-october-2026/">sideswap.io</a></li>
+          <li id="s9">TRM Labs，《2026's Biggest Hack To Date: Attackers Drained USD 319 Million in Bitcoin From Liquid Network, Then Returned 85% of Funds》，2026-09-08。<a href="https://www.trmlabs.com/resources/blog/2026s-biggest-hack-to-date-attackers-drained-usd-319-million-in-bitcoin-from-liquid-network-then-returned-85-of-funds">trmlabs.com</a></li>
+          <li id="s10">Rob Behnke，《Explained: The Liquid Network Hack (September 2026)》，Halborn，2026-09-09。<a href="https://www.halborn.com/blog/post/explained-the-liquid-network-hack-september-2026">halborn.com</a></li>
+          <li id="s11">Bloomberg，《Bitcoin network says $320 million stolen in latest crypto hack》，2026-09-07（本站读的是 The Hindu BusinessLine 转载的版本）。<a href="https://www.thehindubusinessline.com/money-and-banking/cryptocurrency/bitcoin-network-says-320-million-stolen-in-latest-crypto-hack/article71437377.ece">thehindubusinessline.com</a></li>
+          <li id="s12">Juan Galt，《Alleged White-Hat Hackers Withdraw 4,000 bitcoin from Blockstream's Liquid Network Federation Reserves》，Bitcoin Magazine，2026-09-06。<a href="https://bitcoinmagazine.com/news/alleged-white-hat-hackers-withdraw-4000-bitcoin-from-blockstreams-liquid-network-federation-reserves">bitcoinmagazine.com</a></li>
+          <li id="s13">Jason Nelson，《$47M Still Missing After Liquid Hack as Blockstream Bargains With 'White Hats'》，Decrypt，2026-09-08（Yahoo Finance 转载版）。<a href="https://finance.yahoo.com/markets/crypto/articles/47m-still-missing-liquid-hack-204634367.html">finance.yahoo.com</a></li>
+          <li id="s14">Decrypt，《Blockstream Refuses Ransom for Return of $47M in Bitcoin from Liquid Hack: 'It Is Theft'》，2026-09-11（Yahoo Finance 转载版）。<a href="https://finance.yahoo.com/markets/crypto/articles/blockstream-refuses-ransom-return-47m-141738871.html">finance.yahoo.com</a></li>
+          <li id="s15">Jamie Redman，《'Return the Bitcoin': Blockstream Draws Line After 4,000 BTC Hack》，Bitcoin.com News，2026-09-11。<a href="https://news.bitcoin.com/crypto-news/return-the-bitcoin-blockstream-draws-line-after-4000-btc-hack/">news.bitcoin.com</a></li>
+          <li id="s16">Sergio Goschenko，《Bitcoin Red Team Claims Blockstream Ignored Warnings Before Hack》，Bitcoin.com News，2026-09-11。<a href="https://news.bitcoin.com/security/bitcoin-red-team-claims-blockstream-ignored-warnings-before-hack/">news.bitcoin.com</a></li>
+          <li id="s17">Jamie Redman，《Liquid Network at 86% Backing as Bitcoin Redemption Freeze Drags On》，Bitcoin.com News，2026-10-11。<a href="https://news.bitcoin.com/crypto-news/liquid-network-at-86-backing-as-bitcoin-redemption-freeze-drags-on/">news.bitcoin.com</a></li>
+          <li id="s18">Estefano Gomez，《Samson Mow says Liquid's 600 BTC shortfall will be covered within days》，Crypto Briefing，2026-10-27。<a href="https://cryptobriefing.com/samson-mow-liquid-600-btc-shortfall/">cryptobriefing.com</a></li>
+          <li id="s19">The Defiant，《Liquid Reserve Gap Narrows to 600 BTC After Test Transfer》，2026-10-27（本站读的是 cryptonews.net 转载的版本）。<a href="https://cryptonews.net/news/bitcoin/33661070/">cryptonews.net</a></li>
+          <li id="s20">The Defiant，《Liquid Reserve Gap Falls to 550 BTC After 50 BTC Transfer》，2026-10-28（cryptonews.net 转载版）。<a href="https://cryptonews.net/news/bitcoin/33666765/">cryptonews.net</a></li>
+          <li id="s21">Mathew Di Salvo，《Liquid Network Announces Final Stages of Recovery Following Massive Hack》，Bitcoin Magazine，2026-10-20。<a href="https://bitcoinmagazine.com/news/liquid-network-announces-recovery">bitcoinmagazine.com</a></li>
+          <li id="s22">Gregory Maxwell，《Confidential Transactions》技术说明，Elements Project 网站。<a href="https://elementsproject.org/features/confidential-transactions/investigation">elementsproject.org</a></li>
+          <li id="s23">Bitcoin Core，《CVE-2018-17144 Full Disclosure》，2018-09-20。<a href="https://bitcoincore.org/en/2018/09/20/notice/">bitcoincore.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

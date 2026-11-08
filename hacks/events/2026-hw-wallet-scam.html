@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>冒充硬件钱包客服骗走 2.82 亿美元｜区块链被盗事件编年史</title>
+<meta name="description" content="2026 年 1 月，一名持币者被冒充硬件钱包客服的人骗出恢复助记词，1,459 枚 BTC 和 205 万枚 LTC（约 2.82 亿美元）被转走：硬件钱包的安全边界，一份备份为什么能转走多条链的资产，资金去向，以及已知与未知。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2026-hw-wallet-scam">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2026 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>冒充硬件钱包客服骗走 2.82 亿美元</h1>
+    <p class="lede">2026 年 1 月 10 日约 23:00（UTC），一名持币者把硬件钱包的恢复助记词交给了冒充客服的人，1,459 枚 BTC 和 205 万枚 LTC 随即被转走，随后被换成门罗币或经跨链协议转移。这一单占了 2026 年第一季度全行业被盗损失的一半以上。私钥从没离开过设备，攻击者拿到的是能重建全部私钥的那份备份。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">据链上调查者 ZachXBT，2026 年 1 月 10 日约 23:00（UTC），一名受害者在一场“硬件钱包社会工程诈骗”中损失了价值 2.82 亿美元以上的 LTC 和 BTC，他公布的三个接收赃款的地址（被盗地址）共收到 205 万枚 LTC 和 1,459 枚 BTC<a class="ref" href="#s1">[1]</a>。受害者被骗交出了与硬件钱包对应的恢复助记词，攻击者由此取得了钱包的全部控制权<a class="ref" href="#s4">[4]</a>。钱是攻击者自己签名转走的，所以本站算作被盗；攻击者只接管了社交账号、钱由受害者自己转出的，算作诈骗，见诈骗站的 <a href="../../scams/events/2020-twitter-scam.html">2020 年 Twitter 名人账号送币骗局</a>。</p>
+        <p>攻击者随即通过多家即时兑换平台把 LTC 和 BTC 换成门罗币（XMR），又经 THORChain 把一部分 BTC 换到 Ethereum、XRP Ledger 和 Litecoin 上<a class="ref" href="#s1">[1]</a>。据 CertiK，至少 686 枚 BTC 经跨链兑换变成约 19,600 枚 ETH，之后分批存入混币器 Tornado Cash，已确认的金额约 6,300 万美元<a class="ref" href="#s5">[5]</a>。门罗币在 1 月 14 日创下 797.73 美元的历史新高，ZachXBT 认为与这笔赃款的兑换有关；The Block 则指出，门罗币和其他隐私币从 2025 年底起就在上涨<a class="ref" href="#s3">[3]</a>。</p>
+        <p>安全公司 zeroShadow 称在约 20 分钟内冻结了约 70 万美元，并说受害者是被冒充 Trezor 客服的人骗出了助记词<a class="ref" href="#s4">[4]</a>。ZachXBT 排除了朝鲜黑客作案<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。受害者身份、骗子的具体话术、赃款的最终去向都没有公开；截至 2026 年 10 月，本站没有找到任何逮捕、起诉或没收资产的公开消息。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <h3>硬件钱包保护的是什么</h3>
+        <p>硬件钱包在设备内部生成私钥，交易也在设备内部签名，连接的电脑只拿到签好名的交易。电脑中了木马，攻击者也拿不到私钥。设备初始化时会给出一份恢复助记词，让用户抄在纸上，设备丢失或损坏时用来恢复钱包。传统格式是 BIP-39 的 12 或 24 个单词；Trezor 从 2024 年 6 月起把新设备的默认备份改成基于 SLIP-39 的 20 个单词<a class="ref" href="#s12">[12]</a>。两种格式最终还原出的都是同一个 BIP-32 主种子，钱包里所有币种的私钥都从它派生<a class="ref" href="#s10">[10]</a><a class="ref" href="#s15">[15]</a>。谁拿到这份备份，谁就能在任意一个兼容的钱包里重建整个钱包，不需要原来那台设备，也不需要 PIN。</p>
+        <p>所以厂商一再提醒用户不要把备份交给任何人。Trezor 的官方说明写道：任何索要钱包备份、PIN、密码或验证码的请求都是诈骗；“没有任何正规公司，包括 Trezor，会向你索要钱包备份”；Trezor 不会通过短信、WhatsApp、Telegram、电话或信件联系用户；骗子已经开始用 AI 在文字、语音和视频里模仿官方客服<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>谁买了硬件钱包，并不是秘密</h3>
+        <p>冒充客服的前提是知道谁买过硬件钱包，而这类数据一再外泄。本案五天前的 2026 年 1 月 5 日，为 Ledger 官网处理订单的 Global-e 披露其云环境遭未授权访问，过去 12 个月在 Ledger 官网下单的用户，姓名、收货地址、邮箱、电话和订单信息外泄。zeroShadow 当天就指出，“真实身份 + 住址 + 确认持有硬件钱包”的组合足以支撑带着真实订单细节的冒充，并从邮件升级到电话诈骗<a class="ref" href="#s13">[13]</a>。CoinDesk 报道本案时也提到了这次泄露<a class="ref" href="#s2">[2]</a>。没有任何公开资料把本案受害者和这次泄露联系起来，何况 zeroShadow 说骗子冒充的是 Trezor，不是 Ledger<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>同一套路的前几起</h3>
+        <p>针对单个富裕持币者的社会工程诈骗此前已多次出现。2024 年 8 月，一名 Genesis 债权人接到冒充 Google 和 Gemini 客服的电话，被诱导用 AnyDesk 共享屏幕，约 2.43 亿美元的 BTC 被盗<a class="ref" href="#s14">[14]</a><a class="ref" href="#s20">[20]</a>（见 <a href="2024-genesis-creditor.html">Genesis 债权人案</a>）。2025 年，一名美国老年持币者在另一起社会工程诈骗中损失了约 3.3 亿美元的 BTC<a class="ref" href="#s4">[4]</a>（见 <a href="2025-us-holder-btc.html">美国老年持币者案</a>）。2025 年 8 月 19 日，又有一名受害者在交易所客服和硬件钱包客服都被冒充之后，损失了 783 枚 BTC（约 9,140 万美元）<a class="ref" href="#s14">[14]</a>。本案沿用了同一个模式：锁定一个人，冒充客服接触，得手后立即洗钱。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>以下时间均为 UTC。</p>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与调查方行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2025-08-19</time><div class="ev">另一名受害者在交易所客服和硬件钱包客服都被冒充后，损失 783 枚 BTC（约 9,140 万美元）<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-01-05</time><div class="ev">Global-e 披露为 Ledger 官网处理订单的云环境遭未授权访问，买家姓名、住址、邮箱、电话和订单信息外泄<a class="ref" href="#s13">[13]</a>。没有公开资料表明它与本案有关。</div></li>
+          <li class="atk key"><time>2026-01-10 约 23:00</time><div class="ev">受害者把恢复助记词交给冒充客服的人，钱包被转空，1,459 枚 BTC 和 205 万枚 LTC 进入攻击者控制的两个 BTC 地址和一个 LTC 地址<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2026-01-10 起</time><div class="ev">攻击者立即通过多家即时兑换平台把 LTC 和 BTC 换成门罗币，同时经 THORChain 把一部分 BTC 换成 ETH、XRP 和 LTC<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>事发后不久</time><div class="ev">zeroShadow 接到链上监控团队的告警后实时追踪资金，约 20 分钟内冻结约 70 万美元。具体日期和执行冻结的平台没有公开<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2026-01-10 至 01-14</time><div class="ev">门罗币连涨五天，1 月 14 日创下 797.73 美元的历史新高，较近一周约 450 美元的低点上涨近 80%<a class="ref" href="#s3">[3]</a><a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def key"><time>2026-01-16 17:18</time><div class="ev">ZachXBT 在 X 和 Telegram 公开披露此案，公布三个接收赃款的地址，指出攻击者的兑换推高了门罗币价格<a class="ref" href="#s1">[1]</a>，并表示“不是朝鲜”<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2026-01-16</time><div class="ev">zeroShadow 在 LinkedIn 发文，称受害者是被冒充 Trezor 客服的人骗出了助记词<a class="ref" href="#s4">[4]</a>。CoinDesk 和 The Block 当天报道，The Block 提醒：被标记地址的资金是否已换成门罗币，链上看不到明确证据<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2026-01-18</time><div class="ev">门罗币连跌三天，较高点回落约 26%，报约 590 美元<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="atk"><time>2026-01-19</time><div class="ev">CertiK 报告：被盗 BTC 中至少 686 枚经跨链兑换变成约 19,600 枚 ETH，再分散到多个地址、分批存入 Tornado Cash，已确认约 6,300 万美元<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2026-01-31</time><div class="ev">CertiK 统计 1 月全行业损失约 3.703 亿美元，其中钓鱼类约 3.113 亿美元，单一受害者在社会工程诈骗中损失约 2.84 亿美元<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2026-02-14</time><div class="ev">BleepingComputer 报道，有人向 Trezor 和 Ledger 用户邮寄冒充官方的纸质信件，用二维码把人引到索要恢复助记词的钓鱼网站<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2026-04-14</time><div class="ev">Hacken 第一季度报告：钓鱼与社会工程造成约 3.06 亿美元损失，这一单硬件钱包诈骗占全季损失的一半以上<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2026-08-13 / 09-04</time><div class="ev">Trezor 披露物流商 ShipMonk 被入侵，13,689 名客户的数据外泄；9 月更新称 ShipMonk 没有按约定删除旧订单，另有约 6.7 万名美国客户受影响<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="key"><time>2026-10</time><div class="ev">本站没有找到任何与本案有关的逮捕、起诉或没收资产的公开消息，受害者身份也未公开。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起事件里没有代码漏洞，设备也没有被攻破。要讲清楚它为什么能成功，得先看硬件钱包的安全边界划在哪里，以及恢复助记词在这条边界上的位置。</p>
+        <h3>安全边界划在哪里</h3>
+        <p>硬件钱包的设计目标是“私钥不出设备”：私钥在设备里生成，签名在设备里完成，每笔交易都要在设备屏幕上确认。这条边界防的是一台不可信的电脑。但设备总会丢、会坏，所以厂商有意留了一个出口：初始化时把能还原全部私钥的备份交给用户抄在纸上。这份备份是唯一被设计成离开设备的东西。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 410" role="img" aria-labelledby="hw-trust-t hw-trust-d">
+            <title id="hw-trust-t">硬件钱包的安全边界与本案的攻击路径</title>
+            <desc id="hw-trust-d">上面一行是正常使用：电脑把待签名的交易交给硬件钱包，私钥在设备内签名，交易发往网络。设备初始化时把恢复助记词抄到纸上，这是唯一离开设备边界的东西。下面一行是本案：持有人把纸上的助记词交给冒充的客服，攻击者把它导入自己的钱包软件，算出同一组私钥，直接签名转账，全程不经过受害者的设备。</desc>
+            <defs>
+              <marker id="hw-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="hw-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-line dash" x="210" y="14" width="390" height="170" rx="6"/>
+            <text class="d-t s" x="226" y="36">设备边界：私钥只在框内使用</text>
+            <rect class="d-box" x="20" y="50" width="160" height="80" rx="4"/>
+            <text class="d-t b" x="100" y="84" text-anchor="middle">用户的电脑</text>
+            <text class="d-t s" x="100" y="106" text-anchor="middle">钱包软件构造交易</text>
+            <rect class="d-box def" x="240" y="50" width="340" height="80" rx="4"/>
+            <text class="d-t b" x="410" y="76" text-anchor="middle">硬件钱包</text>
+            <text class="d-t s" x="410" y="98" text-anchor="middle">私钥在芯片里生成，不出设备</text>
+            <text class="d-t s" x="410" y="118" text-anchor="middle">每次签名都要在屏幕上按键确认</text>
+            <text class="d-t s" x="440" y="170" text-anchor="middle">电脑中了木马，也拿不到框里的私钥</text>
+            <rect class="d-box" x="630" y="50" width="130" height="280" rx="4"/>
+            <text class="d-t b" x="695" y="180" text-anchor="middle">区块链网络</text>
+            <text class="d-t s" x="695" y="202" text-anchor="middle">签名来自哪里</text>
+            <text class="d-t s" x="695" y="220" text-anchor="middle">网络无从分辨</text>
+            <line class="d-line" x1="180" y1="90" x2="238" y2="90" marker-end="url(#hw-ah)"/>
+            <text class="d-t s halo" x="209" y="82" text-anchor="middle">待签名</text>
+            <line class="d-line" x1="580" y1="90" x2="628" y2="90" marker-end="url(#hw-ah)"/>
+            <text class="d-t s halo" x="604" y="82" text-anchor="middle">已签名</text>
+            <path class="d-line dash" d="M270,130 V205 H100 V248" marker-end="url(#hw-ah)"/>
+            <text class="d-t s halo" x="185" y="198" text-anchor="middle">初始化时抄在纸上</text>
+            <text class="d-t s" x="185" y="224" text-anchor="middle">唯一离开设备的东西</text>
+            <rect class="d-box doubt" x="20" y="250" width="160" height="80" rx="4"/>
+            <text class="d-t b" x="100" y="280" text-anchor="middle">纸上的恢复助记词</text>
+            <text class="d-t s" x="100" y="302" text-anchor="middle">12 / 20 / 24 个单词</text>
+            <text class="d-t s" x="100" y="320" text-anchor="middle">可另设口令</text>
+            <rect class="d-box atk" x="230" y="250" width="160" height="80" rx="4"/>
+            <text class="d-t b atk" x="310" y="280" text-anchor="middle">冒充的“客服”</text>
+            <text class="d-t s" x="310" y="302" text-anchor="middle">索要钱包备份</text>
+            <text class="d-t s" x="310" y="320" text-anchor="middle">具体话术未公开</text>
+            <rect class="d-box atk" x="440" y="250" width="160" height="80" rx="4"/>
+            <text class="d-t b atk" x="520" y="280" text-anchor="middle">攻击者的钱包软件</text>
+            <text class="d-t s" x="520" y="302" text-anchor="middle">导入备份，算出</text>
+            <text class="d-t s" x="520" y="320" text-anchor="middle">同一组私钥</text>
+            <line class="d-line atk" x1="180" y1="290" x2="228" y2="290" marker-end="url(#hw-ah-atk)"/>
+            <text class="d-t s atk halo" x="205" y="282" text-anchor="middle">交出</text>
+            <line class="d-line atk" x1="390" y1="290" x2="438" y2="290" marker-end="url(#hw-ah-atk)"/>
+            <text class="d-t s atk halo" x="415" y="282" text-anchor="middle">导入</text>
+            <line class="d-line atk" x1="600" y1="290" x2="628" y2="290" marker-end="url(#hw-ah-atk)"/>
+            <text class="d-t s atk halo" x="615" y="282" text-anchor="middle">签名</text>
+            <rect class="d-box soft" x="20" y="356" width="580" height="40" rx="4"/>
+            <text class="d-t s" x="310" y="381" text-anchor="middle">PIN、安全芯片、屏幕确认保护的都是上面一行；下面一行从头到尾不经过设备</text>
+          </svg>
+          </div>
+          <figcaption>图 1：硬件钱包的安全边界（虚线框）。正常使用时，私钥只在框内签名，签好的交易再经电脑广播。恢复助记词是唯一被设计成离开设备的东西。本案攻击者拿到它之后，在自己的软件里算出同一组私钥，设备上的防护一样都没碰到。红色是攻击路径。</figcaption>
+        </figure>
+        <h3>一份备份，多条链的私钥</h3>
+        <p>备份怎样变回私钥，由几份公开标准规定。BIP-39 规定把助记词变成种子：以助记词为密码、以字符串 <code>"mnemonic"</code> 加用户口令为盐，用 HMAC-SHA512 做 2048 轮 PBKDF2，得到 512 位种子；没有设口令时，口令按空字符串处理<a class="ref" href="#s10">[10]</a>。Trezor 的 20 词备份走的是 SLIP-39，用口令解开加密的主密钥，但规范要求这个主密钥就是 BIP-32 的主种子，以保证在别的钱包里也能恢复<a class="ref" href="#s15">[15]</a>。</p>
+        <p>有了种子，BIP-32 派生出一棵密钥树，BIP-44 按 <code>m / purpose' / coin_type' / account' / change / address_index</code> 的路径给不同币种分配分支；SLIP-44 登记的 coin_type 里，Bitcoin 是 0，Litecoin 是 2<a class="ref" href="#s11">[11]</a>。Bitcoin 和 Litecoin 只是同一棵树上的两根树枝：</p>
+<pre class="code"><code><span class="c"># 示意：按 BIP-39 / BIP-84 / SLIP-44 从一份备份得到两条链的账户（Python）</span>
+import hashlib, unicodedata
+
+def bip39_seed(mnemonic: str, passphrase: str = "") -&gt; bytes:
+    pwd = unicodedata.normalize("NFKD", mnemonic).encode()
+    salt = unicodedata.normalize("NFKD", "mnemonic" + passphrase).encode()
+    <span class="c"># HMAC-SHA512，2048 轮，输出 64 字节（512 位）</span>
+    return hashlib.pbkdf2_hmac("sha512", pwd, salt, 2048)
+
+<span class="c"># 以下为伪代码：BIP-32 派生需要第三方库，这里只示意路径</span>
+seed = bip39_seed(backup_words, passphrase)
+root = bip32_master_key(seed)
+<span class="bad">btc = root.derive("m/84'/0'/0'")   <span class="c"># coin_type 0：Bitcoin（原生隔离见证）</span></span>
+<span class="bad">ltc = root.derive("m/84'/2'/0'")   <span class="c"># coin_type 2：Litecoin，同一个 root</span></span></code></pre>
+        <p class="code-cap">示意代码，依据 BIP-39、BIP-44/84 与 SLIP-44 的公开规范<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。受害者钱包的备份格式、派生路径和是否设置口令都没有公开。</p>
+        <p>这就是 BTC 和 LTC 同时被转空的原因。Halborn 的分析说，助记词等同于私钥，拿到它就能算出钱包里的每一把密钥，硬件钱包提供的保护随之失效<a class="ref" href="#s6">[6]</a>。上面整个计算不需要设备，不需要 PIN，也不需要在屏幕上按确认。任何人拿到备份，都能离线算出同样的私钥，自己构造交易、签名、广播。Bitcoin 和 Litecoin 的交易一经确认就不可撤回，链上没有拒付机制，能拦住资金的只剩下中心化的兑换服务。</p>
+        <h3>设备防住了什么，没防住什么</h3>
+        <div class="compare">
+          <div>
+            <h4>设备能防住的</h4>
+            <p>来自电脑一侧的攻击：木马、被篡改的钱包软件或浏览器插件、伪造的收款地址、远程控制。这些攻击都要让设备签名，而签名必须由持有人在设备屏幕上核对、按键确认。</p>
+          </div>
+          <div>
+            <h4>设备防不住的</h4>
+            <p>持有人亲手交出备份。PIN、安全芯片和屏幕确认保护的是设备本身；备份一旦泄露，攻击者根本不需要那台设备。唯一可能剩下的防线是另设、且没有一起交出的口令。本案受害者有没有设口令没有公开；从结果看，交出去的东西已经足够转走全部资产。</p>
+          </div>
+        </div>
+        <h3>骗局为什么能得手</h3>
+        <p>硬件钱包把攻击面从设备推到了人身上。私钥锁进设备之后，攻击者能下手的只剩持有人手里的那份备份。Trezor 的安全文章描述过这类骗局的共同结构：社区反复强调备份只能在设备要求时使用，骗子就编造“设备故障”“资产有风险”之类的例外，让用户相信“只有这一次”必须在设备之外输入备份<a class="ref" href="#s17">[17]</a>。冒充客服，就是制造这种例外最直接的办法。Trezor 给出的判断规则只有一条：除非是你自己发起、并在设备上确认的恢复，任何要求你输入钱包备份的网站、应用或个人都是骗子<a class="ref" href="#s17">[17]</a>。</p>
+        <div class="note warn">
+          <span class="h">单签是结构上的弱点</span>
+          <p>从公开描述看，交出一份备份就足以转走价值 2.8 亿美元的资产。这意味着这些资产的花费条件只依赖一组密钥，持有人一次判断失误就等于全部损失。如果放在需要多把独立密钥共同签名的钱包里，同样的失误不会直接造成全损。具体做法见“教训与防御”。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>受害者是谁、和骗子来往了多久、骗子用的是什么说辞，都没有公开。下面按 ZachXBT、zeroShadow、CertiK 和 The Block 披露的信息概括经过，只描述手法的结构。</p>
+        <ol class="steps">
+          <li><b>冒充客服，建立联系</b>据 zeroShadow，受害者是被一个冒充 Trezor “Value Wallet” 客服的人骗的<a class="ref" href="#s4">[4]</a>。“Value Wallet”具体指什么，报道没有解释；骗子通过什么渠道联系上受害者、事先掌握了多少信息，也都不清楚。</li>
+          <li><b>骗出恢复助记词</b>受害者被骗交出了与硬件钱包对应的恢复助记词<a class="ref" href="#s4">[4]</a>。Halborn 把它归为“客服类社会工程诈骗”<a class="ref" href="#s6">[6]</a>。骗子编造的理由没有公开。</li>
+          <li><b>转空钱包</b>1 月 10 日约 23:00（UTC），资金被转入两个 BTC 地址和一个 LTC 地址，合计 1,459 枚 BTC 和 205 万枚 LTC<a class="ref" href="#s1">[1]</a>。从交出助记词到转账隔了多久，没有公开。</li>
+          <li><b>立即拆分和兑换</b>攻击者马上通过多家即时兑换平台把 LTC 和 BTC 换成门罗币，又经 THORChain 把一部分 BTC 换到 Ethereum、XRP Ledger 和 Litecoin 上<a class="ref" href="#s1">[1]</a>。据 The Block 对 ZachXBT 所标地址的描述，其中一个地址收到 1,108 枚以上 BTC（约 1.05 亿美元）后被拆分了三次，205 万枚 LTC 也以类似方式被转出<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>混币</b>换成的 ETH 先汇到一个地址，再分散到多个地址，以每批约 400 ETH 的规模存入 Tornado Cash<a class="ref" href="#s5">[5]</a>。到 1 月 16 日公开披露时，资金已经流转了近六天。</li>
+        </ol>
+        <div class="note lesson">
+          <span class="h">受害者本可以在哪一步识破</span>
+          <p>只有第 1、2 步取决于受害者自己的判断。第 1 步：Trezor 明确说不会通过短信、WhatsApp、Telegram、电话或信件主动联系用户<a class="ref" href="#s9">[9]</a>，接到这类联系就应当挂断，再自己从官网找支持渠道。第 2 步：真正的恢复只能由用户自己发起、在设备上确认，任何人要你在设备之外报出或输入备份，不论理由多急，都是诈骗<a class="ref" href="#s17">[17]</a>。到了第 3 步，受害者已经无能为力：转账不可撤回，剩下的机会只有第三方在资金进入兑换服务之前把它冻结。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>ZachXBT 公布的三个被盗地址（theft addresses，即接收赃款的地址）是 <span class="addr">bc1qluxw46r55wf3dnk9c652vrt4duadm3hpuktf86</span>、<span class="addr">bc1qpsmh26ja0fzzf286zulmt9eywujc2pggj40wzm</span>（BTC）和 <span class="addr">ltc1qly43c2prj4c2e85dcspzpjd36jnapnenldnr70</span>（LTC）<a class="ref" href="#s1">[1]</a>。此后已知的去向有四条，下图和表格按公开报道整理，本站没有做链上核对。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 430" role="img" aria-labelledby="hw-funds-t hw-funds-d">
+            <title id="hw-funds-t">被盗资金的已知去向</title>
+            <desc id="hw-funds-d">受害者钱包在 1 月 10 日约 23:00（UTC）被转空，1,459 枚 BTC 和 205 万枚 LTC 进入三个赃款接收地址，之后分成四路：经即时兑换平台换成门罗币，去向无法追踪；经 THORChain 把 818 枚 BTC 换成 ETH、XRP 和 LTC，其中约 19,600 枚 ETH 分批进入 Tornado Cash，已确认约 6,300 万美元；约 4,370 万美元的 BTC 汇入一个归集地址（The Block 1 月 16 日报道）；约 70 万美元被 zeroShadow 在约 20 分钟内冻结。</desc>
+            <defs>
+              <marker id="hw-fl-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="hw-fl-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="hw-fl-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <rect class="d-box" x="270" y="10" width="240" height="48" rx="4"/>
+            <text class="d-t b" x="390" y="31" text-anchor="middle">受害者的硬件钱包（助记词已泄露）</text>
+            <text class="d-t s" x="390" y="50" text-anchor="middle">1 月 10 日约 23:00（UTC）被转空</text>
+            <line class="d-line atk" x1="390" y1="58" x2="390" y2="84" marker-end="url(#hw-fl-ah-atk)"/>
+            <rect class="d-box atk" x="250" y="86" width="280" height="56" rx="4"/>
+            <text class="d-t b atk" x="390" y="108" text-anchor="middle">三个赃款接收地址（ZachXBT 公布）</text>
+            <text class="d-t s" x="390" y="130" text-anchor="middle">1,459 BTC + 205 万 LTC，约 2.82 亿美元</text>
+            <line class="d-line" x1="390" y1="142" x2="390" y2="160"/>
+            <line class="d-line" x1="105" y1="160" x2="675" y2="160"/>
+            <line class="d-line atk" x1="105" y1="160" x2="105" y2="180" marker-end="url(#hw-fl-ah-atk)"/>
+            <line class="d-line atk" x1="295" y1="160" x2="295" y2="180" marker-end="url(#hw-fl-ah-atk)"/>
+            <line class="d-line" x1="485" y1="160" x2="485" y2="180" marker-end="url(#hw-fl-ah)"/>
+            <line class="d-line def" x1="675" y1="160" x2="675" y2="180" marker-end="url(#hw-fl-ah-def)"/>
+            <rect class="d-box atk" x="20" y="182" width="170" height="76" rx="4"/>
+            <text class="d-t b atk" x="105" y="206" text-anchor="middle">多家即时兑换平台</text>
+            <text class="d-t s" x="105" y="227" text-anchor="middle">LTC、BTC 换成门罗币</text>
+            <text class="d-t s" x="105" y="246" text-anchor="middle">金额无公开统计</text>
+            <rect class="d-box atk" x="210" y="182" width="170" height="76" rx="4"/>
+            <text class="d-t b atk" x="295" y="206" text-anchor="middle">THORChain 跨链兑换</text>
+            <text class="d-t s" x="295" y="227" text-anchor="middle">818 BTC 换成</text>
+            <text class="d-t s" x="295" y="246" text-anchor="middle">ETH、XRP、LTC</text>
+            <rect class="d-box doubt" x="400" y="182" width="170" height="76" rx="4"/>
+            <text class="d-t b" x="485" y="206" text-anchor="middle">汇入归集地址</text>
+            <text class="d-t s" x="485" y="227" text-anchor="middle">约 4,370 万美元 BTC</text>
+            <text class="d-t s" x="485" y="246" text-anchor="middle">The Block 1 月 16 日报道</text>
+            <rect class="d-box def" x="590" y="182" width="170" height="76" rx="4"/>
+            <text class="d-t b def" x="675" y="206" text-anchor="middle">被冻结</text>
+            <text class="d-t s" x="675" y="227" text-anchor="middle">约 70 万美元</text>
+            <text class="d-t s" x="675" y="246" text-anchor="middle">约 20 分钟内完成</text>
+            <line class="d-line atk" x1="105" y1="258" x2="105" y2="290" marker-end="url(#hw-fl-ah-atk)"/>
+            <line class="d-line atk" x1="295" y1="258" x2="295" y2="290" marker-end="url(#hw-fl-ah-atk)"/>
+            <text class="d-t s halo" x="304" y="279">约 19,600 ETH，每批约 400</text>
+            <rect class="d-box doubt" x="20" y="292" width="170" height="58" rx="4"/>
+            <text class="d-t b" x="105" y="316" text-anchor="middle">去向无法追踪</text>
+            <text class="d-t s" x="105" y="336" text-anchor="middle">门罗币隐藏金额和收款方</text>
+            <rect class="d-box atk" x="210" y="292" width="170" height="58" rx="4"/>
+            <text class="d-t b atk" x="295" y="316" text-anchor="middle">Tornado Cash</text>
+            <text class="d-t s" x="295" y="336" text-anchor="middle">已确认约 6,300 万美元</text>
+            <rect class="d-box soft" x="20" y="372" width="740" height="44" rx="4"/>
+            <text class="d-t s" x="390" y="399" text-anchor="middle">数字来自不同来源和时点，不能简单相加；没有任何来源公布过换成门罗币的总额</text>
+          </svg>
+          </div>
+          <figcaption>图 2：被盗资金的已知去向。被盗总额与 THORChain 一路据 ZachXBT<a class="ref" href="#s1">[1]</a><a class="ref" href="#s21">[21]</a>，Tornado Cash 一路据 CertiK<a class="ref" href="#s5">[5]</a>，归集地址据 The Block<a class="ref" href="#s3">[3]</a>，冻结据 zeroShadow<a class="ref" href="#s4">[4]</a>。红色是攻击者的转移路径，黄褐色是去向或性质不明的部分，蓝色是被拦下的部分。</figcaption>
+        </figure>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>来源与说明</th></tr></thead>
+            <tbody>
+              <tr><td>被盗 BTC</td><td class="n">1,459 BTC</td><td>转入两个 BTC 被盗地址，ZachXBT 公布<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>被盗 LTC</td><td class="n">205 万 LTC</td><td>转入一个 LTC 被盗地址，ZachXBT 公布<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>折合美元</td><td class="n">2.82 亿以上</td><td>ZachXBT；CertiK 的月度统计记为约 2.84 亿<a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>经 THORChain 换出</td><td class="n">818 BTC</td><td>约 7,800 万美元，换成约 19,631 ETH、315 万 XRP、77,285 LTC；Coinpedia 转述 ZachXBT<a class="ref" href="#s21">[21]</a></td></tr>
+              <tr><td>汇入单个 ETH 地址</td><td class="n">约 19,600 ETH</td><td>由至少 686 BTC 跨链换来；CertiK<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>存入 Tornado Cash</td><td class="n">约 6,300 万美元</td><td>CertiK 称这只是全部损失的一部分<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>汇入归集地址</td><td class="n">约 4,370 万美元</td><td>BTC；The Block，1 月 16 日报道，之后去向不明<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>被冻结</td><td class="n">约 70 万美元</td><td>zeroShadow，约 20 分钟内<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>换成门罗币</td><td class="n">不明</td><td>没有来源公布可信的总额，见下文</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note doubt">
+          <span class="h">数字之间的分歧</span>
+          <p>美元总额的差别主要来自折算时点。ZachXBT 写的是“2.82 亿美元以上”，CertiK 记为约 2.84 亿<a class="ref" href="#s7">[7]</a>，Cointelegraph 按发稿时价格把 205 万 LTC 折为约 1.53 亿、1,459 BTC 折为约 1.39 亿，合计约 2.92 亿<a class="ref" href="#s4">[4]</a>。</p>
+          <p>换成门罗币的金额分歧最大。MarketForces Africa 称约 <span class="dispute">7,800 万美元</span>经即时兑换平台换成了门罗币<a class="ref" href="#s22">[22]</a>；Coinpedia 转述 ZachXBT 的数据，同样约 7,800 万美元（818 BTC）却是经 THORChain 换成了 ETH、XRP 和 LTC<a class="ref" href="#s21">[21]</a>。金额相同、去向不同，前者很可能把两条路径混在了一起。The Block 也提醒，ZachXBT 标出的地址里看不到资金已换成门罗币的明确链上证据，它们也可能只是普通的钱包间转账<a class="ref" href="#s3">[3]</a>。门罗币本身隐藏金额和收款方，外部只能看到资金流进兑换平台，看不到换出了多少门罗币，这一路的总额因此很难核实。</p>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>一单拉高了整个季度</h3>
+        <p>CertiK 统计 2026 年 1 月全行业因攻击和诈骗损失约 3.703 亿美元，其中钓鱼类约 3.113 亿美元，而单是这一名受害者就损失约 2.84 亿美元<a class="ref" href="#s7">[7]</a>。Hacken 的第一季度报告把钓鱼与社会工程列为最大的损失类别，约 3.06 亿美元，并称这一单硬件钱包诈骗占了全季损失的一半以上<a class="ref" href="#s8">[8]</a>。这份报告被转述时出现了两个版本：Cointelegraph 更新后的版本是 44 起、4.82 亿美元<a class="ref" href="#s8">[8]</a>；CoinMarketCap 的版本是 43 起、4.645 亿美元，并说这一单占 <span class="dispute">81%</span><a class="ref" href="#s24">[24]</a>。按 2.82 亿除以 4.645 亿算只有约 61%，81% 与两个总额都对不上，本页采用“一半以上”的说法。</p>
+        <p>Halborn 称这是迄今针对加密用户个人的最大一起社会工程攻击<a class="ref" href="#s6">[6]</a>，Cointelegraph 的说法是“有记录以来最大的社会工程攻击之一”<a class="ref" href="#s4">[4]</a>。按美元计，2025 年美国老年持币者案（约 3.3 亿美元）比本案还大，排名取决于统计口径和折算时点。可以确定的是，一个人在一次诈骗里的损失，已经和同年 4 月 <a href="2026-drift-protocol.html">Drift Protocol</a>、<a href="2026-kelpdao.html">KelpDAO</a> 这样的协议级被盗处在同一量级。</p>
+        <h3>门罗币的价格异动</h3>
+        <p>CoinDesk 称，攻击者的兑换让门罗币在随后四天里上涨约 70%<a class="ref" href="#s2">[2]</a>；The Block 记下 1 月 14 日的历史新高 797.73 美元，与“一系列数百万美元规模的门罗币兑换”时间重合<a class="ref" href="#s3">[3]</a>。Coinpedia 的解释是，门罗币的交易量远小于比特币，这些大额兑换在短时间内把价格推高了六成以上<a class="ref" href="#s21">[21]</a>。</p>
+        <p>价格上涨不全是赃款造成的。The Block 指出，门罗币和 Zcash 等隐私币从 2025 年底起就在上涨<a class="ref" href="#s3">[3]</a>；U.Today 援引 10x Research，认为市场对隐私的关注和对协议升级的预期也推动了这波行情<a class="ref" href="#s16">[16]</a>。高点没有维持住：1 月 18 日门罗币已较高点回落约 26%<a class="ref" href="#s16">[16]</a>。到 2026 年 6 月，ZachXBT 记录另一个实体把约 800 万美元转进多家即时兑换平台、下单买门罗币，价格随即从 330 美元跳到 420 美元<a class="ref" href="#s23">[23]</a>。这个市场的深度浅到几百万美元的买单就能明显推动价格。这也让门罗币的价格异动成了外界察觉大额盗窃的一个信号：本案中，价格高点出现在公开披露的两天之前<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>买家信息继续外泄，冒充手法升级</h3>
+        <p>本案之后，冒充厂商的诈骗没有停，硬件钱包买家的数据也仍在外泄。2026 年 2 月，BleepingComputer 报道有人向用户邮寄印着 Trezor 和 Ledger 抬头的纸质信件，声称必须在期限前完成“验证”，用二维码把人引到钓鱼网站，网站最后一步要求输入 12、20 或 24 个单词的恢复助记词<a class="ref" href="#s18">[18]</a>。8 月，Trezor 披露物流合作方 ShipMonk 被入侵，13,689 名客户的数据外泄；9 月更新称，ShipMonk 没有按约定删除 2019 年 11 月至 2021 年 8 月的旧订单，另有约 6.7 万名美国客户的姓名、邮箱、电话和收货地址外泄。Trezor 说这是公司 2013 年成立以来第一次泄露客户的电话和收货地址<a class="ref" href="#s19">[19]</a>。这些后来的泄露和本案没有已知关联，但它们让下一次冒充更容易找准目标，也更像真的。</p>
+        <h3>洗钱通道没有变化</h3>
+        <p>即时兑换平台、THORChain、Tornado Cash 这套组合反复出现在针对个人的大额盗窃里。Coinpedia 指出，THORChain 无需许可、不做 KYC，正越来越多地被用来转移被盗资金<a class="ref" href="#s21">[21]</a>。2025 年美国老年持币者案的赃款，也是经多家即时兑换平台换成了门罗币<a class="ref" href="#s4">[4]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>冻结窗口以分钟计</h3>
+        <p>zeroShadow 称，接到链上监控团队的告警后，它实时追踪并标记了部分资金流，约 20 分钟内冻结了约 70 万美元，赶在这部分资金被换成隐私资产之前<a class="ref" href="#s4">[4]</a>。这是本案唯一公开的冻结，约占被盗总额的 0.25%。冻结由哪个平台执行、资金后来是否归还受害者，都没有公开。</p>
+        <p>其余资金很快进入了追不下去的地方。安全公司 FearsOff 的首席执行官 Marwan Hachem 把这套手法称为“教科书式”的：先用 THORSwap 把 BTC 换成 ETH，再拆成每批约 400 ETH 送进混币器；他说资金一旦经过混币器，追回的可能性通常会“降到接近零”<a class="ref" href="#s5">[5]</a>。换进门罗币的部分也一样，外部无法跟踪之后的流向。</p>
+        <h3>执法：没有公开进展</h3>
+        <p>截至 2026 年 10 月，本站没有找到与本案有关的逮捕、起诉或没收资产的公开消息。受害者的身份、国籍、是否报案都没有公开。ZachXBT 只排除了朝鲜，没有点名任何个人或团伙<a class="ref" href="#s4">[4]</a>。</p>
+        <p>可以对照的是 <a href="2024-genesis-creditor.html">Genesis 债权人案</a>。那起案件的主犯 Malone Lam 拿赃款买豪车、坐私人飞机、去汉普顿度假，引来了执法部门的注意，2024 年 9 月被起诉；2026 年 9 月 8 日，他承认参与有组织犯罪（RICO）共谋，团伙中至少另有 9 人已认罪<a class="ref" href="#s25">[25]</a>。本案攻击者从一开始就把资金送进门罗币和混币器，至今看不到类似的消费痕迹。这可能是两案进展不同的原因之一，但这只是推测，没有公开资料证实。</p>
+        <h3>已知与未知</h3>
+        <div class="compare">
+          <div>
+            <h4>已知</h4>
+            <p>被盗时间（1 月 10 日约 23:00 UTC）、币种和数量（1,459 BTC、205 万 LTC）、三个被盗地址；入口是冒充客服骗出恢复助记词；资金经即时兑换平台换成门罗币，一部分经 THORChain 跨链、再进入 Tornado Cash；约 70 万美元被冻结；ZachXBT 认为不是朝鲜所为。</p>
+          </div>
+          <div>
+            <h4>未知</h4>
+            <p>受害者是谁、是否报案；骗子如何联系上受害者、用的什么说辞、事先如何知道对方持有硬件钱包；“Value Wallet”指什么；钱包是否设了口令；最终换成门罗币的金额；冻结的资金是否归还；Trezor 是否调查过此案。本站没有找到 Trezor 就此案发表的公开声明。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给持币者</span>
+          <ul>
+            <li>恢复助记词只在两种场合出现：初始化时抄下来，以及你自己发起、在设备上确认的恢复。除此之外，任何人索要它都是诈骗，不论对方自称谁、理由多急<a class="ref" href="#s17">[17]</a>。</li>
+            <li>厂商不会打电话、发短信或私信找你。接到自称客服的联系，挂断，再自己从官网提交工单<a class="ref" href="#s9">[9]</a>。</li>
+            <li>不要给备份拍照，不要把它输进电脑、手机或任何网页<a class="ref" href="#s9">[9]</a>。</li>
+            <li>大额资产不要放在单签钱包里。用 2-of-3 这类多签，把密钥放在不同的设备和地点，一份备份泄露不足以转走资金。口令能多挡一层，但它和助记词一样可能被骗走；Shamir 多份备份（SLIP-39）防的是丢失和单份被盗，凑齐门槛份数照样能重建钱包<a class="ref" href="#s15">[15]</a>。两者都不能代替多签。</li>
+            <li>下单买硬件钱包时，用不关联真实身份的邮箱，能用邮政信箱就不用家庭住址<a class="ref" href="#s19">[19]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给钱包厂商</span>
+          <ul>
+            <li>客户数据本身就是诈骗者的目标名单。只收集发货必需的数据，按期删除，并核查合作方是否真的删了。Trezor 的 90 天删除规则限制了 ShipMonk 泄露的初始范围，合作方没删的旧数据又让受影响人数多出约 6.7 万<a class="ref" href="#s19">[19]</a>。</li>
+            <li>泄露通知要写清楚受影响的时间范围和判定方法。zeroShadow 批评 Global-e 的通知没有说明未授权访问从何时开始、持续多久、如何确定受影响人群，用户难以判断自己的风险<a class="ref" href="#s13">[13]</a>。</li>
+            <li>把“永远不会索要备份”做进流程：客服流程里没有任何一步需要用户报出备份，设备只在用户主动发起恢复时才接受备份输入<a class="ref" href="#s17">[17]</a>。</li>
+            <li>把多签做得和单签一样容易上手。这是本站的建议，不是厂商已有的表态。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给兑换服务和调查方</span>
+          <ul>
+            <li>能拦住资金的窗口以分钟计。本案唯一公开的冻结发生在约 20 分钟内<a class="ref" href="#s4">[4]</a>，即时兑换平台和跨链服务需要实时接入被盗地址告警，并有权暂停可疑兑换。</li>
+            <li>把低流动性隐私币的价格异动当作早期信号。本案门罗币的价格高点比公开披露早了两天<a class="ref" href="#s3">[3]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">ZachXBT，Telegram 频道 Investigations by ZachXBT，关于 1 月 10 日 2.82 亿美元 LTC 与 BTC 被盗的帖子（含三个被盗地址），2026-01-16；同文发于 X。<a href="https://t.me/investigations/302">t.me</a> · <a href="https://x.com/zachxbt/status/2012212936735912351">x.com</a></li>
+          <li id="s2">Oliver Knight，《Hacker steals $282 million crypto from a victim in social-engineering attack》，CoinDesk，2026-01-16。<a href="https://www.coindesk.com/business/2026/01/16/hacker-steals-usd282-milion-in-hardware-wallet-social-engineering-attack">coindesk.com</a></li>
+          <li id="s3">Daniel Kuhn，《Monero hit an all-time high earlier this week, and crypto sleuth ZachXBT thinks he knows why》，The Block，2026-01-16。<a href="https://www.theblock.co/news/regulation/2026-01-16-monero-hit-all-time-high-this-week-crypto-sleuth-zachxbt-thinks-he-knows-why-386014">theblock.co</a></li>
+          <li id="s4">Cointelegraph，《User loses $282M in one of the largest social engineering crypto heists》，2026-01-17（含 zeroShadow 的 LinkedIn 声明与 ZachXBT 的表态；原文链接已失效，引自 TradingView 转载）。<a href="https://www.tradingview.com/news/cointelegraph:d2aa4642d094b:0-user-loses-282m-in-one-of-the-largest-social-engineering-crypto-heists/">tradingview.com</a></li>
+          <li id="s5">Bhushan Akolkar，《$63M From $282M Crypto Wallet Hack Routed Through Tornado Cash》，Coinspeaker，2026-01-19（引述 CertiK 与 FearsOff；Yahoo Finance 转载）。<a href="https://finance.yahoo.com/news/63m-282m-crypto-wallet-hack-140919790.html">finance.yahoo.com</a></li>
+          <li id="s6">Rob Behnke，《Explained: The $282M Social Engineering Crypto Heist》，Halborn，2026-01-20。<a href="https://www.halborn.com/blog/post/explained-the-282-million-social-engineering-crypto-heist">halborn.com</a></li>
+          <li id="s7">CertiK Alert，2026 年 1 月损失统计（#CertiKStatsAlert），X，2026-01-31。<a href="https://x.com/CertiKAlert/status/2017568546747035835">x.com</a></li>
+          <li id="s8">Cointelegraph，《Web3 hacks cost $482M in Q1 as phishing drove majority of losses: Hacken》，2026-04-14（TradingView 转载，含当日更新）。<a href="https://www.tradingview.com/news/cointelegraph:cb2537d20094b:0-web3-hacks-cost-482m-in-q1-as-phishing-drove-majority-of-losses-hacken/">tradingview.com</a></li>
+          <li id="s9">Trezor，《Common scams and phishing affecting Trezor users》，2026-10 查阅。<a href="https://trezor.io/learn/security-privacy/personal-security-standards/scams-and-phishing">trezor.io</a></li>
+          <li id="s10">Marek Palatinus 等，《BIP-39: Mnemonic code for generating deterministic keys》（“From mnemonic to seed”一节）。<a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">github.com</a></li>
+          <li id="s11">《BIP-44: Multi-Account Hierarchy for Deterministic Wallets》《BIP-84: Derivation scheme for P2WPKH based accounts》及 SatoshiLabs《SLIP-0044: Registered coin types for BIP-0044》。<a href="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki">BIP-44</a> · <a href="https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki">BIP-84</a> · <a href="https://github.com/satoshilabs/slips/blob/master/slip-0044.md">SLIP-44</a></li>
+          <li id="s12">Trezor，《Single-share Backup on Trezor》，2026-10 查阅。<a href="https://trezor.io/guides/backups-recovery/general-standards/single-share-backup-on-trezor">trezor.io</a></li>
+          <li id="s13">zeroShadow，《Global-e and Ledger Breach: Scope Uncertainty and Physical Risk Considerations》，2026-01-05。<a href="https://zeroshadow.io/blog/global-e-ledger-breach">zeroshadow.io</a></li>
+          <li id="s14">ZachXBT，Telegram 频道帖子：2025-08-19 受害者在交易所和硬件钱包客服被冒充后损失 783 BTC，2025-08-21。<a href="https://t.me/investigations/270">t.me</a></li>
+          <li id="s15">SatoshiLabs，《SLIP-0039: Shamir's Secret-Sharing for Mnemonic Codes》（“Specification for backing up BIP-0032 Hierarchical Deterministic Wallets”一节）。<a href="https://github.com/satoshilabs/slips/blob/master/slip-0039.md">github.com</a></li>
+          <li id="s16">U.Today，《Monero (XMR) Crashes 26% From ATH, Price Rally Over?》，2026-01-18（TradingView 转载）。<a href="https://www.tradingview.com/news/u_today:536f9a8c1094b:0-monero-xmr-crashes-26-from-ath-price-rally-over/">tradingview.com</a></li>
+          <li id="s17">Trezor，《Phishing attacks and how to keep your crypto safe》，Trezor 博客，2026-10 查阅。<a href="https://trezor.io/blog/security/phishing-attacks-and-how-to-keep-your-crypto-safe">trezor.io</a></li>
+          <li id="s18">Lawrence Abrams，《Snail mail letters target Trezor and Ledger users in crypto-theft attacks》，BleepingComputer，2026-02-14。<a href="https://www.bleepingcomputer.com/news/security/snail-mail-letters-target-trezor-and-ledger-users-in-crypto-theft-attacks/">bleepingcomputer.com</a></li>
+          <li id="s19">Trezor，《Recent customer data exposed in shipping provider incident》，2026-08-13，2026-09-04 更新。<a href="https://trezor.io/blog/news/recent-customer-data-exposed-in-shipping-provider-incident">trezor.io</a></li>
+          <li id="s20">Cryptonews，《Victim Loses $282M in Bitcoin and Litecoin to Hardware Wallet Scam》，2026-01-16（含 2024 年 Genesis 债权人案的经过；TradingView 转载）。<a href="https://www.tradingview.com/news/cryptonews:88b5421e0094b:0-victim-loses-282m-in-bitcoin-and-litecoin-to-hardware-wallet-scam/">tradingview.com</a></li>
+          <li id="s21">Coinpedia，《Crypto Scam Alert: Whale Lost Over $282M in Bitcoin and Litecoin Via Social Engineering Scam》，2026-01-17（转述 ZachXBT 的 THORChain 兑换明细；TradingView 转载）。<a href="https://www.tradingview.com/news/coinpedia:536f9f299094b:0-crypto-scam-alert-whale-lost-over-282m-in-bitcoin-and-litecoin-via-social-engineering-scam/">tradingview.com</a></li>
+          <li id="s22">Julius Alagbe，《XMR Plunges by 12% over Hack-Related Sell Pressures》，MarketForces Africa，2026-01-17。<a href="https://dmarketforces.com/xmr-plunges-by-12-over-hack-related-sell-pressures/">dmarketforces.com</a></li>
+          <li id="s23">ZachXBT，Telegram 频道帖子：一个 Tron 地址收到 1.202 亿 USDT 后转入即时兑换平台，门罗币价格从 330 美元跳到 420 美元，2026-06-12。<a href="https://t.me/investigations/341">t.me</a></li>
+          <li id="s24">CoinMarketCap，《Web3 Lost $464.5M to Hacks in Q1 2026, Reports Hacken》，2026-04-14。<a href="https://coinmarketcap.com/academy/article/web3-lost-dollar4645m-to-hacks-in-q1-2026-reports-hacken">coinmarketcap.com</a></li>
+          <li id="s25">Jonathan Greig，《Scammer behind $245 million crypto heist pleads guilty to RICO charges》，The Record，2026-09-08。<a href="https://therecord.media/scammer-behind-245-million-crypto-heist-pleads-guilty-rico">therecord.media</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

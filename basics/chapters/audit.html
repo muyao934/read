@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>跨链安全审计｜区块链基础知识</title>
+<meta name="description" content="什么是审计、谁有资格做、怎么做；链下与运营审计、CCSS；怎么读报告；核对链上代码">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="audit">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 10 章</p>
+    <h1>跨链安全审计</h1>
+    <p class="lede">什么是安全审计、谁有资格做、具体怎么做；跨链桥的审计为什么要远远超出合约，链下系统和运营又怎么审；怎样证明链上跑的就是审过的那份代码。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">安全审计 = 一支独立的团队，在约定的时间和范围内，审查某一版代码和系统设计，把发现的问题写成报告</p>
+  <p class="lead">它是对<b>某个时间点、某个版本、某个范围</b>的专业体检，不是安全保证，也不是执照。对跨链桥来说，要审的远不止合约：链下的 Validator 程序、私钥怎么保管、管理员能做什么、出事了怎么办，都在范围里。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见说法里，对的部分</h3>
+      <ul>
+        <li>上线前请外部团队审计，是行业的基本做法</li>
+        <li>审计能找出很多开发团队自己看不出的问题</li>
+        <li>大桥一般会请多家审计。Wormhole 官方文档列出 Trail of Bits、Neodyme、Kudelski、OtterSec、CertiK、Hacken、Zellic、Coinspect、Halborn、Cantina 十家</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>“审计过”不等于安全</b>。Nomad 2022-06 刚完成 Quantstamp 审计，报告里的 QSP-19 已经预示了类似问题；两个月后被盗约 1.9 亿美元（rekt.news）</li>
+        <li><b>审计不是执照</b>。智能合约审计没有政府颁发的从业资格，谁都可以自称审计方。托管和钥匙管理这一块倒有一个行业标准和个人认证（CCSS 与 CCSSA，见下文），但它也不是政府执照</li>
+        <li><b>审计只对报告里写的那个版本有效</b>。之后改的每一行代码都不在覆盖范围内</li>
+        <li><b>只审合约远远不够</b>。Ronin、Harmony、Orbit、Multichain 都不是合约漏洞，是钥匙出了问题（第 03 章）</li>
+        <li><b>“Acknowledged”不是“已修复”</b>。它表示项目方知道这个问题，但决定不改</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="scope">
+  <h2 class="eyebrow">审什么</h2>
+  <p class="lead">普通 DeFi 合约审计主要看合约。跨链桥的“证明者”在链下，资产在两条链上，所以范围要大得多。下表每一层后面都标了本板块讲过它的章节。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>层</th><th>要看什么</th><th>历史教训</th><th>本板块</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 两条链上的合约</b></td><td>验签、签名里绑定了哪些字段、防重放、门槛和名单的保护、铸币 / 放款权限、初始化、升级、两边账目对得上</td><td>Wormhole（验签被绕过）、Nomad（零值根被设为可信）、Qubit（遗留函数）</td><td><a href="bridges.html#sig">第 03 章</a>、<a href="usdc.html#roles">第 02 章</a>、<a href="evm.html#calls">第 09 章</a></td></tr>
+      <tr><td><b>② 链下程序</b>（Validator / relayer）</td><td>怎么读事件、等多少确认、重组时怎么回退、签名前是否重新核对、同一笔会不会签两次、出错能否恢复</td><td>BNB Token Hub（证明校验库被伪造）</td><td><a href="ethereum.html#finality">第 05 章</a>、<a href="evm.html#events">第 09 章</a></td></tr>
+      <tr><td><b>③ RPC 和节点</b></td><td>Validator 读的数据从哪来；各 Validator 是否用了同一个 RPC；RPC 被篡改会怎样</td><td>CCIP 官方服务限制文档原话：在交易数据不能被多个节点独立验证的链上，“被攻破的 RPC 提供方可能篡改交易数据，直至导致桥内资金被盗”</td><td><a href="qtum.html#janus">第 01 章</a></td></tr>
+      <tr><td><b>④ 私钥</b></td><td>怎么生成、存在哪（硬件、多方计算）、谁能碰、是否真由不同的人和机器保管、怎么轮换、丢了怎么办</td><td>Ronin（9 把里 5 把被拿到）、Harmony（2/5）、Multichain（钥匙都在 CEO 手里）</td><td><a href="bridges.html#hacks">第 03 章</a></td></tr>
+      <tr><td><b>⑤ 管理权</b></td><td>owner、代理 admin、masterMinter 等每个角色能做什么、由谁控制、有没有延迟期、紧急暂停怎么触发</td><td>Poly Network（跨链消息换掉了守门人公钥）</td><td><a href="usdc.html#roles">第 02 章</a>、<a href="l2.html">第 06 章</a></td></tr>
+      <tr><td><b>⑥ 运营</b></td><td>限额 / 限速、储备与流通对账、监控告警、出事时谁做什么、演练过没有</td><td>Nomad：漏洞公开后被很多地址照抄攻击，跟着取钱（第 03 章）；有限额和暂停机制，损失才会有上限</td><td><a href="cctp-ccip.html#ccip-tokens">第 04 章</a></td></tr>
+      <tr><td><b>⑦ 前端和依赖</b></td><td>网页被篡改、域名被劫持、用户的无限授权、第三方库</td><td>Socket（攻击者利用用户给聚合器的无限授权）</td><td><a href="atlas.html#liquidity">图鉴</a></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">还有两条链各自的特性：确认和最终性规则不同、地址规则不同、chainId 是否唯一（Qtum 的 81 与 Japan Open Chain 重复，第 01 章）。这些都会改变“签名里该绑定什么、该等多久”。</p>
+</section>
+
+<section id="methods">
+  <h2 class="eyebrow">怎么审：方法</h2>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>方法</th><th>做什么</th><th>擅长</th><th>盲区</th><th>常用工具 / 平台</th></tr></thead>
+    <tbody>
+      <tr><td>人工代码审查</td><td>审计员逐行读代码，对照设计文档推演攻击路径</td><td>业务逻辑错误、权限设计问题、跨组件的组合漏洞</td><td>依赖审计员的经验和投入时间</td><td>—</td></tr>
+      <tr><td>静态分析</td><td>不运行代码，按规则扫描已知漏洞模式</td><td>快、便宜，能扫出常见问题</td><td>误报多；看不懂业务意图</td><td>Slither（Solidity / Vyper 静态分析框架）</td></tr>
+      <tr><td>模糊测试 / 不变量测试</td><td>自动生成大量随机输入，检查“永远应该成立的规则”有没有被打破，比如“铸出的总量 ≤ 锁定的总量”</td><td>边界条件、想不到的输入组合</td><td>不变量写错或写漏就测不出来</td><td>Echidna、Foundry 的 invariant 测试</td></tr>
+      <tr><td>形式化验证</td><td>用数学方法证明代码在所有输入下都满足规格</td><td>关键逻辑可以得到“证明”级别的保证</td><td>贵、慢；规格本身写错，证明也没意义</td><td>Certora 等</td></tr>
+      <tr><td>竞争性审计</td><td>公开悬赏，很多安全研究员同时看同一份代码，按发现的问题分奖金</td><td>人多、视角多</td><td>质量参差；通常只看合约</td><td>Code4rena、Sherlock、Cantina</td></tr>
+      <tr><td>漏洞赏金</td><td>上线后长期悬赏，谁发现漏洞谁拿奖金</td><td>持续覆盖、激励真实攻击者转为报告者</td><td>不是事前保证</td><td>Immunefi</td></tr>
+      <tr><td>基础设施与运营审查</td><td>渗透测试服务器和接口，审查密钥管理和操作流程</td><td>覆盖钥匙和链下系统，正是桥最常出事的地方</td><td>需要的是另一类专业能力</td><td>CCSS（加密货币安全标准，有专门的审计员认证 CCSSA）</td></tr>
+      <tr><td>监控与应急</td><td>上线后实时监控异常，出事时快速响应</td><td>缩短损失窗口</td><td>不防漏洞本身</td><td>SEAL 911（7×24 应急响应）、SEAL Safe Harbor（白帽救援的法律保护框架）</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="offchain">
+  <h2 class="eyebrow">怎么审：链下和运营</h2>
+  <p class="lead">合约审计读的是代码。链下系统的风险大多不在代码里，而在“谁能碰到钥匙、谁能改配置、流程有没有真的照着做”。所以审法也不一样：审计方要读云账号的权限配置、抽查操作记录、到场见证生成钥匙，还要实际去攻击服务器。</p>
+  <div class="tbl"><table class="mw-900">
+    <thead><tr><th>对象</th><th>要回答的问题</th><th>审计方怎么查</th><th>项目方要拿出的证据</th></tr></thead>
+    <tbody>
+      <tr><td><b>签名服务</b>的代码</td><td>签名前是不是自己去链上核对了事件、金额、收款人和确认数；同一笔会不会签两次；自动放行上限是不是写死在签名服务里；签出的是不是低 S 签名</td><td>代码审查，和合约审计一样逐行读；再用测试网构造伪造的“已批准”记录，看它签不签</td><td>源码和 commit、部署配置、测试用例</td></tr>
+      <tr><td><b>云账号和 KMS</b></td><td>谁能调用签名（KMS 的 <code>Sign</code>）、谁能改钥匙策略、谁能改签名服务的代码和配置；不同链的签名钥匙是不是真在不同账号</td><td>读 IAM 策略、KMS 钥匙策略、账号结构；看 CloudTrail 日志里实际调用过 <code>Sign</code> 的身份，和策略对得上</td><td>账号清单、策略导出、近期日志</td></tr>
+      <tr><td><b>服务器和网络</b></td><td>后端被攻破后能走多远；管理端口、内部接口是否暴露；部署流水线谁能改</td><td>渗透测试：从外网、从一台被攻破的内部机器分别打</td><td>网络拓扑、测试环境、部署权限清单</td></tr>
+      <tr><td><b>多签和硬件钱包</b></td><td>冷钱包多签的持钥人是不是真的分属不同人、不同地点；有没有两把钥匙放在同一台设备上</td><td><b>到场见证钥匙仪式</b>（key ceremony）：看设备开箱、生成地址、记录备份去向；核对链上的签名人地址</td><td>持钥人名单、仪式记录、备份存放记录</td></tr>
+      <tr><td><b>运营流程</b></td><td>大额审批是不是每笔都有审核员签名；换钥匙、补额度、冷转热是不是照文档做的</td><td>抽样：随机挑几笔大额转账、几次补额度，逐笔对审批记录和链上交易</td><td>审批记录、操作日志、值班表、演练记录</td></tr>
+      <tr><td><b>对账和储备</b></td><td>储备是不是一直 ≥ 负债；对账是谁算的，后端被攻破了它还准不准</td><td>自己按链上数据重算一遍，和项目方的结果对比</td><td>对账脚本、历史对账结果、看门狗告警记录</td></tr>
+      <tr><td><b>应急</b></td><td>发现异常后多久能暂停；守护者钥匙在谁手里；恢复要谁批准</td><td>桌面推演，或在测试网实际演练一次暂停和恢复</td><td>应急预案、演练记录</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">和合约审计最大的不同：合约审一次，代码就固定了；运营审计看的是“这段时间做得怎么样”，所以要定期重做。CCSS 的“安全审计与渗透测试”一项，Level 3 要求至少每年一次外部审计或渗透测试。</p>
+</section>
+<section id="who">
+  <h2 class="eyebrow">谁有资格</h2>
+  <p class="sub">没有执照，只有记录：怎么判断一个审计方靠不靠谱</p>
+  <p class="lead">智能合约审计没有法定的从业资格，也没有统一的认证考试。“有资格”在这个行业里的意思是：<b>有可以公开查验的过往记录</b>，并且这些记录和你要审的东西相关。唯一的例外是托管和钥匙管理：这一块有 CCSS 标准和配套的个人认证 CCSSA（下面单独讲），但它只管托管运营，不管合约代码。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>类型</th><th>是什么</th><th>适合审什么</th></tr></thead>
+    <tbody>
+      <tr><td>专业审计公司</td><td>固定团队，签合同、约定范围和时间，交付正式报告</td><td>合约主审；有些也做链下代码和基础设施</td></tr>
+      <tr><td>竞争性审计平台</td><td>平台组织公开竞赛，项目方出奖金池，安全研究员（Code4rena 叫 Warden）提交问题，由裁判定级和定奖</td><td>合约的第二道审查，补充视角</td></tr>
+      <tr><td>漏洞赏金平台</td><td>托管长期赏金计划，按严重程度付奖金</td><td>上线后的持续覆盖</td></tr>
+      <tr><td>形式化验证团队</td><td>专门写规格、做数学证明</td><td>验签、记账这类最关键、最适合写成规则的逻辑</td></tr>
+      <tr><td>传统信息安全公司</td><td>渗透测试、密钥管理和运营流程审查；ISO 27001、SOC 2 这类认证属于这一类</td><td>服务器、Validator 运行环境、密钥保管、审批流程</td></tr>
+      <tr><td>独立安全研究员</td><td>个人，常在竞争平台上有公开排名</td><td>按个人专长</td></tr>
+    </tbody>
+  </table></div>
+  <h3>挑审计方时问这八个问题</h3>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>问题</th><th>为什么要问</th></tr></thead>
+    <tbody>
+      <tr><td>有没有公开的过往报告，能不能看几份</td><td>报告质量就是能力的证据</td></tr>
+      <tr><td>审过跨链桥或跨链消息协议吗</td><td>验签、重放、最终性这些问题，没审过桥的人容易漏</td></tr>
+      <tr><td>具体是谁来审、各投入多少人·周</td><td>同一家公司，资深员和新人差别很大</td></tr>
+      <tr><td>范围包不包括链下 Validator、RPC、私钥和运营</td><td>桥最常出事的恰恰是这些</td></tr>
+      <tr><td>会不会用模糊测试或形式化验证，还是只人工读</td><td>方法越多，盲区越少</td></tr>
+      <tr><td>修复后会不会复查（fix review）</td><td>不复查，“已修复”只是项目方自己说的</td></tr>
+      <tr><td>报告里会不会写明 commit hash 和范围外的内容</td><td>没有这些，报告没法和实际部署对应</td></tr>
+      <tr><td>和开发团队有没有利益关系</td><td>自己写的代码自己审，不算独立审计</td></tr>
+    </tbody>
+  </table></div>
+  <h3>托管这一块：CCSS 标准和 CCSSA 认证</h3>
+  <p>托管桥的钱放在冷热钱包和云端 HSM 里，这部分要审的是“钥匙和流程”，不是代码。行业里专门管这个的是 <b>CCSS</b>（CryptoCurrency Security Standard，加密货币安全标准），由非营利组织 C4（CryptoCurrency Certification Consortium）维护。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>项目</th><th>内容（C4 官网，2026-10-30 读取）</th></tr></thead>
+    <tbody>
+      <tr><td>审的对象</td><td>一个具体的“系统”，不是整个公司。CCSS 不替代 ISO 27001 这类通用信息安全标准，是在它们之上补加密资产特有的要求</td></tr>
+      <tr><td>审什么</td><td>当前版本 v9.0 共 41 项控制。旧版公开仓库分两大类：钥匙管理（钥匙/种子生成、钱包创建、钥匙存储、钥匙使用、钥匙泄露预案、持钥人的授予和撤销）和运营（安全审计与渗透测试、数据清除、储备证明、审计日志）</td></tr>
+      <tr><td>等级</td><td>Level 1、2、3，逐级更严。例：“钥匙使用”一项，Level 2 要求签名前通过可信渠道核对收款地址和金额，自动签名的系统要按白名单和额度上限核对后再签；Level 3 要求访问钥匙需要 3 个以上认证因素、持钥人做背景调查</td></tr>
+      <tr><td>谁来审</td><td><b>CCSSA</b>（CCSS 认证审计员）。要上 2 天基础课 + 2 天审计员课，通过 100 题、90 分钟、70 分及格的考试，<b>每年重新认证</b>。和被审系统有雇佣、亲属、持币或持股关系的不能审</td></tr>
+      <tr><td>怎么审</td><td>审的是控制措施<b>在过去一段时间里有没有真的在执行</b>，通常每年一次、覆盖之前 12 个月；出证书前还要由另一位审计员（CCSSA-PR）做独立的同行复核</td></tr>
+      <tr><td>谁拿过</td><td>C4 公开名单里有 Kraken、OKX、KuCoin、BitGo、Fireblocks 等的托管或冷热钱包系统，等级从 Level 1 到 Level 3 不等</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">两点要注意：① CCSS 看的是“过去一段时间的执行记录”，一个刚上线的系统还没有记录，第一年能做的是按 CCSS 做差距评估，把流程搭对；② 公开名单里的 CCSSA 有些就在合约审计公司任职（名单里能看到 OpenZeppelin、EY 的人），所以合约审计和托管审计可以由同一家公司的不同团队做，但要分别签范围。本页提到的公司和平台名字只作为例子，不代表推荐。</p>
+</section>
+
+<section id="process">
+  <h2 class="eyebrow">怎么审：流程</h2>
+  <p class="sub">一次审计从准备到上线</p>
+  <div class="bit wide"><div class="anim" data-anim="flow"></div></div>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>阶段</th><th>项目方要做的</th><th>审计方做的</th></tr></thead>
+    <tbody>
+      <tr><td>① 准备</td><td><b>冻结代码</b>，给出 commit hash；写清范围（哪些文件、哪些链下组件）；提供设计文档、信任假设、已知问题、测试和部署配置</td><td>评估工作量，给出人·周和报价</td></tr>
+      <tr><td>② 启动</td><td>讲解系统设计和资金流向</td><td>建立威胁模型：谁可能攻击、能拿到什么、最坏会怎样</td></tr>
+      <tr><td>③ 审查</td><td>随时回答问题</td><td>人工审查 + 工具（静态分析、模糊测试、必要时形式化验证）</td></tr>
+      <tr><td>④ 出初稿</td><td>—</td><td>列出发现，每条带严重程度、复现方式和修复建议</td></tr>
+      <tr><td>⑤ 修复</td><td>逐条修复，或写明为什么不修</td><td>—</td></tr>
+      <tr><td>⑥ 复查</td><td>给出修复后的 commit</td><td>确认修复有效、没有引入新问题；每条标 Resolved / Partially / Acknowledged</td></tr>
+      <tr><td>⑦ 终版报告</td><td>公开报告</td><td>报告写明最终审查的 commit</td></tr>
+      <tr><td>⑧ 部署核对</td><td><b>证明链上部署的就是报告里的那个 commit</b>（见下文）</td><td>—</td></tr>
+      <tr><td>⑨ 上线后</td><td>漏洞赏金、监控告警、应急预案；以后每次升级都要重新审</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <h3>准备阶段最值钱的一份材料：不变量清单</h3>
+  <p><b>不变量</b>是“无论发生什么都必须成立的规则”。项目方自己先写出来，审计方就知道该守住什么，模糊测试也有了检查目标。以托管桥为例：</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>不变量</th><th>被打破意味着</th></tr></thead>
+    <tbody>
+      <tr><td>储备（冷 + 热）= USDC.e 总供应 + 已存入未铸币 + 已销毁未放款 + 已取消待退款 + 待处理误转</td><td>超发或漏记，最大的风险</td></tr>
+      <tr><td>每个转账 ID 最多被执行一次；已取消的 ID 永远不能再执行；已执行的 ID 不能取消</td><td>重复付款，或既退款又放款</td></tr>
+      <tr><td>每次存入之后，网关的热余额 ≤ 热余额上限</td><td>热钱包暴露的钱超出预期</td></tr>
+      <tr><td>任意 24 小时内，运营密钥放出的总额 ≤ 24 小时上限</td><td>钥匙泄露后的损失没有上限</td></tr>
+      <tr><td>只有守护者能暂停，只有多签能恢复和改参数</td><td>权限被绕过</td></tr>
+    </tbody>
+  </table></div>
+  <h3>工期和费用由什么决定</h3>
+  <p>没有公开的统一价格。合约审计通常按“人·周”报价，审计方要先看过代码才会报。决定工作量的主要因素：</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>因素</th><th>为什么影响工作量</th></tr></thead>
+    <tbody>
+      <tr><td>代码量（不含测试和注释的行数）</td><td>报价的基础；自己先统计好，写进范围</td></tr>
+      <tr><td>是否涉及多条链、签名、资金托管</td><td>跨链要两边一起推演，验签和记账要逐个字段核对</td></tr>
+      <tr><td>文档和测试是否齐全</td><td>文档不全，审计员要花时间猜设计意图；测试覆盖低，审计员要自己补</td></tr>
+      <tr><td>范围里有没有链下组件</td><td>签名服务、后端和云配置要另外的人·周，有时要另一类专业团队</td></tr>
+      <tr><td>要不要复查、要几轮</td><td>每轮修复后复查都要单独排期</td></tr>
+      <tr><td>托管运营审计（CCSS）</td><td>按 C4 的说明，费用由审计员和项目方自己谈，还要另付同行复核和 C4 的登记费</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">排期也要算进上线计划：审计方要排档期，修复和复查还要再加时间。代码还没冻结就开审，审到一半代码又变了，前面的工作就白做了。</p>
+  <h3>问题怎么定级</h3>
+  <p>各家写法不同，但都围绕“会不会丢钱”。两个公开的定级标准：</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Code4rena</span><h4>三级</h4></div>
+      <p><b>High</b>：资产可以被直接偷走、丢失或被控制（或者有不靠空想假设的间接攻击路径）。<b>Medium</b>：资产没有直接风险，但协议功能或可用性受影响，或在有明确前提的假设路径下会泄露价值。<b>QA</b>：低风险问题，以及治理和中心化风险（包括管理员权限）。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Immunefi</span><h4>四级</h4></div>
+      <p>Critical、High、Medium、Low，主要按影响定。智能合约的 Critical 包括：直接盗取用户资金（无论静止还是在途）、永久冻结资金等。</p></div>
+  </div>
+</section>
+<section id="read">
+  <h2 class="eyebrow">怎么读报告</h2>
+  <p>勾上报告里能找到答案的项。没勾的，就是这份报告<b>没法替你回答</b>的风险。“载入 Qtum 桥的现状”按 Qtum 桥目前能查到的公开信息预设。</p>
+  <div class="tool">
+    <div class="ctrl gap-6">
+      <button class="btn ghost" type="button" data-rd="all">全部勾上</button>
+      <button class="btn ghost" type="button" data-rd="none">全部清空</button>
+      <button class="btn ghost" type="button" data-rd="mine">载入 Qtum 桥的现状</button>
+    </div>
+    <div class="stack-6" id="rdBoxes"></div>
+    <div class="out" id="rdOut" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="verify">
+  <h2 class="eyebrow">关键一步</h2>
+  <p class="lead">报告再好，如果部署的不是报告里的版本，就等于没审。下面用 Qtum 桥（<code>qtumproject/bridge-evm-contracts</code>）的主网合约走一遍，每一步都是实际做过的。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>步骤</th><th>怎么做</th><th>Qtum 桥的结果（2026-10-29）</th></tr></thead>
+    <tbody>
+      <tr><td>① 找到真正的逻辑合约</td><td>用户交互的是代理，要读代理指向的实现合约地址</td><td>以太坊桥代理 <code>0x8189…6Aea0</code> → 实现 <code>0xFBe4…3800</code></td></tr>
+      <tr><td>② 查源码验证</td><td>在 Sourcify / Etherscan 查实现合约是否“源码与字节码一致”</td><td>Sourcify：实现合约 <b>exact match</b>（字节码和编译元数据都一致），Solidity 0.8.9、EVM 版本 london</td></tr>
+      <tr><td>③ 和仓库对比</td><td>把验证过的源码逐个文件和某个 commit 对比</td><td>18 个合约源文件和 <code>bridge-evm-contracts</code> 的 commit <code>a351a067</code>（2024-09-30）<b>逐字节相同</b></td></tr>
+      <tr><td>④ 和报告的 commit 对比</td><td>报告应写明审计的 commit；看部署的 commit 是否就是它，或只差已复查过的修复</td><td>CertiK 页面没有公开报告正文，审计的 commit 无法确认。部署的 commit 比审计日期晚半年</td></tr>
+      <tr><td>⑤ 审计后改了什么</td><td>看审计日期到部署 commit 之间的提交记录</td><td>2024-05-15 新增 <code>upgradeToWithSigAndCall</code>；2024-09-30 新增 BridgeV2 / USDCManager（主网没有部署这两个）</td></tr>
+      <tr><td>⑥ 另一条链也要核对</td><td>没有验证服务的链，可以和已验证的同一份实现比字节码</td><td>Qtum 桥实现 <code>0xB4f3…2810</code> 的运行时字节码和以太坊上那份<b>完全相同</b>（各 19,772 字节，只有 9 处自己的部署地址不同，编译元数据哈希一致）；也含 <code>upgradeToWithSigAndCall</code> 的选择器 <code>0x3f65ca94</code></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">结论：两条链上跑的是同一份代码，就是 commit <code>a351a067</code>；它包含审计之后才加入的升级函数，这部分代码<b>没有被 2024-03 的审计覆盖</b>。</p>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li><a href="https://docs.code4rena.com/competitions/severity-categorization" rel="noopener">Code4rena：Severity categorization</a>；<a href="https://docs.code4rena.com/" rel="noopener">Code4rena 文档</a>（Warden、裁判）</li>
+    <li><a href="https://immunefi.com/immunefi-vulnerability-severity-classification-system-v2-3/" rel="noopener">Immunefi：Vulnerability Severity Classification v2.3</a></li>
+    <li><a href="https://owasp.org/www-project-smart-contract-top-10/" rel="noopener">OWASP Smart Contract Top 10（2025）</a>；<a href="https://cryptoconsortium.org/standards/CCSS" rel="noopener">CCSS（CryptoCurrency Security Standard）</a>；<a href="https://securityalliance.org/" rel="noopener">SEAL</a>（SEAL 911、Safe Harbor）</li>
+    <li><a href="https://github.com/crytic/slither" rel="noopener">Slither</a>；<a href="https://github.com/crytic/echidna" rel="noopener">Echidna</a>；<a href="https://docs.sherlock.xyz/" rel="noopener">Sherlock</a></li>
+    <li><a href="https://wormhole.com/docs/protocol/security/" rel="noopener">Wormhole：Security</a>（审计方名单、漏洞赏金）；<a href="https://rekt.news/nomad-rekt/" rel="noopener">rekt.news：Nomad</a>（Quantstamp 审计与 QSP-19）；<a href="https://docs.chain.link/ccip/service-limits/evm" rel="noopener">CCIP 服务限制</a>（RPC 风险原话）</li>
+    <li><a href="https://skynet.certik.com/projects/qtum" rel="noopener">CertiK：Qtum 项目页</a>（审计与渗透测试记录，2026-10-29 读取）</li>
+    <li>Sourcify API：以太坊主网 <code>0xFBe4F5C6…3800</code>（exact match）与 <code>0x8189902E…6Aea0</code>（match）的验证结果与源码；GitHub <code>qtumproject/bridge-evm-contracts</code> 的提交记录与 commit <code>a351a067</code> 源码；qtum.info API：Qtum 桥实现 <code>0xB4f39881…2810</code> 的运行时字节码；以太坊 <code>eth_getCode</code></li>
+    <li>C4：<a href="https://cryptoconsortium.org/certifications/ccssa/" rel="noopener">CCSSA 认证</a>（培训、考试、年度续证、41 项控制）；<a href="https://cryptoconsortium.org/how-to-start-a-ccss-audit/" rel="noopener">How to Start a CCSS Audit</a>（12 个月审计期、CCSSA-PR 同行复核、利益冲突、费用）；<a href="https://cryptoconsortium.org/ccss-audits/" rel="noopener">CCSS 认证系统与审计员名单</a>；<a href="https://github.com/CryptoConsortium/CCSS/tree/c491c9861c62a554d3186db081393499368f29c7/_data/aspects" rel="noopener">CCSS 旧版公开仓库</a>（各项控制原文，如 1.04 Key Usage、2.01 Security Audits / Pentests、2.03 Proof of Reserve）。2026-10-30 读取</li>
+  </ol>
+  <p>核查日期 2026-10-29；CCSS 部分 2026-10-30 补充。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // 审计覆盖的是某个 commit：代码往后走，覆盖范围不会自动跟着走
+  A.flow = {h:270,
+    b:[['git',2,6,96,30,'代码提交（时间 →）'],['cov',2,40,96,24,'审计覆盖到的版本'],['dep',2,70,96,24,'链上部署的版本']],
+    it:[
+      {id:'c1', h:blk('…'), x:10, y:22}, {id:'c2', h:blk('A'), x:30, y:22, hide:1}, {id:'c3', h:blk('B'), x:52, y:22, hide:1}, {id:'c4', h:blk('C'), x:80, y:22, hide:1},
+      {id:'ca', h:chip('审计 A','--accent'), x:30, y:52, hide:1}, {id:'cb', h:chip('复查到 B','--ok'), x:52, y:52, hide:1},
+      {id:'d', h:chip('部署','--eth'), x:52, y:82, hide:1}],
+    s:[
+      {c:'开发阶段，代码一直在改。这时候请审计没有意义，改完一半的代码审了也白审。', lit:['git']},
+      {c:'冻结代码：给审计方一个确定的 commit A。审计只看这个版本。', set:{c2:{hide:0, h:blk('A','new')}, ca:{hide:0}}, lit:['git','cov']},
+      {c:'审计方列出问题，项目方修复，得到 commit B。审计方复查 B，确认修复有效、没引入新问题。现在审计覆盖的是 B。', set:{c2:{h:blk('A')}, c3:{hide:0, h:blk('B','new')}, ca:{hide:1}, cb:{hide:0}}, lit:['cov']},
+      {c:'部署时要证明：链上跑的就是 B。办法是查源码验证（Sourcify / Etherscan），再拿验证过的源码和 B 逐个文件对比。', set:{c3:{h:blk('B')}, d:{hide:0}}, lit:['dep']},
+      {c:'上线后又加了一个功能，变成 commit C，并升级上链。C 里新增的代码，审计从来没看过。', set:{c4:{hide:0, h:blk('C','dead')}, d:{x:80}}, bad:['dep']},
+      {c:'Qtum 桥正是这样：CertiK 审计在 2024-03；2024-05 加了 upgradeToWithSigAndCall；主网部署的是 2024-09 的版本。可升级的合约每次升级前都要重新审，或者至少审这次的改动；不可升级的合约则是每部署一个新合约就审一次。', lit:['git','cov','dep']},
+    ]};
+  // 读报告的七个问题
+  const RD = [
+    {k:'commit', t:'报告写明了审计的 commit hash', risk:'没法证明链上部署的代码被审过', mine:'CertiK 页面没有公开报告正文，审计的 commit 无法确认'},
+    {k:'scope', t:'报告列出了范围内的文件，以及链下组件（Validator、RPC、私钥）', risk:'没写进范围的东西，等于没审', mine:'范围未公开'},
+    {k:'status', t:'每个问题都有修复后的状态（Resolved / Partially / Acknowledged）', risk:'有些问题可能从来没修', mine:'渗透测试 4 个已解决、4 个 Acknowledged；代码审计页面仍显示“修复中 99%”'},
+    {k:'ack', t:'每个 Acknowledged 的问题，你都知道影响是什么、并且能接受', risk:'这些是已知但没修的风险', mine:'渗透测试有 1 个 High（中心化）是 Acknowledged，具体内容看不到'},
+    {k:'match', t:'链上字节码和报告里的 commit 一致', risk:'部署的可能根本不是审过的那份', mine:'部署的是 commit a351a067（已逐字节核对），但它不是审计时的版本'},
+    {k:'nochange', t:'审计之后没有改过代码', risk:'改过的部分没人审过', mine:'审计后新增了 upgradeToWithSigAndCall，主网两侧都在用'},
+    {k:'offchain', t:'链下 Validator、私钥、管理权限都审过', risk:'桥最常出事的地方没被覆盖', mine:'公开记录里看不到'},
+  ];
+  const rdBoxes = document.getElementById('rdBoxes'), rdOut = document.getElementById('rdOut');
+  rdBoxes.innerHTML = RD.map(r => `<label for="rd_${r.k}" style="display:flex;gap:8px;align-items:flex-start"><input id="rd_${r.k}" type="checkbox" style="width:auto;margin-top:4px">${r.t}</label>`).join('');
+  let showMine = false;
+  function rdRun(){
+    const miss = RD.filter(r => !document.getElementById('rd_' + r.k).checked);
+    rdOut.innerHTML = (miss.length ? miss.map(r => `<span><b style="color:var(--warn)">缺</b> ${r.t}：${r.risk}${showMine ? `<span class="m">（Qtum 桥：${r.mine}）</span>` : ''}</span>`).join('')
+      : '<span><b style="color:var(--ok)">七项都能从报告里找到答案</b></span>') + `<span class="m">共 ${RD.length} 项，${RD.length - miss.length} 项有答案</span>`;
+  }
+  RD.forEach(r => document.getElementById('rd_' + r.k).addEventListener('change', rdRun));
+  document.querySelectorAll('[data-rd]').forEach(b => b.addEventListener('click', () => {
+    const m = b.dataset.rd; showMine = m === 'mine';
+    RD.forEach(r => document.getElementById('rd_' + r.k).checked = m === 'all');
+    rdRun();
+  }));
+  rdRun();
+  Guide.mount(A);
+})();
+</script>
+</body>
+</html>

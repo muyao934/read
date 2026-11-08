@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SVB 倒闭与 USDC 脱锚｜区块链大事记</title>
+<meta name="description" content="2023 年 3 月硅谷银行倒闭，Circle 有 33 亿美元 USDC 储备卡在那里，USDC 一度跌破 0.87 美元，DAI 和 Frax 跟着脱锚：储备构成、周末一级市场停摆、MakerDAO 的 PSM 与紧急提案、政府兜底，以及后来的 GENIUS 法案。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-usdc-depeg">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　<a href="../index.html#cat-crash">崩盘与暴雷</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>SVB 倒闭与 USDC 脱锚</h1>
+    <p class="lede">2023 年 3 月 10 日，硅谷银行（SVB）被监管机构关闭。稳定币 USDC 的发行方 Circle 有 33 亿美元储备存在那里，约占全部储备的 8%。那个周末银行不营业，Circle 的赎回停了，USDC 在交易所一度跌破 0.87 美元，抵押品里有大量 USDC 的 DAI 也跟着脱锚。2022 年的几次崩盘，风险都来自加密行业内部；这一次风险从传统银行传了进来，直到政府宣布全额保障存款，情况才好转。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">USDC 是 Circle 发行的美元稳定币，承诺 1 枚随时能换回 1 美元。2023 年 3 月 11 日 Circle 公布，储备的 77% 是三个月内到期的美国国债，23% 是存在几家银行的现金，其中 33 亿美元在前一天被关闭的 SVB<a class="ref" href="#s1">[1]</a>。能直接按 1 美元向 Circle 赎回的，只有经过审核的直接客户，多是交易所和机构；其他人只能在交易所买卖<a class="ref" href="#s12">[12]</a>。</p>
+        <p>SVB 在周五被关。Circle 的发行和赎回靠银行电汇，要等周一银行开门<a class="ref" href="#s1">[1]</a>；Coinbase 暂停了 USDC 换美元<a class="ref" href="#s20">[20]</a>，Binance 暂停了把 USDC 自动换成 BUSD<a class="ref" href="#s19">[19]</a>。能把价格拉回 1 美元的套利停了，3 月 11 日 USDC 在交易所跌破 0.87 美元<a class="ref" href="#s18">[18]</a>。MakerDAO 的 DAI 约 52% 的抵押品是 USDC，也跟着脱锚<a class="ref" href="#s11">[11]</a>。</p>
+        <p>3 月 12 日（周日），财政部、美联储和 FDIC 宣布对 SVB 和 Signature Bank 启用系统性风险例外，储户全额保障，13 日起可以取用全部存款<a class="ref" href="#s5">[5]</a>。Circle 13 日取回了 33 亿美元<a class="ref" href="#s1">[1]</a>，USDC 不久回到 1 美元<a class="ref" href="#s3">[3]</a>；到 15 日，Circle 基本清完积压的请求，周一到周三赎回 38 亿美元、发行 8 亿美元<a class="ref" href="#s2">[2]</a>。Circle 说自己没有直接损失，但这件事是后来 USDC 流通量下降的原因之一<a class="ref" href="#s3">[3]</a>。3 月 1 日到 4 月 1 日，USDC 市值减少约 97 亿美元，USDT 增加约 88 亿美元<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>USDC 和它的两层市场</h3>
+        <p>Circle 2018 年 5 月宣布 USDC，同年 9 月由它和 Coinbase 合办的 Centre 联盟推出<a class="ref" href="#s24">[24]</a>。2023 年 3 月 1 日，USDC 市值约 420 亿美元，仅次于 USDT 的约 710 亿美元<a class="ref" href="#s12">[12]</a>。</p>
+        <p>美联储研究人员把稳定币的流通分成两层。一级市场是发行方和直接客户之间的铸造与赎回：USDC 的直接客户要经过 Circle 审核，多是交易所、金融科技公司和机构交易者，他们按 1 美元换 1 枚。二级市场是其他人在中心化和去中心化交易所里的买卖，价格由供求决定。两层之间靠套利连着：价格偏离 1 美元时，直接客户在交易所买卖，再向发行方铸造或赎回，把价格拉回来<a class="ref" href="#s12">[12]</a>。这个机制成立的前提是一级市场随时能用。</p>
+        <h3>储备放在哪里</h3>
+        <p>3 月 11 日 Circle 公布的储备构成如下<a class="ref" href="#s1">[1]</a>：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>储备</th><th class="n">金额</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>三个月内到期的美国国债</td><td class="n">324 亿美元（77%）</td><td>BNY Mellon 托管，BlackRock 管理，可以查到每一笔国债的 CUSIP</td></tr>
+            <tr><td>现金：BNY Mellon</td><td class="n">54 亿美元</td><td>Circle 称上一周为降低银行风险存入</td></tr>
+            <tr><td>现金：SVB</td><td class="n">33 亿美元</td><td>周四已发起转出，到周五收盘没有到账</td></tr>
+            <tr><td>现金：Customers Bank</td><td class="n">10 亿美元</td><td>用于扩展交易结算渠道</td></tr>
+            <tr><td>Signature Bank</td><td class="n">未披露</td><td>有 USDC 的交易和结算账户</td></tr>
+            <tr><td>Silvergate</td><td class="n">0</td><td>关闭前已把少量结算资金转出</td></tr>
+          </tbody>
+        </table></div>
+        <p>现金合计 97 亿美元，占 23%。SVB 那 33 亿美元约占全部储备的 8%，占现金的三分之一多<a class="ref" href="#s1">[1]</a>。在此之前，Circle 3 月的储备证明只说有一部分现金存在 SVB，没有披露金额<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>给加密行业办美元业务的银行</h3>
+        <p>当时愿意给加密行业做美元业务的银行不多。Silvergate 运营 Silvergate Exchange Network（SEN），交易所、机构和客户可以在上面实时互转美元和欧元<a class="ref" href="#s21">[21]</a>。Signature Bank 2019 年推出 Signet，供审核过的客户用区块链做实时结算<a class="ref" href="#s22">[22]</a>。Circle 在招股书里说，同期还有两家属于 Circle 稳定币生态的银行倒闭，它们此前提供全年无休的一级市场流动性<a class="ref" href="#s3">[3]</a>。招股书没有点名。同一周宣布清盘和被关闭的另外两家给加密行业办业务的银行，是 Silvergate 和 Signature<a class="ref" href="#s21">[21]</a><a class="ref" href="#s22">[22]</a>。</p>
+        <h3>SVB 为什么倒闭</h3>
+        <p>SVB 主要为科技和生命科学企业提供金融服务，客户高度集中在有风险投资背景的初创企业<a class="ref" href="#s10">[10]</a>；2022 年底总资产约 2,090 亿美元，存款约 1,754 亿美元<a class="ref" href="#s7">[7]</a>。美联储负责监管的副主席 Barr 主持的复盘报告认为，SVB 管理上有普遍的缺陷，业务高度集中，利率风险大，又依赖未保险的存款；2022 年起利率上升、科技行业放缓，这几点一起暴露。3 月 9 日 SVB 遭储户挤兑，当天流出超过 400 亿美元，管理层预计第二天还要流出 1,000 亿美元；10 日加州金融保护与创新局（DFPI）关闭了这家银行<a class="ref" href="#s10">[10]</a>，指定 FDIC 为接管人<a class="ref" href="#s7">[7]</a>。</p>
+        <p>FDIC 的存款保险每位储户上限 25 万美元。FDIC 关闭 SVB 时说，未保险的部分先付一笔预付股息，其余发接管凭证，等变卖资产后再分配<a class="ref" href="#s7">[7]</a>。Circle 的 33 亿美元几乎全是未保险存款，能拿回多少、什么时候拿回，当时没有人知道。</p>
+        <h3>DAI 和 Frax 为什么也持有 USDC</h3>
+        <p>DAI 由 MakerDAO 发行。用户可以超额抵押 ETH 等资产借出 DAI，也可以通过 Peg Stability Module（PSM）把 USDC 按 1:1 换成 DAI<a class="ref" href="#s12">[12]</a>。FSOC 年报称，当时 DAI 约 52% 的抵押品是 USDC<a class="ref" href="#s11">[11]</a>。Frax 也是加密资产抵押的稳定币，进入 2023 年 3 月时，抵押品里同样有 USDC<a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">脱锚与损失</span><span class="def">处置、监管与恢复</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2018-09</time><div class="ev">Circle 和 Coinbase 合办的 Centre 推出 USDC<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li><time>2023-03-01</time><div class="ev">USDC 市值约 420 亿美元，USDT 约 710 亿美元<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>2023-03-08</time><div class="ev">Silvergate 宣布清盘<a class="ref" href="#s21">[21]</a>。SVB 宣布调整资产负债表，出售部分证券并计划募资<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>2023-03-09</time><div class="ev">SVB 遭储户挤兑，当天流出超过 400 亿美元<a class="ref" href="#s10">[10]</a>。Circle 发起电汇，要把 SVB 的存款转到其他银行<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-03-10</time><div class="ev">加州 DFPI 关闭 SVB，FDIC 接管<a class="ref" href="#s7">[7]</a>。Circle 的电汇没有到账<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>03-10 晚（美东）</time><div class="ev">22:11 Circle 发推，确认约 33 亿美元储备仍在 SVB；约半小时后 Coinbase 暂停周末的 USDC 换美元<a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a>。22:40 Kraken 上 USDC 对 USDT 约 0.92<a class="ref" href="#s19">[19]</a>。FSOC 年报称，Circle 公布消息当天，USDC 被赎回 16 亿美元<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2023-03-11</time><div class="ev">USDC 周六早晨跌破 0.87 美元，创历史新低<a class="ref" href="#s18">[18]</a>；DAI 跟着脱锚<a class="ref" href="#s11">[11]</a>。去中心化交易所当天成交超过 200 亿美元，平时只有 10 亿到 30 亿美元<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2023-03-11</time><div class="ev">Circle 发文称周一银行开门后恢复正常业务，SVB 若不能全额返还，用公司资源补足<a class="ref" href="#s1">[1]</a>。MakerDAO 风险团队提出紧急提案，当天通过<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2023-03-12</time><div class="ev">纽约州金融服务局关闭 Signature Bank，FDIC 接管<a class="ref" href="#s8">[8]</a>。财政部、美联储和 FDIC 宣布对 SVB 和 Signature 启用系统性风险例外，储户全额保障<a class="ref" href="#s5">[5]</a>；美联储推出 BTFP<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-03-13</time><div class="ev">FDIC 把 SVB 的全部存款转入过桥银行<a class="ref" href="#s9">[9]</a>。Circle 称 33 亿美元已全部可用，转到了新的合作银行<a class="ref" href="#s1">[1]</a>；USDC 回到 1 美元附近<a class="ref" href="#s3">[3]</a>。MakerDAO 提出 PSM 断路器<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2023-03-14 至 15</time><div class="ev">Circle 接入新的交易银行办理电汇；到 15 日收盘，积压的铸造和赎回基本清完，周一以来赎回 38 亿美元、发行 8 亿美元<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2023-03-26</time><div class="ev">FDIC 宣布 First Citizens 收购 SVB 的商业银行业务<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2023-03 全月</time><div class="ev">3 月 1 日到 4 月 1 日，USDC 市值减少约 97 亿美元，USDT 增加约 88 亿美元<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2023-04-28</time><div class="ev">美联储发布 Barr 主持的 SVB 监管复盘报告<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2023-08</time><div class="ev">Circle 和 Coinbase 解散 Centre，USDC 改由 Circle 单独治理<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def"><time>2023-11</time><div class="ev">Silvergate 的存款全部偿还<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2023-12-14</time><div class="ev">FSOC 年报把 USDC 挤兑列为加密资产与银行业相互关联、风险集中的例子<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2025-06-05</time><div class="ev">Circle 在纽交所上市，代码 CRCL，发行价 31 美元<a class="ref" href="#s4">[4]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def"><time>2025-07-18</time><div class="ev">GENIUS 法案签署成为法律，规定支付稳定币的储备种类和每月披露<a class="ref" href="#s17">[17]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>崩盘机制</h2>
+        <p>按 Circle 公布的数字算，即使 SVB 的 33 亿美元一分也拿不回来，剩下的储备仍够覆盖约 92% 的 USDC（本站按储备合计约 421 亿美元计算）<a class="ref" href="#s1">[1]</a>。交易所里的价格却跌破了 0.87 美元<a class="ref" href="#s18">[18]</a>。多出来的跌幅来自两件事叠在一起：能把价格拉回 1 美元的赎回在那个周末停了；持有人不知道储备最后会少多少。DAI 再通过 PSM 把这个价格接了过去。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 330" role="img" aria-labelledby="usdc-t usdc-d">
+            <title id="usdc-t">SVB 倒闭怎样传到 USDC 和 DAI</title>
+            <desc id="usdc-d">3 月 10 日 SVB 被关闭，Circle 有 33 亿美元储备卡在里面，约占 8%。周末银行不营业，Circle 的赎回要等周一，Coinbase 也暂停了 USDC 换美元，套利停了，USDC 在交易所跌到约 0.87 至 0.89 美元。DAI 和 Frax 的抵押品里有大量 USDC，跟着脱锚。3 月 12 日政府宣布存款全额保障，13 日 Circle 取回 33 亿美元，USDC 回到 1 美元附近。</desc>
+            <defs>
+              <marker id="usdc-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="usdc-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="usdc-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="220" height="70" rx="4"/>
+            <text class="d-t b" x="130" y="50" text-anchor="middle">SVB 被关闭</text>
+            <text class="d-t s" x="130" y="72" text-anchor="middle">3 月 10 日（周五），FDIC 接管</text>
+            <rect class="d-box atk" x="270" y="20" width="220" height="70" rx="4"/>
+            <text class="d-t b" x="380" y="50" text-anchor="middle">33 亿美元储备卡住</text>
+            <text class="d-t s" x="380" y="72" text-anchor="middle">约占 USDC 储备的 8%</text>
+            <rect class="d-box" x="520" y="20" width="220" height="70" rx="4"/>
+            <text class="d-t b" x="630" y="50" text-anchor="middle">一级市场：赎回停摆</text>
+            <text class="d-t s" x="630" y="72" text-anchor="middle">电汇要等周一银行开门</text>
+            <rect class="d-box atk" x="20" y="130" width="220" height="70" rx="4"/>
+            <text class="d-t b" x="130" y="160" text-anchor="middle">DAI、Frax 跟着脱锚</text>
+            <text class="d-t s" x="130" y="182" text-anchor="middle">抵押品里有大量 USDC</text>
+            <rect class="d-box atk" x="270" y="130" width="220" height="70" rx="4"/>
+            <text class="d-t b" x="380" y="160" text-anchor="middle">二级市场：USDC 折价</text>
+            <text class="d-t s" x="380" y="182" text-anchor="middle">最低约 0.87 至 0.89 美元</text>
+            <rect class="d-box" x="520" y="130" width="220" height="70" rx="4"/>
+            <text class="d-t b" x="630" y="160" text-anchor="middle">交易所暂停兑换</text>
+            <text class="d-t s" x="630" y="182" text-anchor="middle">Coinbase 暂停 USDC 换美元</text>
+            <rect class="d-box def" x="20" y="240" width="470" height="70" rx="4"/>
+            <text class="d-t b" x="255" y="270" text-anchor="middle">3 月 12 日：政府宣布存款全额保障</text>
+            <text class="d-t s" x="255" y="292" text-anchor="middle">财政部、美联储和 FDIC 对 SVB、Signature 启用系统性风险例外</text>
+            <rect class="d-box ok" x="520" y="240" width="220" height="70" rx="4"/>
+            <text class="d-t b" x="630" y="270" text-anchor="middle">USDC 回到 1 美元附近</text>
+            <text class="d-t s" x="630" y="292" text-anchor="middle">13 日 Circle 取回 33 亿美元</text>
+            <line class="d-line atk" x1="240" y1="55" x2="268" y2="55" marker-end="url(#usdc-ah-atk)"/>
+            <line class="d-line" x1="490" y1="55" x2="518" y2="55" marker-end="url(#usdc-ah)"/>
+            <line class="d-line" x1="560" y1="90" x2="452" y2="128" marker-end="url(#usdc-ah)"/>
+            <line class="d-line" x1="520" y1="165" x2="492" y2="165" marker-end="url(#usdc-ah)"/>
+            <line class="d-line atk" x1="270" y1="165" x2="242" y2="165" marker-end="url(#usdc-ah-atk)"/>
+            <line class="d-line def" x1="490" y1="275" x2="518" y2="275" marker-end="url(#usdc-ah-def)"/>
+          </svg>
+          </div>
+          <figcaption>资料：Circle 3 月 11 日的公告和 13 日的更新<a class="ref" href="#s1">[1]</a>，CNBC<a class="ref" href="#s18">[18]</a>和 FSOC 年报<a class="ref" href="#s11">[11]</a>的价格数据，三部门联合声明<a class="ref" href="#s5">[5]</a>。图中只画主要的传导方向。</figcaption>
+        </figure>
+        <h3>周末一级市场停摆，套利断了</h3>
+        <p>平时交易所价格低于 1 美元，Circle 的直接客户会在交易所低价买入 USDC，再向 Circle 按 1 美元赎回，赚中间的差价；买的人多了，价格就回到 1 美元<a class="ref" href="#s12">[12]</a>。赎回最后要靠银行电汇。Circle 3 月 11 日写道，USDC 在链上全年无休，发行和赎回却受美国银行营业时间的限制，要等周一早上银行开门才恢复<a class="ref" href="#s1">[1]</a>。美联储研究人员据此认为，一级市场这段时间的运作受到限制；后来的公告也显示赎回积压了下来，积压发生在链下，链上数据看不出规模<a class="ref" href="#s12">[12]</a>。</p>
+        <p>这样一来，周六在交易所低价买入 USDC 的人，最早周一才能找 Circle 赎回，中间两天要承担 SVB 处置结果的风险。愿意接盘的人少了，价格就继续往下走。Circle 在招股书里的解释是：周末银行停业，一级市场没有流动性，同期另外两家提供全年无休一级流动性的银行也倒闭了，二级市场出现暂时的供需失衡，价格跌破 1 美元<a class="ref" href="#s3">[3]</a>。</p>
+        <p>交易所也关上了出口。Coinbase 暂停周末的 USDC 换美元，说等周一银行开门再恢复<a class="ref" href="#s20">[20]</a>；Binance 暂停了把 USDC 自动换成 BUSD，称这是“正常的风险管理步骤”<a class="ref" href="#s19">[19]</a>。想离开 USDC 的人，只能在交易所把它卖给别人，或者换成别的币。</p>
+        <h3>储备质量突然说不清</h3>
+        <p>BIS 的一篇工作论文把稳定币挤兑看作持有人之间的协调博弈。结论是：持有人不清楚储备资产的波动有多大时，1:1 兑换扛得住小冲击，遇到大的负面公开消息就会失守，即使储备原本质量很高<a class="ref" href="#s13">[13]</a>。论文拿 SVB 做例子：市场只知道 USDC 在 SVB 有存款、不知道金额时，USDC 已经跌破 1 美元；Circle 公布 33 亿美元之后情况更糟；直到美国政府宣布为 SVB 兜底才好转<a class="ref" href="#s13">[13]</a>。</p>
+        <p>33 亿美元能拿回多少，取决于 FDIC 怎样处置 SVB。Circle 3 月 11 日列了几种可能：按 FDIC 的政策，接管前发起的转账可能照常结算，周四的电汇也许周一就能处理；FDIC 很快找到买家整体收购 SVB，所有储户拿回全部存款；或者 SVB 不能全额返还，FDIC 发接管凭证和预付股息，钱要过一段时间才回来。Circle 说，如果是最后一种，它会按储值类汇款监管的法律要求，用公司资源补足缺口，必要时引入外部资本<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>PSM 不看市场价</h3>
+        <p>PSM 的规则很简单：存进 USDC，按 1:1 铸出 DAI，只扣一笔手续费 tin。合约里不读 USDC 的市场价格<a class="ref" href="#s16">[16]</a>。</p>
+        <pre class="code"><code><span class="c">// src/psm.sol（PSM-USDC-A 里的 gem 就是 USDC）</span>
+function sellGem(address usr, uint256 gemAmt) external {
+    <span class="c">// USDC 是 6 位小数，换算成 18 位精度</span>
+    uint256 gemAmt18 = mul(gemAmt, to18ConversionFactor);
+    <span class="c">// 手续费按治理设定的 tin 计算，危机前 tin 为 0</span>
+    uint256 fee = mul(gemAmt18, tin) / WAD;
+    uint256 daiAmt = sub(gemAmt18, fee);
+    gemJoin.join(address(this), gemAmt, msg.sender);
+    <span class="c">// 在 Vat 里记入同等数量的抵押品和债务</span>
+    vat.frob(ilk, address(this), address(this), address(this),
+             int256(gemAmt18), int256(gemAmt18));
+    vat.move(address(this), vow, mul(fee, RAY));
+    <span class="c">// 扣掉手续费，其余按 1:1 发给用户</span>
+    daiJoin.exit(usr, daiAmt);
+
+    emit SellGem(usr, gemAmt, fee);
+}</code></pre>
+        <p class="code-cap">出处：sky-ecosystem/dss-psm（原 makerdao/dss-psm），src/psm.sol 第 109–119 行，提交 222c96d。frob 一行为排版拆成两行；中文注释为本站所加。</p>
+        <p>所以 USDC 在交易所只值 0.90 美元时，存进 PSM 仍能换出接近 1 枚 DAI。MakerDAO 风险团队在紧急提案里写道，在当时的条件下，PSM 每天能铸造的额度太大，一旦 USDC 因背后未保险的银行存款受损，Maker 的损失会更大；把 tin 从 0 提到 1%，是为了防止 USDC 被大量倒进 PSM<a class="ref" href="#s14">[14]</a>。美联储研究人员发现，那几天 USDC 和 DAI 的价格走势几乎一样，都跌破 0.90 美元，又在三天里以相近的速度恢复<a class="ref" href="#s12">[12]</a>。BIS 把 DAI 的下跌称为对其储备质量认知的负面冲击，其他以美元为储备的稳定币没有受到这种冲击<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>MakerDAO 的紧急调整</h3>
+        <p>3 月 11 日 08:02（UTC），MakerDAO 的风险团队按治理框架的紧急程序提出提案。理由是：Silvergate 和 SVB 接连出事，中心化稳定币在受影响的银行有大量未保险存款，可能受损；Circle 报告约 33 亿美元在 SVB，风险团队估计这占它约 110 亿美元银行存款的四分之一多<a class="ref" href="#s14">[14]</a>。110 亿美元这个数和 Circle 自己公布的 97 亿美元现金对不上<a class="ref" href="#s1">[1]</a>，提案没有说明出处。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>对象</th><th>调整</th><th>提案给出的理由</th></tr></thead>
+          <tbody>
+            <tr><td>四种含 USDC 的 Uniswap 流动性代币抵押品</td><td>债务上限降为 0</td><td>暴露在 USDC 的尾部风险下，对维持 DAI 的流动性不是必需</td></tr>
+            <tr><td>PSM-USDC-A</td><td>gap 从 9.5 亿降到 2.5 亿 DAI，相当于每天最多铸 2.5 亿；tin 从 0 提到 1%</td><td>每日额度太大；手续费防止 USDC 被大量倒进 PSM</td></tr>
+            <tr><td>PSM-GUSD-A</td><td>gap 从 5,000 万降到 1,000 万 DAI</td><td>GUSD 没有 Silvergate、SVB 敞口，但未保险的银行存款多，储备证明没有按银行列出</td></tr>
+            <tr><td>PSM-USDP-A</td><td>债务上限从 4.5 亿提到 10 亿 DAI，gap 提到 2.5 亿；tin 降为 0，tout 提到 1%</td><td>Paxos 的储备以国债和逆回购为主，未保险存款较少；DAI 涨过 1 美元时需要它提供流动性</td></tr>
+            <tr><td>Compound v2、Aave v2 的 D3M</td><td>bar 设为 0，撤出敞口</td><td>收回已供给 Compound v2 的 DAI，也不再按待执行的提案供给 Aave v2</td></tr>
+            <tr><td>治理安全模块（GSM）延迟</td><td>缩短到 16 小时</td><td>讨论中有人反对缩短，也有人主张缩得更短，16 小时是折中</td></tr>
+          </tbody>
+        </table></div>
+        <p>同一天 16:34（UTC），论坛上的回复称执行提案已经通过：D3M 的改动立即生效，其余改动要等 48 小时的 GSM 延迟；此后的执行提案只需等 16 小时<a class="ref" href="#s14">[14]</a>。3 月 13 日，风险团队又提出“PSM 断路器”：新增一个合约，作为 GSM 延迟的例外，执行投票一通过就能把 PSM 的债务上限降为 0。提案写明，被误用的最坏情况是 DAI 溢价交易，直到治理按正常流程撤回<a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>崩盘过程</h2>
+        <ol class="steps">
+          <li><b>3 月 8 日至 9 日：银行接连出事</b>Silvergate 宣布清盘<a class="ref" href="#s21">[21]</a>。SVB 宣布出售证券并计划募资，第二天遭储户挤兑，一天流出超过 400 亿美元<a class="ref" href="#s10">[10]</a>。Circle 在 9 日发起电汇，要把 SVB 的存款转走<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>3 月 10 日（周五）：SVB 被关</b>加州 DFPI 关闭 SVB<a class="ref" href="#s7">[7]</a>，Circle 的电汇没有到账<a class="ref" href="#s1">[1]</a>。Circle 起初只说 SVB 是它存放现金储备的六家银行之一，没有说金额；Binance 暂停 USDC 自动换 BUSD；据 Nansen 的数据，SVB 关闭后 USDC 被赎回超过 10 亿美元<a class="ref" href="#s19">[19]</a>。</li>
+          <li><b>周五晚：公布金额</b>美东 22:11，Circle 发推说约 33 亿美元、约 8% 的储备仍在 SVB；首席战略官 Dante Disparte 随后说，Circle 在保护 USDC 免受“银行体系的黑天鹅式倒闭”<a class="ref" href="#s19">[19]</a>。约半小时后 Coinbase 暂停周末的 USDC 换美元<a class="ref" href="#s20">[20]</a>。22:40，Kraken 上 USDC 对 USDT 约 0.92<a class="ref" href="#s19">[19]</a>。</li>
+          <li><b>3 月 11 日（周六）：最低点</b>USDC 早晨跌破 0.87 美元<a class="ref" href="#s18">[18]</a>，DAI 跟着脱锚<a class="ref" href="#s11">[11]</a>，Frax 的偏离也明显扩大<a class="ref" href="#s13">[13]</a>。去中心化交易所的成交量创出历史新高<a class="ref" href="#s12">[12]</a>。Circle 发文承诺周一恢复、必要时补足缺口<a class="ref" href="#s1">[1]</a>；MakerDAO 的紧急提案通过<a class="ref" href="#s14">[14]</a>。</li>
+          <li><b>3 月 12 日（周日）：政府兜底</b>纽约州金融服务局关闭 Signature Bank<a class="ref" href="#s8">[8]</a>，Circle 无法再经 Signet 铸造和赎回 USDC<a class="ref" href="#s22">[22]</a>。同一天，财政部、美联储和 FDIC 宣布 SVB 和 Signature 的储户全额保障，13 日起可以取用全部存款，相关损失不由纳税人承担<a class="ref" href="#s5">[5]</a>。BIS 的论文认为，局势在这之后才好转<a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>3 月 13 日（周一）：回到 1 美元</b>Circle 称 33 亿美元已全部可用，转到了新的合作银行<a class="ref" href="#s1">[1]</a>；USDC 不久回到 1 美元。Circle 开始处理周末积压的赎回，积压太多，加上几家合作银行倒闭，部分客户的赎回变慢<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>3 月 14 日至 15 日：清完积压</b>14 日 Circle 接入一家新的交易银行办理美国境内电汇，15 日由同一家开通 19 个国家的国际电汇。到 15 日收盘，积压的铸造和赎回基本清完，周一以来赎回 38 亿美元、发行 8 亿美元<a class="ref" href="#s2">[2]</a>。</li>
+        </ol>
+      </section>
+      <section id="contagion">
+        <h2>传染</h2>
+        <h3>方向和 2022 年相反</h3>
+        <p>2022 年的几次崩盘，损失在加密行业内部传递：<a href="2022-terra-ust.html">Terra/UST 崩盘</a>之后，<a href="2022-celsius.html">Celsius</a> 冻结提款，<a href="2022-three-arrows.html">三箭资本</a>违约；<a href="2022-ftx.html">FTX</a> 倒闭后，损失又沿借贷关系传到 BlockFi 和 Genesis。这一次源头在传统银行：SVB 倒闭，风险经 Circle 的储备传到 USDC，再经 DAI 和 Frax 的抵押品传进 DeFi。FSOC 年报写道，3 月的银行业动荡显示，加密资产行业与银行业之间的关联和集中度风险，会给加密资产市场带来压力<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>加密行业的美元通道变窄</h3>
+        <p>同一周，三家给加密行业办业务的银行接连出事：Silvergate 3 月 8 日宣布清盘<a class="ref" href="#s21">[21]</a>，SVB 10 日被关<a class="ref" href="#s7">[7]</a>，Signature 12 日被关。Signature 2022 年底总资产 1,104 亿美元、存款 886 亿美元<a class="ref" href="#s8">[8]</a>。它被关后，Circle 无法再经 Signet 铸造和赎回 USDC；Coinbase 在 Signature 有 2.4 亿美元，并说客户使用 Signet 只能限于银行营业时间<a class="ref" href="#s22">[22]</a>。Circle 到 14 日、15 日才接上新的交易银行，恢复电汇<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>DeFi：抵押品里的 USDC</h3>
+        <p>DAI 和 Frax 都把 USDC 当作抵押品。BIS 的论文用 Frax 做实证：Circle 公布 SVB 敞口之后，Frax 偏离 1 美元的幅度显著扩大，论文把 USDC 脱锚看作 Frax 持有人受到的一次储备波动冲击<a class="ref" href="#s13">[13]</a>。MakerDAO 把 D3M 里的 DAI 从 Compound v2 撤回，也不再供给 Aave v2<a class="ref" href="#s14">[14]</a>。美联储研究人员用链上数据算了 Curve 上的兑换率，发现 DAI、USDC、USDT 的价格走势和主要中心化交易所没有明显差别<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>资金转向 USDT</h3>
+        <p>据美联储研究人员统计，3 月 1 日到 4 月 1 日，USDC 市值减少约 97 亿美元，USDT 增加约 88 亿美元，BUSD 减少约 26 亿美元，DAI 几乎没变。脱锚之后一周，四种稳定币里只有 USDT 流入二级市场的资金增加，研究人员认为这可能反映了避险需求。BUSD 的减少另有原因：监管机构 2 月已叫停它的新发行<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>规模：几种说法</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>指标</th><th>来源</th><th class="n">数字</th></tr></thead>
+          <tbody>
+            <tr><td>留在 SVB 的储备</td><td>Circle<a class="ref" href="#s1">[1]</a>；FSOC 年报<a class="ref" href="#s11">[11]</a></td><td class="n">33 亿美元，约 8%</td></tr>
+            <tr><td>USDC 最低价</td><td>CNBC，引 CoinDesk 数据<a class="ref" href="#s18">[18]</a></td><td class="n">低于 0.87 美元</td></tr>
+            <tr><td>USDC 最低价</td><td>FSOC 年报<a class="ref" href="#s11">[11]</a></td><td class="n">0.89 美元</td></tr>
+            <tr><td>USDC、DAI 最低价</td><td>美联储 FEDS Notes（小时数据）<a class="ref" href="#s12">[12]</a></td><td class="n">低于 0.90 美元</td></tr>
+            <tr><td>SVB 关闭后的赎回</td><td>Fortune 引 Nansen，截至 3 月 10 日深夜（美东）<a class="ref" href="#s19">[19]</a></td><td class="n">超过 10 亿美元</td></tr>
+            <tr><td>Circle 公布消息当天的赎回</td><td>FSOC 年报<a class="ref" href="#s11">[11]</a></td><td class="n">16 亿美元</td></tr>
+            <tr><td>到 3 月 15 日的赎回</td><td>FSOC 年报<a class="ref" href="#s11">[11]</a></td><td class="n">约 30 亿美元</td></tr>
+            <tr><td>3 月 13 日至 15 日的赎回</td><td>Circle<a class="ref" href="#s2">[2]</a></td><td class="n">38 亿美元</td></tr>
+            <tr><td>3 月 13 日至 15 日的发行</td><td>Circle<a class="ref" href="#s2">[2]</a></td><td class="n">8 亿美元</td></tr>
+            <tr><td>USDC 市值，3 月 1 日至 4 月 1 日</td><td>美联储 FEDS Notes<a class="ref" href="#s12">[12]</a></td><td class="n">减少约 97 亿美元</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">数字对不上的地方</span><p>最低价有 0.87、0.89 和“低于 0.90”三种说法。CNBC 用的是 CoinDesk 的数据，美联储的研究用的是 CryptoCompare 的小时价格；小时数据会抹平更短时间里的低点，这可能是差别的一个来源。赎回额的截止时间也不同：Nansen 的数字截至 3 月 10 日深夜；FSOC 写的“到 3 月 15 日约 30 亿美元”，和 Circle 公布的赎回 38 亿美元减去发行 8 亿美元的差额接近，可能是净额，这是本站的推测。本页把几种说法都列出来，不替读者选一个。</p></div>
+        <h3>谁承担了损失</h3>
+        <p>Circle 称自己没有直接的财务损失，始终按 1:1 兑付 Circle Mint 的客户<a class="ref" href="#s3">[3]</a>。周末在交易所以低于 1 美元的价格卖出 USDC 或 DAI 的人，承担了卖价和 1 美元之间的差额；这部分损失分散在大量交易里，本站没有找到可靠的合计数。保障未保险储户的成本先由 FDIC 的存款保险基金承担，再按法律向银行收特别评估费；联合声明说，相关损失不由纳税人承担<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>对 USDC 的长期影响</h3>
+        <p>Circle 在招股书里把 SVB 倒闭列为此后 USDC 流通量下降的原因之一<a class="ref" href="#s3">[3]</a>。维基百科写道，2022 年 USDC 和 USDT 的规模一度接近，此后 USDC 下降，时间上与 SVB 倒闭重合<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>后来的立法</h3>
+        <p>2025 年 7 月 18 日签署的 <a href="2025-genius-act.html">GENIUS 法案</a>要求，持牌的支付稳定币发行方至少按 1:1 持有可识别的储备，种类限于：现金和在联邦储备银行的存款；可以随时支取的银行存款，受 FDIC 和 NCUA 为控制安全稳健风险而设的限制；剩余期限或发行期限在 93 天以内的美国国债；以美国国债为抵押的隔夜回购和逆回购；只投资上述资产的政府货币市场基金；监管机构批准的其他流动性相当的联邦政府资产；以及其中部分资产的代币化形式。发行方每月要在网站上公布储备构成，由注册会计师事务所审查；不得仅因持有、使用稳定币向持有人支付利息或收益。法案还要求监管机构制定储备分散的标准，其中包括在银行的存款集中度<a class="ref" href="#s17">[17]</a>。</p>
+        <p>按这些类别看，Circle 2023 年 3 月的储备（短期国债加银行存款）都在允许的范围内。法案没有禁止把储备存在银行；在一家银行能存多少，要看监管机构的标准。这是本站对照法条的理解。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>银行</h3>
+        <p>3 月 13 日，FDIC 把 SVB 的全部存款和几乎全部资产转入新设的过桥银行 Silicon Valley Bridge Bank<a class="ref" href="#s9">[9]</a>。3 月 26 日，FDIC 宣布 First Citizens BancShares 收购 SVB 的商业银行业务，接手约 1,190 亿美元存款和 720 亿美元贷款<a class="ref" href="#s23">[23]</a>。Signature 的存款和几乎全部资产转入 Signature Bridge Bank<a class="ref" href="#s8">[8]</a>。美联储同时推出银行定期融资计划（BTFP），向银行提供最长一年的贷款，银行可以用国债、机构债和抵押贷款支持证券等作抵押，按面值计价，不必在压力下急着卖掉这些证券<a class="ref" href="#s6">[6]</a>。Silvergate 自行清盘，到 2023 年 11 月存款全部偿还<a class="ref" href="#s21">[21]</a>。</p>
+        <p>Barr 的复盘报告认为，SVB 倒闭的原因是管理层的缺陷、集中的业务模式和对未保险存款的依赖；报告也承认，对 SVB 的监管标准太低，监管人员没有足够有力地要求它尽快整改<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>Circle 和 USDC</h3>
+        <p>Circle 取回 33 亿美元后，两三天里接上新的交易银行，清完积压<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。招股书说，此后它加强了储备管理的治理，改进了对交易对手的分析和监控<a class="ref" href="#s3">[3]</a>。2023 年 8 月，Circle 和 Coinbase 解散 Centre，USDC 改由 Circle 单独治理<a class="ref" href="#s24">[24]</a>。2025 年 6 月 5 日，Circle 在纽交所上市，代码 CRCL，发行价 31 美元<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>MakerDAO</h3>
+        <p>紧急提案里 D3M 的改动当天生效，其余改动在 48 小时的 GSM 延迟之后生效，此后的执行提案延迟缩为 16 小时<a class="ref" href="#s14">[14]</a>。PSM 断路器的提案是否最终上线，本站没有核实<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>立法</h3>
+        <p>GENIUS 法案（Public Law 119–27）2025 年 7 月 18 日签署，对支付稳定币的储备、披露和审查作了规定，内容见上一节<a class="ref" href="#s17">[17]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给持有人</span>
+          <ul>
+            <li>“1:1 赎回”只对能直接找发行方赎回的人成立。其他人拿到的是交易所的价格，赎回停摆时，它可以离 1 美元很远。</li>
+            <li>链上转账全年无休，换回美元要靠银行。周末和节假日，一级市场可能完全停下。</li>
+          </ul>
+          <span class="h">给发行方</span>
+          <ul>
+            <li>储备存在哪家银行，就承担那家银行的风险。Circle 周四发起的转账，没能在银行周五被关之前到账。</li>
+            <li>结算通道不能只靠少数几家银行。Silvergate、SVB 和 Signature 一周内接连出事，Circle 花了两三天才接上新的交易银行。</li>
+            <li>BIS 的模型显示，持有人对储备质量本来就没有信心时，多披露反而可能增加挤兑风险；长期稳定、频繁的披露，总体上有利于维持锚定。</li>
+          </ul>
+          <span class="h">给 DeFi 协议</span>
+          <ul>
+            <li>把中心化稳定币当作主要抵押品，就把它背后的银行风险一起引了进来。当时 DAI 约 52% 的抵押品是 USDC。</li>
+            <li>PSM 这类按固定比例兑换的模块不看市场价。抵押品一脱锚，风险直接传到协议自己的稳定币；参数能多快调整，取决于治理延迟。MakerDAO 后来把 GSM 延迟缩到 16 小时，又提出了 PSM 断路器。</li>
+          </ul>
+          <span class="h">给监管</span>
+          <ul>
+            <li>加密行业和银行业之间的风险是双向的。2022 年 FTX 倒闭后，Silvergate 的存款到 12 月降到 38 亿美元<a class="ref" href="#s21">[21]</a>；2023 年三家银行出事，又反过来冲击了 USDC。</li>
+            <li>GENIUS 法案规定了储备种类、每月披露和审查，但储备仍可以存在银行；在单家银行的集中度，留给监管机构定标准。欧盟的 MiCA 反过来要求电子货币代币至少 30% 的资金存在银行的独立账户里<a class="ref" href="#s25">[25]</a>，见<a href="2023-mica.html">欧盟 MiCA 加密资产市场法规</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Circle，《An Update on USDC and Silicon Valley Bank》，2023-03-11，含 3 月 13 日的更新（Internet Archive 存档）。<a href="https://web.archive.org/web/20230320000000/https://www.circle.com/blog/an-update-on-usdc-and-silicon-valley-bank">web.archive.org</a></li>
+          <li id="s2">Circle，《Update on USDC operations》，2023-03-15（Internet Archive 存档）。<a href="https://web.archive.org/web/20230320000000/https://www.circle.com/blog/march-15-update-on-usdc-operations">web.archive.org</a></li>
+          <li id="s3">Circle Internet Group，Form S-1 注册说明书，2025-04-01。<a href="https://www.sec.gov/Archives/edgar/data/1876042/000119312525070481/d737521ds1.htm">sec.gov</a></li>
+          <li id="s4">Circle Internet Group，招股说明书（Form 424B4），2025-06-05。<a href="https://www.sec.gov/Archives/edgar/data/1876042/000119312525135795/d737521d424b4.htm">sec.gov</a></li>
+          <li id="s5">美国财政部、美联储、FDIC，《Joint Statement by the Department of the Treasury, Federal Reserve, and FDIC》，2023-03-12。<a href="https://home.treasury.gov/news/press-releases/jy1337">treasury.gov</a></li>
+          <li id="s6">美联储，《Federal Reserve Board announces it will make available additional funding to eligible depository institutions to help assure banks have the ability to meet the needs of all their depositors》，2023-03-12。<a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20230312a.htm">federalreserve.gov</a></li>
+          <li id="s7">FDIC，《FDIC Creates a Deposit Insurance National Bank of Santa Clara to Protect Insured Depositors of Silicon Valley Bank, Santa Clara, California》，2023-03-10。<a href="https://www.fdic.gov/news/press-releases/2023/pr23016.html">fdic.gov</a></li>
+          <li id="s8">FDIC，《FDIC Establishes Signature Bridge Bank, N.A., as Successor to Signature Bank, New York, NY》，2023-03-12。<a href="https://www.fdic.gov/news/press-releases/2023/pr23018.html">fdic.gov</a></li>
+          <li id="s9">FDIC，《FDIC Acts to Protect All Depositors of the former Silicon Valley Bank, Santa Clara, California》，2023-03-13。<a href="https://www.fdic.gov/news/press-releases/2023/pr23019.html">fdic.gov</a></li>
+          <li id="s10">美联储（Michael S. Barr），《Review of the Federal Reserve’s Supervision and Regulation of Silicon Valley Bank》，2023-04-28。<a href="https://www.federalreserve.gov/publications/files/svb-review-20230428.pdf">federalreserve.gov</a></li>
+          <li id="s11">美国金融稳定监督委员会（FSOC），《2023 Annual Report》，2023-12-14。<a href="https://home.treasury.gov/system/files/261/FSOC2023AnnualReport.pdf">treasury.gov</a></li>
+          <li id="s12">Cy Watsky、Jeffrey Allen、Hamzah Daud 等，《Primary and Secondary Markets for Stablecoins》，美联储 FEDS Notes，2024-02-23。<a href="https://www.federalreserve.gov/econres/notes/feds-notes/primary-and-secondary-markets-for-stablecoins-20240223.html">federalreserve.gov</a></li>
+          <li id="s13">Rashad Ahmed、Iñaki Aldasoro、Chanelle Duley，《Public information and stablecoin runs》，BIS Working Papers No 1164，2025-01-31 版。<a href="https://www.bis.org/publications/working-paper-1164-public-information-and-stablecoin-runs.pdf">bis.org</a></li>
+          <li id="s14">MakerDAO 论坛（Risk Core Unit），《Emergency Proposal: Risk and Governance Parameter Changes (11 March 2023)》，2023-03-11，含当天的回复。<a href="https://forum.skyeco.com/t/emergency-proposal-risk-and-governance-parameter-changes-11-march-2023/20125">forum.skyeco.com</a></li>
+          <li id="s15">MakerDAO 论坛，《Out-Of-Schedule executive proposal to implement PSM Breaker》，2023-03-13。<a href="https://forum.skyeco.com/t/out-of-schedule-executive-proposal-to-implement-psm-breaker/20162">forum.skyeco.com</a></li>
+          <li id="s16">sky-ecosystem/dss-psm，src/psm.sol，提交 222c96d（2021-08-24）。<a href="https://github.com/sky-ecosystem/dss-psm/blob/222c96d4047e76680ed6803f07dd61aa2590e42b/src/psm.sol">github.com</a></li>
+          <li id="s17">美国国会，Public Law 119–27（GENIUS Act），2025-07-18。<a href="https://www.govinfo.gov/content/pkg/PLAW-119publ27/pdf/PLAW-119publ27.pdf">govinfo.gov</a></li>
+          <li id="s18">CNBC，《Stablecoin USDC breaks dollar peg after firm reveals it has $3.3 billion in SVB exposure》，2023-03-11。<a href="https://www.cnbc.com/2023/03/11/stablecoin-usdc-breaks-dollar-peg-after-firm-reveals-it-has-3point3-billion-in-svb-exposure.html">cnbc.com</a></li>
+          <li id="s19">Leo Schwartz，Fortune（Yahoo Finance 转载），《Circle reveals it has $3.3 billion stuck at Silicon Valley Bank as USDC wobbles against its peg》，2023-03-11。<a href="https://finance.yahoo.com/news/circle-reveals-3-3-billion-041025738.html">finance.yahoo.com</a></li>
+          <li id="s20">Jacquelyn Melinek、Alex Wilhelm，TechCrunch，《Uncertainty stands around multibillion USDC empire as issuer Circle held reserves at Silicon Valley Bank》，2023-03-10，含后续更新。<a href="https://techcrunch.com/2023/03/10/uncertainty-stands-around-multi-billion-usdc-empire-as-issuer-circle-held-reserves-at-silicon-valley-bank/">techcrunch.com</a></li>
+          <li id="s21">维基百科，《Silvergate Bank》。<a href="https://en.wikipedia.org/wiki/Silvergate_Bank">en.wikipedia.org</a></li>
+          <li id="s22">维基百科，《Signature Bank》。<a href="https://en.wikipedia.org/wiki/Signature_Bank">en.wikipedia.org</a></li>
+          <li id="s23">维基百科，《Collapse of Silicon Valley Bank》。<a href="https://en.wikipedia.org/wiki/Collapse_of_Silicon_Valley_Bank">en.wikipedia.org</a></li>
+          <li id="s24">维基百科，《USDC (cryptocurrency)》。<a href="https://en.wikipedia.org/wiki/USDC_(cryptocurrency)">en.wikipedia.org</a></li>
+          <li id="s25">欧洲议会和理事会，Regulation (EU) 2023/1114 on markets in crypto-assets（MiCA），OJ L 150, 9.6.2023, p. 40，2023-05-31（经欧盟出版局 Cellar 读取）。<a href="https://eur-lex.europa.eu/eli/reg/2023/1114/oj">eur-lex.europa.eu</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

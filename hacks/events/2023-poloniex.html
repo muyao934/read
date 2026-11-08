@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poloniex 热钱包被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2023 年 11 月 Poloniex 在以太坊、Tron 和比特币上的热钱包一小时内被转空的经过：热钱包私钥失守为什么拦不住、各方金额估算的差异、孙宇晨的赏金与赔付、联合国专家小组的朝鲜归因，以及与 HTX、Heco 事件的关系。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-poloniex">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Poloniex 热钱包被盗</h1>
+    <p class="lede">2023 年 11 月 10 日，孙宇晨旗下的交易所 Poloniex 在以太坊、Tron 和比特币上的热钱包在一个多小时里被转空，各方估算的损失在 1.14 亿到 1.32 亿美元之间。Poloniex 没有公布事故原因，链上特征显示攻击者拿到了热钱包的签名能力。联合国专家小组后来把它列为朝鲜涉嫌发动的攻击之一；12 天后，孙宇晨相关的 HTX 和 Heco 跨链桥也被盗。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">2023 年 11 月 10 日 10:34（UTC）起，Poloniex 的热钱包开始出现可疑转出，先是约 1,800 万美元的 BTC，随后是以太坊和 Tron 上的 ETH、TRX 和数百种代币<a class="ref" href="#s1">[1]</a>。以太坊上被标记为“Poloniex 4”的热钱包在一个多小时里被几百笔交易转空<a class="ref" href="#s6">[6]</a>。这些交易都带有合法签名，链上没有任何机制能拦住它们。</p>
+        <p>孙宇晨当天表示会全额赔付受影响的资金，向攻击者提出 5% 的白帽赏金，给出 7 天期限<a class="ref" href="#s3">[3]</a>。Poloniex 和孙宇晨都没有公布攻击者如何拿到私钥。安全公司根据链上行为推测这是 Lazarus 所为<a class="ref" href="#s5">[5]</a>，联合国安理会朝鲜制裁专家小组在 2024 年把它列入涉嫌由朝鲜发动的 58 起攻击<a class="ref" href="#s8">[8]</a>。</p>
+        <p>12 月中旬，孙宇晨说 Poloniex 已恢复约 85%（按美元价值）的资产提现，损失由平台承担<a class="ref" href="#s7">[7]</a>。被盗资金在攻击者地址里静置了约半年，2024 年 4 月起开始转移，一部分进入 Tornado Cash<a class="ref" href="#s10">[10]</a>。公开资料里没有执法机构立案或资金追回的记录。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Poloniex 2014 年开始运营，2019 年被 Tron 创始人孙宇晨收购<a class="ref" href="#s2">[2]</a>，总部设在塞舌尔<a class="ref" href="#s6">[6]</a>。2023 年孙宇晨还是另一家交易所 HTX（原火币）和 Heco 链的主要关联人物。</p>
+        <p>交易所的热钱包是用来自动处理用户提现的联网钱包。用户发起提现后，交易所的系统直接用热钱包的私钥签名并广播交易，不需要人工参与。这样提现才快，但也意味着谁拿到了这把私钥或者签名系统的控制权，谁就能以交易所的名义转账，而且链上看起来和正常提现没有区别。美国执法机构认为，朝鲜 Lazarus 是攻击加密平台的主要力量之一<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与项目方行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk key"><time>2023-11-10 10:34 UTC</time><div class="ev">第一笔可疑转出：约 1,800 万美元的 BTC 转到攻击者的比特币钱包。随后以太坊上的约 1,100 万 USDT 和 Tron 上的资产相继被转走<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-11-10</time><div class="ev">以太坊热钱包“Poloniex 4”（<span class="addr">0xa910f92acdaf488fa6ef02174fb86208ad7722ba</span>）在一个多小时里被几百笔未经授权的交易转空<a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-11-10</time><div class="ev">Poloniex 客服账号称“钱包已停用维护”。孙宇晨表示正在调查、会全额赔付，已冻结攻击者地址上的部分资产，并提出 5% 白帽赏金，7 天内不回应就交给执法部门<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2023-11-15</time><div class="ev">CertiK 发布分析，估算损失约 1.32 亿美元，被盗资金已分散到至少 681 个钱包<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2023-11-17</time><div class="ev">Halborn 发布分析，认为攻击由 Lazarus 实施，依据是链上的资金拆分方式<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>2023-11-22</time><div class="ev">孙宇晨相关的 <a href="2023-htx-heco.html">HTX 交易所和 Heco 跨链桥</a>同日被盗<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2023-11 下旬</time><div class="ev">7 天期限过后，孙宇晨称已知道攻击者身份，被盗资金“都已标记追踪，无法使用”，据报道把赏金提高到 1,000 万美元<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-12-13</time><div class="ev">孙宇晨称 Poloniex 已按美元价值恢复约 85% 资产的提现，HTX 约 95%，平台已承担全部代币损失<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2024-03</time><div class="ev">联合国安理会朝鲜制裁专家小组调查 2017 至 2023 年间 58 起涉嫌由朝鲜发动的加密攻击，名单中有“Poloniex，2023 年 11 月 10 日，1.14 亿美元”<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2024-04-30</time><div class="ev">攻击者把 501 枚 BTC（约 3,200 万美元）转到一个没有标签的新钱包<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>2024-05-07 前后</time><div class="ev">沉寂 178 天后，1,100 枚 ETH（约 330 万美元）分 11 批、每批 100 枚转入 Tornado Cash<a class="ref" href="#s10">[10]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>Poloniex 没有发布事故报告，攻击者怎样拿到签名能力至今不清楚。下面能讲清楚的是：为什么一旦热钱包的签名能力失守，链上就没有任何东西能拦住转账；以及哪些环节本可以把损失限制在很小的范围。</p>
+        <h3>链上只认签名</h3>
+        <p>“Poloniex 4”是一个普通的以太坊外部账户（EOA），由一把私钥控制。区块链节点验证一笔转账，只检查签名是否与地址匹配、余额是否足够、nonce 是否正确，不知道也不关心是谁、在什么情况下签的名。只要攻击者拿到了这把私钥，或者控制了替交易所签名的系统，他发出的交易在链上和正常提现完全一样。比特币和 Tron 也是同样的道理。</p>
+        <p>三条链上的钱包几乎同时被转空。如果每条链的私钥由彼此隔离的系统分别保管，攻击者需要分别攻破它们；同时失守，更可能是因为它们共用了同一套密钥管理或签名基础设施。这是根据结果所作的推断，Poloniex 没有确认。网络安全公司 Cyvers 的联合创始人认为这“很可能是一次私钥泄露”，是“预先设定、自动运行的机器人”，并认为 Lazarus 往往在真正动手前几个月就已潜入系统<a class="ref" href="#s6">[6]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 340" role="img" aria-labelledby="polo-flow-t polo-flow-d">
+            <title id="polo-flow-t">Poloniex 热钱包被盗的资金路径</title>
+            <desc id="polo-flow-d">左边是失守的热钱包签名能力，同时覆盖以太坊、Tron 和比特币三条链。以太坊和 Tron 上的资产被分散到至少 681 个地址，用 DEX 换成 ETH；有一批 GLM 被误转进了 GLM 代币合约。资金静置约半年后，2024 年 4 月有 501 枚 BTC 转到新钱包，5 月有 1,100 枚 ETH 进入 Tornado Cash。</desc>
+            <defs>
+              <marker id="polo-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="polo-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="96" width="150" height="80" rx="4"/>
+            <text class="d-t b" x="95" y="124" text-anchor="middle">热钱包签名能力</text>
+            <text class="d-t s" x="95" y="146" text-anchor="middle">如何失守未公开</text>
+            <text class="d-t s" x="95" y="164" text-anchor="middle">三条链同时出事</text>
+            <rect class="d-box" x="215" y="20" width="175" height="62" rx="4"/>
+            <text class="d-t b" x="302" y="44" text-anchor="middle">以太坊</text>
+            <text class="d-t s" x="302" y="66" text-anchor="middle">ETH 约 5,600 万美元</text>
+            <rect class="d-box" x="215" y="105" width="175" height="62" rx="4"/>
+            <text class="d-t b" x="302" y="129" text-anchor="middle">Tron</text>
+            <text class="d-t s" x="302" y="151" text-anchor="middle">TRX 约 4,800 万美元</text>
+            <rect class="d-box" x="215" y="190" width="175" height="62" rx="4"/>
+            <text class="d-t b" x="302" y="214" text-anchor="middle">比特币</text>
+            <text class="d-t s" x="302" y="236" text-anchor="middle">BTC 约 1,800 万美元</text>
+            <line class="d-line atk" x1="170" y1="126" x2="213" y2="51" marker-end="url(#polo-ah-atk)"/>
+            <line class="d-line atk" x1="170" y1="136" x2="213" y2="136" marker-end="url(#polo-ah-atk)"/>
+            <line class="d-line atk" x1="170" y1="146" x2="213" y2="221" marker-end="url(#polo-ah-atk)"/>
+            <rect class="d-box atk" x="440" y="20" width="300" height="100" rx="4"/>
+            <text class="d-t b" x="590" y="44" text-anchor="middle">拆分与兑换</text>
+            <text class="d-t s" x="590" y="66" text-anchor="middle">分散到至少 681 个地址</text>
+            <text class="d-t s" x="590" y="86" text-anchor="middle">先转 0.5 ETH 作手续费，再在 DEX 换成 ETH</text>
+            <text class="d-t s" x="590" y="106" text-anchor="middle">约 1,050 万枚 GLM 被误转进 GLM 合约</text>
+            <line class="d-line atk" x1="390" y1="51" x2="438" y2="60" marker-end="url(#polo-ah-atk)"/>
+            <line class="d-line atk" x1="390" y1="136" x2="438" y2="90" marker-end="url(#polo-ah-atk)"/>
+            <rect class="d-box doubt" x="440" y="150" width="300" height="102" rx="4"/>
+            <text class="d-t b" x="590" y="174" text-anchor="middle">静置约半年后</text>
+            <text class="d-t s" x="590" y="196" text-anchor="middle">2024-04-30：501 枚 BTC 转到新钱包</text>
+            <text class="d-t s" x="590" y="216" text-anchor="middle">2024-05：1,100 枚 ETH 进入 Tornado Cash</text>
+            <text class="d-t s" x="590" y="236" text-anchor="middle">其余下落没有公开分析</text>
+            <line class="d-line dash" x1="590" y1="120" x2="590" y2="148" marker-end="url(#polo-ah)"/>
+            <line class="d-line dash" x1="390" y1="221" x2="438" y2="214" marker-end="url(#polo-ah)"/>
+            <rect class="d-box soft" x="20" y="276" width="720" height="54" rx="4"/>
+            <text class="d-t s" x="36" y="298">各链金额来自 PeckShield，地址数、GLM 和以太坊上共 317 种 ERC-20 代币被转走的统计来自 CertiK。</text>
+            <text class="d-t s" x="36" y="318">以太坊热钱包从第一笔可疑转出到被转空约一个多小时，链上已确认的转账无法撤回。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：Poloniex 热钱包被盗的资金路径。红色是 2023 年 11 月当天的转移，琥珀色是半年后才发生、目前了解不全的部分。依据 CertiK、The Record 和 CoinDesk 的报道整理<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s10">[10]</a>。</figcaption>
+        </figure>
+        <h3>能拦住的地方在链下</h3>
+        <p>既然链上只认签名，限制损失的手段只能放在签名之前。交易所通常有三道这样的关口：热钱包里只放很少的余额，大部分资产放在需要多方签名的冷钱包里；签名系统在签名前检查转出的额度和速度；新的收款地址要经过人工复核。一个小时里几百笔大额转出，任何一道关口都应该触发：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>关口</th><th>规则</th><th>在这次事件中能挡住什么</th></tr></thead>
+            <tbody>
+              <tr><td>热钱包余额上限</td><td>热钱包只放几个小时的提现量，其余放在需要多方签名的冷钱包里</td><td>决定被盗金额的上限</td></tr>
+              <tr><td>转出速度上限</td><td>一段时间内的累计转出超过阈值，签名系统停止自动签名并告警</td><td>一小时内几百笔转出会在早期被叫停</td></tr>
+              <tr><td>新地址复核</td><td>收款地址不在已知列表里，转人工复核</td><td>转往数百个全新地址的交易无法自动签出</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>这些检查只有在签名设备内部（HSM 或 MPC 节点）执行时才可靠。放在业务服务器上，攻击者控制服务器后可以一并绕过；如果私钥本身被拷走，攻击者自己就能签名，任何检查都不起作用。所以私钥不能离开 HSM 或 MPC 的边界。</p>
+        <p>Poloniex 的情况是：三条链的热钱包合计放着超过 1 亿美元，几百笔转出没有被拦下。Poloniex 没有说明它的热钱包余额上限、签名架构和告警机制，所以无法判断是这些控制不存在，还是被攻击者一并绕过了。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下根据 CertiK 的链上分析和媒体报道整理<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。入侵 Poloniex 系统的部分没有公开资料。</p>
+        <ol class="steps">
+          <li><b>取得签名能力</b>攻击者拿到了 Poloniex 在以太坊、Tron 和比特币上热钱包的签名能力，方式不明。</li>
+          <li><b>先转大额主币和稳定币</b>10:34（UTC）起，约 1,800 万美元的 BTC 被转走，接着是以太坊上的约 1,100 万枚 USDT 和 Tron 上的资产<a class="ref" href="#s1">[1]</a>。稳定币容易被发行方冻结，越早转走、越早换掉越安全。</li>
+          <li><b>把代币分给大量新地址</b>攻击者先给一个新地址转 0.5 ETH 作为手续费，再转去一种代币，在 DEX 上换成 ETH，然后把 ETH 转到下一个新地址。被盗资金至少经过了 681 个钱包，600 多个在以太坊上，70 多个在 Tron 上<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>一处失误</b>约 1,050 万枚 GLM（当时约 260 万美元）被攻击者转进了 GLM 代币合约本身，CertiK 发稿时这批代币仍停在合约里<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>静置</b>CertiK 发稿时，资金还没有经过混币器或交易所，比特币钱包里的 BTC 也没有动<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+        <p>Halborn 认为这套操作就是归因的依据之一：把不同类型的代币分别发给专门的地址，经中间地址在 DEX 上兑换后再转出，这些步骤本身并不必要，却与 Lazarus 以往的做法一致<a class="ref" href="#s5">[5]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>各家机构对损失的估算差别较大，统计时点和覆盖的代币范围不同：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">金额</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>Beosin</td><td class="n">1.14 亿美元</td><td>事发当天的估算<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>联合国专家小组</td><td class="n">1.14 亿美元</td><td>2024 年的涉朝攻击名单<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>PeckShield</td><td class="n">约 1.25 亿美元</td><td>ETH 约 5,600 万、TRX 约 4,800 万、BTC 约 1,800 万<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>Halborn</td><td class="n">约 1.26 亿美元</td><td><a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>SlowMist</td><td class="n">约 1.3 亿美元</td><td>另计入数百万美元的小币<a class="ref" href="#s3">[3]</a><a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>CertiK</td><td class="n">约 1.32 亿美元</td><td>2023-11-15 的估算<a class="ref" href="#s1">[1]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>本站的汇总数据采用 <span class="dispute">约 1.26 亿美元</span>，处在各方估算的中间。</p>
+        <p>冻结方面，孙宇晨当天说 Poloniex 已“识别并冻结了与攻击者地址相关的部分资产”<a class="ref" href="#s3">[3]</a>，没有说明金额、由谁冻结。两周后的报道写道，截至发稿还没有资金被追回<a class="ref" href="#s6">[6]</a>。此后的链上动向只有 2024 年 4 月 30 日 501 枚 BTC 转到新钱包、5 月 1,100 枚 ETH 进入 Tornado Cash 两次比较明确的记录<a class="ref" href="#s10">[10]</a>。CoinDesk 的报道援引 Arkham 的数据说，攻击者当时仍在多条链上持有约 1.81 亿美元的资产<a class="ref" href="#s10">[10]</a>，这个数字高于被盗时的金额，可能是因为加密资产价格上涨。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>与 HTX、Heco 的关系</h3>
+        <p>12 天后的 11 月 22 日，孙宇晨相关的 HTX 交易所热钱包和 Heco 链跨链桥同日被盗，详见 <a href="2023-htx-heco.html">HTX 与 Heco 跨链桥同日被盗</a>。Halborn 把 Heco 桥的原因归为运营者账户被攻破，HTX 归为私钥被盗<a class="ref" href="#s12">[12]</a>。联合国专家小组的名单把这三起都列为涉嫌由朝鲜发动的攻击：Poloniex 1.14 亿美元，HTX 3,000 万美元，Heco 跨链桥 8,600 万美元<a class="ref" href="#s8">[8]</a>。Elliptic 也把 HTX 和 Heco 的被盗归因于 Lazarus，依据是“攻击的多种特征和之后的资金流向”，这笔钱在 2024 年 3 月起有超过 1 亿美元经 Tornado Cash 洗出<a class="ref" href="#s9">[9]</a>。</p>
+        <p>这些归因说明三起事件被认为出自同一个国家的攻击者，但公开资料里没有看到把 Poloniex 和 HTX、Heco 的攻击者地址直接关联起来的链上证据，也没有看到 Poloniex 和 HTX 共用密钥管理系统的说明。“同一伙人”是合理的推测，不是已证实的结论。</p>
+        <h3>归因的分量</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th>说法</th><th>性质</th></tr></thead>
+            <tbody>
+              <tr><td>联合国安理会朝鲜制裁专家小组</td><td>列入 58 起涉嫌朝鲜的攻击<a class="ref" href="#s8">[8]</a></td><td>国际组织的调查名单，“涉嫌”</td></tr>
+              <tr><td>Halborn</td><td>“据信由 Lazarus 实施”，依据是资金拆分方式<a class="ref" href="#s5">[5]</a></td><td>安全公司根据链上行为的推断</td></tr>
+              <tr><td>Cyvers</td><td>“怀疑指向 Lazarus”<a class="ref" href="#s6">[6]</a></td><td>安全公司的推测</td></tr>
+              <tr><td>安全研究员 Dominic Alvieri</td><td>手法可能与 Lazarus 的一个子组织相同<a class="ref" href="#s4">[4]</a></td><td>个人推测</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>与 <a href="2024-dmm-bitcoin.html">DMM Bitcoin</a> 不同，本站没有查到美国 FBI 或其他国家执法机构就 Poloniex 被盗作出的正式认定。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <p>Poloniex 一开始只说钱包“停用维护”<a class="ref" href="#s2">[2]</a>，当天孙宇晨在 X 上承认被盗，并作出几项表态：Poloniex 财务状况健康，会全额赔付受影响的资金；损失“在可控范围内”，营业收入可以覆盖；系统已恢复，相关证据已保全，会在确保安全的前提下逐步恢复充提<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>赏金先是 5%，期限 7 天，并表示 Poloniex 在探索与其他交易所合作追回资金<a class="ref" href="#s3">[3]</a>。期限过后没有回音，孙宇晨称已经知道攻击者的身份，被盗资金都已被标记，无法使用，据报道把赏金提高到 1,000 万美元<a class="ref" href="#s6">[6]</a>。之后再没有关于攻击者身份的公开信息。</p>
+        <p>12 月 13 日，孙宇晨说 Poloniex 已按美元价值恢复约 85% 资产的提现，客户资产“100% 安全”，平台已经承担了全部代币损失；HTX 和 Poloniex 还计划按用户持仓每 1 美元空投价值 1 美元的代币<a class="ref" href="#s7">[7]</a>。用户最终是否全部拿回资产，本站没有找到独立的核实。</p>
+        <div class="note doubt">
+          <span class="h">至今没有公开的内容</span>
+          <ul>
+            <li>事故报告：私钥或签名系统是怎样失守的，热钱包当时的余额上限和风控设置。</li>
+            <li>被冻结资产的金额、冻结方，以及有没有追回任何资金。</li>
+            <li>孙宇晨所说的攻击者身份，以及是否有执法机构立案。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>热钱包只放几个小时的提现量，按计划从冷钱包补充，补充本身需要多方签名。热钱包被盗的上限，就是热钱包的余额。</li>
+            <li>额度、速度和新地址复核要在签名设备内部执行，而不是只在业务服务器上检查。攻击者控制业务服务器后，服务器上的检查会被一并绕过。</li>
+            <li>不同链、不同钱包的密钥分开保管、分开授权，一处失守不应同时打开所有链。</li>
+            <li>出事后的头几分钟最重要。稳定币发行方可以冻结地址，但前提是交易所能马上发现异常、马上联系到对方。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>“全额赔付”是交易所的承诺，它的分量取决于交易所的资产负债状况和透明度。Poloniex 没有公布储备证明和事故报告，用户只能选择相信。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">CertiK，《Poloniex Incident Analysis》，2023-11-15。<a href="https://www.certik.com/resources/blog/poloniex-incident-analysis">certik.com</a></li>
+          <li id="s2">The Block，《Justin Sun’s crypto exchange Poloniex seemingly hit by hack for over $100 million》，2023-11-10。<a href="https://www.theblock.co/news/markets/2023-11-10-justin-suns-crypto-exchange-poloniex-seemingly-hit-by-60-million-hack-262563">theblock.co</a></li>
+          <li id="s3">The Record，《More than $100 million stolen from Poloniex crypto platform》，2023-11-12。<a href="https://therecord.media/poloniex-cryptocurrency-platform-millions-stolen">therecord.media</a></li>
+          <li id="s4">GIGAZINE，《Virtual currency worth 19 billion yen is stolen from the virtual currency exchange Poloniex》，2023-11-13。<a href="https://gigazine.net/gsc_news/en/20231113-poloniex-hacking-crypto/">gigazine.net</a></li>
+          <li id="s5">Rob Behnke，《Explained: The Poloniex Hack (November 2023)》，Halborn，2023-11-17。<a href="https://www.halborn.com/blog/post/explained-the-poloniex-hack-november-2023">halborn.com</a></li>
+          <li id="s6">Disruption Banking，《Poloniex Offers ‘White Hat’ Bounty to Black Hat Hackers in Largest Crypto Attack Of 2023》，2023-11-27。<a href="https://www.disruptionbanking.com/2023/11/27/poloniex-offers-white-hat-bounty-to-black-hat-hackers-in-largest-crypto-attack-of-2023/">disruptionbanking.com</a></li>
+          <li id="s7">CoinDesk，《HTX, Poloniex Assets Are ‘100% Safe’ Says Justin Sun After $200M Hack》，2023-12-13。<a href="https://www.coindesk.com/business/2023/12/13/htx-poloniex-assets-are-100-safe-says-justin-sun-after-200m-hack">coindesk.com</a></li>
+          <li id="s8">The Record，《UN probing 58 alleged crypto heists by North Korea worth $3 billion》，2024-03-22（引用联合国安理会朝鲜制裁专家小组报告）。<a href="https://therecord.media/north-korea-cryptocurrency-hacks-un-experts">therecord.media</a></li>
+          <li id="s9">Elliptic，《North Korean hackers return to Tornado Cash despite sanctions》，2024-03-14。<a href="https://www.elliptic.co/blog/north-korean-hackers-return-to-tornado-cash-despite-sanctions">elliptic.co</a></li>
+          <li id="s10">Oliver Knight，《Poloniex Hacker Sends $3.3M Worth of Ether to Tornado Cash》，CoinDesk（Yahoo Finance 转载），2024-05-07。<a href="https://finance.yahoo.com/news/poloniex-hacker-sends-3-3m-055134406.html">finance.yahoo.com</a></li>
+          <li id="s11">SlowMist Hacked 事件库，Poloniex 条目（2023-11-10）。<a href="https://hacked.slowmist.io/">hacked.slowmist.io</a></li>
+          <li id="s12">Halborn，《Month in Review: Top DeFi Hacks of November 2023》，2023-12-16。<a href="https://www.halborn.com/blog/post/month-in-review-top-defi-hacks-of-november-2023">halborn.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

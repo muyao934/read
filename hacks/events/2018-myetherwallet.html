@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyEtherWallet DNS 劫持｜区块链被盗事件编年史</title>
+<meta name="description" content="2018 年攻击者劫持 Amazon Route 53 的 BGP 路由并伪造 DNS 应答，把 MyEtherWallet 用户引到钓鱼站，偷走约 215 枚 ETH：路由劫持原理、证书警告、资金去向，以及 RPKI、DNSSEC、HSTS 和硬件钱包各能拦住哪一步。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2018-myetherwallet">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2018 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>MyEtherWallet DNS 劫持</h1>
+    <p class="lede">2018 年 4 月 24 日，攻击者借用美国俄亥俄州一家 ISP 的网络，宣告了 5 段本属于 Amazon 的地址，把一部分发往 Amazon Route 53 的 DNS 查询引到自己的服务器，让 myetherwallet.com 解析到钓鱼站。伪造路由存在了约两小时，点过浏览器证书警告的用户交出了私钥，约 215 枚 ETH 被转走。钱包网站、智能合约和 Amazon 自己的系统都没有被攻破，出问题的是互联网的路由和域名解析。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">MyEtherWallet（MEW）是一个在浏览器里运行的以太坊钱包，用户在网页上输入私钥，交易在本地签名。谁能让用户打开一个假的 myetherwallet.com，谁就能拿到私钥。这次攻击者没有碰 MEW 的服务器和域名账户，而是在路由层冒充了 MEW 所用的 DNS 服务商 Amazon Route 53 的权威服务器。</p>
+        <p>UTC 11:05 起，eNet（AS10297）向邻居网络宣告了 5 个 /24 地址段。它们比 Amazon 自己宣告的 /23 更具体，接受这些路由的网络就把发往 Route 53 的查询送到了攻击者手里。Google Public DNS 等递归解析器因此缓存了伪造记录，把 myetherwallet.com 指向一个钓鱼站<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>钓鱼站只有自签名证书，浏览器会弹出警告。点了“继续”并输入私钥的用户，钱包随即被转空，约 215 枚 ETH（约 15 万美元）汇入同一个收款地址<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。攻击者身份至今不明，没有起诉，资金也没有追回。事后 Amazon 为自己的路由发布了 RPKI 的 ROA，这起事件也成了路由安全社区推动 RPKI 时常举的例子<a class="ref" href="#s16">[16]</a><a class="ref" href="#s17">[17]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>MEW 在 2018 年的版本自称“免费、开源、纯客户端”的以太坊工具：钱包在浏览器里生成，用户可以用明文私钥、加密私钥、keystore 文件、助记词或 Ledger、TREZOR 等硬件钱包访问，网站本身不保存任何密钥<a class="ref" href="#s15">[15]</a>。这样的设计让 MEW 不用托管用户资产，代价是一切都押在“用户打开的网页是真的”这一点上。网页从哪台服务器加载，取决于 DNS 解析和互联网路由，这两样都不在 MEW 手里。</p>
+        <p>当时 myetherwallet.com 的 DNS 托管在 Amazon Route 53<a class="ref" href="#s7">[7]</a>。浏览器要访问这个域名，先问递归解析器（比如 Google 的 8.8.8.8），递归解析器再去问 Route 53 的权威服务器。这次被冒充的 Route 53 权威服务器，地址位于 205.251.192.0/21 这一段，平时由 Amazon 的 AS16509 分成 4 个 /23 向全网宣告<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>针对加密货币网站的 DNS 劫持在此之前已经出现过。2017 年 12 月有 EtherDelta，2018 年 1 月有 BlackWallet，后者被盗走价值 40 多万美元的 Stellar（XLM）；Classic Ether Wallet 和 Etherparty 的 ICO 网站也出过事<a class="ref" href="#s8">[8]</a>。MEW 这次不同的地方在于，MEW 自己的域名设置没有被改动，攻击者冒充的是它的 DNS 服务商<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>以下时间均为 UTC。推文的发布时刻按推文 ID 换算，路由事件以 BGP 采集点的记录为准，原因见表后说明。</p>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2018-04-24 11:04</time><div class="ev">Isolario 的 BGP 采集点仍只收到 Amazon（AS16509）宣告的 4 个 /23，一切正常<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>04-24 11:05</time><div class="ev">11:05:41 起，eNet（AS10297）宣告的 5 个 /24 先后经 1&amp;1 Internet、Hurricane Electric、Shaw 和 BroadbandOne 出现在采集点上，前后约 13 秒<a class="ref" href="#s3">[3]</a><a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>04-24 11:33</time><div class="ev">有用户在 Twitter 上说 MEW 开始提示“证书无效”，网站用的是自签名证书<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>04-24 11:54</time><div class="ev">Outages 邮件列表出现第一封报告：通过 Google DNS 解析 Route 53 托管的域名返回 SERVFAIL<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>04-24 12:48</time><div class="ev">一名用户用 dig 查到 Google Public DNS 把 myetherwallet.com 解析到 46.161.42.42，缓存剩余约 9,600 秒。他在 13:04 把结果发到 Reddit，提醒使用 Google DNS 的人不要访问<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="key"><time>04-24 12:55 前后</time><div class="ev">RIPE Stat 和 Isolario 看到伪造路由开始撤回<a class="ref" href="#s3">[3]</a>。Oracle Dyn 记录的结束时间是 13:03<a class="ref" href="#s2">[2]</a>。已经缓存了伪造记录的解析器，在缓存到期前还会继续返回错误地址。</div></li>
+          <li class="atk"><time>04-24 13:44</time><div class="ev">有受害者在 Twitter 上说钱包被清空。BleepingComputer 汇总受害者的说法，资金都流向同一个收款地址<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>04-24 14:29</time><div class="ev">MEW 发推确认“几台 DNS 服务器被劫持”，用户被引向钓鱼站，并称问题不在 MEW 一方<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>04-24 14:52</time><div class="ev">Oracle Internet Intelligence 发推：eNet（AS10297）在 11:05 至 13:03 宣告了 Amazon 路由的更具体前缀，受影响的是 Amazon 的 DNS<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>04-24 16:20</time><div class="ev">MEW 团队账号 kvhnuke 在 Reddit 发布官方声明，建议改用 Cloudflare DNS、核对 EV 证书上的“MyEtherWallet Inc”、使用离线版和硬件钱包<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>04-24 至 04-25</time><div class="ev">AWS 声明 AWS 和 Route 53 都没有被入侵，是一家上游 ISP 被攻击者控制；Equinix 声明作恶服务器是客户放在其芝加哥机房的设备；eNet 拒绝置评<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>04-24 22:31</time><div class="ev">Cloudflare 发布分析，确认自家的 1.1.1.1 在芝加哥、悉尼等 11 个地点也被污染<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2018-04-25</time><div class="ev">Oracle Dyn 的 Doug Madory 发文，判断 eNet/XLHost（AS10297）遭到入侵，伪造路由只出现在该公司略多于 15% 的 BGP 数据源里<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2018-04-27</time><div class="ev">Internet Society 复原了路由传播过程，指出转发伪造路由的几家网络都没有做前缀过滤<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2018-07-06 至 07-12</time><div class="ev">印尼和马来西亚的两个 AS 多次劫持美国支付处理商权威 DNS 所在的路由。Oracle Dyn 认为这与 4 月的劫持可能有关<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk"><time>2018-07-09</time><div class="ev">Hola VPN 的 Chrome 扩展被换成恶意版本，把 MEW 用户引向钓鱼页面约 5 小时。这是另一条攻击路径<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2018 年内</time><div class="ev">事发后数月内，Amazon 为自己的路由（包括权威 DNS 所在的地址段）发布了 ROA<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2018-09-19</time><div class="ev">Cloudflare 宣布部署 RPKI，文中把这次事件列为历年典型路由事故之一<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2019–2020</time><div class="ev">AT&amp;T、Telia 在 2019 年开始丢弃 RPKI 无效路由，Cogent、NTT 在 2020 年跟进<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2020-12-17</time><div class="ev">Amazon Route 53 开始支持 DNSSEC 签名<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="atk"><time>2022-02-03</time><div class="ev">KLAYswap 被盗约 190 万美元。攻击者劫持了 Kakao 一台服务器的路由，替换掉一个 JavaScript 文件，还骗到了受信任 CA 签发的证书<a class="ref" href="#s24">[24]</a><a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="atk"><time>2022-08-17</time><div class="ev">Celer Bridge 被盗约 23.5 万美元。攻击者伪造路由登记记录，并把 Amazon 的 AS 号写进路径末尾，让劫持路由在 RPKI 校验中显示为有效<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2024-05-01</time><div class="ev">全球路由表中过半的 IPv4 路由有了 ROA<a class="ref" href="#s25">[25]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">在本页查阅的资料中，没有找到对攻击者的正式归因、起诉或资金追回的记录。</div></li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">几处时间对不上</span>
+          <p>MEW 的 Reddit 声明说劫持从 12:00 开始<a class="ref" href="#s4">[4]</a>，比 BGP 采集点记录的 11:05 晚了约一小时。媒体给出的本地时间也互相矛盾：The Verge 写成美东时间午夜<a class="ref" href="#s10">[10]</a>，Ars Technica 写成加州时间早上 6 点左右<a class="ref" href="#s6">[6]</a>，换算成 UTC 都对不上 11:05。CoinDesk 把 MEW 第一条警告推文记为美东时间 7:29<a class="ref" href="#s9">[9]</a>，按推文 ID 换算是 UTC 14:29，对应的是太平洋时间 7:29。本页以 BGP 采集点的记录为主线。</p>
+        </div>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次没有代码漏洞。浏览器要打开 MEW 的网页，要依次经过三层：BGP 路由决定数据包送到哪里，DNS 决定域名对应哪个 IP，TLS 证书证明对面的服务器是谁。攻击者攻破了前两层，第三层没有攻破，于是最后一步要靠用户自己点掉证书警告。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 600" role="img" aria-labelledby="mew-seq-t mew-seq-d">
+            <title id="mew-seq-t">MyEtherWallet 用户被劫持的请求路径</title>
+            <desc id="mew-seq-d">用户浏览器向递归解析器查询 myetherwallet.com。解析器本该问 Amazon Route 53，但伪造的 /24 路由比 Amazon 的 /23 更具体，查询被送到 eNet AS10297 里冒充的 DNS 服务器。冒充者返回钓鱼站地址 46.161.42.42，解析器缓存后交给浏览器。浏览器连上钓鱼站，收到自签名证书并弹出警告。用户点继续并输入私钥后，攻击者用私钥转走资金。</desc>
+            <defs>
+              <marker id="mew-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="mew-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="80" y1="66" x2="80" y2="590"/>
+            <line class="d-line dash" x1="235" y1="66" x2="235" y2="590"/>
+            <line class="d-line dash" x1="390" y1="66" x2="390" y2="590"/>
+            <line class="d-line dash" x1="545" y1="66" x2="545" y2="590"/>
+            <line class="d-line dash" x1="700" y1="66" x2="700" y2="540"/>
+            <rect class="d-box" x="10" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="80" y="35" text-anchor="middle">用户浏览器</text>
+            <text class="d-t s" x="80" y="55" text-anchor="middle">打开 MEW 网页</text>
+            <rect class="d-box" x="165" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="235" y="35" text-anchor="middle">递归解析器</text>
+            <text class="d-t s" x="235" y="55" text-anchor="middle">如 Google 8.8.8.8</text>
+            <rect class="d-box ok" x="320" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="390" y="35" text-anchor="middle">真 Route 53</text>
+            <text class="d-t s" x="390" y="55" text-anchor="middle">Amazon AS16509</text>
+            <rect class="d-box atk" x="475" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="545" y="35" text-anchor="middle">冒充的 DNS</text>
+            <text class="d-t s" x="545" y="55" text-anchor="middle">经 eNet AS10297</text>
+            <rect class="d-box atk" x="630" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="700" y="35" text-anchor="middle">钓鱼站</text>
+            <text class="d-t s m" x="700" y="55" text-anchor="middle">46.161.42.42</text>
+            <line class="d-line" x1="80" y1="105" x2="233" y2="105" marker-end="url(#mew-ah)"/>
+            <text class="d-t halo" x="157" y="97" text-anchor="middle">① 查域名的 A 记录</text>
+            <line class="d-line dash" x1="235" y1="150" x2="388" y2="150" marker-end="url(#mew-ah)"/>
+            <text class="d-t halo" x="312" y="142" text-anchor="middle">② 本该问 Route 53</text>
+            <rect class="d-box soft" x="245" y="162" width="290" height="30" rx="4"/>
+            <text class="d-t s atk" x="390" y="182" text-anchor="middle">/24 比 /23 更具体，路由器选了伪造的那条</text>
+            <line class="d-line atk" x1="235" y1="225" x2="543" y2="225" marker-end="url(#mew-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="217" text-anchor="middle">③ 查询实际被送到 AS10297</text>
+            <line class="d-line atk" x1="545" y1="275" x2="237" y2="275" marker-end="url(#mew-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="267" text-anchor="middle">④ 伪造应答：<tspan class="m">46.161.42.42</tspan>，缓存时间很长</text>
+            <line class="d-line atk" x1="235" y1="325" x2="82" y2="325" marker-end="url(#mew-ah-atk)"/>
+            <text class="d-t atk halo" x="157" y="317" text-anchor="middle">⑤ 缓存后转交</text>
+            <line class="d-line atk" x1="80" y1="375" x2="698" y2="375" marker-end="url(#mew-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="367" text-anchor="middle">⑥ 用 HTTPS 连向这个地址，地址栏里的域名完全正确</text>
+            <line class="d-line atk" x1="700" y1="420" x2="82" y2="420" marker-end="url(#mew-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="412" text-anchor="middle">⑦ 出示自签名证书</text>
+            <rect class="d-box def" x="20" y="436" width="500" height="50" rx="4"/>
+            <text class="d-t b def" x="270" y="456" text-anchor="middle">⑧ 浏览器警告：证书不是受信任机构签发的</text>
+            <text class="d-t s" x="270" y="476" text-anchor="middle">还在起作用的最后一道检查。用户点了“继续”，攻击才成立</text>
+            <line class="d-line atk" x1="80" y1="522" x2="698" y2="522" marker-end="url(#mew-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="512" text-anchor="middle">⑨ 在钓鱼页上输入私钥、keystore 或助记词</text>
+            <rect class="d-box atk" x="560" y="540" width="210" height="48" rx="4"/>
+            <text class="d-t b atk" x="665" y="560" text-anchor="middle">⑩ 攻击者用私钥签名</text>
+            <text class="d-t s" x="665" y="579" text-anchor="middle">钱包余额转入收款地址</text>
+          </svg>
+          </div>
+          <figcaption>图 1：一次被劫持的访问。红色是攻击者控制的步骤，蓝色是唯一还在起作用的检查。路由和 DNS 都已失守，最后把关的是浏览器的证书警告，而它把决定权交给了用户。</figcaption>
+        </figure>
+        <h3>第一层：BGP，更具体的路由胜出</h3>
+        <p>互联网上的每个自治系统（AS）用 BGP 告诉邻居“这段地址找我”。路由器转发时选匹配得最具体的那条，/24（256 个地址）比 /23（512 个地址）优先，不管宣告者是谁。Cloudflare 的说法是，伪造路由想压过合法路由，要么前缀更小，要么在前缀相同时路径更优<a class="ref" href="#s1">[1]</a>。攻击者走的是前一条路：不和 Amazon 抢 /23，而是在其中切出 5 个 /24，从 eNet 的 AS10297 宣告出去。接受了这些路由的路由器，就把发往这 1,280 个地址的包送往 AS10297。媒体报道的“约 1,300 个地址”就是这个数<a class="ref" href="#s6">[6]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>Amazon 平时宣告（AS16509）</th><th>被劫持的更具体前缀（AS10297）</th><th class="n">地址数</th></tr></thead>
+            <tbody>
+              <tr><td>205.251.192.0/23</td><td>205.251.192.0/24、205.251.193.0/24</td><td class="n">512</td></tr>
+              <tr><td>205.251.194.0/23</td><td>205.251.195.0/24</td><td class="n">256</td></tr>
+              <tr><td>205.251.196.0/23</td><td>205.251.197.0/24</td><td class="n">256</td></tr>
+              <tr><td>205.251.198.0/23</td><td>205.251.199.0/24</td><td class="n">256</td></tr>
+              <tr><td>合计</td><td>5 个 /24</td><td class="n">1,280</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Cloudflare 的 BGP 采集器记下了这些宣告。下面是它公布的记录节选，每行依次是时间、类型、前缀和 AS 路径，路径的最后一个 AS 是起源：</p>
+<pre class="code"><code><span class="c"># Cloudflare BGP 采集器记录（节选），时间为 UTC</span>
+BGP4MP|04/24/18 11:05:42|A|205.251.199.0/24|10297
+BGP4MP|04/24/18 11:05:42|A|205.251.197.0/24|10297
+BGP4MP|04/24/18 11:05:42|A|205.251.195.0/24|10297
+BGP4MP|04/24/18 11:05:42|A|205.251.193.0/24|10297
+BGP4MP|04/24/18 11:05:42|A|205.251.192.0/24|10297
+<span class="c"># 12 秒后，同一前缀经 Hurricane Electric（AS6939）转发，传到更远的网络</span>
+<span class="bad">BGP4MP|04/24/18 11:05:54|A|205.251.197.0/24|4826,6939,10297</span>
+<span class="c"># 这些地址段的合法起源是 Amazon 的 AS16509，RADB 里早有登记：</span>
+<span class="c"># route: 205.251.192.0/23  origin: AS16509  source: RADB</span></code></pre>
+        <p class="code-cap">来源：Cloudflare《BGP leaks and cryptocurrencies》中公布的采集记录和 whois 查询结果，原样摘录，中文注释为本站所加<a class="ref" href="#s1">[1]</a>。</p>
+        <p>BGP 协议本身不检查宣告者有没有权利宣告这段地址，这件事靠每个网络自己配置过滤规则。RADB 这样的路由登记库（IRR）早就写明 205.251.192.0/23 的起源是 AS16509，按登记库过滤的网络会直接丢掉 AS10297 的宣告<a class="ref" href="#s1">[1]</a>。Internet Society 事后复原的传播过程显示，eNet 的伪造路由经 Hurricane Electric（AS6939）、1&amp;1 Internet（AS8560）、Shaw（AS6327）和 BroadbandOne（AS19151）扩散开来，这几家都没有按前缀过滤；Level3（AS3356）、Cogent（AS174）和 NTT（AS2914）是 MANRS 成员，做了过滤，没有接受<a class="ref" href="#s3">[3]</a>。结果伪造路由只出现在 Oracle Dyn 略多于 15% 的 BGP 数据源里，但这一小部分里正好包括 Google Public DNS 的路径<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>第二层：DNS，冒充权威服务器并污染缓存</h3>
+        <p>递归解析器去问 Route 53 时，查询落到了 AS10297 里一台冒充的 DNS 服务器上<a class="ref" href="#s2">[2]</a>。Equinix 后来说明，这台服务器是客户放在其芝加哥机房的设备<a class="ref" href="#s6">[6]</a>；eNet 正是在 Equinix 芝加哥的交换中心与上述几家网络互联<a class="ref" href="#s3">[3]</a>。这台服务器只回答 myetherwallet.com，Route 53 托管的其他域名一律不答，所以有人先看到的是 SERVFAIL<a class="ref" href="#s1">[1]</a>。它给出的地址是 46.161.42.42。这个地址的归属说法不一：Cloudflare 说钓鱼站的地址属于俄罗斯的网络（AS48693、AS41995），Oracle Dyn 说它登记为德国的地址段、实际从乌克兰东部的卢甘斯克路由出去，媒体多写作“俄罗斯的服务器”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s13">[13]</a><a class="ref" href="#s6">[6]</a>。</p>
+        <p>伪造应答一旦进了递归解析器的缓存，所有用这台解析器的人都会拿到错误地址。Cloudflare 特别指出，用户自己所在的网络不需要接受伪造路由，只要用的解析器被污染就够了<a class="ref" href="#s1">[1]</a>。缓存多久由应答里的 TTL 决定，而 TTL 是冒充的服务器自己填的。一名 Reddit 用户当时贴出的查询结果如下：</p>
+<pre class="code"><code><span class="c"># 用户在 2018-04-24 15:48:51（EEST，即 UTC 12:48:51）向 Google Public DNS 查询</span>
+root@tali:/home/micky# dig @8.8.8.8 myetherwallet.com
+;; ANSWER SECTION:
+<span class="bad">myetherwallet.com.	9641	IN	A	46.161.42.42</span>
+<span class="c"># 9641 是这条记录在缓存里还剩的秒数，约 2.7 小时</span>
+<span class="c"># 约 1.5 分钟后查 8.8.4.4，剩余 9902 秒：两台缓存节点各自存了这条伪造记录</span></code></pre>
+        <p class="code-cap">来源：Reddit r/ethereum 用户 MickySocaci 的帖子，2018-04-24，保留原始 dig 输出中的应答行，中文注释为本站所加<a class="ref" href="#s11">[11]</a>。</p>
+        <p>按这个剩余时间，就算伪造路由在 13:00 前后撤回，这台缓存节点也要到 15:30 前后才会重新去问真正的 Route 53。撤回路由并不能立刻结束攻击。MEW 的 CEO Kosala Hemachandra 当天对 CoinDesk 说，Google 很快修好了问题，各 DNS 服务器已经解析回正确地址<a class="ref" href="#s9">[9]</a>。Oracle Dyn 在 7 月的同类劫持中观察到，攻击者把伪造应答的 TTL 设成约 5 天，而这些域名正常的 TTL 是 600 秒<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>第三层：TLS 证书，没有攻破的一层</h3>
+        <p>MEW 全站使用 HTTPS。钓鱼站要让浏览器不报警，需要一张受信任 CA 签发给 myetherwallet.com 的证书。攻击者只有一张自签名证书，域名写得没错，但签发者不受浏览器信任，于是浏览器提示“证书由未知机构签发”。Cloudflare 的结论是，这次攻击要成功，只能靠用户点继续、接受错误的证书<a class="ref" href="#s1">[1]</a>。</p>
+        <p>攻击者为什么没去弄一张真证书，各方看法不同。Cloudflare 认为，要为别人的域名拿到合法证书，得去污染 CA 所用的、没有 DNSSEC 保护的解析器<a class="ref" href="#s1">[1]</a>。Kevin Beaumont 则认为，在劫持流量期间拿一张证书“很容易”，攻击者没这么做，反而让很多人发现了问题<a class="ref" href="#s5">[5]</a>。四年后的 KLAYswap 事件说明这条路走得通：攻击者劫持路由后，CA 的域名验证请求落到了攻击者的服务器上，CA 就把证书签给了攻击者<a class="ref" href="#s24">[24]</a>。</p>
+        <p>还有一种机制可以把警告变成硬性拦截：HSTS。按 RFC 6797，浏览器连接一个已知启用 HSTS 的站点时，只要证书有任何错误就必须断开，并且不给用户“继续”的选项<a class="ref" href="#s21">[21]</a>。当天有用户能点过警告，说明他们的浏览器没有对这个域名执行 HSTS。可能是 MEW 没有发送 HSTS 响应头，也可能是域名不在浏览器的预加载列表里、用户本地也没缓存过这条策略。公开资料没有说清是哪一种。</p>
+        <h3>被拿走的是私钥本身</h3>
+        <p>MEW 没有账户和密码。“登录”就是把私钥贴进网页、上传 keystore 文件并输入密码，或者输入助记词，签名在浏览器里完成<a class="ref" href="#s15">[15]</a>。钓鱼页把这些内容记下来交给攻击者，攻击者就能自己签名转账<a class="ref" href="#s8">[8]</a>。一名受害者描述，他“登录”后页面出现约 10 秒的倒计时，接着钱包里的钱就被转走了<a class="ref" href="#s7">[7]</a>。用硬件钱包的人，私钥不离开设备，钓鱼页拿不到。MEW 当天的声明也呼吁用户用硬件钱包保存资产<a class="ref" href="#s4">[4]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击者没有公开过任何说明。下面的步骤根据路由数据、各方声明和受害者描述整理，准备阶段的细节大多不清楚。</p>
+        <ol class="steps">
+          <li><b>拿到宣告路由的能力</b>宣告路由用的是 eNet/XLHost 的 AS10297，这是俄亥俄州哥伦布市的一家 ISP<a class="ref" href="#s6">[6]</a>。攻击者怎么拿到的有三种说法：Oracle Dyn 认为 eNet 遭到入侵<a class="ref" href="#s2">[2]</a>；AWS 说是上游 ISP 被攻击者控制<a class="ref" href="#s6">[6]</a>；Cloudflare 指出 eNet 也为客户提供 IP 服务，宣告可能来自它的某个客户<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>架好冒充的 DNS 和钓鱼站</b>在 Equinix 芝加哥机房的一台客户设备上运行冒充 Route 53 的 DNS 服务，只对 myetherwallet.com 返回假地址<a class="ref" href="#s6">[6]</a><a class="ref" href="#s1">[1]</a>。钓鱼页放在 46.161.42.42，外观仿照真站，配一张自签名证书<a class="ref" href="#s8">[8]</a>。</li>
+          <li><b>宣告 5 个 /24</b>11:05:41 起，伪造路由在约 13 秒内经 4 家对等网络出现在采集点上，再由 Hurricane Electric 传给更多邻居<a class="ref" href="#s3">[3]</a>。Cloudflare 的 1.1.1.1 受影响的地点集中在芝加哥和澳大利亚等地：eNet 在芝加哥有直接互联，Hurricane Electric 在澳大利亚覆盖很广<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>污染递归解析器</b>Google Public DNS 和 Cloudflare 1.1.1.1 的部分节点向冒充的服务器查询，缓存了指向钓鱼站的记录<a class="ref" href="#s1">[1]</a>。MEW 和 Oracle Dyn 都说，受影响的主要是使用 Google DNS 的用户<a class="ref" href="#s4">[4]</a><a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>收集私钥并转走资金</b>受害者看到的是和真站一样的页面，地址栏里的域名也对。点过证书警告、输入私钥之后，余额被转到攻击者的收款地址<a class="ref" href="#s8">[8]</a><a class="ref" href="#s7">[7]</a>。</li>
+          <li><b>撤回路由，转移资金</b>12:55 前后伪造路由开始撤回<a class="ref" href="#s3">[3]</a>。BleepingComputer 报道，大约两小时后、MEW 开始恢复对解析的控制时，攻击者把约 215 枚 ETH 从收款地址转到另一个地址<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</li>
+        </ol>
+        <p>从伪造路由出现到开始撤回，前后约 1 小时 50 分钟，缓存让受影响的时间更长。Oracle Dyn 先看到的是“Amazon 的 DNS 被劫持”，看到 myetherwallet.com 的相关报告后才把两件事联系起来<a class="ref" href="#s2">[2]</a>。Kevin Beaumont 的评价是，几乎没有人在攻击停下之前注意到它<a class="ref" href="#s5">[5]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>受害者报告的收款地址是 <span class="addr">0x1d50588C0aa11959A5c28831ce3DC5F1D3120d29</span><a class="ref" href="#s8">[8]</a>。CoinDesk 发稿时统计，这个地址收到 179 笔转入，合计 216.06 枚 ETH，约合 15.2 万美元<a class="ref" href="#s9">[9]</a>。179 笔转入不等于 179 名受害者，公开资料没有给出受害人数。</p>
+        <ol class="flow">
+          <li class="atk"><b>受害者钱包</b>私钥在钓鱼页上被记下，攻击者自己签名转出</li>
+          <li class="atk"><b>收款地址</b>0x1d50…0d29，179 笔转入，合计 216.06 ETH</li>
+          <li class="atk"><b>中转地址</b>0x68ca…da83，转入约 215 ETH，随后分到多个地址</li>
+          <li class="doubt"><b>之后不明</b>公开报道没有继续追踪，没有冻结或追回的记录</li>
+        </ol>
+        <p>CoinDesk 记录的中转地址是 <span class="addr">0x68ca85dbf8eba69fb70ecdb78e0895f7cd94da83</span>，并说资金随后被分到多个钱包地址<a class="ref" href="#s9">[9]</a>。本页查阅的资料都没有说明这笔钱最后进了哪家交易所或混币服务。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">金额</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>CoinDesk</td><td class="n">216.06 ETH，约 15.2 万美元</td><td>按收款地址的转入合计，发稿时的价格<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>BleepingComputer</td><td class="n">215 ETH，约 16 万美元</td><td>按转出到中转地址时的价格<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>Ars Technica、The Register</td><td class="n">约 15 万美元</td><td>没有给出 ETH 数量<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>The Verge</td><td class="n">至少 1.3 万美元</td><td>当天早些时候按钱包活动估算<a class="ref" href="#s10">[10]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note doubt">
+          <span class="h">“1,700 万美元”说的不是这次的赃款</span>
+          <p>Kevin Beaumont 当天写道，攻击者的钱包“总共已经有超过 2,000 万英镑”<a class="ref" href="#s5">[5]</a>。The Verge、Ars Technica 和 The Register 转述为钱包里已有约 1,700 万美元<a class="ref" href="#s10">[10]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>，2023 年 Kentik 的一篇回顾则写成攻击者“攒下了 <span class="dispute">1,700 万美元</span>”<a class="ref" href="#s23">[23]</a>。这和 CoinDesk 统计的收款地址只收到 216.06 ETH 对不上。Beaumont 没有说明他指的是哪些钱包、钱从哪里来，本站也没有做链上核实。本页的损失按约 215 枚 ETH 计。</p>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>BGP 劫持与 DNS 劫持连在一起用</h3>
+        <p>两种手法都不新。2017 年，Visa、MasterCard 等公司的流量曾被可疑地经由俄罗斯的网络绕行<a class="ref" href="#s6">[6]</a>；2014 年，有人用 BGP 劫持截获比特币矿工和矿池之间的通信<a class="ref" href="#s23">[23]</a>。Kevin Beaumont 说，这是他见过的把两者结合起来规模最大的一次<a class="ref" href="#s5">[5]</a>。偷到的钱不多，展示出来的能力却不小：攻击者让一部分互联网相信自己就是 Amazon 的 DNS 服务器。The Register 指出，理论上所有用 Route 53 做 DNS 的网站都可能被冒充<a class="ref" href="#s7">[7]</a>。Beaumont 也怀疑 MEW 不是唯一目标<a class="ref" href="#s5">[5]</a>，但至今没有第二个受害网站公开。AWS 的说法是，被引走的只是“单个客户域名的一小部分流量”<a class="ref" href="#s6">[6]</a>。</p>
+        <p>其他 Route 53 客户受到的是可用性影响。在受影响的地区，冒充的服务器对别的域名一律不答，这些域名通过 Google DNS 解析失败，Outages 邮件列表上最早的报告说的正是这件事<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a>。</p>
+        <h3>信任边界在钱包之外</h3>
+        <p>MEW 在声明里说，这不是平台安全措施不足，而是黑客利用了公共 DNS 服务器的弱点<a class="ref" href="#s4">[4]</a>。从技术上看这没错：MEW 的代码、服务器和域名账户都没被碰过，Amazon 的系统也没有。声明里把责任指向 Google DNS，Oracle Dyn 则指出真正被劫持的是 Amazon 的 DNS<a class="ref" href="#s2">[2]</a>。但用户照样丢了钱。网页钱包的安全，取决于它下面的路由、DNS、证书体系，以及用户会不会点过警告。这些大多不归钱包开发者管，开发者能决定的是把多少信任押在上面，比如私钥要不要经过网页。</p>
+        <h3>推动 RPKI 落地</h3>
+        <p>RPKI 让地址持有者签发一种叫 ROA 的证书，写明哪个 AS 有权宣告这段地址。做起源验证（ROV）的网络会丢弃起源对不上的路由。事发时，Amazon 还没有为这些地址发布 ROA。Oracle Dyn 当时引用 NTT 的 Job Snijders 的建议：大型权威 DNS 服务商应该用 RPKI 为自己的路由签名，这样各 AS 和交换中心就能丢掉这类伪造路由<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Kentik 的 Doug Madory 后来记录，事发后几个月内 Amazon 就为自己的路由发布了 ROA，包括权威 DNS 所在的地址段。他认为 Google DNS 这类公共解析器和 Amazon 直接互联、并且会丢弃 RPKI 无效路由，同样的手法很难再骗过它们<a class="ref" href="#s16">[16]</a>。Cloudflare 2018 年 9 月宣布部署 RPKI 时，把这次事件列为历年典型路由事故之一<a class="ref" href="#s17">[17]</a>。之后 AT&amp;T、Telia、Cogent、NTT 等大网络在 2019 到 2020 年先后开始丢弃无效路由<a class="ref" href="#s18">[18]</a>。到 2024 年 5 月，全球过半的 IPv4 路由有了 ROA，RPKI 无效路由的传播范围比 2022 年初缩小了 24%<a class="ref" href="#s25">[25]</a>。推动这些进展的因素很多，MEW 事件是其中被反复引用的一例。</p>
+        <h3>之后的同类攻击</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th class="n">损失</th><th>劫持了什么，怎么绕过检查</th></tr></thead>
+            <tbody>
+              <tr><td>MyEtherWallet<br>2018-04</td><td class="n">约 215 ETH</td><td>劫持 Amazon 权威 DNS 的路由，伪造 DNS 应答。没拿到证书，靠用户点掉警告</td></tr>
+              <tr><td>KLAYswap<br>2022-02</td><td class="n">约 190 万美元</td><td>劫持 Kakao 一台托管 JavaScript SDK 的服务器的路由，换掉脚本<a class="ref" href="#s24">[24]</a>。骗 CA 签发了真证书；没有伪造 DNS，DNSSEC 帮不上<a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>Celer Bridge<br>2022-08</td><td class="n">约 23.5 万美元</td><td>劫持 AWS 上部分基础设施的路由，向用户下发钓鱼合约。在 AltDB 伪造路由登记，把 Amazon 的 AS14618 写成起源，RPKI 校验显示有效<a class="ref" href="#s16">[16]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>三起事件都没有碰目标自己的代码，改的是用户的数据包去哪里。MEW 事件里证书警告拦住了一部分人；KLAYswap 的攻击者拿到了受信任证书，警告没有出现；RPKI 推广之后，Celer 的攻击者干脆伪造起源。站内的 <a href="2021-badgerdao.html">BadgerDAO</a> 和 <a href="2025-bybit.html">Bybit</a> 也是同一个思路：合约没问题，被篡改的是用户看到的前端。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>MEW 的应对</h3>
+        <p>MEW 当天在 Twitter 和 Reddit 上发出提示：改用 Cloudflare DNS；使用前确认地址栏有写着“MyEtherWallet Inc”的绿色 EV 证书；运行离线的本地版 MEW；用硬件钱包保存资产；不要理会任何自称代表 MEW 发放或退还 ETH 的消息<a class="ref" href="#s4">[4]</a><a class="ref" href="#s7">[7]</a>。CEO Kosala Hemachandra 对 CoinDesk 说，能对 Google 公共 DNS 做 DNS 投毒的攻击者“规模足够大”，团队希望说服用户改用硬件钱包和本地版本<a class="ref" href="#s9">[9]</a>。</p>
+        <p>回头看，其中两条建议并不可靠。Cloudflare 的 1.1.1.1 当天同样在 11 个地点被污染<a class="ref" href="#s1">[1]</a>，换一个解析器只是换一个可能被污染的缓存。EV 证书的绿色公司名后来也从浏览器地址栏消失了：Chrome 从 77 版起把它移进页面信息面板，理由是研究显示这个标识并不能让用户做出更安全的选择<a class="ref" href="#s22">[22]</a>。</p>
+        <p>没有资料显示 MEW 或其他方面向受害者赔付。MEW 提醒用户警惕“退款”诈骗，说明有人借机冒充 MEW 行骗<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>各方的说法</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>谁</th><th>说了什么</th></tr></thead>
+            <tbody>
+              <tr><td>AWS</td><td>AWS 和 Route 53 都没有被入侵。一家上游 ISP 被攻击者控制，向与它互联的网络宣告了 Route 53 的部分地址，这些网络接受后，把单个客户域名的一小部分流量引向了恶意副本<a class="ref" href="#s6">[6]</a>。</td></tr>
+              <tr><td>Equinix</td><td>涉事服务器不是 Equinix 的，而是客户放在其芝加哥 IBX 机房的设备；Equinix 一般看不到、也管不了客户或客户的客户在设备上做什么<a class="ref" href="#s6">[6]</a>。</td></tr>
+              <tr><td>eNet</td><td>对 The Register 说“不感兴趣，谢谢”，拒绝置评<a class="ref" href="#s7">[7]</a>。</td></tr>
+              <tr><td>Oracle Dyn</td><td>eNet/XLHost（AS10297）看来遭到入侵，攻击者借此冒充 Amazon 的权威 DNS<a class="ref" href="#s2">[2]</a>。</td></tr>
+              <tr><td>Cloudflare</td><td>eNet 提供 IP 服务，伪造宣告可能来自它的某个客户；参与其中的环节很多，很难确定该怪谁<a class="ref" href="#s1">[1]</a>。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>这几种说法彼此不矛盾，但都没有给出证据细节。本页没有找到 eNet 的事故报告，也没有找到执法机构公开的调查结果。</p>
+        <h3>与 7 月支付系统劫持的关联</h3>
+        <p>2018 年 7 月 6 日至 12 日，印尼的 AS38146 和马来西亚的 AS38182 多次劫持 Datawire、Vantiv、Mercury Payment Systems 等美国支付处理商权威 DNS 所在的路由，手法和 4 月相似。被动 DNS 数据显示，伪造应答指向的地址登记在库拉索，实际从卢甘斯克路由出去；4 月的 46.161.42.42 登记为德国地址，同样从卢甘斯克路由出去。Oracle Dyn 据此认为两次劫持“可能有关”<a class="ref" href="#s13">[13]</a>。这是根据网络特征做的推断，不是归因。</p>
+        <h3>同年第二次针对 MEW 用户的攻击</h3>
+        <p>2018 年 7 月 9 日，攻击者盗用了 Hola VPN 的 Chrome 网上应用店开发者账号，把扩展换成恶意版本。恶意扩展向 MEW 网站注入脚本，把用户引到钓鱼页面，持续约 5 小时。MEW 呼吁装了这个扩展、过去 24 小时内用过 MEW 的人立即把资金转到新账户<a class="ref" href="#s14">[14]</a>。这次被利用的是用户浏览器里的扩展，和路由、DNS 无关，结果一样是网页被换掉。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <p>按数据包经过的顺序，下面每一层都有机会拦住这次攻击。2018 年时，前缀过滤只在部分网络生效，RPKI 和 DNSSEC 还没有用在这些地址和这个域名上，HSTS 没有对受害者生效。CA 没有给攻击者签发证书，所以警告一定会出现。最后拦住一部分人的，是证书警告和硬件钱包。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>环节</th><th>本可以怎样拦住</th><th>2018 年的实际情况与局限</th></tr></thead>
+            <tbody>
+              <tr><td>对等网络的前缀过滤（IRR）</td><td>丢掉 AS10297 对 Amazon 地址的宣告，伪造路由传不出去</td><td>Level3、Cogent、NTT 做了，Hurricane Electric 等 4 家没做<a class="ref" href="#s3">[3]</a>。登记库本身可以造假，Celer 事件里攻击者就在 AltDB 写了假登记<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>RPKI 起源验证</td><td>起源不是 AS16509 的路由被判为无效并丢弃</td><td>事发时 Amazon 没有 ROA，大网络也多半还没做起源验证<a class="ref" href="#s2">[2]</a><a class="ref" href="#s18">[18]</a>。它只验证起源，伪造起源可以绕过<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>DNSSEC</td><td>冒充者没有签名私钥，伪造应答通不过验证；Google Public DNS 自 2013 年起做验证<a class="ref" href="#s1">[1]</a><a class="ref" href="#s20">[20]</a></td><td>Route 53 到 2020 年 12 月才支持签名<a class="ref" href="#s19">[19]</a>。攻击者如果直接劫持网站服务器的地址，DNSSEC 帮不上<a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>CA 的域名验证</td><td>攻击者拿不到受信任证书，用户一定会看到警告</td><td>这次攻击者没拿到。Let’s Encrypt 从 2020 年起从多个网络位置验证域名，提高了用路由劫持骗证书的难度<a class="ref" href="#s26">[26]</a></td></tr>
+              <tr><td>HSTS 与预加载</td><td>证书出错直接断开，不给“继续”<a class="ref" href="#s21">[21]</a></td><td>能点过警告的用户，浏览器没有对这个域名执行 HSTS</td></tr>
+              <tr><td>证书警告</td><td>提醒用户连接的不是真站</td><td>拦住了一部分人，但决定权在用户<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>硬件钱包</td><td>私钥不离开设备，钓鱼页拿不到<a class="ref" href="#s15">[15]</a></td><td>MEW 当时已支持 Ledger、TREZOR。签名前仍要在设备屏幕上核对收款地址和金额</td></tr>
+              <tr><td>DNS 与 BGP 监控</td><td>从多地检查解析结果和新出现的前缀，几分钟内报警<a class="ref" href="#s16">[16]</a></td><td>约半小时后就有用户发现证书异常，11:54 邮件列表出现 SERVFAIL 报告，MEW 的公开确认却在路由撤回之后<a class="ref" href="#s8">[8]</a><a class="ref" href="#s12">[12]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note lesson">
+          <span class="h">给钱包和网站开发者</span>
+          <ul>
+            <li>不要让私钥经过网页。用户在被换掉的网页上输入过私钥，就已经丢了。优先引导用户用硬件钱包或浏览器扩展钱包签名。</li>
+            <li>给域名启用 DNSSEC，并确认注册局那边的 DS 记录已经生效。选 DNS 服务商时，把是否支持 DNSSEC 签名列为条件。</li>
+            <li>启用 HSTS 并申请加入浏览器的预加载列表，让证书错误变成无法跳过的拦截。</li>
+            <li>用 CAA 记录限定可以签发证书的 CA，监控证书透明度日志里给自己域名签发的证书。</li>
+            <li>从多个地区持续检查自己域名的解析结果，监控自己地址段的 BGP 宣告。这次 MEW 的公开确认在伪造路由撤回之后。</li>
+            <li>不要再教用户“看地址栏里的公司名”。主流浏览器已经不在地址栏显示 EV 公司名<a class="ref" href="#s22">[22]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给网络运营者</span>
+          <ul>
+            <li>按 IRR 和 RPKI 过滤客户与对等方的宣告，丢弃 RPKI 无效路由。这次伪造路由没有传遍全网，就是因为几家大网络做了过滤<a class="ref" href="#s3">[3]</a>。</li>
+            <li>为自己的地址签发 ROA，并让最大前缀长度和实际宣告的长度一致。ROA 允许的前缀范围越宽，伪造起源的更具体前缀就越容易显示为有效。Kentik 引用的 RFC 9319 把“尽量不用 maxLength”列为最佳实践<a class="ref" href="#s16">[16]</a>。</li>
+            <li>RPKI 只验证起源，不验证路径。伪造起源的攻击要靠路径异常监控发现，比如一个陌生的小网络突然独家转发某家大公司的地址段<a class="ref" href="#s16">[16]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>钓鱼站的域名可以和真站一模一样，地址栏对了不代表连对了。证书警告才是信号，钱包网站出现证书警告就直接关掉。</li>
+            <li>用硬件钱包，并在设备自己的屏幕上核对收款地址和金额。</li>
+            <li>被盗后收到的“退款”“补偿”消息，一律按诈骗处理<a class="ref" href="#s4">[4]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Louis Poinsignon（Cloudflare），《BGP leaks and cryptocurrencies》，Cloudflare Blog，2018-04-24。<a href="https://blog.cloudflare.com/bgp-leaks-and-crypto-currencies/">blog.cloudflare.com</a></li>
+          <li id="s2">Doug Madory（Oracle Dyn），《BGP Hijack of Amazon DNS to Steal Crypto Currency》，Dyn Blog，2018-04-25。<a href="https://web.archive.org/web/20200403082343/https://dyn.com/blog/bgp-hijack-of-amazon-dns-to-steal-crypto-currency/">web.archive.org</a> <span class="src-note">原网址已跳转到 Oracle 博客首页，经 Internet Archive 存档阅读。</span></li>
+          <li id="s3">Aftab Siddiqui（Internet Society），《What Happened? The Amazon Route 53 BGP Hijack to Take Over Ethereum Cryptocurrency Wallets》，2018-04-27。<a href="https://www.internetsociety.org/blog/2018/04/amazons-route-53-bgp-hijack/">internetsociety.org</a></li>
+          <li id="s4">MyEtherWallet（Reddit 账号 kvhnuke），《Official statement regarding DNS spoofing of MyEtherWallet domain》，r/MyEtherWallet，2018-04-24。<a href="https://www.reddit.com/r/MyEtherWallet/comments/8eloo9/official_statement_regarding_dns_spoofing_of/">reddit.com</a> <span class="src-note">正文经 PullPush 的 Reddit 存档接口读取。</span></li>
+          <li id="s5">Kevin Beaumont，《Hijack of Amazon’s internet domain service used to reroute web traffic for two hours unnoticed》，DoublePulsar，2018-04-24。<a href="https://doublepulsar.com/hijack-of-amazons-internet-domain-service-used-to-reroute-web-traffic-for-two-hours-unnoticed-3a6f0dda6a6f">doublepulsar.com</a> <span class="src-note">原站拒绝抓取，经 Internet Archive 存档阅读。</span></li>
+          <li id="s6">Dan Goodin，《Suspicious event hijacks Amazon traffic for 2 hours, steals cryptocurrency》，Ars Technica，2018-04-24（含 Amazon 和 Equinix 的声明）。<a href="https://arstechnica.com/information-technology/2018/04/suspicious-event-hijacks-amazon-traffic-for-2-hours-steals-cryptocurrency/">arstechnica.com</a></li>
+          <li id="s7">Shaun Nichols，《AWS DNS network hijack turns MyEtherWallet into ThievesEtherWallet》，The Register，2018-04-24。<a href="https://www.theregister.com/2018/04/24/myetherwallet_dns_hijack/">theregister.com</a></li>
+          <li id="s8">Catalin Cimpanu，《Hacker Hijacks DNS Server of MyEtherWallet to Steal $160,000》，BleepingComputer，2018-04-24。<a href="https://www.bleepingcomputer.com/news/security/hacker-hijacks-dns-server-of-myetherwallet-to-steal-160-000/">bleepingcomputer.com</a></li>
+          <li id="s9">David Floyd，《$150K Stolen From MyEtherWallet Users in DNS Server Hijacking》，CoinDesk，2018-04-24。<a href="https://www.coindesk.com/markets/2018/04/24/150k-stolen-from-myetherwallet-users-in-dns-server-hijacking">coindesk.com</a></li>
+          <li id="s10">Russell Brandom，《Hackers emptied Ethereum wallets by breaking the basic infrastructure of the internet》，The Verge，2018-04-24。<a href="https://www.theverge.com/2018/4/24/17275982/myetherwallet-hack-bgp-dns-hijacking-stolen-ethereum">theverge.com</a></li>
+          <li id="s11">Reddit 用户 MickySocaci，《[WARNING] MyEtherWallet.com highjacked on Google Public DNS》，r/ethereum，2018-04-24（用户自行贴出的 dig 结果）。<a href="https://www.reddit.com/r/ethereum/comments/8ek86t/warning_myetherwalletcom_highjacked_on_google/">reddit.com</a> <span class="src-note">正文经 PullPush 的 Reddit 存档接口读取。</span></li>
+          <li id="s12">Zach Hanna，《Google 8.8.8.8 Resolution of Route53 domains》，Outages 邮件列表，2018-04-24 07:54（EDT）。<a href="https://puck.nether.net/pipermail/outages/2018-April/011119.html">puck.nether.net</a></li>
+          <li id="s13">Doug Madory（Oracle Dyn），《BGP/DNS Hijacks Target Payment Systems》，Dyn Blog，2018-08-03。<a href="https://web.archive.org/web/20191214063417/https://dyn.com/blog/bgp-dns-hijacks-target-payment-systems/">web.archive.org</a> <span class="src-note">原网址已跳转到 Oracle 博客首页，经 Internet Archive 存档阅读。</span></li>
+          <li id="s14">Catalin Cimpanu，《Hacker Breaches Hola VPN Chrome Extension to Go After Cryptocurrency Wallet Site》，BleepingComputer，2018-07-10。<a href="https://www.bleepingcomputer.com/news/security/hacker-breaches-hola-vpn-chrome-extension-to-go-after-cryptocurrency-wallet-site/">bleepingcomputer.com</a></li>
+          <li id="s15">MyEtherWallet，etherwallet 仓库（v3 版本）README，GitHub，mercury 分支。<a href="https://github.com/kvhnuke/etherwallet/blob/mercury/README.md">github.com</a></li>
+          <li id="s16">Doug Madory（Kentik），《What can be learned from recent BGP hijacks targeting cryptocurrency services?》，Kentik Blog，2022-09-22。<a href="https://www.kentik.com/blog/bgp-hijacks-targeting-cryptocurrency-services/">kentik.com</a></li>
+          <li id="s17">Martin J Levy（Cloudflare），《RPKI - The required cryptographic upgrade to BGP routing》，Cloudflare Blog，2018-09-19。<a href="https://blog.cloudflare.com/rpki/">blog.cloudflare.com</a></li>
+          <li id="s18">Louis Poinsignon（Cloudflare），《Is BGP Safe Yet? No. But we are tracking it carefully》，Cloudflare Blog，2020-04-17。<a href="https://blog.cloudflare.com/is-bgp-safe-yet-rpki-routing-security-initiative/">blog.cloudflare.com</a></li>
+          <li id="s19">AWS，《Announcing Amazon Route 53 support for DNSSEC》，2020-12-17。<a href="https://aws.amazon.com/about-aws/whats-new/2020/12/announcing-amazon-route-53-support-dnssec/">aws.amazon.com</a></li>
+          <li id="s20">Google，《Security Benefits》，Google Public DNS 文档（最后更新 2024-09-03）。<a href="https://developers.google.com/speed/public-dns/docs/security">developers.google.com</a></li>
+          <li id="s21">J. Hodges、C. Jackson、A. Barth，RFC 6797《HTTP Strict Transport Security (HSTS)》，IETF，2012-11。<a href="https://www.rfc-editor.org/rfc/rfc6797">rfc-editor.org</a></li>
+          <li id="s22">Chromium，《EV UI Moving to Page Info》，Chromium 文档。<a href="https://chromium.googlesource.com/chromium/src/+/HEAD/docs/security/ev-to-page-info.md">chromium.googlesource.com</a></li>
+          <li id="s23">Doug Madory（Kentik），《A Brief History of the Internet’s Biggest BGP Incidents》，Kentik Blog，2023-06-06（加密货币部分主要由普林斯顿的 Henry Birge-Lee 撰写）。<a href="https://www.kentik.com/blog/a-brief-history-of-the-internets-biggest-bgp-incidents/">kentik.com</a></li>
+          <li id="s24">Catalin Cimpanu，《KlaySwap crypto users lose funds after BGP hijack》，The Record，2022-02-14。<a href="https://therecord.media/klayswap-crypto-users-lose-funds-after-bgp-hijack">therecord.media</a></li>
+          <li id="s25">Doug Madory（Kentik）、Job Snijders（Fastly），《RPKI ROV Deployment Reaches Major Milestone》，Kentik Blog，2024-05-01。<a href="https://www.kentik.com/blog/rpki-rov-deployment-reaches-major-milestone/">kentik.com</a></li>
+          <li id="s26">Let’s Encrypt，《Multi-Perspective Validation Improves Domain Validation Security》，2020-02-19。<a href="https://letsencrypt.org/2020/02/19/multi-perspective-validation/">letsencrypt.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

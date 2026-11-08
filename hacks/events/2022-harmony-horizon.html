@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harmony Horizon 跨链桥被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 Harmony Horizon 跨链桥被盗约 1 亿美元的经过：只需 2 个签名的多签、被解密的私钥、FBI 对 Lazarus 的认定、Tornado Cash 与 Railgun 洗钱、四年未完成的赔付，以及 2026 年 Harmony 主网关停。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-harmony-horizon">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Harmony Horizon 跨链桥被盗</h1>
+    <p class="lede">2022 年 6 月 23 日，攻击者用两把被盗的签名私钥，从 Harmony 的 Horizon 跨链桥在以太坊和 BSC 上的合约里转走约 1 亿美元。合约代码没有漏洞，放行一笔提款只需要多签钱包 5 个签名者中的 2 个。FBI 后来认定这是朝鲜 Lazarus 所为；Harmony 上那些失去储备的跨链资产此后一直没有恢复锚定，到 2026 年 Harmony 宣布关停主网时，赔付仍未完成。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Horizon 是 Harmony 官方运营的跨链桥。用户存到以太坊或 BSC 一侧的资产锁在桥合约里，Harmony 上对应发行带 “1” 前缀的映射代币，例如 1USDC、1ETH。桥合约放款只认一个多签钱包，多签钱包只数签名够不够。据 rekt.news 和 Elliptic，事发时多签是 5 个签名者、门槛 2 个<a class="ref" href="#s3">[3]</a><a class="ref" href="#s17">[17]</a>。</p>
+        <p>攻击者拿到并解密了其中两把私钥，从 UTC 时间 6 月 23 日 11:06 开始，用 12 笔交易把桥里的 USDC、ETH、WBTC、USDT、DAI 等 14 种资产转走<a class="ref" href="#s2">[2]</a>。Harmony 统计的损失为 99,340,030 美元，涉及约 6.5 万个钱包<a class="ref" href="#s7">[7]</a>。Harmony 称私钥经过口令和密钥管理服务双重加密，没有一台机器能同时接触多把明文私钥，但攻击者还是解密了其中几把<a class="ref" href="#s1">[1]</a>。</p>
+        <p>赃款先在 Uniswap 换成约 8.58 万枚 ETH，6 月 27 日起分批存入 Tornado Cash<a class="ref" href="#s5">[5]</a>。2023 年 1 月 23 日，FBI 确认作案者是朝鲜的 Lazarus Group（APT38），并披露攻击者在 1 月 13 日通过 Railgun 洗出了超过 6,000 万美元的 ETH<a class="ref" href="#s6">[6]</a>。</p>
+        <p>Harmony 先提出增发约 49.7 亿枚 ONE 赔付，遭社区反对后撤回，改为用金库资金和此后的部分增发回购销毁脱锚资产<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>。到 2025 年 8 月，社区估计只有约 30% 的脱锚资产被销毁或移除<a class="ref" href="#s11">[11]</a>。2026 年 9 月，Harmony 在又一次链上漏洞之后宣布关停主网、把 ONE 迁到以太坊<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Harmony 是 2019 年上线的分片公链，原生代币 ONE。2021 年它是热门的“以太坊竞争者”之一：ONE 在 2021 年 10 月涨到约 0.38 美元，2022 年 1 月链上用户存款超过 10 亿美元，其中链游 DeFi Kingdoms 一家就有 7.47 亿美元<a class="ref" href="#s13">[13]</a>。这些资金大量来自以太坊和 BSC，靠的就是 Horizon 桥。</p>
+        <h3>Horizon 怎么搬运资产</h3>
+        <p>Horizon 的合约开源在 harmony-one/ethhmy-bridge 仓库里<a class="ref" href="#s15">[15]</a>。以太坊一侧，每类资产有一个 Manager 合约（ETH 用 <code>EthManager</code>，ERC-20 代币用 <code>ERC20EthManager</code> 等），负责锁定和解锁。用户存入时，资产锁进 Manager，Harmony 上铸出等量的 1 字头代币；用户取回时，在 Harmony 上烧掉 1 字头代币，桥的后端看到烧毁事件后，向以太坊上的多签钱包提交一笔解锁交易，签名的 owner 够数了，Manager 就把原资产转给用户。</p>
+        <p>这意味着 Harmony 上的 1USDC 值不值 1 美元，完全取决于以太坊上的 Manager 里有没有对应的 USDC。Manager 里的钱一旦被搬空，1 字头代币就失去了储备。</p>
+        <h3>门槛早有人质疑</h3>
+        <p>2022 年 4 月，推特用户 @_apedev 公开指出 Horizon 的多签只有四个 owner，“如果四个签名者中有两个被攻破，我们就会看到又一起九位数的黑客事件”<a class="ref" href="#s4">[4]</a><a class="ref" href="#s3">[3]</a>。这条警告发出时，<a href="2022-ronin-bridge.html">Ronin 跨链桥</a>刚因 9 个验证者中的 5 个签名被攻破而损失超过 6 亿美元。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2022-04</time><div class="ev">@_apedev 公开警告 Horizon 多签门槛过低<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk key"><time>2022-06-23 11:06</time><div class="ev">第一笔攻击交易上链（UTC）。攻击者用两把私钥在以太坊侧多签上确认并执行解锁，共 12 笔交易、3 个攻击地址，单笔从 4.9 万美元到 4,120 万美元不等<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。Harmony 的公告写的是太平洋时间 5:30、11 笔交易<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-06-23</time><div class="ev">Harmony 通知安全合作方、交易所和 FBI，停止 Horizon 桥，在推特公告被盗。rekt.news 统计，公告比第一笔资金转出晚了 14 个多小时<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2022-06-25</time><div class="ev">创始人 Stephen Tse 通报：没有发现合约漏洞，原因是私钥泄露；以太坊侧多签已改为 5 签 4。Harmony 悬赏 100 万美元换取资金归还<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2022-06-27</time><div class="ev">攻击者开始把 ETH 分批存入 Tornado Cash，此后 6 天里全部转完<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2022-06-29</time><div class="ev">Harmony 提出最后条件：攻击者留下 1,000 万美元、归还其余，即可匿名并停止调查，期限 7 月 4 日 23:00（GMT）；另悬赏 1,000 万美元征集线索<a class="ref" href="#s1">[1]</a>。没有公开信息显示攻击者接受了条件。</div></li>
+          <li><time>2022-07-13</time><div class="ev">Elliptic 列出 5 项指标，认为此案与 Lazarus 的作案方式一致<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2022-07-27</time><div class="ev">Harmony 发布赔付提案：增发约 49.7 亿枚 ONE，三年内全额赔付。社区反对，提案撤回<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2022-10-20</time><div class="ev">回收计划进入“销毁阶段”：改用金库资金，不再增发，目标四年内全额赔付 1 字头资产<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2023-01-13</time><div class="ev">攻击者通过 Railgun 洗出超过 6,000 万美元的 ETH，部分发往交易所换成 BTC，其中一部分被冻结<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def key"><time>2023-01-23</time><div class="ev">FBI 确认作案者是朝鲜 Lazarus Group（APT38），并公布 11 个 BTC 地址<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-03-27</time><div class="ev">Harmony 介绍基于 LayerZero 的新跨链桥如何部署代币<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2023-10-05</time><div class="ev">HIP-30v2 获验证者投票通过：每年 4.41 亿枚 ONE 增发中的 25% 用于桥资产回收，计划 11 月 2 日生效<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2025-08-17</time><div class="ev">社区提案估计，约 30% 的脱锚资产已被销毁或移除，事发前就持有资产的钱包仍未得到 1:1 兑付<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2026-08-11</time><div class="ev">另一起事件：攻击者利用 Harmony 分片交易验证的缺陷凭空铸出大量 ONE，Harmony 暂停跨链桥并回滚链上历史<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="key"><time>2026-09-06</time><div class="ev">Harmony 宣布彻底关停 Layer 1，把 ONE 以 ERC-20 形式迁到以太坊，9 月 10 日起验证者可以关停节点<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>Harmony 和 CertiK 都没有在合约里发现漏洞<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。问题在于桥的放款规则：以太坊上的合约不验证 Harmony 上是否真的发生过烧毁，只验证多签钱包里有没有足够的签名。签名够了，钱就放出去。</p>
+        <h3>两层检查，都只看身份</h3>
+        <p>第一层在 Manager 合约。<code>unlockToken</code> 只允许多签钱包调用，另外用 <code>receiptId</code> 防止同一个烧毁事件被重复解锁：</p>
+<pre class="code"><code><span class="c">// ERC20EthManager.sol（Horizon 以太坊侧，ERC-20 资产的锁定与解锁）</span>
+<span class="bad">modifier onlyWallet {                       <span class="c">// 唯一的权限检查：调用者是不是多签钱包</span></span>
+    require(msg.sender == wallet, "HmyManager/not-authorized");
+    _;
+}
+
+function unlockToken(
+    address ethTokenAddr,
+    uint256 amount,
+    address recipient,
+    bytes32 receiptId                       <span class="c">// Harmony 上烧毁交易的哈希，由提交方填写</span>
+) public onlyWallet {
+    require(
+        !usedEvents_[receiptId],            <span class="c">// 只防重放，不验证这个烧毁是否真的发生过</span>
+        "EthManager/The burn event cannot be reused"
+    );
+    IERC20 ethToken = IERC20(ethTokenAddr);
+    usedEvents_[receiptId] = true;
+    ethToken.safeTransfer(recipient, amount);   <span class="c">// 金额、收款地址都由多签交易决定</span>
+    emit Unlocked(ethTokenAddr, amount, recipient, receiptId);
+}</code></pre>
+        <p class="code-cap">来源：harmony-one/ethhmy-bridge 仓库 master 分支，contracts/erc20/ERC20EthManager.sol 第 27–30 行、第 97–111 行。中文注释为本站所加。</p>
+        <p>第二层在多签钱包。owner 调用 <code>confirmTransaction</code> 确认一笔交易，函数末尾立即尝试执行；<code>isConfirmed</code> 只数确认的 owner 有没有达到 <code>required</code>：</p>
+<pre class="code"><code><span class="c">// MultiSigWallet.sol（Horizon 使用的多签钱包）</span>
+function confirmTransaction(uint256 transactionId)
+    public
+    ownerExists(msg.sender)
+    transactionExists(transactionId)
+    notConfirmed(transactionId, msg.sender)
+{
+    confirmations[transactionId][msg.sender] = true;
+    emit Confirmation(msg.sender, transactionId);
+    executeTransaction(transactionId);      <span class="c">// 确认后立刻尝试执行，没有等待期</span>
+}
+
+function isConfirmed(uint256 transactionId) public view returns (bool) {
+    uint256 count = 0;
+    for (uint256 i = 0; i &lt; owners.length; i++) {
+        if (confirmations[transactionId][owners[i]]) count += 1;
+<span class="bad">        if (count == required) return true;  <span class="c">// required 为 2 时，两个签名就放行</span></span>
+    }
+}</code></pre>
+        <p class="code-cap">来源：同上，contracts/lib/MultiSigWallet.sol 第 193–202 行、第 272–278 行。仓库中这两个文件都没有每日限额、延迟执行之类的机制。</p>
+        <p>两层合起来，桥的安全就等于“攻击者需要拿到几把 owner 私钥”。答案是 <code>required</code> 的值。CertiK 的分析也是这个结论：攻击者以某种方式控制了多签的 owner，直接调用了 <code>confirmTransaction</code><a class="ref" href="#s2">[2]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 360" role="img" aria-labelledby="hmy-unlock-t hmy-unlock-d">
+            <title id="hmy-unlock-t">Horizon 以太坊侧的放款路径</title>
+            <desc id="hmy-unlock-d">正常提款时，用户先在 Harmony 上烧毁 1 字头代币，签名者确认后多签钱包调用 Manager 合约的 unlockToken，把原资产转给用户。攻击时没有任何烧毁，攻击者用两把被盗私钥直接在多签钱包上确认交易，Manager 合约照样执行，把资产转到攻击者地址。合约只检查签名数量。</desc>
+            <defs>
+              <marker id="hmy-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="hmy-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="20" y="40" width="190" height="64" rx="4"/>
+            <text class="d-t b" x="115" y="66" text-anchor="middle">正常提款</text>
+            <text class="d-t s" x="115" y="88" text-anchor="middle">先在 Harmony 上烧毁 1USDC</text>
+            <rect class="d-box atk" x="20" y="200" width="190" height="64" rx="4"/>
+            <text class="d-t b" x="115" y="226" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="115" y="248" text-anchor="middle">两把被盗私钥，没有烧毁</text>
+            <rect class="d-box" x="290" y="40" width="200" height="64" rx="4"/>
+            <text class="d-t b" x="390" y="66" text-anchor="middle">多签钱包</text>
+            <text class="d-t s m" x="390" y="88" text-anchor="middle">MultiSigWallet</text>
+            <rect class="d-box" x="290" y="170" width="200" height="64" rx="4"/>
+            <text class="d-t b" x="390" y="196" text-anchor="middle">Manager 合约</text>
+            <text class="d-t s m" x="390" y="218" text-anchor="middle">unlockToken()</text>
+            <rect class="d-box" x="580" y="40" width="180" height="64" rx="4"/>
+            <text class="d-t b" x="670" y="66" text-anchor="middle">用户的以太坊地址</text>
+            <text class="d-t s" x="670" y="88" text-anchor="middle">收到锁在桥里的原资产</text>
+            <rect class="d-box atk" x="580" y="200" width="180" height="64" rx="4"/>
+            <text class="d-t b" x="670" y="226" text-anchor="middle">攻击者地址</text>
+            <text class="d-t s" x="670" y="248" text-anchor="middle">12 笔交易，约 1 亿美元</text>
+            <line class="d-line" x1="210" y1="72" x2="288" y2="72" marker-end="url(#hmy-ah)"/>
+            <text class="d-t s halo" x="250" y="64" text-anchor="middle">签名确认</text>
+            <line class="d-line atk" x1="210" y1="212" x2="298" y2="107" marker-end="url(#hmy-ah-atk)"/>
+            <text class="d-t atk halo" x="243" y="170" text-anchor="end">① 两把私钥签名确认</text>
+            <line class="d-line" x1="390" y1="104" x2="390" y2="167" marker-end="url(#hmy-ah)"/>
+            <text class="d-t s halo" x="400" y="141">签名够数即执行</text>
+            <path class="d-line" d="M490,188 H535 V72 H578" marker-end="url(#hmy-ah)"/>
+            <path class="d-line atk" d="M490,216 H535 V232 H578" marker-end="url(#hmy-ah-atk)"/>
+            <text class="d-t atk halo" x="488" y="270">② 转出资产</text>
+            <rect class="d-box soft" x="20" y="296" width="740" height="56" rx="4"/>
+            <text class="d-t s" x="40" y="319">合约只检查调用者和签名数量，分辨不出两个签名来自真正的签名者，还是偷到私钥的人。</text>
+            <text class="d-t s" x="40" y="341">开源代码里没有单笔限额和延迟执行。CertiK 统计的最大一笔约 4,120 万美元。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：Horizon 以太坊侧的放款路径。上排是正常提款，下排红色是攻击路径。两条路径经过同一个多签钱包和同一个解锁函数，区别只在于 Harmony 上有没有真实的烧毁，而合约并不检查这一点<a class="ref" href="#s2">[2]</a><a class="ref" href="#s15">[15]</a>。</figcaption>
+        </figure>
+        <h3>加密存储为什么没有挡住</h3>
+        <p>Harmony 说，私钥由它自己加密保存，经过口令和密钥管理服务（KMS）两层加密，没有一台机器能同时接触到多把明文私钥<a class="ref" href="#s1">[1]</a>。这套设计防的是偷走一个文件、攻破一台机器。可私钥在签名时总要被解密，签名所在的环境、口令、调用 KMS 的权限本身都是攻击面。攻击者最终访问并解密了其中几把私钥，包括签署那些未授权交易的私钥<a class="ref" href="#s1">[1]</a>。</p>
+        <p>Harmony 没有公布入侵的具体路径。Elliptic 推测是针对 Harmony 团队成员的社会工程攻击<a class="ref" href="#s5">[5]</a>；FBI 在认定公告中提到，朝鲜在这次入侵中使用了名为 TraderTraitor 的恶意软件活动<a class="ref" href="#s6">[6]</a>。加密和分散存放降低了单点泄露的概率，但改变不了门槛本身：门槛是 2，攻击者只需要得手两次。</p>
+        <div class="note doubt">
+          <span class="h">门槛是 4 签 2 还是 5 签 2</span>
+          <p>4 月的警告说多签只有四个 owner<a class="ref" href="#s4">[4]</a>；rekt.news 写的是事发时“5 签 2”，Elliptic 也说攻击者攻破的是“五个多签地址中的两个”<a class="ref" href="#s3">[3]</a><a class="ref" href="#s17">[17]</a>。两种说法可能对应不同的时间点，本文没有找到 Harmony 官方公布的事发时 owner 数量。两种说法一致的是，放行一笔交易只需要 2 个签名。事发后，Harmony 称以太坊侧已改为 5 签 4<a class="ref" href="#s1">[1]</a>。BSC 侧多签的配置没有公开资料。</p>
+        </div>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面的步骤依据 Harmony 的公告、CertiK 与 rekt.news 的事后分析和 Elliptic 的资金追踪整理。私钥是怎么被拿到的，至今没有公开细节。</p>
+        <ol class="steps">
+          <li><b>拿到并解密私钥</b>攻击者访问并解密了多把签名私钥<a class="ref" href="#s1">[1]</a>。入侵途径没有公布，FBI 把它与 TraderTraitor 恶意软件活动联系在一起<a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>签名放款</b>UTC 时间 6 月 23 日 11:06 起，攻击者用两把私钥在多签钱包上确认并执行解锁交易，共 12 笔，用了 3 个攻击地址<a class="ref" href="#s2">[2]</a>。以太坊侧，ETH 桥被转走 1.31 万枚 ETH，BUSD 桥约 550 万枚 BUSD，ERC-20 桥里的 USDC、WBTC、USDT、DAI、FRAX 等也被一并转走<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>BSC 侧同时被转走</b>攻击者在 BSC 上的地址留有约 5,000 枚 BNB 和 64 万枚 BUSD<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>归集并换成 ETH</b>资金归集到一个主地址<a class="ref" href="#s2">[2]</a>，在 Uniswap 上全部换成 ETH，共 85,837 枚<a class="ref" href="#s5">[5]</a>。Harmony 公布的攻击者地址为 <span class="addr">0x0d043128146654c7683fbf30ac98d7b2285ded00</span><a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>停留四天后开始洗钱</b>Harmony 6 月 25 日通报时，资金还原样留在这个地址<a class="ref" href="#s1">[1]</a>。6 月 27 日起，攻击者按固定节奏分批存入 Tornado Cash<a class="ref" href="#s5">[5]</a>。</li>
+        </ol>
+        <p>交易笔数有三种说法：Harmony 的公告写 11 笔，CertiK 统计 12 笔，Elliptic 统计以太坊和 BSC 两侧共 14 笔<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s17">[17]</a>。损失金额也有 9,700 万（CertiK）、9,970 万（Elliptic）和 9,934 万美元（Harmony，含坏账）几种口径。ETH 总数也略有出入，Elliptic 记为 85,837 枚，CoinMarketCap 报道的项目方地址持有 85,867 枚<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>，差异可能来自统计时点。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>Harmony 在 7 月的赔付提案中公布了各类资产的损失<a class="ref" href="#s7">[7]</a>。下表按原表整理，表中代币名是 Harmony 上对应的映射代币，被转走的是锁在以太坊和 BSC 上的原资产：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>资产</th><th>所在桥</th><th class="n">数量</th><th class="n">美元价值</th></tr></thead>
+            <tbody>
+              <tr><td>USDC（1USDC）</td><td>以太坊</td><td class="n">41,200,000</td><td class="n">41,200,000</td></tr>
+              <tr><td>ETH（1ETH）</td><td>以太坊</td><td class="n">13,100</td><td class="n">14,410,000</td></tr>
+              <tr><td>WBTC（1WBTC）</td><td>以太坊</td><td class="n">592</td><td class="n">11,840,000</td></tr>
+              <tr><td>USDT（1USDT）</td><td>以太坊</td><td class="n">9,981,000</td><td class="n">9,981,000</td></tr>
+              <tr><td>DAI（1DAI）</td><td>以太坊</td><td class="n">6,070,000</td><td class="n">6,070,000</td></tr>
+              <tr><td>FRAX（1FRAX）</td><td>以太坊</td><td class="n">5,620,000</td><td class="n">5,620,000</td></tr>
+              <tr><td>BUSD（1BUSD）</td><td>以太坊</td><td class="n">5,530,000</td><td class="n">5,530,000</td></tr>
+              <tr><td>BNB（bscBNB）</td><td>BSC</td><td class="n">5,000</td><td class="n">1,100,000</td></tr>
+              <tr><td>BUSD（bscBUSD）</td><td>BSC</td><td class="n">640,000</td><td class="n">640,000</td></tr>
+              <tr><td>FXS、SUSHI、AAG、AAVE、WETH</td><td>以太坊</td><td class="n">5 种</td><td class="n">1,229,030</td></tr>
+              <tr><td>14 种资产合计</td><td></td><td class="n"></td><td class="n">97,620,030</td></tr>
+              <tr><td>借贷协议坏账（另计）</td><td>Harmony</td><td class="n">8,600 万 ONE</td><td class="n">1,720,000</td></tr>
+              <tr><td>提案中的损失总额</td><td></td><td class="n"></td><td class="n">99,340,030</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>可见 99,340,030 美元里包含约 172 万美元的借贷坏账；单算被转走的资产是 97,620,030 美元，与 CertiK 估计的约 9,700 万美元接近<a class="ref" href="#s2">[2]</a>。按事发时价格计，约 98% 来自以太坊侧。</p>
+        <ol class="flow">
+          <li class="atk"><b>两座桥的合约</b>以太坊侧约 9,588 万美元，BSC 侧约 174 万美元</li>
+          <li class="atk"><b>Uniswap</b>全部换成 85,837 ETH</li>
+          <li class="atk"><b>Tornado Cash</b>2022-06-27 起分批存入，超过 98% 的资产经过这里</li>
+          <li class="atk"><b>Railgun</b>2023-01-13 洗出超过 6,000 万美元的 ETH</li>
+          <li class="doubt"><b>交易所换成 BTC</b>一部分被冻结，其余转到 FBI 公布的 11 个地址</li>
+        </ol>
+        <p>Elliptic 观察到，存入 Tornado Cash 的节奏很规律，像是程序自动执行，这与 Ronin 案的洗钱方式相似；资金暂停流动的时段与亚太地区的夜间吻合<a class="ref" href="#s5">[5]</a>。Elliptic 通过分析把经过 Tornado Cash 的资金追到了一批新的以太坊钱包，这些钱包在 2022 年 7 月时还没有动<a class="ref" href="#s5">[5]</a>。</p>
+        <p>半年后，资金开始第二轮转移。FBI 公告称，2023 年 1 月 13 日，朝鲜黑客通过隐私协议 Railgun 洗出超过 6,000 万美元的 ETH，其中一部分被发往几家虚拟资产服务商换成 BTC。部分资金在服务商配合下被冻结，剩余的 BTC 转入 FBI 公布的 11 个比特币地址<a class="ref" href="#s6">[6]</a>。FBI 没有公布被冻结的金额。按现有公开资料，绝大部分被盗资金没有追回。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>1 字头资产失去储备</h3>
+        <p>桥被搬空的那一刻，Harmony 上流通的 1USDC、1ETH、1WBTC 等就没有了对应的储备，价格随即在 DEX 上被套利压低。Harmony 在 7 月承认，以当时的市场和金库状况，让这些资产恢复锚定不可行<a class="ref" href="#s7">[7]</a>。受影响的钱包约 6.5 万个<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>DeFi 生态连锁受损</h3>
+        <p>脱锚资产在借贷协议里还被当作抵押品。有人用不值钱的 1 字头稳定币作抵押借出 ONE，不打算归还，结果 ONE 的存款人无法取回资金<a class="ref" href="#s7">[7]</a>。Harmony 原生借贷协议 Tranquil Finance（当时 TVL 排名第二）关闭了借款市场，Aave V3 的 Harmony 市场被冻结<a class="ref" href="#s9">[9]</a>。Messari 的季度报告显示，2023 年第一季度 Harmony 的日均交易数和活跃地址数同比下降超过 94%，报告认为桥被盗和 DeFi Kingdoms 迁出加剧了下滑<a class="ref" href="#s9">[9]</a>。事发后 24 小时内 ONE 下跌约 12%<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>2022 年的跨链桥失守潮</h3>
+        <p>Elliptic 统计，算上 Horizon，2022 年从跨链桥被盗的金额已超过 10 亿美元，此前还有 Qubit、Wormhole 和 Ronin<a class="ref" href="#s17">[17]</a>。Horizon 与三个月前的 <a href="2022-ronin-bridge.html">Ronin</a> 结构相同：资产由少数签名者控制，攻击者攻破多数签名就能放款，两起事件都被 FBI 认定为 Lazarus 所为。不同的是，Ronin 需要 9 个签名中的 5 个，Horizon 只需要 2 个。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>谈判与悬赏</h3>
+        <p>事发当天，Harmony 向攻击者地址发送了一笔附带消息的交易。随后条件逐步加码：6 月 25 日悬赏 100 万美元，承诺资金归还后主张不起诉；6 月 29 日提出攻击者可以留下 1,000 万美元，其余归还即可匿名并停止调查，期限 7 月 4 日；同时悬赏 1,000 万美元征集能追回资金的线索<a class="ref" href="#s1">[1]</a>。资金此后照常流入 Tornado Cash 和 Railgun，谈判没有结果<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</p>
+        <h3>赔付方案几经更改</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th>方案</th><th>钱从哪里来</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td>2022-07-27</td><td>三年内按月发放 ONE，全额赔付需增发约 49.7 亿枚，半额约 24.8 亿枚</td><td>硬分叉增发</td><td>社区反对，撤回<a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>2022-10-20</td><td>“销毁阶段”：资助合作方回购并销毁脱锚资产，目标四年内全额赔付</td><td>金库资金，不增发</td><td>首期每月 5 万美元预算<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>2023-01</td><td>HIP-28：交易手续费不再销毁，改作基础设施等用途</td><td>手续费</td><td>投票未通过<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>2023-10-05</td><td>HIP-30v2：年增发 4.41 亿枚 ONE，其中 25% 用于桥资产回收</td><td>增发</td><td>验证者投票通过<a class="ref" href="#s10">[10]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>第一份提案没有动用基金会金库。Harmony 的解释是，从金库赔付会严重削弱基金会支持生态发展的能力<a class="ref" href="#s7">[7]</a>。增发近 50 亿枚 ONE 意味着摊薄所有持有人，提案很快撤回，改由社区主导的 Recovery One（R1）推动回收<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</p>
+        <p>“销毁阶段”的首个渠道是 Recovery Exchange：1USDC 按每枚 0.07 美元兑换，参加过 R1 治理投票的用户按 0.10 美元，每人限额 1,000 美元<a class="ref" href="#s8">[8]</a>。R1 当时还指出，约一半的 1 字头资产持有人是在事发之后才买入的，这让“谁该获赔、赔多少”更难界定<a class="ref" href="#s8">[8]</a>。到 2023 年第一季度末，累计被销毁的脱锚资产约 760 万美元<a class="ref" href="#s9">[9]</a>。</p>
+        <p>2025 年 8 月的一份社区提案估计，约 30% 的脱锚资产已被销毁或移除，其中脱锚 USDC 约 45%；仍活跃的受影响钱包约 6.7 万个，约 93% 在事发时持有的资产不到 100 美元。提案称，那些事发前就持有资产、一直等着 1:1 兑付的钱包“被落下了”<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>Horizon 桥与 Harmony 的结局</h3>
+        <p>Horizon 在事发当天停止运行<a class="ref" href="#s4">[4]</a>。到 2023 年 3 月，Harmony 已经在用基于 LayerZero 的新桥部署代币<a class="ref" href="#s16">[16]</a>。</p>
+        <p>2026 年 8 月 11 日，Harmony 又出了一次事，这次与跨链桥无关：攻击者利用跨分片收据验证的缺陷，让同一张收据被重复处理，在 6 笔交易里铸出超过 3 万亿枚 ONE。Harmony 暂停跨链桥，把链回滚到被盗之前，永久删除了超过 10.9 万笔交易<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</p>
+        <p>9 月 6 日，Harmony 宣布彻底关停 Layer 1，理由是“国家级攻击者和 AI 代理带来的威胁太大”。ONE 按最终区块的快照以 ERC-20 形式空投到以太坊上的同一地址，多签钱包、流动性池和链上应用里的资产无法迁移；验证者从 9 月 10 日起可以关停节点<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。CoinDesk 和 The Block 的报道都没有提到 1 字头脱锚资产和 Horizon 受害者在迁移中如何处理，本文也没有找到相关的官方说明。</p>
+        <h3>执法</h3>
+        <p>FBI 在 2023 年 1 月的公告中确认了 Lazarus（APT38）的责任，并说明部分资金已被冻结<a class="ref" href="#s6">[6]</a>。本文没有找到针对这起事件的起诉或没收诉讼。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给跨链桥设计者</span>
+          <ul>
+            <li>多签门槛就是安全下限。5 签 2 的意思是“攻破任意两把私钥就能动用全部资金”，签名者人数再多也改变不了这一点。门槛要按桥里的资金规模来定。</li>
+            <li>只靠签名放款，就要给签名之外留第二道防线：单笔和每日限额、大额延迟执行、可以暂停桥的独立监控。Horizon 的开源合约里这些都没有，最大一笔约 4,120 万美元一次放出。</li>
+            <li>能在目标链上验证源链事件的设计（轻客户端、零知识证明）不依赖签名者的私钥安全，代价是实现更复杂。只验证签名的桥，等于把源链的安全换成了几把私钥的安全。</li>
+            <li>公开的安全警告要当作事故处理。4 月就有人指出门槛过低，门槛在被盗之后才调高。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给负责私钥的团队</span>
+          <ul>
+            <li>加密存储只防静态窃取。签名时私钥总要解密，签名环境本身要隔离：不同的人、不同的设备、不同的网络，最好分属不同的组织。</li>
+            <li>多个签名者共用同一套基础设施、同一个团队，门槛在实际上就会被打折。攻击者攻破一个环境，可能就拿到了不止一把。</li>
+            <li>对多签上的异常确认设置告警。rekt.news 统计，这次从第一笔资金转出到公开宣布被盗隔了 14 个多小时。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给上层协议和用户</span>
+          <ul>
+            <li>跨链映射资产的价值取决于另一条链上的储备。接受这类资产作抵押的借贷协议，要预先想好桥出事时如何冻结市场、处理坏账。</li>
+            <li>“项目方会赔”不是保障。Harmony 的赔付在增发和金库之间反复，四年后估计只回收了约三成。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Matthew Barrett（Harmony），《Harmony’s Horizon Bridge Hack》，Harmony Medium，2022-06-24 发布，持续更新至 2022-07-14（含 Stephen Tse 6 月 25 日的通报）。<a href="https://medium.com/harmony-one/harmonys-horizon-bridge-hack-1e8d283b6d66">medium.com</a></li>
+          <li id="s2">CertiK，《Harmony Incident Analysis》，2022-06-24。<a href="https://www.certik.com/resources/blog/harmony-incident-analysis">certik.com</a></li>
+          <li id="s3">rekt.news，《Harmony Bridge - REKT》。<a href="https://rekt.news/harmony-rekt/">rekt.news</a></li>
+          <li id="s4">CoinMarketCap Academy，《$100M Stolen After Horizon Bridge Hacked, Months After Security Fears Raised》，2022-06。<a href="https://coinmarketcap.com/academy/article/100m-stolen-after-horizon-bridge-hacked-months-after-security-fears-raised">coinmarketcap.com</a></li>
+          <li id="s5">Elliptic，《The $100 million Horizon hack: following the trail through Tornado Cash to North Korea》，2022-07-13 更新。<a href="https://www.elliptic.co/blog/the-100-million-horizon-hack-following-the-trail-through-tornado-cash-to-north-korea">elliptic.co</a></li>
+          <li id="s6">FBI，《FBI Confirms Lazarus Group Cyber Actors Responsible for Harmony’s Horizon Bridge Currency Theft》，新闻稿，2023-01-23。<a href="https://www.fbi.gov/news/press-releases/fbi-confirms-lazarus-group-cyber-actors-responsible-for-harmonys-horizon-bridge-currency-theft">fbi.gov</a></li>
+          <li id="s7">Harmony（Announcements），《Reimbursement Proposal [Horizon Incident]》，Harmony 论坛，2022-07-27（后撤回）。<a href="https://talk.harmony.one/t/reimbursement-proposal-horizon-incident/20665">talk.harmony.one</a></li>
+          <li id="s8">Matthew Barrett（mbarret3），《Recovery ONE: Burn Phase》，Harmony 论坛，2022-10-17。<a href="https://talk.harmony.one/t/recovery-one-burn-phase/21727">talk.harmony.one</a></li>
+          <li id="s9">Peter Horton（Messari），《State of Harmony Q1 2023》，Harmony 博客转载，2023-04-21。<a href="https://blog.harmony.one/p/state-of-harmony-q1-2023">blog.harmony.one</a></li>
+          <li id="s10">Harmony，《HIP30v2 Update Announcement》，Harmony 博客，2023-10-05。<a href="https://blog.harmony.one/p/hip30v2-update-announcement">blog.harmony.one</a></li>
+          <li id="s11">mzfshark，《[Proposal] New Recovery Platform for Pre-Hack Wallets》，Harmony 论坛，2025-08-17。<a href="https://talk.harmony.one/t/proposal-new-recovery-platform-for-pre-hack-wallets/26661">talk.harmony.one</a></li>
+          <li id="s12">Shaurya Malwa，《Harmony’s ONE falls 26% after attacker allegedly mints 4 billion tokens》，CoinDesk，2026-08-12。<a href="https://www.coindesk.com/markets/2026/08/12/harmony-s-one-falls-26-after-attacker-allegedly-mints-4-billion-tokens">coindesk.com</a></li>
+          <li id="s13">Shaurya Malwa，《Once-hyped Ethereum rival Harmony wants to shut its blockchain over AI threats》，CoinDesk，2026-09-07。<a href="https://www.coindesk.com/markets/2026/09/07/once-hyped-ethereum-rival-harmony-wants-to-shut-its-blockchain-over-ai-threats">coindesk.com</a></li>
+          <li id="s14">Danny Park，《Harmony to fully sunset Layer 1, proposes token migration to Ethereum for AI video initiative》，The Block，2026-09-06。<a href="https://www.theblock.co/news/web3/2026-09-06-harmony-sunset-network-413635">theblock.co</a></li>
+          <li id="s15">Harmony，harmony-one/ethhmy-bridge 仓库 master 分支（contracts/erc20/ERC20EthManager.sol、contracts/lib/MultiSigWallet.sol）。<a href="https://github.com/harmony-one/ethhmy-bridge">github.com</a></li>
+          <li id="s16">Harmony ONE、Julia Nai，《Bridging Blockchains: How Harmony deploys tokens on LayerZero》，Harmony 博客，2023-03-27。<a href="https://blog.harmony.one/p/bridging-blockchains-how-harmony">blog.harmony.one</a></li>
+          <li id="s17">Elliptic，《Over $1 billion stolen from bridges so far in 2022 as Harmony’s Horizon Bridge becomes latest victim in $100 million hack》，2022-06-24。<a href="https://www.elliptic.co/blog/over-1-billion-stolen-from-bridges-so-far-in-2022-as-harmonys-horizon-bridge-becomes-latest-victim-in-100-million-hack">elliptic.co</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

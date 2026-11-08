@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DMM Bitcoin 被盗 4,502 枚 BTC｜区块链被盗事件编年史</title>
+<meta name="description" content="2024 年 5 月 DMM Bitcoin 被盗 4,502.9 枚 BTC 的经过：朝鲜 TraderTraitor 如何用假招聘和“编程测试”攻破钱包供应商 Ginco 的员工、篡改 DMM 的正规交易请求，金融厅的业务改善命令，全额补偿、停业与向 SBI VC Trade 移管。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2024-dmm-bitcoin">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2024 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>DMM Bitcoin 被盗 4,502 枚 BTC</h1>
+    <p class="lede">2024 年 5 月 31 日，日本交易所 DMM Bitcoin 被转走 4,502.9 枚 BTC，约合 482 亿日元。日本警察厅和美国 FBI 后来查明，朝鲜 TraderTraitor 两个月前在 LinkedIn 上冒充招聘者，用一份“编程测试”攻破了钱包软件供应商 Ginco 的一名员工，再冒充他篡改了 DMM 的一笔正规交易请求。DMM 在集团支持下筹集 550 亿日元补足了用户的 BTC，交易所本身却在 2025 年 3 月关闭。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">2024 年 5 月 31 日 13:26 前后（日本时间），DMM Bitcoin 发现 4,502.9 枚 BTC 被非法转出，约合 482 亿日元<a class="ref" href="#s4">[4]</a>。12 月 24 日，日本警察厅、美国 FBI 和美国国防部网络犯罪中心（DC3）联合公布：盗窃者是朝鲜的 TraderTraitor，又称 Jade Sleet、UNC4899、Slow Pisces，被认为是 Lazarus Group 的一部分<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p>
+        <p>按警察厅的说法，攻击分三步。3 月下旬，TraderTraitor 在 LinkedIn 上冒充招聘者，给企业钱包软件公司 Ginco 一名有权访问钱包管理系统的员工发去伪装成“录用前测试”的 Python 脚本，这名员工的电脑因此被攻破。5 月中旬起，攻击者用窃取的会话 cookie 冒充这名员工，进入 Ginco 未加密的通信系统。5 月下旬，攻击者利用这个入口，篡改了 DMM 员工发起的一笔正规交易请求<a class="ref" href="#s1">[1]</a>。攻击者没有直接攻破 DMM，而是攻破了 DMM 信任的钱包供应商。</p>
+        <p>DMM 在集团公司支持下筹集 550 亿日元，6 月中旬补足了全部 BTC<a class="ref" href="#s5">[5]</a>。金融厅 9 月对它发出业务改善命令，指出它引入外部钱包时没有评估流出风险<a class="ref" href="#s6">[6]</a>。DMM 在 12 月宣布停业，2025 年 3 月 8 日把约 60 万个账户和资产移交 SBI VC Trade<a class="ref" href="#s8">[8]</a><a class="ref" href="#s14">[14]</a>。Chainalysis 追踪到，被盗 BTC 经 CoinJoin 混币和跨链桥，最终进入柬埔寨的 Huione Guarantee<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>DMM Bitcoin 是日本 DMM 集团旗下的持牌加密资产交易所，用 Ginco 的企业钱包软件 Ginco Enterprise Wallet 管理加密资产<a class="ref" href="#s12">[12]</a>。Ginco 是日本的钱包软件公司，不是持牌的加密资产交易业者。按它自己的说法，这款软件让客户自己管理私钥，Ginco 无法操作 DMM Bitcoin 的冷钱包<a class="ref" href="#s12">[12]</a>。</p>
+        <p>TraderTraitor 早已被点名。2022 年 4 月 18 日，FBI、美国网络安全与基础设施安全局（CISA）和美国财政部就发过关于它的联合警报；日本金融厅、警察厅和内阁网络安全中心（NISC）也在 2022 年 10 月 14 日就 Lazarus 发过警告。2024 年 9 月 3 日，FBI 又专门公布了朝鲜用社会工程窃取加密资产的手法和对策<a class="ref" href="#s3">[3]</a>。警察厅说，TraderTraitor 的特点是同时对同一家公司的多名员工开展定向社会工程<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方、监管与执法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2024-03 下旬</time><div class="ev">TraderTraitor 在 LinkedIn 上冒充招聘者接触 Ginco 员工，发去 GitHub 上一个伪装成录用前测试的 Python 脚本链接。员工把代码复制到自己的 GitHub 页面后被攻破<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2024-05 中旬起</time><div class="ev">攻击者利用会话 cookie 冒充这名员工，进入 Ginco 未加密的通信系统<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2024-05-24 至 31</time><div class="ev">按 Ginco 的说法，攻击者用员工的凭据访问了 Ginco Enterprise Wallet 所在云服务上的 Kubernetes 生产环境<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk key"><time>2024-05-31</time><div class="ev">攻击者篡改 DMM 员工发起的一笔正规交易请求，4,502.9 枚 BTC 被转到 TraderTraitor 控制的钱包<a class="ref" href="#s1">[1]</a>。13:26 前后（日本时间）DMM 发现流出<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2024-05-31</time><div class="ev">DMM 暂停新开户审核、加密资产出金、现货买入和杠杆交易新开仓，宣布在集团支持下全额保证用户的 BTC<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2024-06-14</time><div class="ev">DMM 宣布已通过借款和增资筹集 550 亿日元，用于补足流出部分的 BTC 已全部买齐<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2024-09-26</time><div class="ev">关东财务局依据《资金结算法》对 DMM Bitcoin 发出业务改善命令，要求 10 月 28 日前提交改善计划<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2024-12-02</time><div class="ev">DMM Bitcoin 宣布停业，已于 11 月 29 日与 SBI VC Trade 签订基本协议，移交全部账户和资产<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2024-12-19</time><div class="ev">Chainalysis 公布追踪结果：被盗资金经 CoinJoin 混币服务和跨链桥，最终流入 Huione Guarantee<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2024-12-24</time><div class="ev">警察厅、FBI 和 DC3 联合认定 TraderTraitor 为盗窃者。警察厅、NISC 和金融厅同日发布攻击手法与缓解措施的警示<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2025-01-14</time><div class="ev">美日韩联合声明，把 DMM Bitcoin 被盗的 3.08 亿美元列为三国单独或共同归因于朝鲜的 2024 年盗窃之一<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2025-01-28</time><div class="ev">Ginco 公布调查结果：入侵发生在支撑 Ginco Enterprise Wallet 的部分基础设施上，钱包程序本身、源代码和客户数据库没有被入侵<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2025-03-08</time><div class="ev">DMM Bitcoin 停止服务，账户和资产移交 SBI VC Trade 完成<a class="ref" href="#s14">[14]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起事件没有交易所代码漏洞。攻击者攻破的是 DMM 所依赖的钱包供应商 Ginco 的一名员工，再借他的身份进入 Ginco 的系统，改掉了 DMM 发出的一笔正规交易请求。整个过程跨了两家公司，下图把它分成三条泳道。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 420" role="img" aria-labelledby="dmm-lane-t dmm-lane-d">
+            <title id="dmm-lane-t">DMM Bitcoin 被盗的三条泳道</title>
+            <desc id="dmm-lane-d">攻击者在 LinkedIn 上冒充招聘者，让 Ginco 员工运行伪装成录用前测试的 Python 脚本，员工电脑被攻破。攻击者用窃取的会话 cookie 冒充这名员工，进入 Ginco 未加密的通信系统，篡改了 DMM 员工发起的正规交易请求，4,502.9 BTC 流到 TraderTraitor 的钱包。Ginco 补充说，攻击者同期访问了 Kubernetes 生产环境。DMM 在 13:26 前后发现流出。</desc>
+            <defs>
+              <marker id="dmm-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="dmm-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box soft" x="20" y="10" width="720" height="102" rx="4"/>
+            <rect class="d-box soft" x="20" y="120" width="720" height="102" rx="4"/>
+            <rect class="d-box soft" x="20" y="230" width="720" height="102" rx="4"/>
+            <text class="d-t s" x="728" y="28" text-anchor="end">攻击者 TraderTraitor</text>
+            <text class="d-t s" x="728" y="138" text-anchor="end">Ginco（钱包软件供应商）</text>
+            <text class="d-t s" x="728" y="248" text-anchor="end">DMM Bitcoin（交易所）</text>
+            <rect class="d-box atk" x="40" y="36" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="130" y="60" text-anchor="middle">冒充招聘者</text>
+            <text class="d-t s" x="130" y="80" text-anchor="middle">在 LinkedIn 上接触</text>
+            <text class="d-t s" x="130" y="98" text-anchor="middle">2024-03 下旬</text>
+            <rect class="d-box atk" x="540" y="36" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="630" y="60" text-anchor="middle">TraderTraitor 钱包</text>
+            <text class="d-t s" x="630" y="80" text-anchor="middle">收到 4,502.9 BTC</text>
+            <text class="d-t s" x="630" y="98" text-anchor="middle">2024-05-31</text>
+            <rect class="d-box atk" x="40" y="146" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="130" y="170" text-anchor="middle">① 员工电脑被攻破</text>
+            <text class="d-t s" x="130" y="190" text-anchor="middle">运行伪装成录用前测试</text>
+            <text class="d-t s" x="130" y="208" text-anchor="middle">的 Python 脚本</text>
+            <rect class="d-box atk" x="290" y="146" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="380" y="170" text-anchor="middle">② 冒充这名员工</text>
+            <text class="d-t s" x="380" y="190" text-anchor="middle">用窃取的会话 cookie</text>
+            <text class="d-t s" x="380" y="208" text-anchor="middle">进入未加密的通信系统</text>
+            <rect class="d-box doubt" x="540" y="146" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="630" y="170" text-anchor="middle">Ginco 的补充</text>
+            <text class="d-t s" x="630" y="190" text-anchor="middle">访问了 Kubernetes</text>
+            <text class="d-t s" x="630" y="208" text-anchor="middle">生产环境，5-24 至 31</text>
+            <rect class="d-box" x="40" y="256" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="130" y="280" text-anchor="middle">正规交易请求</text>
+            <text class="d-t s" x="130" y="300" text-anchor="middle">由 DMM 员工发起</text>
+            <text class="d-t s" x="130" y="318" text-anchor="middle">2024-05 下旬</text>
+            <rect class="d-box atk" x="290" y="256" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="380" y="280" text-anchor="middle">③ 请求被篡改</text>
+            <text class="d-t s" x="380" y="300" text-anchor="middle">4,502.9 BTC 流出</text>
+            <text class="d-t s" x="380" y="318" text-anchor="middle">篡改方式未公开</text>
+            <rect class="d-box def" x="540" y="256" width="180" height="70" rx="4"/>
+            <text class="d-t b" x="630" y="280" text-anchor="middle">④ 发现流出</text>
+            <text class="d-t s" x="630" y="300" text-anchor="middle">5-31 13:26 前后</text>
+            <text class="d-t s" x="630" y="318" text-anchor="middle">暂停出金，宣布全额保证</text>
+            <line class="d-line atk" x1="130" y1="106" x2="130" y2="144" marker-end="url(#dmm-ah-atk)"/>
+            <line class="d-line atk" x1="220" y1="181" x2="288" y2="181" marker-end="url(#dmm-ah-atk)"/>
+            <line class="d-line atk" x1="380" y1="216" x2="380" y2="254" marker-end="url(#dmm-ah-atk)"/>
+            <text class="d-t s atk halo" x="390" y="240">篡改</text>
+            <line class="d-line" x1="220" y1="291" x2="288" y2="291" marker-end="url(#dmm-ah)"/>
+            <path class="d-line atk" d="M470,272 H505 V71 H538" marker-end="url(#dmm-ah-atk)"/>
+            <line class="d-line" x1="470" y1="306" x2="538" y2="306" marker-end="url(#dmm-ah)"/>
+            <rect class="d-box soft" x="20" y="346" width="720" height="62" rx="4"/>
+            <text class="d-t s" x="36" y="370">依据警察厅、FBI 和 DC3 的联合公告（2024-12-24）与 Ginco 的公告（2025-01-28）。</text>
+            <text class="d-t s" x="36" y="392">被篡改的是请求里的哪一项、DMM 一侧的审核为什么没有拦下，官方都没有公开。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：攻击跨越两家公司。红色是攻击者控制或篡改的环节，琥珀色是 Ginco 公告补充的说法，蓝色是 DMM 的响应。</figcaption>
+        </figure>
+        <h3>“编程测试”是怎样攻破电脑的</h3>
+        <p>警察厅只说受害员工把 GitHub 上的 Python 代码复制到自己的 GitHub 页面，之后被攻破<a class="ref" href="#s1">[1]</a>；Ginco 说调查人员发现脚本用了“利用 Python 规格的高级手法”<a class="ref" href="#s12">[12]</a>。具体用的是哪种手法，两者都没有公开。警察厅、NISC 和金融厅同日发布的警示描述了这类攻击的典型做法：攻击者在 GitHub 上放一个“有 bug、跑不起来”的简单 API 程序，请目标帮忙找出问题；程序访问的地址里除了正常的服务器，还混有攻击者的服务器，处理返回数据的函数里藏着能执行代码的功能<a class="ref" href="#s3">[3]</a>。</p>
+        <p>Palo Alto Networks 的 Unit 42 在 2025 年 4 月公开了同一团伙（Unit 42 称为 Slow Pisces）的一批“编程测试”样本<a class="ref" href="#s11">[11]</a>。样本的特点可以概括为四点：</p>
+        <ul>
+          <li>项目看起来正常，比如股票数据分析工具，会从几个网址拉取数据，其中一个是模仿维基百科的攻击者域名。</li>
+          <li>如果返回的数据声明为 YAML 格式，程序会用 PyYAML 的 <code>yaml.load()</code> 去解析，而不是 PyYAML 文档推荐的 <code>yaml.safe_load()</code>。不安全的解析会构造出任意 Python 对象，攻击者借此在受害者电脑上执行代码。</li>
+          <li>攻击者的服务器会按 IP、地理位置、时间和请求头判断来访者，只给选定的目标发恶意内容，其他人拿到的是无害的 JSON，安全研究者很难复现。</li>
+          <li>后续的窃密程序会收集 SSH 密钥，以及 AWS、Kubernetes、Google Cloud 的配置文件。</li>
+        </ul>
+        <p>最后一点与 Ginco 所说“攻击者取得了 Kubernetes 生产环境的凭据”相吻合。不过 Unit 42 没有说 Ginco 遇到的就是这批样本中的哪一个，两者之间的联系是本站的推测。</p>
+        <h3>为什么偷到会话 cookie 就够了</h3>
+        <p>会话 cookie 是用户登录成功后服务器发的凭证。此后的每个请求只要带着它，服务器就认为是本人在操作，不会再要密码和第二因素。多因素认证只在登录那一刻起作用；cookie 被偷，攻击者在它失效之前都可以直接冒充本人，绕过了密码和多因素认证。警示里写道，攻击者会窃取被感染电脑上保存的认证信息和会话 cookie，冒充目标进入加密资产管理系统，并在短时间内摸清系统结构，按被冒充者的角色和权限寻找能够转走资产的环节<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>篡改的是一笔真实的请求</h3>
+        <p>攻击者没有自己发起一笔提币，而是改掉了 DMM 员工发起的一笔正规交易请求<a class="ref" href="#s1">[1]</a>。这样做的好处是，签名和审批流程看到的是一笔本来就该发生的交易，时间、发起人都对得上。被改掉的是收款地址、金额还是别的字段，DMM 一侧为什么没有发现，官方都没有公开。这和一个半月后 <a href="2024-wazirx.html">WazirX</a>、2025 年 2 月 <a href="2025-bybit.html">Bybit</a> 被盗的共同点是：签名的人以为自己批准的是一笔正常交易。</p>
+        <div class="compare">
+          <div>
+            <h4>警察厅的说法</h4>
+            <p>攻击者冒充 Ginco 员工进入 Ginco 未加密的通信系统，利用这个入口篡改了 DMM 员工的正规交易请求，4,502.9 BTC 流出，最后进入 TraderTraitor 的钱包<a class="ref" href="#s1">[1]</a>。</p>
+          </div>
+          <div>
+            <h4>Ginco 的说法</h4>
+            <p>入侵发生在支撑 Ginco Enterprise Wallet 的部分基础设施上，攻击者在 5 月 24 日至 31 日用员工凭据访问了云上的 Kubernetes 生产环境。钱包程序、源代码和客户数据库没有被入侵；Ginco 无法操作 DMM 的冷钱包<a class="ref" href="#s12">[12]</a>。</p>
+          </div>
+        </div>
+        <p>两种说法并不矛盾：警察厅讲的是攻击者做了什么，Ginco 强调的是自己哪些部分没被攻破、自己不掌握 DMM 的私钥。但 Ginco 的公告里没有提到交易请求被篡改这一环。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下步骤依据警察厅、FBI 和 DC3 的联合公告与 Ginco 的公告<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a>。DMM Bitcoin 没有公开自己一侧的调查细节。</p>
+        <ol class="steps">
+          <li><b>接近目标</b>2024 年 3 月下旬，TraderTraitor 在 LinkedIn 上冒充招聘者，接触 Ginco 一名有权访问钱包管理系统的员工。警示提到，这类攻击者会盗用第三方的姓名和照片，根据目标简历上的经历和技能找话题<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>“录用前测试”</b>攻击者发来 GitHub 上一个 Python 脚本的链接，说是录用前的测试。员工把代码复制到自己的 GitHub 页面并运行，电脑被攻破<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>潜伏</b>此后约一个半月，公开资料里没有攻击者活动的记录。</li>
+          <li><b>冒充员工</b>5 月中旬起，攻击者用窃取的会话 cookie 冒充这名员工，进入 Ginco 未加密的通信系统<a class="ref" href="#s1">[1]</a>。按 Ginco 的说法，攻击者在 5 月 24 日至 31 日访问了 Kubernetes 生产环境<a class="ref" href="#s12">[12]</a>。</li>
+          <li><b>篡改请求</b>5 月下旬，攻击者利用这个入口篡改了 DMM 员工发起的一笔正规交易请求<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>资金流出</b>4,502.9 枚 BTC 被转到 TraderTraitor 控制的钱包。DMM 在 5 月 31 日 13:26 前后发现<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。</li>
+        </ol>
+        <p>从第一次接触到转走资金约两个月。攻击者拿到入口后没有马上转账，最终是借一笔真实的请求做了手脚。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>Chainalysis 在 2024 年 12 月公布了追踪结果<a class="ref" href="#s10">[10]</a>：</p>
+        <ol class="flow">
+          <li class="atk"><b>DMM 钱包</b>4,502.9 BTC 流出</li>
+          <li class="atk"><b>多个中间地址</b>分批转出数百万美元</li>
+          <li class="atk"><b>CoinJoin 混币服务</b>比特币上的混币</li>
+          <li class="doubt"><b>跨链桥，再到 Huione Guarantee</b>一部分资金最终在这里兑现</li>
+        </ol>
+        <p>Huione Guarantee 是一个与柬埔寨有关的线上交易市场<a class="ref" href="#s10">[10]</a>，The Record 称它是华人有组织犯罪和网络诈骗的资金枢纽<a class="ref" href="#s9">[9]</a>，见诈骗站的<a href="../../scams/events/2025-huione.html">汇旺担保与诈骗洗钱市场</a>。公开资料里没有这笔 BTC 被冻结或追回的记录。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>被盗</td><td class="n">4,502.9 BTC</td><td>约 482 亿日元<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>美元折算</td><td class="n">3.05 亿 至 3.08 亿</td><td>FBI 和警察厅写 3.08 亿美元<a class="ref" href="#s2">[2]</a>，Chainalysis 和 CoinDesk 写 3.05 亿美元<a class="ref" href="#s10">[10]</a><a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>补偿资金</td><td class="n">550 亿日元</td><td>DMM 通过借款和增资从集团公司等筹得<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>移交的账户</td><td class="n">约 60 万个</td><td>2025 年 3 月移交 SBI VC Trade<a class="ref" href="#s8">[8]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>两个美元数字的差别来自折算时点和汇率，日元金额和 BTC 数量各方一致。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <p>Chainalysis 统计，2024 年与朝鲜有关的黑客在 47 起事件中盗走 13.4 亿美元，占全年被盗总额的 61%，DMM Bitcoin 是报告中单独剖析的案例<a class="ref" href="#s10">[10]</a>。2025 年 1 月，美日韩联合声明列出了三国单独或共同归因于朝鲜的 2024 年盗窃，DMM Bitcoin 金额最大：DMM Bitcoin 3.08 亿美元、Upbit 5,000 万美元、Rain Management 1,613 万美元<a class="ref" href="#s13">[13]</a>。声明还提到，日本金融厅与日本加密资产交易业协会（JVCEA）在 2024 年 9 月 26 日和 12 月 24 日两次要求交易所自查<a class="ref" href="#s13">[13]</a>。</p>
+        <p>这起事件让“供应商员工”成了交易所安全的一部分。攻击者不需要碰交易所自己的系统，只要攻破一家有权限接触交易流程的供应商的一名员工。同样的思路在 2025 年 2 月的 <a href="2025-bybit.html">Bybit</a> 事件中再次出现，那次被攻破的是多签钱包服务 Safe{Wallet} 的开发者电脑。Unit 42 援引 FBI 的认定，把这两起事件都归在同一个团伙名下<a class="ref" href="#s11">[11]</a>。</p>
+        <p>对 DMM Bitcoin 本身来说，用户的 BTC 虽然全额补足，但出金、现货买入等服务被长期限制，最终它放弃了经营<a class="ref" href="#s7">[7]</a>。补足了全部损失的交易所，最后仍然停业。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>全额补偿</h3>
+        <p>事发当天，DMM 宣布在集团公司支持下筹措与流出数量相当的 BTC，全额保证用户托管的比特币<a class="ref" href="#s4">[4]</a>。6 月 14 日，它宣布已通过借款和增资筹集 550 亿日元，补足流出部分的 BTC 已买齐<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>金融厅的业务改善命令</h3>
+        <p>2024 年 9 月 26 日，关东财务局依据《资金结算法》对 DMM Bitcoin 发出业务改善命令。命令列出的问题包括<a class="ref" href="#s6">[6]</a>：</p>
+        <ul>
+          <li>开业以来没有设置负责系统的董事，没有在经营层面审视系统风险。</li>
+          <li>系统风险管理、系统开发运维和信息安全管理的权限集中在少数人手中，系统风险管理部门监督的是它自己，制衡没有发挥作用。</li>
+          <li>没有配备具备审计技能的人员，却让被审计的部门自己做审计，内部审计缺乏独立性。</li>
+          <li>引入外部钱包时没有讨论转移加密资产时的流出风险，没有确认对外部钱包安全评估的内容是否妥当，在不清楚钱包出问题时该如何应对的情况下就开始使用。</li>
+        </ul>
+        <p>命令要求查明原因、保护客户、强化系统风险管理、明确经营责任，并在 10 月 28 日前提交改善计划<a class="ref" href="#s6">[6]</a>。最后一条直接对应这次的攻击路径：DMM 把交易流程的一环交给了外部钱包，却没有评估这一环失守时会怎样。</p>
+        <h3>停业与移交</h3>
+        <p>2024 年 11 月 29 日，DMM Bitcoin 与 SBI VC Trade 签订基本协议；12 月 2 日宣布停业，理由是服务限制持续太久，继续下去会损害客户<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。约 60 万个账户和托管的日元、加密资产移交 SBI VC Trade；DMM 经营而 SBI VC Trade 原本没有的 14 种现货加密资产，由 SBI VC Trade 在移交前上线；杠杆交易的未平仓头寸不在移交范围内，须在移交前了结<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。2025 年 3 月 8 日，移交完成，DMM Bitcoin 停止服务<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>执法</h3>
+        <p>调查由警察厅关东管区警察局网络特别搜查部和警视厅进行，与 FBI、DC3 合作完成了归因<a class="ref" href="#s1">[1]</a>。攻击者在朝鲜，本站没有查到起诉、逮捕或资金追回的记录。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给开发者</span>
+          <ul>
+            <li>招聘流程里的“编程测试”不要在工作电脑上运行。先在编辑器里把代码读一遍，需要运行时放进虚拟机或一次性环境<a class="ref" href="#s3">[3]</a>。</li>
+            <li>对方催你尽快运行代码，或者一再拒绝视频通话，都要当作可疑信号<a class="ref" href="#s3">[3]</a>。</li>
+            <li>解析外部数据时用安全的方式，例如 PyYAML 用 <code>safe_load()</code> 而不是 <code>load()</code><a class="ref" href="#s11">[11]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给钱包供应商</span>
+          <ul>
+            <li>能接触生产环境的员工，日常电脑上不留生产环境的凭据。生产访问走专用设备和短时效凭据。</li>
+            <li>会话设短时效并绑定设备。非工作时段、异常地点、VPN 或非公司电脑的登录要能被发现<a class="ref" href="#s3">[3]</a>。</li>
+            <li>内部通信系统加密并鉴权。警察厅特别指出，攻击者进入的是 Ginco “未加密”的通信系统<a class="ref" href="#s1">[1]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>签名之前，在自己的系统里独立核对收款地址和金额，与白名单比对，不只相信供应商传来的请求。</li>
+            <li>引入外部钱包或托管服务前，评估它失守时会有多少资产流出、出事时怎样应对。这正是金融厅指出 DMM 欠缺的<a class="ref" href="#s6">[6]</a>。</li>
+            <li>系统风险管理、开发运维和审计分开，不让一个部门监督自己。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">日本警察厅，《北朝鮮を背景とするサイバー攻撃グループ TraderTraitor による暗号資産関連事業者を標的としたサイバー攻撃について》，2024-12-24。<a href="https://www.npa.go.jp/bureau/cyber/pdf/020241224_pa.pdf">npa.go.jp</a></li>
+          <li id="s2">FBI、DC3、日本警察厅，《FBI, DC3 and NPA Identification of North Korean Cyber Actors, tracked as TraderTraitor, Responsible for Theft of $308 Million USD from Bitcoin.DMM.com》，2024-12-24（本站阅读的是警察厅发布的日文暂译本）。<a href="https://www.npa.go.jp/bureau/cyber/pdf/20241224_jp.pdf">npa.go.jp</a></li>
+          <li id="s3">日本警察厅、内阁网络安全中心、金融厅，《北朝鮮を背景とするサイバー攻撃グループ TraderTraitor によるサイバー攻撃について（注意喚起）》，2024-12-24。<a href="https://www.npa.go.jp/bureau/cyber/pdf/20241224_caution.pdf">npa.go.jp</a></li>
+          <li id="s4">Impress Watch，《DMM、482億円相当のビットコインが不正流出》，2024-05-31。<a href="https://www.watch.impress.co.jp/docs/news/1596639.html">watch.impress.co.jp</a></li>
+          <li id="s5">ITmedia，《ビットコイン流出のDMM、補填分の調達を完了 グループ会社などから550億円確保》，2024-06-15。<a href="https://www.itmedia.co.jp/news/article/2406/15/1240615056/">itmedia.co.jp</a></li>
+          <li id="s6">ロケットボーイズ セキュリティ対策Lab，《金融庁がDMMへ業務改善命令 ビットコイン482億円の不正流出を受け》，2024-09-27（引用关东财务局业务改善命令原文）。<a href="https://rocket-boys.co.jp/security-measures-lab/8961/">rocket-boys.co.jp</a></li>
+          <li id="s7">Impress Watch，《DMM、ビットコイン撤退 不正流出の影響脱せず》，2024-12-02。<a href="https://www.watch.impress.co.jp/docs/news/1644138.html">watch.impress.co.jp</a></li>
+          <li id="s8">ニッキンONLINE，《DMMビットコイン廃業、SBI系へ60万口座移管》，2024-12-02。<a href="https://www.nikkinonline.com/article/234223">nikkinonline.com</a></li>
+          <li id="s9">The Record，《Chainalysis: $2.2 billion stolen from crypto platforms in 2024 cyberattacks》，2024-12-19。<a href="https://therecord.media/cryptocurrency-platforms-2-billion-stolen-2024-chainalysis">therecord.media</a></li>
+          <li id="s10">Chainalysis，《$2.2 Billion Stolen from Crypto Platforms in 2024》，2024-12-19。<a href="https://www.chainalysis.com/blog/crypto-hacking-stolen-funds-2025/">chainalysis.com</a></li>
+          <li id="s11">Unit 42（Palo Alto Networks），《Slow Pisces Targets Developers With Coding Challenges and Introduces New Customized Python Malware》，2025-04-14。<a href="https://unit42.paloaltonetworks.com/slow-pisces-new-custom-malware/">unit42.paloaltonetworks.com</a></li>
+          <li id="s12">Iolite，《Ginco announces details regarding unauthorized access to DMM Bitcoin》，2025-01-29（报道 Ginco 2025-01-28 的公告）。<a href="https://iolite.net/en/news/ginco-releases-details-about-dmm-bitcoin-leak">iolite.net</a></li>
+          <li id="s13">美国国务院，《Joint Statement on Cryptocurrency Thefts by the Democratic People’s Republic of Korea and Public-Private Collaboration》，2025-01-14。<a href="https://2021-2025.state.gov/office-of-the-spokesperson/releases/2025/01/joint-statement-on-cryptocurrency-thefts-by-the-democratic-peoples-republic-of-korea-and-public-private-collaboration/">state.gov</a></li>
+          <li id="s14">CoinPost，《DMM Bitcoinはサービス終了｜口座・預かり資産はSBI VCトレードへ移管（2025年3月8日）》。<a href="https://coinpost.jp/?p=11738">coinpost.jp</a></li>
+          <li id="s15">CoinDesk，《DMM Bitcoin to Shut Down After $305M Hack; Will Transfer Accounts to SBI VC》，2024-12-02。<a href="https://www.coindesk.com/business/2024/12/02/japanese-crypto-exchange-dmm-bitcoin-to-shut-down-after-305-m-hack">coindesk.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

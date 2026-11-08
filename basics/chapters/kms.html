@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KMS 签名原理｜区块链基础知识</title>
+<meta name="description" content="运营地址的私钥放在 AWS KMS 里：KMS 签什么、不签什么；DER、低位 s、v；以太坊和 Qtum 的交易怎么签；权限怎么配">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="kms">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 12 章</p>
+    <h1>KMS 签名原理</h1>
+    <p class="lede">托管桥的运营地址要全天候自动铸币、放款，它的私钥放在 AWS KMS 的 HSM 里。这一章讲 KMS 替签名服务做了什么、没做什么；签名服务怎么把 KMS 给的签名变成以太坊和 Qtum 都认的交易；权限该怎么配。看不懂的词，先看“先看懂几个概念”。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">KMS 签名 = 私钥锁在 AWS 的 HSM 里，签名服务把 32 字节摘要交给它，拿回 DER 签名，再自己转成链要的格式</p>
+  <p class="lead">本章以一座 ETH ↔ Qtum 托管桥为例：桥在两条链上各有一个运营地址，私钥放在 AWS KMS 里。标<span class="ok-tag">已核实</span>的结论查过 AWS 官方文档或源码，来源在文末；标<span class="unv">待验证</span>的要在测试网实测。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>基础事实</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>KMS 只做一件事</td><td>用 HSM 里的私钥，对签名服务给的 <b>32 字节摘要</b>做 secp256k1 ECDSA 签名。私钥不出 HSM</td></tr>
+      <tr><td>KMS 看不到交易</td><td>交易怎么组、摘要怎么算、签名怎么转格式，都是签名服务自己的代码。所以签名服务必须先核对交易内容，再算摘要交给 KMS</td></tr>
+      <tr><td>两条链用同一种曲线</td><td>都是 secp256k1，同一种 KMS 密钥规格两边都能用。按设计，每条链各用一把钥匙，放在不同的 AWS 账号里</td></tr>
+      <tr><td>KMS 的签名不能直接用</td><td>要补三件事：从 DER 里拆出 r、s；把 s 规范成低位；以太坊另外算出 v</td></tr>
+      <tr><td>以太坊</td><td>一笔交易签一次。摘要 = keccak256(未签名交易)，签名放成 (yParity, r, s)</td></tr>
+      <tr><td>Qtum</td><td>UTXO 模型，<b>每个输入单独算摘要、单独签</b>。摘要 = 双 SHA256(按规则改写过的交易)，签名编成 DER 加一个字节 0x01，和公钥一起放进输入的 scriptSig</td></tr>
+      <tr><td>安全靠什么</td><td>KMS 只保证私钥拿不走。谁能让 KMS 签、签什么，靠签名服务的核对和链上额度来限制</td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见理解里，对的部分</h3>
+      <ul>
+        <li>私钥在硬件里，服务器被攻破也拷不走；发现入侵后收回权限，攻击者就再也签不了</li>
+        <li>每次签名都留一条 CloudTrail 日志，事后能查谁在什么时候签过</li>
+        <li>不用人按键，能全天候自动签，适合运营地址</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>KMS 不是“帮你签交易”</b>。它只签 32 字节，不知道这 32 字节是哪笔交易，也不检查发给谁、多少钱</li>
+        <li><b>“私钥在 HSM 里就安全”只对一半</b>。收回权限之前，能调用这把钥匙的人想签什么就签什么</li>
+        <li><b>KMS 返回的签名，两条链都不能直接用</b>。格式要转，s 要规范，以太坊还要自己算 v</li>
+        <li><b><code>ECDSA_SHA_256</code> 不会再算一次 SHA256</b>。用 DIGEST 模式时 KMS 直接签签名服务给的 32 字节，所以以太坊的 keccak256 摘要也能交给它签</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="overview">
+  <h2 class="eyebrow">总览</h2>
+  <p class="lead">上面一层是自己写的签名服务，中间是 AWS KMS，下面是链。私钥一直在 HSM 里。图里每个方框都能点，跳到讲它的那张卡片。</p>
+  <div class="mapbox"><div class="svgscroll">
+  <svg id="kmap" viewBox="0 0 900 360" role="img" aria-label="签名总览：签名服务把未签名交易哈希成 32 字节摘要，交给 KMS 的 Sign；HSM 里的私钥签出 DER 签名；签名服务转成链要的格式后广播；节点用运营地址核对签名者">
+    <defs><marker id="kah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L8,4 L0,8z"/></marker></defs>
+    <rect class="zone" x="10" y="10" width="880" height="120" rx="8"/><text class="zl" x="22" y="30">签名服务（自己写的代码）</text>
+    <rect class="zone" x="10" y="150" width="880" height="100" rx="8"/><text class="zl" x="22" y="170">AWS KMS（HSM 在里面）</text>
+    <rect class="zone" x="10" y="270" width="880" height="80" rx="8"/><text class="zl" x="22" y="290">链上</text>
+    <!-- 签名服务 -->
+    <a href="#c-tx"><rect class="nd" x="40" y="44" width="150" height="60" rx="6"/><text x="115" y="70" text-anchor="middle">未签名交易</text><text class="sm" x="115" y="90" text-anchor="middle">铸币、放款、取消</text></a>
+    <a href="#c-hash"><rect class="nd" x="250" y="44" width="150" height="60" rx="6"/><text x="325" y="70" text-anchor="middle">32 字节摘要</text><text class="sm" x="325" y="90" text-anchor="middle">keccak256 / 双 SHA256</text></a>
+    <a href="#c-der"><rect class="nd" x="480" y="44" width="150" height="60" rx="6"/><text x="555" y="70" text-anchor="middle">DER 签名</text><text class="sm" x="555" y="90" text-anchor="middle">(r, s) 两个整数</text></a>
+    <a href="#format"><rect class="nd" x="690" y="44" width="180" height="60" rx="6"/><text x="780" y="70" text-anchor="middle">链要的签名格式</text><text class="sm" x="780" y="90" text-anchor="middle">低位 s · 以太坊 v · Qtum 0x01</text></a>
+    <!-- KMS -->
+    <a href="#c-kms"><rect class="nd" x="250" y="182" width="150" height="52" rx="6"/><text x="325" y="204" text-anchor="middle">Sign 接口</text><text class="sm" x="325" y="222" text-anchor="middle">只收 32 字节</text></a>
+    <a href="#c-hsm"><rect class="nd key" x="480" y="182" width="150" height="52" rx="6"/><text class="fw7" x="555" y="204" text-anchor="middle">私钥</text><text class="sm" x="555" y="222" text-anchor="middle">secp256k1 · 不可导出</text></a>
+    <!-- 链上 -->
+    <a href="#addr"><rect class="nd" x="480" y="292" width="150" height="48" rx="6"/><text x="555" y="312" text-anchor="middle">运营地址</text><text class="sm" x="555" y="330" text-anchor="middle">写在网关合约里</text></a>
+    <a href="#c-ecdsa"><rect class="nd" x="690" y="292" width="180" height="48" rx="6"/><text x="780" y="312" text-anchor="middle">节点验证签名</text><text class="sm" x="780" y="330" text-anchor="middle">签名者 = 运营地址？</text></a>
+    <!-- 连线 -->
+    <path class="ln" d="M190,74 L248,74" marker-end="url(#kah)"/><text class="sm" x="219" y="66" text-anchor="middle">哈希</text>
+    <path class="ln" d="M325,104 L325,180" marker-end="url(#kah)"/><text class="sm" x="333" y="146">Sign(摘要)</text>
+    <path class="ln" d="M400,208 L478,208" marker-end="url(#kah)"/><text class="sm" x="440" y="200" text-anchor="middle">ECDSA</text>
+    <path class="ln" d="M555,182 L555,106" marker-end="url(#kah)"/><text class="sm" x="563" y="146">返回 DER 签名</text>
+    <path class="ln" d="M630,74 L688,74" marker-end="url(#kah)"/><text class="sm" x="659" y="66" text-anchor="middle">转换</text>
+    <path class="ln d" d="M555,234 L555,290" marker-end="url(#kah)"/><text class="sm" x="563" y="262">GetPublicKey → 算地址</text>
+    <path class="ln" d="M780,104 L780,290" marker-end="url(#kah)"/><text class="sm" x="788" y="200">签好的交易，广播</text>
+    <path class="ln d" d="M630,316 L688,316" marker-end="url(#kah)"/><text class="sm" x="659" y="308" text-anchor="middle">核对</text>
+  </svg>
+  </div></div>
+  <p>私钥一直在 HSM 里。签名服务把摘要交给 KMS，拿回 DER 签名，转成链要的格式；链上节点用公钥验证。<b>签什么由签名服务决定</b>，所以签名服务对交易的核对，是整套方案的关键。</p>
+</section>
+
+<section id="basics">
+  <h2 class="eyebrow">先看懂</h2>
+  <p class="lead">后面几节用到的基础知识都在这里，分成两组：密码学和 KMS、两条链的交易。地址编码、AWS 权限、系统角色放在用到它们的那一节开头。已经熟悉的可以直接跳到 <a href="#kms">KMS 提供什么</a>。</p>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>看不懂这一节</th><th>先看</th></tr></thead>
+    <tbody>
+      <tr><td><a href="#kms">KMS 提供什么</a>、<a href="#flow">签名流程</a>、<a href="#format">签名格式</a></td><td><a href="#g-crypto">密码学和 KMS</a></td></tr>
+      <tr><td><a href="#eth">以太坊</a>、<a href="#qtum">Qtum</a>、<a href="#compare">对照</a>、<a href="#verify">还要验证的</a></td><td><a href="#g-tx">两条链的交易</a></td></tr>
+      <tr><td><a href="#addr">地址</a></td><td>那一节开头的四个词（压缩公钥、hash160、Base58Check、EIP-55）</td></tr>
+      <tr><td><a href="#iam">权限</a></td><td>那一节开头的词表（账号、IAM 角色、策略、ARN、钥匙策略、SCP）</td></tr>
+      <tr><td><a href="#flow">签名流程</a>里的角色</td><td>那一节开头的角色表</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <p><b>读数据的几个约定</b></p>
+    <p><b>字节和十六进制</b>：1 字节是 8 位，写成两位十六进制数字，从 <code>00</code> 到 <code>ff</code>。32 字节写出来是 64 个十六进制数字。<b><code>0x</code></b> 表示后面是十六进制，例如 <code>0x45</code> 就是十进制的 69。<b><code>‖</code></b> 表示把两段字节首尾接起来，例如 <code>04 ‖ X ‖ Y</code>。<b>大端</b>是高位在前，和平常写数字一样；本章的整数默认按大端写，Qtum 交易内部有些字段是小端（低位在前），用到时会说明。<b><code>…</code></b> 表示一长串十六进制只写开头和结尾。</p>
+  </div>
+  <div class="bgroup">
+    <h3 id="g-crypto">密码学和 KMS <small>KEY · HASH · ECDSA · DER · HSM</small></h3>
+    <p class="note">按“私钥和签名 → 摘要 → ECDSA → secp256k1 → 低位 s → DER → HSM → KMS”的顺序讲，前面讲的后面会用到。这部分是通用的密码学常识；和 AWS 有关的说法已按官方文档核实。</p>
+    <div class="bgrid">
+      <div class="bit wide" id="c-keys">
+        <div class="bh"><span class="term">Key Pair · Signature</span><h4>私钥、公钥、签名</h4></div>
+        <p><b>一句话</b>：私钥是只有你知道的一个大数；公钥由私钥算出，可以公开；签名是用私钥对一段数据算出的一组数。任何人拿着公钥都能验证两件事：这段数据确实经过私钥持有人认可，而且没被改过。</p>
+        <div class="tbl"><table>
+          <thead><tr><th></th><th>是什么</th><th>谁知道</th><th>在托管桥里</th></tr></thead>
+          <tbody>
+            <tr><td>私钥</td><td>一个 256 位的随机整数</td><td>只有持有人</td><td>运营密钥的私钥，存在 KMS 里</td></tr>
+            <tr><td>公钥</td><td>由私钥算出的曲线上的一个点（见 <a href="#c-ecdsa">ECDSA</a>）</td><td>任何人</td><td>从 KMS 取出，用来算运营地址</td></tr>
+            <tr><td>地址</td><td>由公钥算出的 20 字节摘要（见 <a href="#addr">地址</a>）</td><td>任何人</td><td>运营地址，写在网关合约里</td></tr>
+            <tr><td>签名</td><td>用私钥对交易摘要算出的 (r, s)</td><td>随交易公开</td><td>每笔铸币、放款交易都带着</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>常见误解</b>：“签名就是加密”，不对。签名不隐藏任何内容，交易本来就是公开的；签名证明的是谁认可了这笔交易、交易内容有没有被改过。“有了公钥就能算出私钥”，算不出来：由私钥算公钥很快，反过来在现实中算不出来，整套体系的安全就建立在这一点上。“地址就是公钥”，不是：地址是公钥的摘要，比公钥短。</p>
+        <p><b>和链的关系</b>：链上没有用户名和密码。节点判断一笔交易能不能执行，只看签名能不能用发送地址的公钥验证通过。所以谁掌握运营密钥的私钥，或者能让 KMS 用这把私钥签名，谁就能以运营地址的身份发交易。</p>
+        <p class="note">助记词、私钥、地址的关系：<a class="chap-link" href="basics.html#bits">入门：助记词、私钥、地址是一条单向链</a></p>
+      </div>
+      <div class="bit wide" id="c-hash">
+        <div class="bh"><span class="term">Hash</span><h4>摘要（哈希）：两条链用的不一样</h4></div>
+        <p><b>一句话</b>：哈希函数把任意长度的数据变成固定长度的“指纹”。本章用到的 SHA256 和 keccak256，输出都是 32 字节。它有三个性质：同样的输入永远得到同样的指纹；输入改一个字节，指纹就完全不同；从指纹反推不出原数据。</p>
+        <p><b>为什么签摘要，不签整笔交易</b>：ECDSA 的签名运算要求输入是一个 256 位的数。先把交易哈希成 32 字节，再签这 32 字节，效果等于签了整笔交易：交易哪怕改一个字节，摘要就变了，原来的签名就验证不过。这也是 KMS 的 <code>Sign</code> 只收 32 字节摘要的原因。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>名字</th><th>是什么</th><th>谁在用</th><th>"abc" 的结果（前 8 字节）</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">SHA256</td><td>美国 NIST 标准的哈希函数</td><td>比特币、Qtum；KMS 的 <code>ECDSA_SHA_256</code> 名字里的就是它</td><td class="mono">ba7816bf8f01cfea…</td></tr>
+            <tr><td class="mono">双 SHA256</td><td>先算一次 SHA256，再对结果再算一次</td><td>比特币和 Qtum：交易 ID、签名摘要</td><td class="mono">4f8b42c22dd3729b…</td></tr>
+            <tr><td class="mono">keccak256</td><td>Keccak 算法，后来被选为 SHA3 标准的原型</td><td>以太坊：地址、交易签名摘要、合约里的 <code>keccak256()</code></td><td class="mono">4e03657aea45a94f…</td></tr>
+            <tr><td class="mono">SHA3-256</td><td>NIST 定稿 SHA3 时改了填充规则的版本</td><td>以太坊不用</td><td class="mono">3a985da74fe225b2…</td></tr>
+          </tbody>
+        </table></div>
+        <div class="tool">
+          <label for="hIn">自己试：输入任意文字（按 UTF-8 转成字节），看四种哈希。改一个字，四行全变<input id="hIn" type="text" value="abc" spellcheck="false"></label>
+          <div class="out" id="hOut" aria-live="polite"></div>
+        </div>
+        <p><b>常见误解</b>：“keccak256 就是 SHA3”，不完全是。以太坊在 SHA3 定稿前就用了 Keccak；NIST 定稿时改了填充规则，所以同样的输入结果不同（上表后两行）。有的库把 keccak256 叫作 “sha3”，用错函数会算出错误的地址和摘要。“KMS 只能签 SHA256 算出的摘要”，也不是：DIGEST 模式下，KMS 不管摘要是怎么算出来的，只要求是 32 字节。keccak256 和双 SHA256 的结果都是 32 字节，都能交给它签。</p>
+        <p><b>和托管桥的关系</b>：签名服务算摘要时，以太坊用 keccak256，Qtum 用双 SHA256。用错一个，签出来的交易节点就不认。</p>
+      </div>
+      <div class="bit wide" id="c-ecdsa">
+        <div class="bh"><span class="term">ECDSA</span><h4>ECDSA：私钥签、公钥验的那套算法</h4></div>
+        <p><b>一句话</b>：ECDSA（椭圆曲线数字签名算法）是一套具体的“私钥签、公钥验”的算法。比特币、以太坊、Qtum 的交易签名都用它。</p>
+        <p><b>怎么工作</b>（只讲后面用得到的部分）：椭圆曲线是满足某个方程的所有点 (x, y)。曲线上定义了一种“点加法”：两个点相加，得到曲线上的另一个点。把一个点 G 连加 d 次，记作 d×G。已知 d 算 d×G 很快；只知道 d×G，反推 d 在现实中做不到。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>步骤</th><th>做什么</th><th>要用什么</th></tr></thead>
+          <tbody>
+            <tr><td>生成钥匙</td><td>随机取一个整数 d 作为私钥；公钥 Q = d×G</td><td>曲线上公认的固定点 G；所有运算都对一个公开的大整数 n（曲线的阶）取余</td></tr>
+            <tr><td>签名</td><td>取一次性随机数 k，算点 R = k×G；r = R 的横坐标；s = (摘要 + r×d) ÷ k。签名就是 (r, s)</td><td>私钥 d、摘要</td></tr>
+            <tr><td>验证</td><td>算 u₁ = 摘要 ÷ s，u₂ = r ÷ s，再算点 P = u₁×G + u₂×Q；P 的横坐标等于 r 就通过</td><td>只要公钥 Q，不要私钥</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">表里的“÷”都是在对 n 取余的意义下算的。</p>
+        <p><b>后面用到的两个结论，都来自这张表</b>：把 s 换成 n − s，u₁、u₂ 都变成相反数，P 变成它上下翻转的那个点，横坐标不变，所以照样验证通过，这就是<a href="#c-lows">低位 s</a> 问题。只知道 r，横坐标等于 r 的点有两个（一上一下），所以从签名反推公钥时有两个候选，以太坊用 v 指明是哪一个（见<a href="#eth">以太坊</a>）。</p>
+        <p><b>常见误解</b>：“ECDSA 就是 secp256k1”，不是：ECDSA 是算法，secp256k1 是它用的那条曲线，同一个算法换一条曲线，就是另一套互不相通的钥匙。“同一条消息签两次，签名一样”，通常不一样：每次的 k 不同，签名也就不同，但两个签名都能验证通过。用 Node 对同一条消息签两次就能看到，两次结果不同。</p>
+        <p><b>k 必须保密，而且每次都不同</b>：用同一个 k 签过两条不同的消息，别人就能直接算出私钥。2010 年索尼 PS3 的签名私钥就是这样泄露的。HSM 在内部生成 k，外面碰不到，这也是签名交给 HSM、不自己写代码实现的原因之一。</p>
+        <p class="note">合约怎么从签名算出签名者地址（<code>ecrecover</code>）：<a class="chap-link" href="bridges.html#sig">第 03 章：一份签名是怎么被验证的</a></p>
+      </div>
+      <div class="bit wide" id="c-curve">
+        <div class="bh"><span class="term">secp256k1</span><h4>secp256k1：用的是哪条曲线</h4></div>
+        <p><b>一句话</b>：secp256k1 是一条具体的椭圆曲线，也就是上面 ECDSA 表里“曲线、G、n”这一整套公开参数。比特币选了它，以太坊和 Qtum 沿用。曲线方程是 y² = x³ + 7，所有坐标都对一个 256 位的素数取余。名字的意思：sec（SECG 组织发布的标准 SEC 2）、p（定义在素数域上）、256（256 位）、k（Koblitz 型曲线）、1（这一类里的第 1 条）。</p>
+        <p>曲线的阶 n = <span class="hex">FFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364141</span>。下一张卡片的“低位 s”就是拿 s 和 n 的一半比。</p>
+        <p><b>常见误解</b>：“secp256k1 是一种加密算法”，不是，它只是一组曲线参数，算法是 ECDSA。“P-256 也是 256 位，差不多”，完全不同：P-256（又叫 secp256r1）是 NIST 标准曲线，网站证书、手机安全芯片常用。同一个私钥在两条曲线上算出的公钥不同，签名互不认。</p>
+        <p><b>和托管桥的关系</b>：KMS 建钥匙时必须选 <code>ECC_SECG_P256K1</code>。选成 <code>ECC_NIST_P256</code>，钥匙照样建得出、签名照样签得出，从公钥也能算出一个看起来正常的地址，但两条链都验证不过这把钥匙的签名，打到那个地址的钱永远花不出来。</p>
+      </div>
+      <div class="bit wide" id="c-lows">
+        <div class="bh"><span class="term">Low-s</span><h4>把 s 规范成低位</h4></div>
+        <p><b>一句话</b>：同一笔交易、同一把私钥，有两个都能验证通过的签名：(r, s) 和 (r, n − s)（原因见 <a href="#c-ecdsa">ECDSA</a>）。规定只用 s 较小的那个，也就是 s ≤ n/2；签出来的 s 比 n/2 大，就换成 n − s。这就叫“把 s 规范成低位”。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>一个真实的例子（Node 的 secp256k1 对 "abc" 签名）</th><th>值（十六进制，32 字节）</th></tr></thead>
+          <tbody>
+            <tr><td>n/2</td><td class="mono">7fffffff…681b20a0</td></tr>
+            <tr><td>签出来的 s</td><td><span class="mono">c9644549…a552e842</span>：开头 c9 比 7f 大，是高位</td></tr>
+            <tr><td>n − s</td><td><span class="mono">369bbab6…2ae358ff</span>：开头 36 比 7f 小，是低位</td></tr>
+            <tr><td>验证结果</td><td>原签名通过；换成 n − s 后也通过</td></tr>
+          </tbody>
+        </table></div>
+        <p class="note">比大小先看开头：大于 7f 的一定是高位，小于 7f 的一定是低位，正好是 7f 才需要往后比。</p>
+        <div class="anim" data-anim="lows"></div>
+        <p><b>为什么链只认低位</b>：两个签名都有效，会带来“交易延展性”问题。交易 ID 是对整笔交易（包括签名）算的哈希。任何人拿到一笔还没上链的交易，不用私钥，就能把 s 换成 n − s，造出一笔内容一样、交易 ID 不同的交易抢先广播。执行器按交易 ID 跟踪自己发出的交易，就会以为原来那笔没上链。所以两条链都只认低位 s：以太坊是协议规则（EIP-2），高位 s 的交易无效；Qtum 是节点的标准策略（继承自比特币），高位 s 的交易不进内存池。</p>
+        <p><b>签名服务怎么做</b>：KMS 签出来的 s 大约一半是高位。签名服务拿到后比一下：s &gt; n/2 就换成 n − s。这只是一次减法，不需要私钥，也不用再调 KMS。以太坊要注意，s 换了以后 v 也跟着变，所以<b>先规范 s，再试 v</b>（见<a href="#eth">以太坊</a>）。</p>
+      </div>
+      <div class="bit wide" id="c-der">
+        <div class="bh"><span class="term">DER</span><h4>DER：KMS 交付签名和公钥的格式</h4></div>
+        <p><b>一句话</b>：DER 是一种把结构化数据写成字节的标准编码规则，属于 ASN.1 标准。KMS 用它交付两样东西：签名和公钥。签名就是两个整数 r 和 s，公钥是曲线上的一个点，要在程序之间传，得约定怎么排成字节。DER 的办法是：每一项都写成“类型、长度、内容”三段。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>字节（上一张卡片里高位 s 的那个签名，共 71 字节）</th><th>意思</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">30</td><td>类型：SEQUENCE，一个结构，里面装着 r 和 s</td></tr>
+            <tr><td class="mono">45</td><td>长度：后面还有 0x45 = 69 字节</td></tr>
+            <tr><td class="mono">02 20</td><td>类型 INTEGER，长度 0x20 = 32 字节：下面是 r</td></tr>
+            <tr><td class="mono">65bf6cee…957afa</td><td>r 的 32 字节</td></tr>
+            <tr><td class="mono">02 21</td><td>类型 INTEGER，长度 0x21 = 33 字节：下面是 s</td></tr>
+            <tr><td class="mono">00 c9644549…a552e842</td><td>s：前面补了一个 00，后面才是 32 字节</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>为什么有时 33 字节、有时 31 字节</b>：DER 的整数带正负号，最高位是 1 表示负数。r、s 都是正数，所以最高字节大于等于 0x80 时，前面要补一个 00（上例的 s 开头是 c9，就补了 00）。反过来，DER 要求用最短的写法，多余的前导 00 要省掉，所以有时只有 31 字节。</p>
+        <p><b>两条链怎么用</b>：<b>以太坊不用 DER</b>，交易里的 r、s 是两个整数，所以要从 DER 里拆出来、去掉补的 00（见<a href="#format">签名格式</a>）。<b>Qtum 用 DER</b>，沿用比特币，输入里放严格 DER 编码（BIP66）的签名，再加 1 字节 0x01。s 规范后变了，所以要重新编：上例换成 n − s 后，s 开头是 36，不用补 00，整个签名从 71 字节变成 70 字节。</p>
+        <p><b>公钥也是 DER</b>：<code>GetPublicKey</code> 返回的 SPKI 是 88 字节的 DER 结构。前 23 字节 <span class="hex">3056301006072a8648ce3d020106052b8104000a034200</span> 是固定的头，里面写着“椭圆曲线公钥”（<code>2a8648ce3d0201</code>）和“曲线是 secp256k1”（<code>2b8104000a</code>）；后 65 字节才是公钥本身（见<a href="#addr">地址</a>）。</p>
+        <p class="note">想自己拆一个签名，用<a href="#format">签名格式</a>一节的小工具。</p>
+      </div>
+      <div class="bit" id="c-hsm">
+        <div class="bh"><span class="term">HSM</span><h4>HSM：保管私钥的专用硬件</h4></div>
+        <p><b>一句话</b>：HSM（硬件安全模块）是专门保管密钥、在内部完成签名运算的硬件。私钥在里面生成、在里面使用，不以明文离开设备；外面只能把摘要送进去，拿回签名。</p>
+        <p>和普通服务器的区别：通常有防拆机制，强行打开会清掉里面的密钥；接口只提供签名这类运算，没有“导出私钥”；要通过 FIPS 140 这类安全认证。<b>AWS KMS 用的 HSM 通过了 FIPS 140-3 第 3 级认证</b><span class="ok-tag">已核实</span>。</p>
+        <p><b>常见误解：“私钥在 HSM 里，服务器被攻破也没关系”</b>。对的一半：私钥拷不走，发现入侵后收回权限（禁用钥匙或换掉执行角色），攻击者就再也签不了；私钥文件一旦被拷走，就永远能用。错的一半：收回权限之前，能调用这把钥匙的人想签什么就签什么，HSM 不知道它签的 32 字节是哪笔交易，也不会检查。</p>
+        <p>所以在 KMS 之外，还要让签名服务自己核对每笔交易，并在链上设额度上限。</p>
+      </div>
+      <div class="bit" id="c-kms">
+        <div class="bh"><span class="term">AWS KMS</span><h4>KMS：AWS 提供的、建在 HSM 上的服务</h4></div>
+        <p><b>一句话</b>：AWS KMS 是一项云服务。钥匙在 AWS 的 HSM 里生成和保管，使用者碰不到私钥，只能通过 API 让它签名。</p>
+        <p>在 HSM 之上，KMS 多提供了这些：<b>API</b>，<code>GetPublicKey</code> 取公钥，<code>Sign</code> 签名；<b>权限</b>，谁能调用哪把钥匙，由 IAM 和钥匙策略决定（见<a href="#iam">权限</a>）；<b>日志</b>，每次调用都记在 CloudTrail 里；<b>禁用和删除</b>，钥匙可以随时禁用，删除前有一段等待期。</p>
+        <p><b>常见误解</b>：“KMS 就是 HSM”，不是：HSM 是硬件，KMS 是建在 HSM 上的服务，负责权限、日志和管理。“KMS 会检查签的是什么”，不会，见上面的 HSM 卡片。</p>
+        <p><b>KMS 和 CloudHSM</b>：AWS 还有一项 CloudHSM，给你一组专用的 HSM，但集群、备份、用户都要自己管。KMS 是全托管的，用起来简单得多。本章的例子用 KMS；KMS 签不出可用的 Qtum 交易时，CloudHSM 可以作为备选。</p>
+      </div>
+      <div class="bit wide" id="c-store">
+        <div class="bh"><span class="term">Key Storage</span><h4>私钥放在哪，对比一下</h4></div>
+        <div class="tbl"><table>
+          <thead><tr><th>放在哪</th><th>私钥会被拷走吗</th><th>能自动签名吗</th><th>托管桥里谁用</th></tr></thead>
+          <tbody>
+            <tr><td>服务器上的文件或环境变量</td><td class="n">服务器被攻破就会</td><td>能</td><td>不用</td></tr>
+            <tr><td>硬件钱包（个人用的小型 HSM）</td><td class="y">不会</td><td>不能，每笔要人按键确认</td><td>多签持有人、审核员、值班人员</td></tr>
+            <tr><td>云端 HSM（KMS）</td><td class="y">不会</td><td>能</td><td>运营密钥：要全天候自动铸币、放款，不可能每笔等人按键</td></tr>
+          </tbody>
+        </table></div>
+        <p>这几张卡片串起来，就是开头的<a href="#overview">总览图</a>：私钥一直在 HSM 里；签名服务把摘要交给 KMS，拿回 DER 签名，转成链要的格式；链上节点用公钥验证。</p>
+      </div>
+    </div>
+  </div>
+  <div class="bgroup">
+    <h3 id="g-tx">两条链的交易 <small>TX · NONCE · GAS · UTXO · SCRIPT</small></h3>
+    <div class="bgrid">
+      <div class="bit wide" id="c-tx">
+        <div class="bh"><span class="term">Transaction</span><h4>交易、节点、区块、确认</h4></div>
+        <p><b>一句话</b>：交易是一条带签名的指令，例如转账或调用合约。签好后发给节点，节点检查签名和规则，先放进内存池；出块的人把内存池里的交易打包进区块，交易就上链了。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>词</th><th>意思</th></tr></thead>
+          <tbody>
+            <tr><td>节点</td><td>运行区块链软件的电脑：保存整条链，检查、转发交易</td></tr>
+            <tr><td>广播</td><td>把签好的交易发给节点，节点再转给其他节点</td></tr>
+            <tr><td>内存池</td><td>节点里“收到了、还没上链”的交易</td></tr>
+            <tr><td>区块</td><td>打包在一起的一批交易，按顺序首尾相连成链。以太坊约 12 秒一个区块</td></tr>
+            <tr><td>确认数</td><td>交易所在区块之后又接了几个区块。越多，越不可能被推翻</td></tr>
+            <tr><td>重组</td><td>链偶尔会分叉，最后较短的那一支被丢掉，里面的交易要重新排队，甚至消失。确认数越多，越不怕重组</td></tr>
+            <tr><td>RPC</td><td>程序和节点通信的接口：查数据、发交易都通过它</td></tr>
+            <tr><td>主网、测试网、regtest</td><td>主网上的币有真实价值；测试网（Sepolia、Qtum Testnet）的币免费领、没有价值；regtest 是在自己电脑上起的私有链，什么时候出块自己说了算</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>两类规则</b>：<b>共识规则</b>所有节点都必须遵守，违反了，交易或区块就是无效的，永远上不了链，以太坊的低位 s 属于这类。<b>转发策略</b>（也叫标准策略）是节点自己的默认规则，不符合的交易，节点不收进内存池、也不转发，但不算违反共识，Qtum 的低位 s 属于这类。对签名服务来说效果一样：不符合就发不出去。</p>
+        <p><b>EIP、BIP</b>：分别是以太坊和比特币的改进提案，是规范文件的编号。本章提到的 EIP-1559、EIP-2、EIP-55、BIP66 都是。Qtum 沿用了比特币的很多 BIP。</p>
+        <p class="note">深入：<a class="chap-link" href="basics.html#bits">入门：为什么桥要“等几个块”</a> · <a class="chap-link" href="bitcoin.html#forks">第 08 章：分叉和重组</a></p>
+      </div>
+      <div class="bit wide" id="c-nonce">
+        <div class="bh"><span class="term">Account · Nonce · Gas</span><h4>以太坊：账户、nonce、gas</h4></div>
+        <p><b>一句话</b>：以太坊像银行账户，链上直接记着每个地址有多少钱。一笔交易就是“从这个地址扣手续费，再改某个合约的状态”。</p>
+        <p><b>两种账户</b>：普通地址由私钥控制，能发交易；合约地址由代码控制，自己不能发起交易，只能被调用。合约代码在 EVM（以太坊虚拟机）里执行，用 Solidity 语言写。Qtum 内置了兼容 EVM 的虚拟机（见下面<a href="#c-qcall">Qtum 怎么调用合约</a>）。</p>
+        <p><b>nonce</b>：每个地址发出的交易按 0、1、2…编号，每笔必须用下一个号。作用有两个：同一笔交易不能被重复执行；用同一个 nonce 再发一笔手续费更高的交易，可以替换掉还没上链的那一笔（加价重发）。</p>
+        <p><b>gas</b>：执行交易要消耗计算量，用 gas 计。gasLimit 是这笔交易最多能用多少 gas，按实际用掉的收费；超过上限，交易失败，已经用掉的 gas 照样收费。<b>手续费</b>（EIP-1559）：每个区块有一个随拥堵自动涨落的基础费，这部分被销毁；另外给出块者一笔小费。交易里写两个上限：<code>maxPriorityFeePerGas</code>（每单位 gas 最多给多少小费）和 <code>maxFeePerGas</code>（每单位 gas 总共最多付多少）。实际每单位 gas 付“基础费 ＋ 小费”，不超过总上限。<b>单位</b>：1 ETH ＝ 10¹⁸ wei；gas 价格常用 gwei，1 gwei ＝ 10⁹ wei。</p>
+        <p><b>和托管桥的关系</b>：运营地址要预先存一些 ETH 付手续费。nonce 必须连续，所以同一时刻只能有一个执行器给运营地址分配 nonce，否则会撞号。</p>
+        <p class="note">深入：<a class="chap-link" href="evm.html#account">第 09 章：两种账户</a> · <a class="chap-link" href="ethereum.html#fees">第 05 章：EIP-1559</a></p>
+      </div>
+      <div class="bit wide" id="c-fields">
+        <div class="bh"><span class="term">EIP-1559 · ABI · RLP</span><h4>以太坊交易的字段、调用数据、RLP</h4></div>
+        <div class="tbl"><table>
+          <thead><tr><th>字段</th><th>意思</th><th>放款交易里填什么</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">chainId</td><td>哪条链：主网 1，Sepolia 11155111</td><td>对应的链</td></tr>
+            <tr><td class="mono">nonce</td><td>运营地址的第几笔交易</td><td>下一个号</td></tr>
+            <tr><td class="mono">maxPriorityFeePerGas、maxFeePerGas</td><td>手续费的两个上限</td><td>按当时的行情</td></tr>
+            <tr><td class="mono">gasLimit</td><td>最多用多少 gas</td><td>按预估再留余量</td></tr>
+            <tr><td class="mono">to</td><td>调用谁</td><td>EthGateway 的地址</td></tr>
+            <tr><td class="mono">value</td><td>随交易转多少 ETH</td><td>0</td></tr>
+            <tr><td class="mono">data</td><td>调用数据：调哪个函数、传什么参数</td><td><code>release</code> 的调用数据</td></tr>
+            <tr><td class="mono">accessList</td><td>预先声明要访问的存储，有时能省 gas</td><td>空</td></tr>
+          </tbody>
+        </table></div>
+        <p>交易里<b>没有“发送方”字段</b>。节点从签名恢复出公钥，再算出地址，那就是发送方（见<a href="#eth">以太坊</a>）。</p>
+        <p><b>调用数据</b>：前 4 字节是函数选择器，等于 keccak256("函数名(参数类型,…)") 的前 4 字节；后面每个参数按规则补齐到 32 字节，依次排开。这套规则叫 ABI 编码。例如 ERC20 的 <code>transfer(address,uint256)</code>，keccak256 的前 4 字节是 <code>a9059cbb</code>，调用 USDC 的 <code>transfer</code> 时，调用数据都以它开头。<code>release</code> 的参数还没定稿，选择器等合约定稿后按同样的方法算。</p>
+        <p><b>常见误解：“放款交易就是运营地址给用户转 USDC”</b>。不是。运营地址发的交易调用的是 EthGateway 的 <code>release</code>，value 为 0；USDC 是 EthGateway 合约执行时从自己的余额里转给用户的。运营地址自己不持有 USDC，只付 ETH 手续费。</p>
+        <p><b>RLP</b>：以太坊把交易字段排成字节的格式，和 DER 一样是“长度 ＋ 内容”的思路。整数按最短的大端字节写，不带前导 00。签名摘要 ＝ keccak256(0x02 ‖ RLP(未签名的 9 个字段))，开头的 0x02 表示这是 EIP-1559 交易。</p>
+        <p><b>msg.sender</b>：合约里“直接调用我的是谁”。EthGateway 的 <code>release</code> 只允许 msg.sender 是运营地址。运营地址签名发出的交易，msg.sender 就是运营地址。</p>
+        <p class="note">深入：<a class="chap-link" href="evm.html#abi">第 09 章：调用一个函数，交易里到底写了什么（含选择器计算器）</a></p>
+      </div>
+      <div class="bit wide" id="c-utxo">
+        <div class="bh"><span class="term">UTXO</span><h4>Qtum：UTXO、找零、手续费</h4></div>
+        <p><b>一句话</b>：Qtum 和比特币一样，不记“每个地址有多少钱”，而是记一张张“还没花掉的钞票”，叫 UTXO（未花费的交易输出）。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>词</th><th>意思</th></tr></thead>
+          <tbody>
+            <tr><td>输出</td><td>交易产生的一张“钞票”：一个金额，加一段锁定脚本，规定谁能花</td></tr>
+            <tr><td>输入</td><td>交易要花的钞票，写成“交易 ID ＋ 第几个输出”，再附上证明有权花它的签名（scriptSig）</td></tr>
+            <tr><td>UTXO</td><td>还没被任何交易花掉的输出。一个地址的余额 ＝ 锁给它的所有 UTXO 的金额之和</td></tr>
+            <tr><td>找零</td><td>钞票只能整张花。要付 3、手上是一张 5，就得再给自己开一个 2 的输出</td></tr>
+            <tr><td>手续费</td><td>交易里没有手续费字段：手续费 ＝ 输入总额 − 输出总额，归出块者</td></tr>
+            <tr><td>单位</td><td>1 QTUM ＝ 10⁸ 个最小单位，沿用比特币的叫法，叫“聪”（sat）</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>常见误解</b>：“忘了写找零，多的钱会退回来”，不会，差额全部算手续费，被出块者拿走。“UTXO 链也有 nonce”，没有：一个输出只能被花一次，这就防住了重复花费，两笔交易花同一个输出，只有一笔能上链。加价重发就是靠这一点（见 <a href="#qtum">Qtum</a>）。</p>
+        <p><b>字节顺序的坑</b>：区块浏览器上显示的交易 ID，和交易内部引用它时存的字节顺序正好相反；金额、输出序号等字段在交易内部是小端（低位在前）。组交易时要按内部的顺序写。</p>
+        <p><b>和托管桥的关系</b>：运营地址的 QTUM 是一堆 UTXO。执行器要记住哪些 UTXO 可用、哪些已经被还没上链的交易占用，不能让两笔交易抢同一个 UTXO。</p>
+        <p class="note">深入：<a class="chap-link" href="qtum.html#utxo">第 01 章：UTXO 和账户模型（含动画）</a></p>
+      </div>
+      <div class="bit wide" id="c-script">
+        <div class="bh"><span class="term">Script · P2PKH · sighash</span><h4>Qtum：脚本、P2PKH、sighash</h4></div>
+        <p><b>一句话</b>：每个输出带一段锁定脚本，规定花它要满足什么条件；花的人在输入里提供解锁脚本（scriptSig）。节点把两段拼起来执行，结果为“真”才允许花。脚本是一串操作，从左到右执行，用一个“栈”（一摞数据，只能从顶上放、从顶上拿）存中间结果。<code>&lt;数据&gt;</code> 表示把这段数据放到栈顶；<code>OP_</code> 开头的是操作码。</p>
+        <p><b>P2PKH</b>（付给公钥哈希，最常见的地址类型，运营地址就是这种）：锁定脚本 <code>OP_DUP OP_HASH160 &lt;hash160&gt; OP_EQUALVERIFY OP_CHECKSIG</code>；解锁脚本 <code>&lt;签名&gt; &lt;压缩公钥&gt;</code>。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>步骤</th><th>执行</th><th>栈（右边是栈顶）</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>放入签名、公钥</td><td>签名 公钥</td></tr>
+            <tr><td>2</td><td><code>OP_DUP</code>：复制栈顶</td><td>签名 公钥 公钥</td></tr>
+            <tr><td>3</td><td><code>OP_HASH160</code>：栈顶换成它的 hash160</td><td>签名 公钥 hash160(公钥)</td></tr>
+            <tr><td>4</td><td>放入锁定脚本里的 <code>&lt;hash160&gt;</code></td><td>签名 公钥 hash160(公钥) hash160</td></tr>
+            <tr><td>5</td><td><code>OP_EQUALVERIFY</code>：比较栈顶两项，不相等就失败</td><td>签名 公钥</td></tr>
+            <tr><td>6</td><td><code>OP_CHECKSIG</code>：用公钥验证签名，对就留下“真”</td><td>真</td></tr>
+          </tbody>
+        </table></div>
+        <p>第 3–5 步证明“这个公钥就是地址对应的那个”，第 6 步证明“签名的人有这个公钥的私钥”。一步一步看栈怎么变：<a class="chap-link" href="bitcoin.html#script">第 08 章的 P2PKH 动画</a>。</p>
+        <p><b>sighash：签名签的是什么</b>。签名要覆盖整笔交易，可签名本身又要放进交易的输入里，自己签不了自己。所以签之前先改写一份交易：① 正在签的输入，scriptSig 临时换成它要花的那个输出的锁定脚本，其他输入的 scriptSig 清空；② 末尾加 4 字节的 sighash 类型；③ 做双 SHA256，得到 32 字节摘要，这就是要签的东西。验证时，节点按同样的规则重新算出这个摘要，再验签名。</p>
+        <p>托管桥用的类型是 <code>SIGHASH_ALL</code>（值为 1）：签名覆盖全部输入和输出，签完后谁改了任何一个输出，签名就失效。签名末尾那 1 字节 0x01，就是在声明用的是这个类型。</p>
+        <p><b>常见误解：“一笔交易签一次就行”</b>。不是。每个输入的摘要里，换进锁定脚本的位置不同，摘要也就不同，所以每个输入都要单独算摘要、单独签（见 <a href="#qtum">Qtum</a> 的动画）。</p>
+      </div>
+      <div class="bit wide" id="c-qcall">
+        <div class="bh"><span class="term">OP_CALL</span><h4>Qtum：怎么调用合约</h4></div>
+        <p><b>一句话</b>：Qtum 在 UTXO 账本上加了一个兼容以太坊的合约虚拟机。调用合约，就是在交易里放一个特殊的输出，写明调哪个合约、传什么数据、给多少 gas。合约调用输出的脚本：<code>OP_4 &lt;gasLimit&gt; &lt;gasPrice&gt; &lt;调用数据&gt; &lt;合约地址&gt; OP_CALL</code>。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>部分</th><th>意思</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">OP_4</td><td>虚拟机版本；开源库 qtum-ethers-wrapper 固定写 4</td></tr>
+            <tr><td class="mono">gasLimit</td><td>最多用多少 gas</td></tr>
+            <tr><td class="mono">gasPrice</td><td>每单位 gas 付多少，单位是聪（sat）</td></tr>
+            <tr><td>调用数据</td><td>和以太坊一样的 ABI 编码</td></tr>
+            <tr><td>合约地址</td><td>20 字节</td></tr>
+            <tr><td class="mono">OP_CALL</td><td>表示“调用已有合约”；部署新合约用 <code>OP_CREATE</code>，不带合约地址</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>gas 从哪里付</b>：gasLimit × gasPrice 这笔钱算在交易手续费里预付（手续费 ＝ 输入总额 − 输出总额）。用不完的怎么退回<span class="unv">待验证</span>。</p>
+        <p><b>调用者是谁</b>：Qtum 交易里没有“发送方”字段。合约看到的 msg.sender，通常认为是第一个输入所花 UTXO 的地址，用的是那个 20 字节的 hash160。所以运营地址发交易时，所有输入都用运营地址的 UTXO<span class="unv">待验证</span>。</p>
+        <p class="note">深入：<a class="chap-link" href="qtum.html#aal">第 01 章：AAL，把 UTXO 交易翻译给 EVM</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="kms">
+  <h2 class="eyebrow">KMS 提供什么</h2>
+  <p class="sub">两个 API：GetPublicKey 取公钥，Sign 签 32 字节</p>
+  <p class="lead">先看懂：<a href="#g-crypto">密码学和 KMS</a> 那一组卡片。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>项</th><th>内容</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>密钥规格</td><td><code>ECC_SECG_P256K1</code>（就是 secp256k1），用途 <code>SIGN_VERIFY</code></td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>取公钥</td><td><code>GetPublicKey</code>，返回 DER 编码的 X.509 SubjectPublicKeyInfo（SPKI）</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>签名</td><td><code>Sign</code>，参数 <code>MessageType=DIGEST</code>、<code>SigningAlgorithm=ECDSA_SHA_256</code>、<code>Message</code>=32 字节摘要</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>返回的签名</td><td>DER 编码的 <code>SEQUENCE { r INTEGER, s INTEGER }</code>（RFC 3279）</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>不返回的</td><td>恢复用的 v；也没有承诺 s 一定是低位</td><td><span class="ok-tag">已核实</span> 文档里没有这两项；AWS 官方以太坊示例自己补了</td></tr>
+      <tr><td>权限</td><td>调用方要有这把钥匙的 <code>kms:Sign</code>、<code>kms:GetPublicKey</code>（见<a href="#iam">权限</a>）</td><td><span class="ok-tag">已核实</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div class="c-warn">
+      <h3 class="t-warn">“ECDSA_SHA_256 会不会再算一次 SHA256？”</h3>
+      <p>不会。<code>MessageType=DIGEST</code> 时 KMS 跳过哈希，直接签你给的 32 字节。算法名里的 SHA_256 只决定摘要必须是 32 字节。所以以太坊的 keccak256 摘要（也是 32 字节）可以直接交给它签。AWS 官方以太坊示例就是这样做的。</p>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">“KMS 帮你签交易？”</h3>
+      <p>不是。KMS 只签 32 字节，它不知道这 32 字节是哪笔交易的摘要，也不会检查交易发给谁、多少钱。能不能签，由签名服务判断。</p>
+    </div>
+  </div>
+</section>
+
+<section id="flow">
+  <h2 class="eyebrow">签名流程</h2>
+  <p class="lead">先认一下流程里出现的角色。它们是这座托管桥里的组件。</p>
+  <div class="tbl" id="roles"><table class="mw-760">
+    <thead><tr><th>角色</th><th>是什么</th></tr></thead>
+    <tbody>
+      <tr><td>运营地址</td><td>由 KMS 运营密钥的公钥算出的地址（见<a href="#addr">地址</a>）。每条链一个，只能在链上额度内铸币或放款，以及取消</td></tr>
+      <tr><td>EthGateway</td><td>以太坊上的网关合约：收存入、放款（<a href="gateway.html">第 11 章</a>）</td></tr>
+      <tr><td>MintGateway</td><td>Qtum 上的网关合约：铸币、收提现</td></tr>
+      <tr><td>交易执行器</td><td>后端里组交易、广播、跟踪交易的模块；以太坊管 nonce，Qtum 管 UTXO</td></tr>
+      <tr><td>签名服务</td><td>独立账号里的程序，核对后调用 KMS 签名；自己记一本账，同一笔不签两次</td></tr>
+      <tr><td>任务</td><td>执行器要做的一件事：给某笔转账铸币、放款或取消</td></tr>
+      <tr><td>源链事件</td><td>用户在源链上存入或提现时，合约留下的记录（例如 <code>Deposited</code>）。签名服务要核对它确实存在</td></tr>
+      <tr><td>审核员签名</td><td>大额转账由审核员用硬件钱包签名批准，签名服务核对</td></tr>
+      <tr><td>额度</td><td>签名服务和链上合约各自的上限，超过就拒签或交易失败</td></tr>
+      <tr><td>多签</td><td>冷钱包 Safe、Qtum 管理多签：换运营地址、补额度、暂停后恢复都要它</td></tr>
+    </tbody>
+  </table></div>
+  <div class="anim" data-anim="flow"></div>
+  <p>Qtum 一笔交易有几个输入，中间“算摘要 → KMS 签名 → 转格式”就要做几遍（见 <a href="#qtum">Qtum</a>）。执行器没有调用 KMS 的权限：执行器被攻破，只能向签名服务提交请求，过不了核对就拿不到签名。签名服务被攻破则能直接签，这时靠链上额度和看门狗框住损失（<a href="gateway.html#flows">第 11 章：运营密钥泄露</a>）。</p>
+</section>
+
+<section id="addr">
+  <h2 class="eyebrow">地址</h2>
+  <p class="lead"><code>GetPublicKey</code> 返回的 SPKI 是 88 字节：前 23 字节是固定头（写明“椭圆曲线公钥、secp256k1”），后 65 字节是非压缩公钥 <code>04 ‖ X(32) ‖ Y(32)</code>。两条链都从这 65 字节出发。先认四个词：</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Compressed Key</span><h4>压缩公钥</h4></div>
+      <p>公钥是曲线上的点 (X, Y)。同一个 X 只对应两个 Y，一个奇一个偶，所以记下 X 和 Y 的奇偶就够了：Y 是偶数写 <code>02 ‖ X</code>，奇数写 <code>03 ‖ X</code>，共 33 字节。非压缩公钥是 <code>04 ‖ X ‖ Y</code>，65 字节。</p></div>
+    <div class="bit"><div class="bh"><span class="term">hash160</span><h4>hash160</h4></div>
+      <p>先 SHA256，再 RIPEMD160（另一种哈希，输出 20 字节）。比特币和 Qtum 用它把公钥缩成 20 字节。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Base58Check</span><h4>Base58Check</h4></div>
+      <p>把“版本字节 ‖ hash160”写成人能抄的字符串。末尾加 4 字节校验和（双 SHA256 的前 4 字节），抄错一个字符，校验就不通过，钱包会拒绝。所用的 58 个字符去掉了容易看错的 0、O、I、l。版本字节决定地址开头：Qtum 主网 58，开头是 Q；测试网 120，开头是 q<span class="ok-tag">已核实</span>。</p></div>
+    <div class="bit"><div class="bh"><span class="term">EIP-55</span><h4>EIP-55</h4></div>
+      <p>以太坊地址是十六进制，本来不分大小写。EIP-55 用 keccak256(小写地址) 决定每个字母大写还是小写，等于加了一层校验，抄错了钱包能发现。</p></div>
+  </div>
+  <p><b>用一把示例私钥算一遍</b>。私钥取 1：这是公开的测试用例，谁都知道，<b>绝不能真的用来存钱</b>。私钥为 1 时，公钥就是曲线上的固定点 G 本身。</p>
+  <div class="anim" data-anim="addr"></div>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>步骤（私钥 = 1）</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>非压缩公钥</td><td class="mono">04 ‖ 79be667e…16f81798 ‖ 483ada77…fb10d4b8</td></tr>
+      <tr><td>压缩公钥（Y 末字节 b8 是偶数，所以开头是 02）</td><td class="mono">02 ‖ 79be667e…16f81798</td></tr>
+      <tr><td>以太坊：keccak256(X ‖ Y) 取后 20 字节</td><td class="mono">0x7e5f4552091a69125d5dfcb7b8c2659029395bdf</td></tr>
+      <tr><td>以太坊：加上 EIP-55 大小写</td><td class="mono">0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf</td></tr>
+      <tr><td>hash160(压缩公钥)</td><td class="mono">751e76e8199196d454941c45d1b3a323f1433bd6</td></tr>
+      <tr><td>同一个 hash160 配比特币的版本字节 0</td><td><span class="mono">1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH</span>：公开的比特币地址，可以拿来核对算法</td></tr>
+      <tr><td>Qtum 主网（版本 58）</td><td class="mono">QXHFfTBKYXjaaTH1e7Rox8CcdNPGHVhM59</td></tr>
+      <tr><td>Qtum 测试网（版本 120）</td><td class="mono">qUEeiBfBZiTuHKvPA85a1u5PeeMkLnNF3K</td></tr>
+      <tr><td class="n">错用非压缩公钥算 Qtum 主网地址</td><td><span class="mono">QZtMgPgmVSujMWKykPTbtVqgE1URC3ibGT</span>：另一个地址，钱打到这里就没到运营地址上</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th></th><th>以太坊</th><th>Qtum</th></tr></thead>
+    <tbody>
+      <tr><td>用哪种公钥</td><td>非压缩公钥去掉开头的 04，剩 64 字节</td><td>压缩公钥 33 字节：<code>02</code> 或 <code>03</code>（看 Y 的奇偶）‖ X</td></tr>
+      <tr><td>地址怎么算</td><td>keccak256(64 字节) 取后 20 字节</td><td>hash160 = RIPEMD160(SHA256(压缩公钥))，20 字节</td></tr>
+      <tr><td>展示形式</td><td><code>0x</code> + 20 字节，大小写校验（EIP-55）</td><td>Base58Check(版本字节 ‖ hash160)。主网 58（Q 开头），测试网和 regtest 120（q 开头）</td></tr>
+      <tr><td>合约里看到的 <code>msg.sender</code></td><td>这个地址</td><td>同一个 hash160（20 字节，和 EVM 地址同样的形式）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <p><b>同一把钥匙在两条链上的地址不一样</b>：一个是 keccak 算的，一个是 hash160 算的，不能互相换算。这和“按设计每条链各用一把钥匙”是两回事：就算用同一把，地址也对不上。</p>
+    <p><b>Qtum 必须用压缩公钥</b>。用非压缩公钥算出的 hash160 是另一个地址，钱就打不到运营地址上。签名时放进 scriptSig 的公钥也必须是同一个压缩公钥。</p>
+  </div>
+  <p class="note">Qtum 的 Q 地址和 40 位 hex 互转：<a class="chap-link" href="qtum.html#addr">第 01 章的小工具</a>。状态：Qtum 版本字节已核实（Qtum 源码 chainparams）；其余是两条链的通用规则，示例数据用 Node 和 OpenSSL 实际算出。</p>
+</section>
+
+<section id="format">
+  <h2 class="eyebrow">签名格式</h2>
+  <p class="lead">KMS 给的是 DER 编码的 (r, s)，s 可能是高位，没有 v。两条链都不能直接用，要按下面四步处理。先看懂：<a href="#c-lows">低位 s</a>、<a href="#c-der">DER</a> 两张卡片。</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">DER → r, s</span><h4>① 拆出 r、s</h4></div>
+      <p>DER 里的 r、s 都是“大端、最短”编码的整数：前导 0 会去掉，最高位是 1 时要补一个 0，所以长度可能是 31、32 或 33 字节。拆出来后去掉补的那个 0，当作两个 256 位整数处理。</p>
+      <p><b>以太坊</b>：r、s 作为整数写进 RLP，同样要按最短字节写、不带前导 00。自己拼字节时，r 或 s 不足 32 字节（概率大约 1%）要按实际长度写，硬补到 32 字节的话，go-ethereum 解码时报 <code>rlp: non-canonical integer format</code>，交易被拒<span class="ok-tag">已核实</span>。<b>Qtum</b>：见第 ④ 步。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Low-s</span><h4>② s 规范成低位</h4></div>
+      <p>(r, s) 和 (r, n − s) 都是同一条消息的有效签名。为了防止别人把 s 换成 n − s、改出另一个交易哈希，两条链都只接受 s ≤ n/2：</p>
+      <p><b>以太坊</b>：协议规则（EIP-2），高位 s 的交易无效。<b>Qtum</b>：节点的标准策略要求低位 s（继承自比特币），高位 s 的交易不进内存池。</p>
+      <p>KMS 签出来的 s 大约一半是高位。s &gt; n/2 时，用 n − s 替换。这一步不需要私钥。</p></div>
+    <div class="bit"><div class="bh"><span class="term">v · yParity</span><h4>③ 以太坊：算出 v</h4></div>
+      <p>以太坊交易里不放公钥，节点要从签名恢复出公钥，再算出发送方地址。同一组 (r, s) 能恢复出两个候选公钥，v（EIP-1559 里叫 yParity，取 0 或 1）指明是哪一个。</p>
+      <p>KMS 不给 v，所以两个都试：用 v = 0 和 v = 1 分别恢复，恢复出的地址等于运营地址的那个就是对的。两个都对不上，说明签名或公钥有问题，必须拒绝。</p>
+      <p><b>顺序不能反</b>：先把 s 规范成低位，再试 v。s 换成 n − s 后，对应的 v 也会翻转（<a href="#eth">下一节</a>有真实数据）。</p></div>
+    <div class="bit"><div class="bh"><span class="term">BIP66 · SIGHASH_ALL</span><h4>④ Qtum：重新编成 DER，加上 0x01</h4></div>
+      <p>Qtum 输入里放的签名格式是：严格 DER（BIP66）编码的 (r, 低位 s)，后面跟 1 字节 sighash 类型（<code>SIGHASH_ALL</code> = 0x01）。</p>
+      <p>KMS 给的已经是 DER，但 s 可能被签名服务换过，所以要用规范后的 r、s <b>重新编一次</b>，不能直接拿 KMS 的原始 DER 用。sighash 是什么见 <a href="#c-script">脚本卡片</a>。</p></div>
+  </div>
+  <div class="tool">
+    <label for="dSel">小工具：拆一个 DER 签名。先选一个示例，或者粘贴自己的（十六进制，可以带末尾的 sighash 字节）<select id="dSel">
+      <option value="3045022065bf6cee9ece10b8afa6fd3f06233f8b6ff66dcf8bbb2c702b5ecc9bba957afa022100c9644549b8d807d6d064ae637f52dd4694b3e49d73a8816492fafebba552e842">例 1：高位 s，71 字节（KMS 可能给出这种）</option>
+      <option value="3044022065bf6cee9ece10b8afa6fd3f06233f8b6ff66dcf8bbb2c702b5ecc9bba957afa0220369bbab64727f8292f9b519c80ad22b825faf8493ba01ed72cd75fd12ae358ff">例 1 规范后：低位 s，70 字节</option>
+      <option value="304402202a36a35fa6d42bb38a311cb7db7786deb1dba187b976bb0cf2ef367b8762809f0220747b138204da4df58cbd3595ea05e2d2268d32bd047805226379c8a0247c188f01">例 2：按 Qtum 输入的格式写（DER ‖ 01）</option>
+    </select></label>
+    <label for="dIn">签名（十六进制）<input id="dIn" type="text" spellcheck="false" autocomplete="off"></label>
+    <div class="out" id="dOut" aria-live="polite"></div>
+  </div>
+  <p class="note">小工具只做格式上的拆解和换算，在浏览器里计算、不联网；它不验证签名对不对，也算不出 v（算 v 要知道公钥，见下一节）。例 1 是用 Node 随机生成的钥匙对 "abc" 签的；例 2 是私钥 1 对 keccak256("abc") 的签名，下一节会用到。</p>
+</section>
+
+<section id="eth">
+  <h2 class="eyebrow">以太坊</h2>
+  <p class="lead">先看懂：<a href="#c-nonce">nonce 和 gas</a>、<a href="#c-fields">交易字段、调用数据、RLP</a>。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>步骤</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td>1. 组未签名交易</td><td>EIP-1559（类型 2）：chainId、nonce、maxPriorityFeePerGas、maxFeePerGas、gasLimit、to（EthGateway）、value（0）、data（<code>release</code> 的调用数据）、accessList（空）</td></tr>
+      <tr><td>2. 算摘要</td><td>keccak256(0x02 ‖ RLP(上面 9 个字段))，32 字节</td></tr>
+      <tr><td>3. KMS 签名</td><td>按上一节转出 (yParity, r, s)：拆 r、s，规范低位 s，再试 v</td></tr>
+      <tr><td>4. 组已签交易</td><td>0x02 ‖ RLP(9 个字段 ‖ yParity ‖ r ‖ s)，交给执行器广播</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>试 v 的真实数据</b>。用<a href="#addr">地址</a>一节的私钥 1（以太坊地址 <code>0x7E5F…5Bdf</code>）对 keccak256("abc") 签名。这 32 字节只是拿来演示的，不是一笔真实交易的摘要。数值用 BigInt 按 secp256k1 的公式算出，签名用 OpenSSL 独立验证通过。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th></th><th>v = 0 恢复出</th><th>v = 1 恢复出</th></tr></thead>
+    <tbody>
+      <tr><td>KMS 给的 s：<span class="mono">8b84ec7d…abba28b2</span>（开头 8b &gt; 7f，高位）</td><td class="mono">0x7E5F…5Bdf ✓</td><td class="mono">0xf06d…A9e5</td></tr>
+      <tr><td>规范后 n − s：<span class="mono">747b1382…247c188f</span>（低位）</td><td class="mono">0xf06d…A9e5</td><td class="mono">0x7E5F…5Bdf ✓</td></tr>
+    </tbody>
+  </table></div>
+  <div class="anim" data-anim="eth"></div>
+  <div class="callout">
+    <p><b>签的内容包含 chainId</b>，签好的交易拿到别的链上用不了。</p>
+    <p><b>加价重发</b>：nonce 不变，调高两个 fee 字段，重新算摘要、重新签。签名服务只对“同一笔转账、同一个 nonce”的加价版本再签。</p>
+  </div>
+</section>
+
+<section id="qtum">
+  <h2 class="eyebrow">Qtum</h2>
+  <p class="lead">先看懂：<a href="#c-utxo">UTXO、找零、手续费</a>、<a href="#c-script">脚本、P2PKH、sighash</a>、<a href="#c-qcall">合约调用输出</a>。Qtum 没有账户和 nonce。运营地址的 QTUM 是一个个 UTXO，一笔交易花掉其中几个，再生成新的输出。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>部分</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>输入</td><td>运营地址的若干 UTXO。每个输入的 scriptSig = <code>&lt;DER 签名 ‖ 0x01&gt; &lt;压缩公钥&gt;</code></td></tr>
+      <tr><td>输出 0：合约调用</td><td>金额 0；脚本 = <code>OP_4 &lt;gasLimit&gt; &lt;gasPrice&gt; &lt;调用数据&gt; &lt;合约地址 20 字节&gt; OP_CALL</code></td></tr>
+      <tr><td>输出 1：找零</td><td>回到运营地址的标准脚本 <code>OP_DUP OP_HASH160 &lt;hash160&gt; OP_EQUALVERIFY OP_CHECKSIG</code></td></tr>
+      <tr><td>手续费</td><td>输入总额 − 输出总额。要覆盖 gasLimit × gasPrice（预付的 gas），加上按交易字节数算的手续费</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">状态：<code>OP_CALL</code> 是 0xc2<span class="ok-tag">已核实 Qtum 源码</span>。合约调用脚本的写法和开源库 qtum-ethers-wrapper 一致<span class="ok-tag">已核实</span>；该库默认 gasLimit 250000、gasPrice 40 sat（库的默认值，不是协议规定）。最低 gasPrice、用不完的 gas 怎么退回<span class="unv">待验证</span>。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>每个输入怎么签（传统的 <code>SIGHASH_ALL</code>）</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td>1. 改写</td><td>复制一份交易。正在签的输入，scriptSig 换成它所花 UTXO 的锁定脚本（运营地址的 P2PKH 脚本）；其他输入的 scriptSig 清空</td></tr>
+      <tr><td>2. 算摘要</td><td>序列化，后面加 4 字节的 sighash 类型（1），做两次 SHA256，得到 32 字节摘要</td></tr>
+      <tr><td>3. 签名</td><td>KMS 签名；规范 s、重新编 DER、加 0x01</td></tr>
+      <tr><td>4. 写回</td><td>和压缩公钥一起写进这个输入的 scriptSig</td></tr>
+    </tbody>
+  </table></div>
+  <div class="anim" data-anim="qtum"></div>
+  <div class="callout">
+    <p><b>一笔有 3 个输入的交易，要调 3 次 KMS</b>。动画里的金额是示意值，只为说明“手续费 ＝ 输入 − 输出，要覆盖预付的 gas”。</p>
+    <p><b>合约里看到的调用者</b>：合约调用交易里，合约看到的 <code>msg.sender</code>，通常认为是第一个输入所花 UTXO 的地址。所以所有输入都用运营地址的 UTXO，就能保证调用者是运营地址<span class="unv">待验证</span>：要在测试网上确认 MintGateway 看到的调用者确实是运营地址。</p>
+    <p><b>重发</b>：没有 nonce，加价重发的做法是“花同一批输入、提高手续费、重新签”，让新旧两笔互相冲突，只可能上链一笔<span class="unv">待验证</span>。</p>
+  </div>
+</section>
+
+<section id="compare">
+  <h2 class="eyebrow">对照</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th></th><th>以太坊</th><th>Qtum</th></tr></thead>
+    <tbody>
+      <tr><td>账户模型</td><td>账户 ＋ nonce</td><td>UTXO</td></tr>
+      <tr><td>一笔交易签几次</td><td>1 次</td><td>每个输入 1 次</td></tr>
+      <tr><td>摘要</td><td>keccak256(0x02 ‖ RLP(未签名字段))</td><td>双 SHA256(改写后的交易 ‖ sighash 类型)</td></tr>
+      <tr><td>签名放在哪</td><td>交易末尾的 yParity、r、s</td><td>每个输入的 scriptSig：DER ‖ 0x01，加压缩公钥</td></tr>
+      <tr><td>要不要 v</td><td>要，靠两个都试来确定</td><td>不要，公钥直接放在交易里</td></tr>
+      <tr><td>低位 s</td><td>必须（协议规则）</td><td>必须（标准策略）</td></tr>
+      <tr><td>重发</td><td>同一 nonce 加价</td><td>同一批输入加价</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="iam">
+  <h2 class="eyebrow">权限</h2>
+  <p class="lead"><b>一句话</b>：AWS 里“谁能对哪个资源做什么”，由策略决定。签名服务能调用 KMS 签名，是因为它的执行角色被策略允许了 <code>kms:Sign</code>，<b>而且</b>这把钥匙的钥匙策略也允许。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>词</th><th>意思</th><th>在托管桥里</th></tr></thead>
+    <tbody>
+      <tr><td>账号</td><td>AWS 里资源和权限的边界，不同账号默认互相看不到</td><td>业务、以太坊签名、Qtum 签名、看门狗、日志、管理，共 6 个</td></tr>
+      <tr><td>IAM 角色</td><td>一种身份，程序“扮演”它来调用 AWS；用临时凭证，没有长期密码</td><td>签名 Lambda 的执行角色</td></tr>
+      <tr><td>策略</td><td>一段 JSON 规则：允许或拒绝哪些操作、对哪些资源、在什么条件下</td><td>只允许签名角色对这一把钥匙做 <code>Sign</code>、<code>GetPublicKey</code></td></tr>
+      <tr><td>ARN</td><td>AWS 资源的唯一名字，例如 <code>arn:aws:kms:区域:账号:key/钥匙ID</code></td><td>策略里用 ARN 指定这一把钥匙，不用通配符 <code>*</code></td></tr>
+      <tr><td>钥匙策略</td><td>挂在 KMS 钥匙本身上的策略</td><td>见下面的“要注意”</td></tr>
+      <tr><td>SCP</td><td>AWS Organizations 给整个账号设的上限，账号里的管理员也越不过</td><td>禁止删除 KMS 钥匙、关闭 CloudTrail</td></tr>
+      <tr><td>Lambda</td><td>AWS 的托管运行环境：有请求时运行一段代码，不用自己管服务器</td><td>签名服务跑在 Lambda 上</td></tr>
+      <tr><td>CloudTrail</td><td>记录每一次 AWS API 调用的日志</td><td>每次 <code>Sign</code> 都留一条记录</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><p><b>要注意：KMS 的钥匙策略说了算</b><span class="ok-tag">已核实</span>。每把 KMS 钥匙都必须有且只有一份钥匙策略。钥匙策略不允许的话，IAM 策略里写了允许也不生效。钥匙策略按区域生效，只管同一区域里的钥匙。</p></div>
+  <p><b>IAM 策略示例</b>（挂在签名角色上；“区域、账号、钥匙ID”是占位）：</p>
+<pre class="json">{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "kms:Sign",
+      "Resource": "arn:aws:kms:区域:账号:key/钥匙ID",
+      "Condition": { "StringEquals": {
+        "kms:SigningAlgorithm": "ECDSA_SHA_256",
+        "kms:MessageType": "DIGEST" } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "kms:GetPublicKey",
+      "Resource": "arn:aws:kms:区域:账号:key/钥匙ID"
+    }
+  ]
+}</pre>
+  <ul>
+    <li>第一条只许用 <code>ECDSA_SHA_256</code>、只许签摘要。这两个条件只作用于 <code>Sign</code> 和 <code>Verify</code><span class="ok-tag">已核实</span>，所以 <code>GetPublicKey</code> 单独写一条。</li>
+    <li>IAM 默认拒绝：没有任何策略允许的操作都做不了。签名角色只挂这一份策略，就做不了 <code>kms:Decrypt</code>、<code>kms:ScheduleKeyDeletion</code> 这类操作。</li>
+    <li>钥匙策略里也要有一条允许这个角色的语句，写法类似，多一个 <code>Principal</code> 字段指明是哪个角色。</li>
+  </ul>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>运维</th><th>做法</th></tr></thead>
+    <tbody>
+      <tr><td>权限最小化</td><td>只给签名服务的执行角色这把钥匙的 <code>kms:Sign</code> 和 <code>kms:GetPublicKey</code>，用钥匙的 ARN 限定，不用通配符。钥匙策略里只列这个角色</td></tr>
+      <tr><td>防误删</td><td>用 SCP 禁止删除密钥</td></tr>
+      <tr><td>轮换</td><td>换钥匙就是建一把新钥匙，算出新地址，由多签在网关上把运营地址换成新地址；新地址充好 gas 后，停用旧钥匙。Qtum 旧地址剩下的 UTXO 要先转出来</td></tr>
+      <tr><td>审计</td><td>每次 <code>Sign</code> 都会记一条 CloudTrail 日志。日志里是否带被签的摘要<span class="unv">待核实</span>；签名服务自己的账本要记“签了哪个摘要、对应哪笔交易”</td></tr>
+      <tr><td>费用和限额</td><td>每把钥匙的月费、每次签名的费用、<code>Sign</code> 的每秒请求上限，上线前按 AWS 官方价格页和限额页核实。托管桥的签名量通常很小，一般碰不到上限</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">审计时怎么查这些权限：<a class="chap-link" href="audit.html#offchain">第 10 章：链下系统和运营怎么审</a></p>
+</section>
+
+<section id="project">
+  <h2 class="eyebrow">上线前</h2>
+  <p class="sub">KMS 不是唯一的防线，还有几件事要实测</p>
+  <p class="lead">KMS 只保证私钥拿不走。谁能让 KMS 签、签什么，要靠签名服务的核对和链上额度来限制。下面这些，文档和源码里查不到确定答案，要在测试网或 regtest 上验证。</p>
+  <h3 id="verify">还要验证的</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>项</th><th>怎么验</th></tr></thead>
+    <tbody>
+      <tr><td>两条链的签名转换（DER、低位 s、v）写得对</td><td>离线原型：本地私钥模拟 KMS 的输出格式，签出的交易用第三方库独立核对</td></tr>
+      <tr><td>Qtum 合约看到的调用者是运营地址</td><td>regtest 或测试网上发一笔调用，看合约记下的 <code>msg.sender</code></td></tr>
+      <tr><td>Qtum 的最低 gasPrice、剩余 gas 怎么退、多久能用</td><td>测试网实测</td></tr>
+      <tr><td>Qtum 同一批输入加价重发能否替换旧交易</td><td>测试网实测</td></tr>
+      <tr><td>CloudTrail 日志里有没有被签的摘要</td><td>有 AWS 账号后看一条真实日志</td></tr>
+      <tr><td>KMS 费用和限额</td><td>查 AWS 价格页和限额页</td></tr>
+    </tbody>
+  </table></div>
+  <h3>和其他章节的关系</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>章节</th><th>关系</th></tr></thead>
+    <tbody>
+      <tr><td><a href="gateway.html">第 11 章 EthGateway</a></td><td>合约只认“调用者是不是运营地址”，运营地址就是本章从 KMS 公钥算出的地址。运营密钥被滥用时，损失由热余额上限和 24 小时上限框住</td></tr>
+      <tr><td><a href="audit.html">第 10 章 跨链安全审计</a></td><td>云账号、KMS 钥匙策略、CloudTrail 属于链下和运营审计的范围：谁能调用 <code>Sign</code>，一个账号被拿下最多影响几把钥匙</td></tr>
+      <tr><td><a href="bridges.html#sig">第 03 章 签名验证</a></td><td>那里讲合约怎么验多方签名（<code>ecrecover</code>）；托管桥的网关合约不验签名，签名只出现在“节点验证交易”这一步</td></tr>
+      <tr><td><a href="qtum.html">第 01 章 Qtum</a>、<a href="bitcoin.html">第 08 章 Bitcoin</a></td><td>UTXO、AAL、P2PKH 的完整讲解和动画</td></tr>
+      <tr><td><a href="evm.html">第 09 章 EVM</a></td><td>ABI、选择器、msg.sender 的完整讲解</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li>AWS KMS API 文档：<a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_Sign.html" rel="noopener">Sign</a>（DIGEST 不再哈希、ECDSA 签名是 DER 编码）、<a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_GetPublicKey.html" rel="noopener">GetPublicKey</a>（公钥是 DER 编码的 SPKI）；开发者指南<a href="https://docs.aws.amazon.com/kms/latest/developerguide/overview.html" rel="noopener">概述</a>（HSM 通过 FIPS 140-3 第 3 级认证，钥匙不以明文离开 KMS）</li>
+    <li>AWS KMS 开发者指南：<a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html" rel="noopener">钥匙策略</a>（每把钥匙必须有且只有一份钥匙策略；钥匙策略不允许时，IAM 策略的允许不生效）、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/conditions-kms.html" rel="noopener">条件键</a>（<code>kms:SigningAlgorithm</code>、<code>kms:MessageType</code> 作用于 <code>Sign</code> 和 <code>Verify</code>）</li>
+    <li>AWS 官方示例 <a href="https://github.com/aws-samples/aws-kms-ethereum-accounts" rel="noopener">aws-kms-ethereum-accounts</a>：自己把 s 规范成低位、自己算 v</li>
+    <li>Qtum 源码：<a href="https://github.com/qtumproject/qtum/blob/master/src/script/script.h" rel="noopener">script.h</a>（<code>OP_CREATE</code> 0xc1、<code>OP_CALL</code> 0xc2）、<a href="https://github.com/qtumproject/qtum/blob/master/src/kernel/chainparams.cpp" rel="noopener">chainparams.cpp</a>（地址版本字节）</li>
+    <li><a href="https://www.npmjs.com/package/qtum-ethers-wrapper" rel="noopener">qtum-ethers-wrapper</a> 2.1.2 源码 <code>src/lib/helpers/utils.ts</code>：合约调用脚本 <code>contractTxScript</code>、按 <code>SIGHASH_ALL</code> 逐个输入签名 <code>signp2pkhWith</code></li>
+    <li>go-ethereum：<a href="https://github.com/ethereum/go-ethereum/blob/master/rlp/decode.go" rel="noopener">rlp/decode.go</a>（<code>ErrCanonInt</code>：大整数带前导 0 字节时拒绝）、<a href="https://github.com/ethereum/go-ethereum/blob/master/core/types/tx_dynamic_fee.go" rel="noopener">core/types/tx_dynamic_fee.go</a>（<code>R</code>、<code>S</code> 是 <code>*big.Int</code>），2026-11-05 读取</li>
+    <li>规范：<a href="https://eips.ethereum.org/EIPS/eip-1559" rel="noopener">EIP-1559</a>（类型 2 交易）、<a href="https://eips.ethereum.org/EIPS/eip-2" rel="noopener">EIP-2</a>（低位 s）、<a href="https://eips.ethereum.org/EIPS/eip-55" rel="noopener">EIP-55</a>（地址大小写校验）、<a href="https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki" rel="noopener">BIP66</a>（严格 DER）</li>
+    <li>示例数据：用 Node.js 自带的 crypto（secp256k1、SHA256、RIPEMD160）和 OpenSSL 的 keccak-256 实际算出。例 1 的钥匙每次生成都不一样，只用来说明格式；私钥 1 是公开测试用例，结果固定，其中的比特币地址可以对照公开资料核对。“试 v”的数据用 BigInt 按曲线公式算出，签名经 OpenSSL <code>pkeyutl -verify</code> 验证</li>
+  </ol>
+  <p>核查日期 2026-11-04；本页 2026-11-05 整理。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip} = Guide;
+  const lbl = (t, c = '') => `<div class="lbl ${c}">${t}</div>`;
+  const A = {};
+  // 低位 s：数轴上 s 和 n − s 关于 n/2 对称（位置按真实比例：s ≈ 0.787n）
+  A.lows = {h:230,
+    b:[['lo',4,10,46,46,'低位：s ≤ n/2'],['hi',50,10,46,46,'高位：s > n/2']],
+    it:[
+      {id:'z', h:lbl('0','m'), x:4, y:64},
+      {id:'m', h:lbl('n/2 = 7fffffff…','m'), x:50, y:64},
+      {id:'n', h:lbl('n','m'), x:96, y:64},
+      {id:'s', h:chip('s：c964…e842','--warn'), x:76, y:33, hide:1},
+      {id:'ns', h:chip('n − s：369b…58ff','--ok'), x:24, y:33, hide:1},
+      {id:'txh', h:lbl('交易 ID ①：带 s','m'), x:73, y:86, hide:1},
+      {id:'txl', h:lbl('交易 ID ②：带 n − s','m'), x:27, y:86, hide:1}],
+    s:[
+      {c:'ECDSA 的 s 是 1 到 n − 1 之间的一个整数。以 n/2 为界，分成低位和高位两半。'},
+      {c:'KMS 签出来的 s = c9644549…a552e842。开头 c9 比 n/2 的开头 7f 大，落在高位这一半。', set:{s:{hide:0}}, lit:['hi']},
+      {c:'n − s = 369bbab6…2ae358ff，和 s 关于 n/2 对称，落在低位这一半。(r, s) 和 (r, n − s) 用同一个公钥都能验证通过。', set:{ns:{hide:0}}, lit:['lo','hi']},
+      {c:'问题在这里：交易 ID 是对整笔交易（包括签名）算的哈希。别人拿到你还没上链的交易，不用私钥，把 s 换成 n − s，就得到内容一样、ID 不同的另一笔交易。', set:{txh:{hide:0}, txl:{hide:0}}, bad:['lo','hi']},
+      {c:'所以两条链都只认低位那一半：以太坊是协议规则（EIP-2），Qtum 是节点的转发策略。高位那一半的签名发不出去。', set:{s:{h:chip('s：高位，链不认','--warn','out')}, txh:{hide:1}}, lit:['lo'], bad:['hi']},
+      {c:'签名服务的做法：比一下 s 和 n/2，s 在高位就换成 n − s。只是一次减法，不需要私钥，也不用再调 KMS。发出去的只有低位这一个版本。', set:{s:{hide:1}, txl:{h:lbl('只发这一笔','g')}}, lit:['lo']},
+    ]};
+  // 一次签名：执行器 → 签名服务 → KMS → 签名服务 → 执行器
+  A.flow = {h:300,
+    b:[['ex',2,8,24,84,'交易执行器'],['sg',29,8,42,84,'签名服务（独立账号）'],['km',74,8,24,84,'AWS KMS']],
+    it:[
+      {id:'tx', h:chip('未签名交易','--muted'), x:14, y:30},
+      {id:'ap', h:lbl('+ 任务 ID<br>大额附审核员签名','m'), x:14, y:50},
+      {id:'chk', h:lbl('核对源链事件、金额、收款人<br>审核员签名、额度、只调指定函数<br>这一笔签过没有','m'), x:50, y:58, hide:1},
+      {id:'dg', h:chip('32 字节摘要','--accent'), x:50, y:28, hide:1},
+      {id:'key', h:'<span class="keyi on">钥</span>', x:86, y:56},
+      {id:'kl', h:lbl('私钥不出 HSM','m'), x:86, y:72},
+      {id:'sig', h:chip('DER 签名','--eth','out'), x:86, y:30, hide:1},
+      {id:'led', h:lbl('账本：摘要 ↔ 任务','m'), x:50, y:82, hide:1}],
+    s:[
+      {c:'执行器把一笔未签名交易交给签名服务，带上任务 ID；大额转账还附上审核员的签名。执行器和签名服务在不同的 AWS 账号里。', lit:['ex']},
+      {c:'签名服务不信执行器，自己核对：用自己的节点查源链事件，金额、收款人对不对，审核员签名、额度，交易是不是只调用网关的指定函数，这一笔有没有签过。任何一项不对就拒签。', set:{tx:{x:50, y:28}, ap:{hide:1}, chk:{hide:0}}, lit:['sg']},
+      {c:'核对通过，按链的规则算出 32 字节摘要：以太坊用 keccak256，Qtum 用双 SHA256。', set:{tx:{hide:1}, dg:{hide:0}, chk:{h:lbl('核对通过','g')}}, lit:['sg']},
+      {c:'调用 KMS 的 Sign(摘要, DIGEST, ECDSA_SHA_256)。KMS 收到的只有这 32 字节，看不到交易本身。', set:{dg:{x:86, y:30}}, lit:['km']},
+      {c:'HSM 用私钥签名，返回 DER 编码的 (r, s)。没有 v，s 也可能是高位。私钥自始至终没离开 HSM。', set:{dg:{hide:1}, sig:{hide:0}}, lit:['km']},
+      {c:'签名服务转格式：从 DER 拆出 r、s；s > n/2 就换成 n − s；以太坊再试出 v，Qtum 重新编 DER、加 0x01。', set:{sig:{x:50, y:28, h:chip('链要的格式','--eth','out')}, chk:{hide:1}}, lit:['sg']},
+      {c:'把签名放回交易，在自己的账本里记下“签了哪个摘要、对应哪个任务”，同一笔以后不会再签。', set:{sig:{h:chip('签好的交易','--ok')}, led:{hide:0}}, lit:['sg']},
+      {c:'签好的交易交回执行器，由执行器广播、跟踪上链。执行器自己没有调用 KMS 的权限。Qtum 交易有几个输入，第 3–6 步就做几遍。', set:{sig:{x:14, y:30}}, lit:['ex']},
+    ]};
+  // 地址：同一个公钥分两路（私钥 = 1 的真实数据）
+  A.addr = {h:300,
+    b:[['k',2,6,96,22,'KMS · GetPublicKey'],['e',2,34,46,62,'以太坊'],['q',52,34,46,62,'Qtum']],
+    it:[
+      {id:'spki', h:lbl('88 字节 = 23 字节固定头 ‖ 04 ‖ X ‖ Y'), x:50, y:18},
+      {id:'e1', h:lbl('X ‖ Y（64 字节）','m'), x:25, y:46, hide:1},
+      {id:'e2', h:lbl('keccak256 → 取后 20 字节<br>7e5f4552…29395bdf','m'), x:25, y:64, hide:1},
+      {id:'e3', h:chip('0x7E5F…5Bdf','--eth'), x:25, y:85, hide:1},
+      {id:'q1', h:lbl('02 ‖ X（33 字节）','m'), x:75, y:46, hide:1},
+      {id:'q2', h:lbl('SHA256 → RIPEMD160<br>751e76e8…f1433bd6','m'), x:75, y:64, hide:1},
+      {id:'q3', h:chip('QXHF…hM59','--qtum'), x:75, y:85, hide:1}],
+    s:[
+      {c:'KMS 的 GetPublicKey 返回 88 字节：前 23 字节是固定头，后 65 字节是非压缩公钥 04 ‖ X ‖ Y。私钥取 1 时，X = 79be667e…16f81798，Y = 483ada77…fb10d4b8。', lit:['k']},
+      {c:'以太坊：去掉固定头和开头的 04，剩下 X ‖ Y 共 64 字节。', set:{e1:{hide:0}}, lit:['e']},
+      {c:'对这 64 字节做 keccak256，取最后 20 字节，就是以太坊地址：7e5f4552…29395bdf。', set:{e2:{hide:0}}, lit:['e']},
+      {c:'再按 EIP-55 决定每个字母的大小写，得到 0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf。', set:{e3:{hide:0}}, lit:['e']},
+      {c:'Qtum：先压缩公钥。Y 的最后一个字节是 b8，偶数，所以写成 02 ‖ X，共 33 字节。', set:{q1:{hide:0}}, lit:['q']},
+      {c:'对压缩公钥做 SHA256，再做 RIPEMD160，得到 20 字节的 hash160：751e76e8…f1433bd6。合约里的 msg.sender 就是这 20 字节。', set:{q2:{hide:0}}, lit:['q']},
+      {c:'前面加版本字节（主网 58），后面加 4 字节校验和，做 Base58 编码：QXHFfTBKYXjaaTH1e7Rox8CcdNPGHVhM59。测试网版本字节是 120，地址变成 qUEe…NF3K。', set:{q3:{hide:0}}, lit:['q']},
+      {c:'两边的 20 字节完全不同（7e5f… 和 751e…），不能互相换算。Qtum 如果错用非压缩公钥，hash160 会变成 91b24bf9…，地址变成 QZtM…ibGT，钱就打不到运营地址上。', set:{q1:{h:lbl('错用 04 ‖ X ‖ Y（65 字节）','w')}, q2:{h:lbl('hash160 = 91b24bf9…','w')}, q3:{h:chip('QZtM…ibGT','--warn')}}, bad:['q']},
+    ]};
+  // 以太坊：先规范 s，再试 v（私钥 1 对 keccak256("abc") 的真实签名）
+  A.eth = {h:300,
+    b:[['sg',2,6,96,30,'签名服务'],['v0',2,44,46,52,'试 v = 0'],['v1',52,44,46,52,'试 v = 1']],
+    it:[
+      {id:'d', h:lbl('摘要 4e03657a…a12d6c45 → KMS'), x:50, y:16},
+      {id:'rs', h:lbl('r = 2a36a35f…8762809f　s = 8b84ec7d…abba28b2（高位）','m'), x:50, y:28, hide:1},
+      {id:'a0', h:lbl('—','m'), x:25, y:66},
+      {id:'a1', h:lbl('—','m'), x:75, y:66},
+      {id:'r0', h:'', x:25, y:84},
+      {id:'r1', h:'', x:75, y:84}],
+    s:[
+      {c:'签名服务算出摘要（这里用 keccak256("abc") 演示），交给 KMS。私钥是 1，运营地址是 0x7E5F…5Bdf。', lit:['sg']},
+      {c:'KMS 返回 DER 签名，拆出 r 和 s。s 的开头 8b 比 7f 大，是高位。', set:{rs:{hide:0}}, lit:['sg']},
+      {c:'错误的顺序：先拿原来的 s 试 v。v = 0 恢复出 0x7E5F…5Bdf，对上了，于是记下 v = 0。', set:{a0:{h:lbl('0x7E5F…5Bdf（对上了）','g')}, a1:{h:lbl('0xf06d…A9e5','m')}}, lit:['v0']},
+      {c:'可是高位 s 的交易以太坊不收（EIP-2），还得把 s 换成 n − s。换完以后，v = 0 恢复出的是 0xf06d…A9e5：交易会被当成从这个地址发出，这个地址里通常没有 ETH 付手续费，节点会拒收；就算发出去，网关也只认运营地址。', set:{rs:{h:lbl('s 换成 n − s = 747b1382…247c188f（低位）','m')}, a0:{h:lbl('0xf06d…A9e5','w')}, a1:{h:lbl('0x7E5F…5Bdf','g')}, r0:{h:lbl('先试 v 再规范 s：签名者不对','w')}}, bad:['v0']},
+      {c:'正确的顺序：先把 s 换成 n − s，再试 v。v = 0 恢复出 0xf06d…A9e5，对不上；v = 1 恢复出 0x7E5F…5Bdf，对上了。', set:{r0:{h:''}, r1:{h:lbl('yParity = 1','g')}}, lit:['v1']},
+      {c:'组交易时填 yParity = 1、r、低位 s。两个 v 都对不上运营地址，就说明签名或公钥有问题，签名服务必须拒绝，不把这笔交出去。', set:{r1:{h:lbl('(yParity 1, r, n − s) 放进交易','g')}}, lit:['sg','v1']},
+    ]};
+  // Qtum：每个输入单独改写、单独算摘要、单独调 KMS（金额是示意值）
+  A.qtum = {h:300,
+    b:[['in',2,6,30,88,'输入'],['sg',35,6,30,88,'签名服务 + KMS'],['out',68,6,30,88,'输出']],
+    it:[
+      {id:'i1', h:chip('① 0.6 QTUM','--qtum'), x:17, y:28},
+      {id:'i2', h:chip('② 0.5 QTUM','--qtum'), x:17, y:48},
+      {id:'i3', h:chip('③ 0.4 QTUM','--qtum'), x:17, y:68},
+      {id:'o0', h:lbl('0：调用合约<br>金额 0'), x:83, y:30},
+      {id:'o1', h:lbl('1：找零 1.38'), x:83, y:54},
+      {id:'fee', h:lbl('手续费 0.12<br>含预付 gas 0.1','m'), x:83, y:78},
+      {id:'cp', h:lbl('','m'), x:50, y:28, hide:1},
+      {id:'dg', h:chip('摘要 ①','--accent'), x:50, y:48, hide:1},
+      {id:'sgn', h:chip('签名 ①','--qtum','out'), x:50, y:66, hide:1},
+      {id:'cnt', h:lbl('KMS 调用 0 次','m'), x:50, y:86}],
+    s:[
+      {c:'要签的交易：花掉运营地址的 3 个 UTXO（共 1.5 QTUM）；输出 0 调用 MintGateway 铸币，输出 1 把找零 1.38 退回运营地址。差额 0.12 是手续费，要覆盖预付的 gas（250000 × 40 sat = 0.1 QTUM）和按字节算的手续费。', lit:['in','out']},
+      {c:'签输入 ①：复制一份交易，输入 ① 的 scriptSig 换成它所花 UTXO 的锁定脚本（运营地址的 P2PKH 脚本），输入 ②、③ 的清空。', set:{cp:{hide:0, h:lbl('副本：① = 锁定脚本<br>②③ 清空','m')}, i1:{h:chip('① 0.6 · 正在签','--accent')}}, lit:['sg']},
+      {c:'序列化这份副本，末尾加 4 字节的 sighash 类型（1），做双 SHA256，得到摘要 ①。', set:{dg:{hide:0}}, lit:['sg']},
+      {c:'KMS 签摘要 ①；签名服务规范 s、重新编 DER、加 0x01，和压缩公钥一起写进输入 ① 的 scriptSig。', set:{sgn:{hide:0}, i1:{h:chip('① 0.6 · 已签','--ok')}, cnt:{h:lbl('KMS 调用 1 次','m')}}, lit:['sg','in']},
+      {c:'签输入 ②：重新复制，这次换的是输入 ② 的 scriptSig，①、③ 清空。改写的位置不同，摘要 ② 和摘要 ① 完全不同，签名 ① 不能拿来用。', set:{cp:{h:lbl('副本：② = 锁定脚本<br>①③ 清空','m')}, dg:{h:chip('摘要 ②','--accent')}, sgn:{hide:1}, i2:{h:chip('② 0.5 · 正在签','--accent')}}, lit:['sg']},
+      {c:'KMS 签摘要 ②，写进输入 ② 的 scriptSig。', set:{sgn:{hide:0, h:chip('签名 ②','--qtum','out')}, i2:{h:chip('② 0.5 · 已签','--ok')}, cnt:{h:lbl('KMS 调用 2 次','m')}}, lit:['sg','in']},
+      {c:'输入 ③ 照做一遍：改写、算摘要 ③、KMS 签名、写回。3 个输入，一共调了 3 次 KMS。', set:{cp:{h:lbl('副本：③ = 锁定脚本<br>①② 清空','m')}, dg:{h:chip('摘要 ③','--accent')}, sgn:{h:chip('签名 ③','--qtum','out')}, i3:{h:chip('③ 0.4 · 已签','--ok')}, cnt:{h:lbl('KMS 调用 3 次','g')}}, lit:['sg','in']},
+      {c:'三个输入都签好，交易交给执行器广播。合约看到的 msg.sender，通常认为是第一个输入所花 UTXO 的地址；三个输入都是运营地址的，调用者就是运营地址（待验证）。', set:{cp:{hide:1}, dg:{hide:1}, sgn:{hide:1}}, lit:['in','out']},
+    ]};
+  Guide.mount(A);
+
+  // ---------- 哈希：SHA-256 与 Keccak（实现同第 08、09 章，Keccak 加了 SHA3 的填充参数） ----------
+  const sha256 = (() => {
+    const K = [], H0 = [], pr = [];
+    for (let n = 2; pr.length < 64; n++) if (pr.every(p => n % p)) pr.push(n);
+    const frac = x => (x - Math.floor(x)) * 4294967296 >>> 0;
+    pr.forEach((p, i) => { K[i] = frac(Math.cbrt(p)); if (i < 8) H0[i] = frac(Math.sqrt(p)); });
+    const rot = (x, n) => (x >>> n) | (x << (32 - n));
+    return bytes => {
+      const l = bytes.length, bl = ((l + 9 + 63) >> 6) << 6, m = new Uint8Array(bl);
+      m.set(bytes); m[l] = 0x80;
+      const dv = new DataView(m.buffer);
+      dv.setUint32(bl - 4, l * 8 >>> 0); dv.setUint32(bl - 8, Math.floor(l / 536870912));
+      const H = H0.slice(), W = new Uint32Array(64);
+      for (let o = 0; o < bl; o += 64) {
+        for (let t = 0; t < 64; t++) {
+          if (t < 16) W[t] = dv.getUint32(o + t * 4);
+          else { const a = W[t - 15], b = W[t - 2]; W[t] = (W[t - 16] + (rot(a, 7) ^ rot(a, 18) ^ (a >>> 3)) + W[t - 7] + (rot(b, 17) ^ rot(b, 19) ^ (b >>> 10))) >>> 0; }
+        }
+        let [a, b, c, d, e, f, g, h] = H;
+        for (let t = 0; t < 64; t++) {
+          const t1 = (h + (rot(e, 6) ^ rot(e, 11) ^ rot(e, 25)) + ((e & f) ^ (~e & g)) + K[t] + W[t]) >>> 0;
+          const t2 = ((rot(a, 2) ^ rot(a, 13) ^ rot(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+          h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+        }
+        [a, b, c, d, e, f, g, h].forEach((v, i) => H[i] = (H[i] + v) >>> 0);
+      }
+      const out = new Uint8Array(32), ov = new DataView(out.buffer);
+      H.forEach((v, i) => ov.setUint32(i * 4, v));
+      return out;
+    };
+  })();
+  const RC = [], ROT = [[0,36,3,41,18],[1,44,10,45,2],[62,6,43,15,61],[28,55,25,21,56],[27,20,39,8,14]];
+  { let r = 1n; for (let i = 0; i < 24; i++) { let c = 0n; for (let j = 0; j < 7; j++) { r = ((r << 1n) ^ ((r >> 7n) * 0x71n)) % 256n; if (r & 2n) c ^= 1n << ((1n << BigInt(j)) - 1n); } RC.push(c); } }
+  const M = (1n << 64n) - 1n, rotl = (x, n) => n ? ((x << BigInt(n)) | (x >> BigInt(64 - n))) & M : x;
+  function kf(A){
+    for (let rd = 0; rd < 24; rd++) {
+      const C = [0,1,2,3,4].map(x => A[x] ^ A[x+5] ^ A[x+10] ^ A[x+15] ^ A[x+20]);
+      for (let x = 0; x < 5; x++) { const D = C[(x+4)%5] ^ rotl(C[(x+1)%5], 1); for (let y = 0; y < 25; y += 5) A[x+y] ^= D; }
+      const B = new Array(25);
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) B[y + 5*((2*x+3*y)%5)] = rotl(A[x+5*y], ROT[x][y]);
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 25; y += 5) A[x+y] = B[x+y] ^ ((~B[(x+1)%5+y] & M) & B[(x+2)%5+y]);
+      A[0] ^= RC[rd];
+    }
+  }
+  // pad = 0x01 是以太坊用的 Keccak-256；0x06 是 NIST 定稿的 SHA3-256。两者只差这一个填充字节
+  function sponge(bytes, pad){
+    const rate = 136, p = new Uint8Array(Math.ceil((bytes.length + 1) / rate) * rate);
+    p.set(bytes); p[bytes.length] ^= pad; p[p.length - 1] ^= 0x80;
+    const A = new Array(25).fill(0n);
+    for (let o = 0; o < p.length; o += rate) {
+      for (let i = 0; i < rate / 8; i++) { let v = 0n; for (let b = 7; b >= 0; b--) v = (v << 8n) | BigInt(p[o + i*8 + b]); A[i] ^= v; }
+      kf(A);
+    }
+    const out = new Uint8Array(32);
+    for (let i = 0; i < 4; i++) for (let b = 0; b < 8; b++) out[i*8 + b] = Number((A[i] >> BigInt(8*b)) & 0xffn);
+    return out;
+  }
+  // 哈希小工具
+  const enc = new TextEncoder();
+  const hx = b => Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+  const kv = (k, v) => `<span class="kv"><span class="m">${k}</span><span>${v}</span></span>`;
+  const hIn = document.getElementById('hIn'), hOut = document.getElementById('hOut');
+  function hashes(){
+    const b = enc.encode(hIn.value), s1 = sha256(b);
+    const head = b.length ? '：<span class="hex">' + (b.length > 24 ? hx(b.slice(0, 24)) + '…' : hx(b)) + '</span>' : '';
+    hOut.innerHTML = [
+      kv('输入', `${b.length} 字节${head}`),
+      kv('SHA256', `<span class="hex">${hx(s1)}</span>`),
+      kv('双 SHA256', `<span class="hex">${hx(sha256(s1))}</span>`),
+      kv('keccak256', `<span class="hex">${hx(sponge(b, 0x01))}</span>`),
+      kv('SHA3-256', `<span class="hex">${hx(sponge(b, 0x06))}</span>`),
+    ].join('');
+  }
+  hIn.addEventListener('input', hashes); hashes();
+  // DER 小工具：只做格式拆解和换算，不验证签名
+  const N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n, HALF = N >> 1n;
+  const h64 = x => x.toString(16).padStart(64, '0');
+  function intDer(x){ let h = x.toString(16); if (h.length % 2) h = '0' + h; if (parseInt(h.slice(0, 2), 16) >= 0x80) h = '00' + h; return h; }
+  function derOf(r, s){
+    const R = intDer(r), S = intDer(s), body = '02' + (R.length / 2).toString(16).padStart(2, '0') + R + '02' + (S.length / 2).toString(16).padStart(2, '0') + S;
+    return '30' + (body.length / 2).toString(16).padStart(2, '0') + body;
+  }
+  function parseDer(input){
+    const h = input.trim().replace(/^0x/i, '').replace(/\s+/g, '').toLowerCase();
+    if (!h) return {err:'请输入十六进制'};
+    if (!/^[0-9a-f]+$/.test(h) || h.length % 2) return {err:'不是有效的十六进制（只能有 0–9、a–f，且位数为偶数）'};
+    const b = h.match(/../g).map(x => parseInt(x, 16));
+    if (b[0] !== 0x30) return {err:`第 1 字节应是 30（SEQUENCE），这里是 ${h.slice(0, 2)}`};
+    if (b.length < 8) return {err:`只有 ${b.length} 字节，太短，不是完整的 DER 签名（通常 70–72 字节）`};
+    if (b[1] >= 0x80) return {err:'长度字节不对：ECDSA 签名不会超过 127 字节'};
+    const total = b[1] + 2;
+    if (b.length !== total && b.length !== total + 1) return {err:`第 2 字节说后面有 ${b[1]} 字节，实际有 ${b.length - 2} 字节`};
+    const notes = [], ints = [];
+    let i = 2;
+    for (const name of ['r', 's']) {
+      if (b[i] !== 0x02) return {err:`${name} 前面应是 02（INTEGER），这里是 ${(b[i] ?? 0).toString(16).padStart(2, '0')}`};
+      const len = b[i + 1];
+      if (!len || i + 2 + len > total) return {err:`${name} 的长度字节不对`};
+      const v = b.slice(i + 2, i + 2 + len);
+      if (v[0] & 0x80) notes.push(`${name} 最高位是 1，DER 会当成负数：前面应补 00（BIP66 不允许）`);
+      if (v[0] === 0 && len > 1 && !(v[1] & 0x80)) notes.push(`${name} 有多余的前导 00，不是最短写法（BIP66 不允许）`);
+      ints.push({len, v:BigInt('0x' + hx(v))});
+      i += 2 + len;
+    }
+    if (i !== total) return {err:'r、s 的长度加起来和第 2 字节对不上'};
+    const [r, s] = ints.map(o => o.v);
+    if (!r || !s || r >= N || s >= N) return {err:'r、s 必须在 1 到 n − 1 之间'};
+    return {r, s, rl:ints[0].len, sl:ints[1].len, derLen:total, extra:b.length > total ? b[total] : null, notes};
+  }
+  const dSel = document.getElementById('dSel'), dIn = document.getElementById('dIn'), dOut = document.getElementById('dOut');
+  function der(){
+    const p = parseDer(dIn.value);
+    if (p.err) { dOut.innerHTML = `<span style="color:var(--warn)">⚠ ${p.err}</span>`; return; }
+    const hi = p.s > HALF, s2 = hi ? N - p.s : p.s, low = derOf(p.r, s2);
+    const tail = p.extra === null ? '' : p.extra === 1 ? '；末尾还有 1 字节 01：SIGHASH_ALL' : `；末尾还有 1 字节 ${p.extra.toString(16).padStart(2, '0')}（不是 SIGHASH_ALL）`;
+    dOut.innerHTML = [
+      kv('结构', `DER 共 ${p.derLen} 字节：r 占 ${p.rl} 字节，s 占 ${p.sl} 字节${tail}`),
+      kv('r', `<span class="hex">${h64(p.r)}</span>`),
+      kv('s', `<span class="hex">${h64(p.s)}</span>`),
+      kv('s 和 n/2', hi ? '<span style="color:var(--warn)">s &gt; n/2，是高位：两条链都不收，要换成 n − s</span>' : '<span style="color:var(--ok)">s ≤ n/2，已经是低位</span>'),
+      ...(hi ? [kv('n − s', `<span class="hex">${h64(s2)}</span>`)] : []),
+      ...p.notes.map(n => kv('注意', `<span style="color:var(--warn)">${n}</span>`)),
+      kv('Qtum 用', `<span class="hex">${low}01</span><br><span class="m">低位 s 重新编的严格 DER（${low.length / 2} 字节）‖ 01</span>`),
+      kv('以太坊用', `r 和 ${hi ? 'n − s' : 's'} 两个整数，写进 RLP 时去掉前导 00；v 要用公钥两个都试`),
+    ].join('');
+  }
+  dSel.addEventListener('change', () => { dIn.value = dSel.value; der(); });
+  dIn.addEventListener('input', der);
+  dIn.value = dSel.value; der();
+})();
+</script>
+</body>
+</html>

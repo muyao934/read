@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nomad 跨链桥“众筹式”抢劫｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 8 月 Nomad 跨链桥被搬空约 1.86 亿美元的完整经过：Replica 合约的零值可信根与一次升级如何让未经证明的消息通过校验，数百个地址复制交易跟风提款，白帽归还与 10% 赏金，FTC 行政控诉，以及 2026 年被告人从以色列引渡到美国。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-nomad-bridge">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Nomad 跨链桥“众筹式”抢劫</h1>
+    <p class="lede">2022 年 8 月 1 日 21:32（UTC）起，Nomad 跨链桥在以太坊上的合约开始放行从未被证明过的跨链消息。第一批攻击交易公开后，数百个地址照抄交易数据、只换上自己的收款地址，几个小时内把桥里约 1.86 亿美元的资产搬空。起因是部署时写入的一个零值可信根和两个月后的一次升级相互作用，参与者不需要私钥，复制一笔交易就够了。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Nomad 在以太坊上的 Replica 合约负责验证从其他链发来的消息：消息先要用默克尔证明（Merkle proof）证明自己属于某个已签名的树根，合约记下这个根；<code>process()</code> 放款前再检查这个根已经过了挑战窗口。2022 年 4 月部署 Replica 代理合约时，起始可信根传入的是 <code>0x00</code>，合约因此写下 <code>confirmAt[0x00] = 1</code>。6 月 21 日的升级把消息记录从状态枚举改成“证明时用的根”，而从没证明过的消息，记录的默认值恰好也是 <code>0x00</code>。两件事叠在一起，任何没见过的消息都会被当作“在一个早已确认的根下证明过”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <p>攻击者只要伪造一条“从 Moonbeam 的 BridgeRouter 发来的转账消息”，直接调用 <code>process()</code>，以太坊上的 BridgeRouter 就会从托管资金里把代币转给消息里写的地址。第一批交易在公开内存池里出现后，模仿者只需替换收款地址重新广播。从 8 月 1 日 21:32 到 8 月 2 日 05:49（UTC），数百个地址按币种把 WBTC、WETH、USDC 等资产逐个抽干<a class="ref" href="#s15">[15]</a>。各家统计的损失在 <span class="dispute" title="Coinbase、FTC 与 Nomad 称约 1.86 亿美元，rekt、Mandiant、Halborn 称约 1.9 亿美元，Elliptic 称 1.564 亿美元，见“资金去向”中的对比表">1.56 亿到 1.9 亿美元</span>之间，本页采用 Nomad 和 FTC 使用的约 1.86 亿美元。</p>
+        <p>Nomad 随后公布回收地址，并承诺归还至少 90% 的人可以留下 10% 作为赏金、不被追究<a class="ref" href="#s2">[2]</a>。最终追回的资产按事发时价值约 3,750 万美元，2022 年 12 月桥重启后按比例返还给用户；按 FTC 的说法，用户净损失超过 1 亿美元<a class="ref" href="#s10">[10]</a>。2025 年 12 月，FTC 对运营公司 Illusory Systems 提起行政控诉<a class="ref" href="#s9">[9]</a>。2026 年 10 月 29 日，被指控拿走约 280 万美元的以色列-俄罗斯双重国籍男子被以色列引渡到美国受审，他目前只是被起诉，没有被定罪<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <h3>乐观验证怎么工作</h3>
+        <p>Nomad 是 Illusory Systems 公司以 Nomad 名义运营的跨链消息协议<a class="ref" href="#s10">[10]</a>，采用“乐观验证”（optimistic verification）。每条接入的链上有一个 Home 合约，把发往其他链的消息依次写进一棵默克尔树；链下的 Updater 对每个新树根签名；Relayer 把签了名的根搬到目标链的 Replica 合约上。新根到达后要先等一段挑战窗口，Nomad 文档举的例子是 30 分钟，其间 Watcher 如果发现 Updater 签了假根，可以签名把这个 Replica 移出信任列表<a class="ref" href="#s7">[7]</a>。窗口过后，任何人都可以提交某条消息在这个根下的默克尔证明，Replica 记下“已证明”，再把消息投递给目标合约。Nomad 的宣传口径是：只要有一个诚实的 Watcher，系统就是安全的<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>真金白银集中在一个合约里</h3>
+        <p>Nomad 的旗舰应用是 Token Bridge。以太坊原生的 WBTC、WETH、USDC 等代币跨出时，锁在以太坊的 BridgeRouter 合约里，其他链上铸出对应的 madWBTC、madUSDC 等“mad 资产”。跨回以太坊时，用户在源链销毁 mad 资产，消息通过 Replica 的验证后，以太坊上的 BridgeRouter 从托管中放出原生代币<a class="ref" href="#s8">[8]</a>。所以各条链上 mad 资产的价值，全都系于以太坊这一个合约里的托管资金。</p>
+        <p>BridgeRouter 自己只核对两件事：调用者是不是已登记的 Replica，消息里声明的发送方是不是对方链的 BridgeRouter。后一项只是消息自带的一个字段，可信与否完全取决于 Replica 有没有真的验证过这条消息<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>“security-first”</h3>
+        <p>Nomad 对外以“security-first”为卖点。它在 2022 年 4 月宣布了 Polychain 领投、约 2,200 万美元的种子轮，7 月 28 日（被盗前四天）又公开了 Coinbase Ventures、Crypto.com Capital、Polygon、OpenSea、Wintermute、Gnosis 等战略投资方<a class="ref" href="#s6">[6]</a>。这些宣传后来被 FTC 逐条列进了控诉书<a class="ref" href="#s10">[10]</a>。</p>
+        <p>Watcher 机制有一个盲区：它只盯 Updater 有没有签假根，不检查合约代码本身出的问题。Nomad 的根因分析承认，这次被利用的消息根本不需要伪造 Updater 签名，所以没有任何 Watcher 采取行动<a class="ref" href="#s1">[1]</a>。FTC 控诉书还提到，被盗前一名工程师发现 36 个 Watcher 钱包余额不足、需要手工调整，他向管理层报告说这个流程本该自动化<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方、项目方与执法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2022-04-21</time><div class="ev">Nomad 部署以太坊上的 Replica 代理合约，起始可信根参数为 <code>0x00</code>，存储里从此留下 <code>confirmAt[0x00] = 1</code><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2022-05-26</time><div class="ev">Quantstamp 审计期间，Nomad 合并 PR #289：<code>messages</code> 改为记录“证明时用的根”，<code>process()</code> 改用 <code>acceptableRoot()</code> 判断。Nomad 称这是审计相关的整理工作（提交时间为 UTC 5 月 27 日）<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2022-06-09</time><div class="ev">Nomad 收到 Quantstamp 最终报告，其中 QSP-19“用空叶子做证明”被评为低风险；Immunefi 漏洞赏金同日上线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="key"><time>2022-06-21</time><div class="ev">生产环境升级，涉及以太坊、Moonbeam、Evmos、Avalanche、Gnosis Chain、Milkomeda C1。4 月写下的那条记录与新逻辑开始相互作用<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2022-07-28</time><div class="ev">Nomad 公开 Coinbase Ventures、OpenSea、Wintermute 等种子轮战略投资方<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2022-07-31</time><div class="ev">Coinbase 事后发现，一个地址当天多次不带证明直接调用 <code>process()</code>，用小额 WBTC 等代币试探，调用都成功了<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="atk key"><time>2022-08-01 21:32</time><div class="ev">区块 15,259,101 里出现四笔攻击交易，各提走 100 WBTC。前两笔经 Flashbots 私下提交，后两笔直接进入公开内存池<a class="ref" href="#s15">[15]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="atk"><time>2022-08-01 起数小时</time><div class="ev">数百个地址复制交易数据、改掉收款地址，按 WBTC、WETH、USDC 等币种逐个抽干桥的托管资金<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2022-08-01 23:25</time><div class="ev">Nomad 官方推特称发生“事件”、正在调查<a class="ref" href="#s21">[21]</a>。rekt 写的是官方确认比攻击开始晚了约三小时；它所链接的这条推文，按推文 ID 推算发于 23:25（UTC），约在首批攻击交易后两小时<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def"><time>2022-08-01 23:45</time><div class="ev">Paradigm 研究员 samczsun 发推解释漏洞，指出参与者只需复制一笔可用的交易（时间按推文 ID 推算）<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2022-08-02 05:49</time><div class="ev">Coinbase 记录的最后一笔盗取交易，桥已基本被搬空<a class="ref" href="#s15">[15]</a>。Nomad 通过把 Replica 从 Bridge 和治理合约中移除停止了消息处理，本页查阅的来源没有给出确切时刻<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-08-02（美国时间）</time><div class="ev">Nomad 再次发表声明，称团队在全天候处理，已通知执法部门<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2022-08-03</time><div class="ev">Nomad 在推特和链上公布官方回收地址，大部分归还发生在之后几小时内；冒充者随即注册仿冒 ENS、用同前缀的靓号地址行骗<a class="ref" href="#s15">[15]</a>。Elliptic 当天统计已归还约 1,600 万美元<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2022-08-04（美国时间）</time><div class="ev">Nomad 宣布赏金：归还至少 90% 即视为白帽，可留下最多 10%，不追究法律责任<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2022-08-04</time><div class="ev">据以色列媒体援引的起诉与引渡文件，Alexander Gurevich 以假身份在 Telegram 上联系 Nomad CTO，道歉并索要 50 万美元“奖励”；次日 Nomad 只同意给 10%，他随后断联<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2022-08-05</time><div class="ev">Nomad 发布官方根因分析<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-08-17</time><div class="ev">Nomad 称参与地址超过 300 个，已追回约 20%（超过 3,700 万美元），与 TRM Labs 合作追踪，并公布三阶段重启计划<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2022-09-04</time><div class="ev">monorepo 合并修复 PR #441：<code>initialize</code> 不再为零根写入 <code>confirmAt</code>，<code>acceptableRoot()</code> 显式拒绝 <code>0x00</code><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2022-11-11</time><div class="ev">回收钱包内约 3,880 万美元，Nomad 公布分四类处理的方案<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>2022-12-20</time><div class="ev">桥重启。完成 KYC 的用户把 mad 资产跨回以太坊，获得一枚不可转让的 NFT，凭它按比例领取追回的资金<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2023-08-16</time><div class="ev">美国加州北区联邦法院对 Gurevich 提起八项罪名的起诉<a class="ref" href="#s12">[12]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2024-12-10</time><div class="ev">美国向以色列提出引渡请求<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="atk"><time>2025-04-29</time><div class="ev">Gurevich 在以色列人口登记处把姓氏改为 Block，次日用新名字领取护照<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2025-05-01</time><div class="ev">他在本-古里安机场登上飞往俄罗斯的航班前被捕<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2025-07</time><div class="ev">耶路撒冷地区法院裁定他可以被引渡<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2025-12-16</time><div class="ev">FTC 对 Illusory Systems 提起行政控诉并公布和解令草案，要求建立安全计划、具备紧急暂停能力、返还剩余追回资产。委员会以 2:0 通过并征求公众意见<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2026-03-08</time><div class="ev">以色列最高法院合议庭维持引渡裁定，驳回“只是按合约原样使用”的辩护<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def key"><time>2026-10-29</time><div class="ev">以色列把他移交美国。截至 2026 年 10 月底，他尚未受审，也没有被定罪；FTC 的案件页面仍显示“Pending”<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>Nomad 的根因分析用一句话概括了问题：Replica 合约没能正确验证消息，只要一条消息还没被处理过，就可以被伪造（“any message to be forged as long as it had not already been processed”）<a class="ref" href="#s1">[1]</a>。下面按调用顺序拆开看。代码引自根因分析所链接的 monorepo 提交 <code>7510d54</code>，英文注释是原有的，中文注释是本站加的。</p>
+        <h3>process() 怎么判断“已证明”</h3>
+<pre class="code"><code><span class="c">// Replica.sol：两张映射表</span>
+// Mapping of roots to allowable confirmation times
+mapping(bytes32 =&gt; uint256) public confirmAt;   <span class="c">// 根 → 可用时刻</span>
+// Mapping of message leaves to MessageStatus
+mapping(bytes32 =&gt; bytes32) public messages;    <span class="c">// 消息哈希 → 证明时用的根</span>
+
+function process(bytes memory _message) public returns (bool _success) {
+    // ensure message was meant for this domain
+    bytes29 _m = _message.ref(0);
+    require(_m.destination() == localDomain, "!destination");
+    // ensure message has been proven
+    bytes32 _messageHash = _m.keccak();
+<span class="c">    // 从没证明过的消息，messages[_messageHash] 读出来是默认值 0x00</span>
+<span class="bad">    require(acceptableRoot(messages[_messageHash]), "!proven");</span>
+    <span class="c">// ……标记为已处理，再调用接收合约的 handle()……</span>
+}
+
+function acceptableRoot(bytes32 _root) public view returns (bool) {
+    // this is backwards-compatibility for messages proven/processed
+    // under previous versions
+    if (_root == LEGACY_STATUS_PROVEN) return true;     <span class="c">// 旧版“已证明”= 1</span>
+<span class="bad">    if (_root == LEGACY_STATUS_PROCESSED) return false;  <span class="c">// 只排除了 2，没排除 0</span></span>
+
+<span class="bad">    uint256 _time = confirmAt[_root];   <span class="c">// _root 为 0x00 时读到 1</span></span>
+    if (_time == 0) {
+        return false;
+    }
+<span class="bad">    return block.timestamp &gt;= _time;    <span class="c">// 任何区块时间都 ≥ 1，返回 true</span></span>
+}</code></pre>
+        <p class="code-cap">来源：nomad-xyz/monorepo 提交 7510d54，packages/contracts-core/contracts/Replica.sol 第 41–44、186–192、262–273 行（去掉了一层缩进，中间有省略）。</p>
+        <p>正常流程里，<code>prove()</code> 用提交的默克尔证明算出根 R，只有 <code>acceptableRoot(R)</code> 为真时才写入 <code>messages[h] = R</code><a class="ref" href="#s8">[8]</a>。之后 <code>process()</code> 读到的是 R，再查 <code>confirmAt[R]</code>，也就是这个根挑战窗口结束的时刻。设计者默认 <code>messages[h]</code> 只会是 R 或旧版的状态值 1、2。同一份合约里其实定义了 <code>LEGACY_STATUS_NONE = bytes32(0)</code>，代表“从没见过”，但 <code>acceptableRoot()</code> 没有拒绝它，于是 0x00 被当成了一个普通的根去查 <code>confirmAt</code>。</p>
+        <h3>第一个条件：4 月写下的 confirmAt[0x00] = 1</h3>
+<pre class="code"><code><span class="c">// Replica.sol：代理合约部署时调用一次</span>
+function initialize(
+    uint32 _remoteDomain,
+    address _updater,
+    bytes32 _committedRoot,      <span class="c">// 2022 年 4 月部署时传入 0x00</span>
+    uint256 _optimisticSeconds
+) public initializer {
+    __NomadBase_initialize(_updater);
+    // set storage variables
+    entered = 1;
+    remoteDomain = _remoteDomain;
+    committedRoot = _committedRoot;
+    // pre-approve the committed root.
+<span class="bad">    confirmAt[_committedRoot] = 1;   <span class="c">// 于是 confirmAt[0x00] = 1</span></span>
+    _setOptimisticTimeout(_optimisticSeconds);
+}</code></pre>
+        <p class="code-cap">来源：同上，第 103–117 行。</p>
+        <p><code>_committedRoot</code> 是 Replica 开始接收的那个可信根，让新部署的 Replica 不必重放源链的全部历史。Nomad 的根因分析解释，如果 Replica 和对应的 Home 同时部署，源链的消息树还是空的，而 Nomad 实现里空树的根是 <code>bytes32(0)</code>，于是起始根就是 0x00<a class="ref" href="#s1">[1]</a>。Coinbase 查到，以太坊上的 Replica 代理合约在 2022 年 4 月 21 日部署时，这个参数正是 0，<code>confirmAt[0x00] = 1</code> 从那时起一直留在存储里<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>第二个条件：6 月的升级改了 0x00 的含义</h3>
+        <p>升级之前，这条记录不会造成任何影响，因为 <code>process()</code> 只认状态枚举，根本不读 <code>confirmAt</code>：</p>
+<pre class="code"><code><span class="c">// PR #289 之前：MessageStatus 枚举，0 = None，1 = Proven，2 = Processed</span>
+<span class="c">// 未证明的消息是 None，会被拒绝（这一行在当时是安全的）</span>
+<span class="good">    require(messages[_messageHash] == MessageStatus.Proven, "!proven");</span>
+
+<span class="c">// PR #289 之后（6 月 21 日上线）：messages 改存根，交给 acceptableRoot 判断</span>
+<span class="bad">    require(acceptableRoot(messages[_messageHash]), "!proven");</span></code></pre>
+        <p class="code-cap">来源：nomad-xyz/monorepo 提交 46d1457（PR #289）中 Replica.sol 的改动。</p>
+        <p>这次改动有它的道理。按旧规则，一条合法消息如果附带了无效的认证（attestation），就会永远卡住；新设计允许消息在另一个根下重新证明，防止恶意 Updater 用无效的认证阻止合法消息投递<a class="ref" href="#s1">[1]</a>。代价是 <code>messages</code> 里的同一个 0x00，含义从“没证明过”变成了“在根 0x00 下证明过”。FTC 控诉书的表述是，漏洞来自智能合约初始化表中一条既有记录与 2022 年 6 月 21 日代码更新之间的相互作用<a class="ref" href="#s10">[10]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>messages[h] 的值</th><th>升级前</th><th>6 月 21 日升级后</th></tr></thead>
+            <tbody>
+              <tr><td><code>0x00</code><br>从没证明过的消息，包括伪造的</td><td>拒绝：不等于 Proven</td><td><strong>放行：查到 confirmAt[0x00] = 1</strong></td></tr>
+              <tr><td>根 R<br>新版下证明过的消息</td><td>旧版没有这种值</td><td>挑战窗口过后放行，符合设计</td></tr>
+              <tr><td><code>1</code><br>旧版下证明过的消息</td><td>放行</td><td>放行，向后兼容</td></tr>
+              <tr><td><code>2</code><br>已经处理过的消息</td><td>拒绝</td><td>拒绝，防止重放</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>四行里只有第一行的结果变了，而第一行覆盖的正好是桥从没收到过的所有消息。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 586" role="img" aria-labelledby="nomad-path-t nomad-path-d">
+            <title id="nomad-path-t">Replica 放行一条消息的两条路径</title>
+            <desc id="nomad-path-d">左边是正常消息：先调用 prove 写入根 R，process 读到 R，再查 confirmAt[R] 是否已过挑战窗口。右边是伪造消息：不调用 prove，process 读到默认值 0x00，再查 confirmAt[0x00]，读到 2022 年 4 月初始化时写入的 1。两条路径进入同一个 acceptableRoot 检查，都返回 true，最后由 BridgeRouter 从托管中转出代币。</desc>
+            <defs>
+              <marker id="nomad-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="nomad-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line" x1="190" y1="58" x2="190" y2="84" marker-end="url(#nomad-ah)"/>
+            <line class="d-line" x1="190" y1="138" x2="190" y2="164" marker-end="url(#nomad-ah)"/>
+            <line class="d-line" x1="190" y1="218" x2="190" y2="244" marker-end="url(#nomad-ah)"/>
+            <line class="d-line" x1="190" y1="298" x2="190" y2="324" marker-end="url(#nomad-ah)"/>
+            <path class="d-line" d="M190,378 V400 H300 V420" marker-end="url(#nomad-ah)"/>
+            <line class="d-line atk" x1="570" y1="58" x2="570" y2="84" marker-end="url(#nomad-ah-atk)"/>
+            <line class="d-line atk" x1="570" y1="138" x2="570" y2="164" marker-end="url(#nomad-ah-atk)"/>
+            <line class="d-line atk" x1="570" y1="218" x2="570" y2="244" marker-end="url(#nomad-ah-atk)"/>
+            <line class="d-line atk" x1="570" y1="298" x2="570" y2="324" marker-end="url(#nomad-ah-atk)"/>
+            <path class="d-line atk" d="M570,378 V400 H460 V420" marker-end="url(#nomad-ah-atk)"/>
+            <line class="d-line" x1="380" y1="478" x2="380" y2="514" marker-end="url(#nomad-ah)"/>
+            <rect class="d-box soft" x="30" y="14" width="320" height="44" rx="4"/>
+            <text class="d-t b" x="190" y="34" text-anchor="middle">正常的跨链消息</text>
+            <text class="d-t s" x="190" y="51" text-anchor="middle">源链 Home 发出，所在的根已被 Updater 签名</text>
+            <rect class="d-box atk" x="410" y="14" width="320" height="44" rx="4"/>
+            <text class="d-t b atk" x="570" y="34" text-anchor="middle">伪造的消息</text>
+            <text class="d-t s" x="570" y="51" text-anchor="middle">攻击者自己拼出来，从没进过源链的消息树</text>
+            <rect class="d-box" x="30" y="86" width="320" height="52" rx="4"/>
+            <text class="d-t b m" x="190" y="108" text-anchor="middle">prove(leaf, proof, index)</text>
+            <text class="d-t s" x="190" y="127" text-anchor="middle">算出根 R，写入 <tspan class="m">messages[h] = R</tspan></text>
+            <rect class="d-box soft" x="410" y="86" width="320" height="52" rx="4"/>
+            <text class="d-t b" x="570" y="108" text-anchor="middle">不调用 <tspan class="m">prove()</tspan></text>
+            <text class="d-t s" x="570" y="127" text-anchor="middle">没有默克尔证明，也不需要 Updater 签名</text>
+            <rect class="d-box" x="30" y="166" width="320" height="52" rx="4"/>
+            <text class="d-t b m" x="190" y="188" text-anchor="middle">process(message)</text>
+            <text class="d-t s m" x="190" y="207" text-anchor="middle">h = keccak256(message)</text>
+            <rect class="d-box atk" x="410" y="166" width="320" height="52" rx="4"/>
+            <text class="d-t b m" x="570" y="188" text-anchor="middle">process(message)</text>
+            <text class="d-t s" x="570" y="207" text-anchor="middle">直接调用，h 是一个从没出现过的哈希</text>
+            <rect class="d-box" x="30" y="246" width="320" height="52" rx="4"/>
+            <text class="d-t b m" x="190" y="268" text-anchor="middle">messages[h] → R</text>
+            <text class="d-t s" x="190" y="287" text-anchor="middle"><tspan class="m">prove()</tspan> 写进去的根</text>
+            <rect class="d-box atk" x="410" y="246" width="320" height="52" rx="4"/>
+            <text class="d-t b m" x="570" y="268" text-anchor="middle">messages[h] → 0x00</text>
+            <text class="d-t s" x="570" y="287" text-anchor="middle">没有记录，映射返回默认值</text>
+            <rect class="d-box" x="30" y="326" width="320" height="52" rx="4"/>
+            <text class="d-t b m" x="190" y="348" text-anchor="middle">confirmAt[R] → t</text>
+            <text class="d-t s" x="190" y="367" text-anchor="middle">根送达后再等约 30 分钟的挑战窗口</text>
+            <rect class="d-box atk" x="410" y="326" width="320" height="52" rx="4"/>
+            <text class="d-t b m" x="570" y="348" text-anchor="middle">confirmAt[0x00] → 1</text>
+            <text class="d-t s" x="570" y="367" text-anchor="middle">2022-04-21 初始化时写入，一直留在存储里</text>
+            <text class="d-t s halo" x="380" y="404" text-anchor="middle">同一个检查</text>
+            <rect class="d-box" x="170" y="422" width="420" height="56" rx="4"/>
+            <text class="d-t b m" x="380" y="445" text-anchor="middle">require(acceptableRoot(messages[h]))</text>
+            <text class="d-t s" x="380" y="466" text-anchor="middle"><tspan class="m">block.timestamp ≥ t</tspan> 或 <tspan class="m">≥ 1</tspan>，两边都返回 true</text>
+            <rect class="d-box" x="170" y="516" width="420" height="56" rx="4"/>
+            <text class="d-t b m" x="380" y="539" text-anchor="middle">BridgeRouter.handle()</text>
+            <text class="d-t s" x="380" y="560" text-anchor="middle"><tspan class="m">onlyReplica</tspan>、<tspan class="m">onlyRemoteRouter</tspan> 都通过，从托管中转出代币</text>
+          </svg>
+          </div>
+          <figcaption>图 1：Replica 判断一条消息能否放行的两条路径。红色是被利用的步骤。右边能通过，只是因为 <code>messages[h]</code> 的默认值 0x00 恰好在 <code>confirmAt</code> 里有一条值为 1 的记录。</figcaption>
+        </figure>
+        <h3>伪造的消息怎么拿到钱</h3>
+        <p>Replica 放行之后，把消息标记为已处理，调用消息里 <code>recipient</code> 字段指定的合约，也就是以太坊上的 BridgeRouter：</p>
+<pre class="code"><code><span class="c">// BridgeRouter.sol：Replica 投递消息的入口</span>
+function handle(
+    uint32 _origin,
+    uint32 _nonce,
+    bytes32 _sender,          <span class="c">// 消息自带的“发送方”字段</span>
+    bytes memory _message
+) external override onlyReplica onlyRemoteRouter(_origin, _sender) {
+
+<span class="c">// Router.sol：onlyRemoteRouter 只拿消息自报的发送方和登记表比对</span>
+return remotes[_domain] == _router &amp;&amp; _router != bytes32(0);
+
+<span class="c">// BridgeRouter.sol，_giveTokens()：以太坊原生代币直接从托管中转出</span>
+if (tokenRegistry.isLocalOrigin(_token)) {
+    // ……
+<span class="bad">    IERC20(_token).safeTransfer(_recipient, _amount);   <span class="c">// 收款人来自消息正文</span></span></code></pre>
+        <p class="code-cap">来源：nomad-xyz/monorepo 提交 7510d54，packages/contracts-bridge/contracts/BridgeRouter.sol 第 113–118、416–421 行，packages/contracts-router/contracts/Router.sol 第 61 行（有省略）。</p>
+        <p><code>onlyReplica</code> 检查调用者是不是已登记的 Replica，这次调用确实来自 Replica。<code>onlyRemoteRouter</code> 检查的 <code>_sender</code> 是攻击者自己填的，填上 Moonbeam 那边 BridgeRouter 的地址就能通过。BridgeRouter 的设计默认 Replica 已经验证过消息，所以它没有任何办法分辨真假。消息正文指定 WBTC 这类以太坊原生代币时，代码走的是从托管里转账的分支，转出的是真实资产。</p>
+        <h3>为什么能被复制几百次</h3>
+        <p><code>process()</code> 处理完一条消息，会把它的哈希标记为已处理，同一条消息不能再处理第二次。但哈希覆盖整条消息，只要改一个字节，比如把收款地址换成自己的，就是一条全新的消息，它的 <code>messages[h]</code> 同样是 0x00，同样能通过。复制别人成功的交易、替换地址、重新提交，这就是全部门槛。samczsun 当时的描述是：</p>
+        <blockquote>
+          <p>“这就是这次攻击如此混乱的原因。你不需要懂 Solidity，不需要懂默克尔树，什么都不用懂。只要找到一笔有效的交易，把里面别人的地址换成你的，再重新广播出去。”</p>
+          <cite>samczsun，2022-08-01（UTC），转引自 The Verge<a class="ref" href="#s21">[21]</a></cite>
+        </blockquote>
+        <h3>修复</h3>
+        <p>Nomad 在 2022 年 9 月 4 日合并了修复 PR #441，标题是“zero root is not acceptableRoot”，改了两行<a class="ref" href="#s8">[8]</a>：</p>
+<pre class="code"><code><span class="c">// Replica.sol，initialize()：不再为零根预先批准</span>
+<span class="bad">-   confirmAt[_committedRoot] = 1;</span>
+<span class="good">+   if (_committedRoot != bytes32(0)) confirmAt[_committedRoot] = 1;</span>
+
+<span class="c">// Replica.sol，acceptableRoot()：显式拒绝“从没见过”的 0x00</span>
+<span class="bad">-   if (_root == LEGACY_STATUS_PROCESSED) return false;</span>
+<span class="good">+   if (_root == LEGACY_STATUS_PROCESSED || _root == LEGACY_STATUS_NONE)</span>
+<span class="good">+       return false;</span></code></pre>
+        <p class="code-cap">来源：nomad-xyz/monorepo 提交 0e02cc1（PR #441）中 Replica.sol 的 diff，第 115、266–267 行。</p>
+        <p>两处都需要。<code>initialize</code> 只能执行一次，以太坊上那个 Replica 代理存储里的 <code>confirmAt[0x00] = 1</code> 不会因为改了初始化代码就消失，只有在 <code>acceptableRoot()</code> 里拒绝 0x00 才能让这条旧记录失效；改 <code>initialize</code> 是防止以后的新部署再写进同样的记录。2022 年 10 月合并的审计改动（PR #486）又给管理员用的 <code>setConfirmation()</code> 加了限制，不允许为零根设置确认时间<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>一条反向测试就能发现</h3>
+        <p>FTC 控诉书引述 Nomad 事后的内部分析：原有测试主要覆盖“happy path”，也就是给合法输入、看它是否被当作合法处理，没有测试非法输入会不会被当作合法处理<a class="ref" href="#s10">[10]</a>。“没证明过的消息必须被拒绝”就是这样一条测试：</p>
+<pre class="code"><code><span class="c">// 示意：Foundry 风格的反向测试（不是 Nomad 的真实测试代码）</span>
+function test_unprovenMessageIsRejected() public {
+    <span class="c">// 按 2022 年 4 月的部署参数初始化：起始可信根为 0x00</span>
+    replica.initialize(remoteDomain, updater, bytes32(0), 1800);
+
+    <span class="c">// 构造一条从没调用过 prove() 的消息，目的链填本链</span>
+    bytes memory forged =
+        buildMessage(remoteDomain, remoteRouter, localDomain, attacker);
+
+    vm.expectRevert("!proven");
+    replica.process(forged);   <span class="c">// 6 月的版本在这里不会回滚，测试失败</span>
+}</code></pre>
+        <p class="code-cap">示意代码，省略了部署代理合约和拼装消息的辅助函数。</p>
+        <div class="note">
+          <span class="h">审计里出现过同类问题</span>
+          <p>Quantstamp 2022 年 6 月的报告里有一条 QSP-19“Proving With An Empty Leaf”，评级低风险，状态标为“Acknowledged”（已知悉）。报告指出，Nomad 用的稀疏默克尔树里没用到的叶子默认是空的 <code>bytes32</code>，有人可以把空值当作叶子、配上人为构造的证明和指定的位置通过包含检查，把这个“空叶子”标记为已证明。Nomad 回复说找到空叶子的原像在实际上不可能；Quantstamp 在报告里写道，Nomad 团队误解了问题，问题与原像无关，而在于空值本来就可以被证明“存在”于树中<a class="ref" href="#s20">[20]</a>。</p>
+          <p>QSP-19 说的是 <code>prove()</code>，被利用的是 <code>process()</code>，两者不是同一个漏洞，但出自同一个错误假设：零值不会被当成真实存在的数据。根因分析还提到，5 月 26 日的改动本身就是审计相关整理的一部分，被包含在提交复审的版本里；6 月 9 日上线的 Immunefi 赏金在攻击前也没有收到这个问题的报告<a class="ref" href="#s1">[1]</a>。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下按 Coinbase、Halborn 等机构事后对链上数据的分析整理。各家用的是公开交易记录，本页只转述他们的结论。</p>
+        <ol class="steps">
+          <li><b>试探</b>Coinbase 发现，2022 年 7 月 31 日有一个地址多次直接调用 <code>process()</code>，用小额 WBTC 等代币测试，消息的来源链写的是 Avalanche。这些消息事先不在 <code>messages</code> 映射里，调用都成功了。攻击前约一小时，同一地址还通过正常流程往 Moonbeam 跨了 0.01 WBTC；首批四笔攻击交易中的第四笔也是它发出的<a class="ref" href="#s15">[15]</a>。美方引渡请求另外指控 Gurevich 在攻击前测试过这个漏洞六次，测试时往 Nomad 钱包里存钱以免被察觉<a class="ref" href="#s14">[14]</a>。本页查阅的来源没有说明这两组测试是否指同一件事。</li>
+          <li><b>第一批交易</b>8 月 1 日 21:32（UTC），区块 15,259,101 里的四笔交易各提走 100 WBTC，合计 400 枚。前两笔经 Flashbots 私下提交，通过辅助合约在 Uniswap 换成 WETH；后两笔直接调用有漏洞的合约，在公开内存池里广播。Coinbase 称前三个地址都由 Tornado Cash 注资、彼此有交易往来，像是同一个团伙。同一区块里，还有地址用辅助合约不顺利，改为直接调用，攻击数据就此公开<a class="ref" href="#s15">[15]</a><a class="ref" href="#s19">[19]</a>。</li>
+          <li><b>每次只拿 100 WBTC</b>四笔交易的 payload 除了收款地址完全相同。Coinbase 推测，攻击者重放了一条真实的跨链消息、只改了收款人，所以每笔金额固定在 100 WBTC，没有一次搬空<a class="ref" href="#s15">[15]</a>。rekt 也指出，更老练的攻击者完全可以写一个合约独自抽干整座桥<a class="ref" href="#s20">[20]</a>。</li>
+          <li><b>跟风</b>之后几个小时，越来越多的地址加入，输入数据几乎一样，只改代币、金额和收款地址。按 Coinbase 的统计，88% 以上的参与地址直接调用了与原始攻击相同的 <code>process(bytes)</code> 函数，其余通过中间合约批量调用；跟风者合计拿走约 8,800 万美元。资金按币种逐个被抽干：第一个小时只有 WBTC 和 WETH，之后是 USDC、CQT 等<a class="ref" href="#s15">[15]</a>。rekt 描述，跟风者在 Etherscan 上复制调用参数、换上自己的地址即可，MEV 机器人和自称白帽的人也都参与了进来<a class="ref" href="#s20">[20]</a>。Halborn 统计共 960 笔交易、1,175 次提款<a class="ref" href="#s19">[19]</a>。</li>
+          <li><b>止血太晚</b>Nomad 把 Replica 从 Bridge 和治理合约中移除后，BridgeRouter 的 <code>onlyReplica</code> 检查开始拒绝一切消息<a class="ref" href="#s1">[1]</a>。FTC 控诉书称，公司最先是从一名社交媒体用户那里得知异常交易，几名主要工程师起初还在争论截图是不是伪造的；公司只能靠一名正在飞机上的工程师，在聊天里和值班的事故负责人来回传代码片段，桥直到资产被搬空之后才被关停<a class="ref" href="#s10">[10]</a>。Coinbase 记录的最后一笔盗取交易在 8 月 2 日 05:49（UTC）<a class="ref" href="#s15">[15]</a>。</li>
+        </ol>
+        <h3>一条伪造消息里有什么</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>字段</th><th>首批攻击交易里的值</th><th>由谁检查，结果如何</th></tr></thead>
+            <tbody>
+              <tr><td>origin</td><td>Moonbeam</td><td>决定由以太坊上接收 Moonbeam 消息的 Replica 处理</td></tr>
+              <tr><td>sender</td><td>Moonbeam 上 BridgeRouter 的地址</td><td>BridgeRouter 的 <code>onlyRemoteRouter</code>：通过，这个字段没有任何来源证明</td></tr>
+              <tr><td>destination</td><td>以太坊</td><td>Replica 的 <code>!destination</code> 检查：通过</td></tr>
+              <tr><td>recipient</td><td>以太坊上 BridgeRouter 的地址</td><td>Replica 据此调用 BridgeRouter 的 <code>handle()</code></td></tr>
+              <tr><td>正文：tokenId</td><td>以太坊上的 WBTC</td><td>BridgeRouter 认定是本链资产，从托管中转出，而不是铸造</td></tr>
+              <tr><td>正文：金额</td><td>100 WBTC</td><td>没有单笔或单位时间的上限</td></tr>
+              <tr><td>正文：收款人</td><td>攻击者自己的地址</td><td>不检查；跟风者唯一需要改的字段</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">数据来源：Coinbase 对首批交易 payload 的解码<a class="ref" href="#s15">[15]</a>；字段含义见 monorepo 中的 Message.sol 与 BridgeMessage.sol<a class="ref" href="#s8">[8]</a>。</p>
+        <ol class="flow">
+          <li class="atk"><b>拼一条消息</b>声称来自 Moonbeam 的 BridgeRouter，收款人是自己</li>
+          <li class="atk"><b>直接调用 process()</b>默认值 0x00 在 confirmAt 里查到 1，检查通过</li>
+          <li class="atk"><b>BridgeRouter 放款</b>从托管中把 100 WBTC 转给收款人</li>
+          <li class="atk"><b>别人照抄</b>换掉收款地址，哈希随之变化，同样能通过，直到这个币种被抽干</li>
+        </ol>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>几百个地址各拿各的，资金去向也就分成了很多条线。Coinbase 在 8 月 9 日给出过一个快照：被盗资产中约 17% 已经归还（含部分归还），约 34% 原地未动，约 49% 已被继续转移。归还的主要是 USDC、USDT、WBTC、DAI、CQT 和 WETH，和被盗的币种构成差别很大，因为最早动手的几个地址拿的主要是 WBTC 和 WETH，并且没有归还的意思<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>归还的部分</h3>
+        <ol class="flow">
+          <li class="def"><b>官方回收钱包</b>8 月 3 日公布；赏金规则下可自留最多 10%</li>
+          <li class="def"><b>按来源分类</b>原样归还的直接对应原交易；换过币的交给做市商换回原币种</li>
+          <li class="def"><b>多签暂存钱包</b>2/4 Gnosis Safe，补发事后申请的赏金后装入升级后的桥</li>
+          <li class="ok"><b>用户按比例领取</b>2022-12-20 起，KYC 后跨回以太坊，凭不可转让的 NFT 领取</li>
+        </ol>
+        <p>到 2022 年 11 月 11 日，回收钱包里的资产约合 3,880 万美元，Nomad 把它们分成四类<a class="ref" href="#s4">[4]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>类别</th><th class="n">金额</th><th class="n">占比</th><th>处理方式</th></tr></thead>
+            <tbody>
+              <tr><td>原样归还的代币</td><td class="n">约 2,980 万美元</td><td class="n">76.7%</td><td>拿走什么还什么，可以直接对应到被盗交易</td></tr>
+              <tr><td>换成其他币种后归还</td><td class="n">约 830 万美元</td><td class="n">21.3%</td><td>由专业做市商换回原来的币种</td></tr>
+              <tr><td>事后申请的赏金</td><td class="n">约 61 万美元</td><td class="n">1.6%</td><td>赏金公布前就全额归还、事后要求 10% 的白帽，在 KYC 后补发</td></tr>
+              <tr><td>可能受监管限制的资金</td><td class="n">约 16 万美元</td><td class="n">0.4%</td><td>包括与追回无关的粉尘转账，法律分析完成前不动用</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>没有归还的部分</h3>
+        <p>Mandiant 在 2022 年 11 月的分析中，把单个地址拿走超过 200 万美元的 14 个地址分成四组<a class="ref" href="#s16">[16]</a>。A 组三个地址都向回收地址还过钱，但只有一个还了大部分（77.6%），另外两个只还了 1.7% 和 3.4%。B 组约 401 万美元，通过 1inch 换币后进入 Tornado Cash，其中一个地址也与 2022 年 4 月 Rari Capital 被盗有关。C 组约 520 万美元，经 Uniswap 换币后进入 Tornado Cash。D 组按分析时的价值约 5,450 万美元，经 OrionPool、Uniswap、Curve 换币，一部分进入 Tornado Cash，约 5,000 万美元停在两个充值地址里。Coinbase 也发现一个资金混在一起、累计流水超过 6,200 万美元的地址群，其中包括第一个实施攻击的地址；它同时注明，Tornado Cash 自 2022 年 8 月 8 日起已是美国制裁对象<a class="ref" href="#s15">[15]</a>。</p>
+        <p>还有一部分价值直接蒸发了。Nomad 在 8 月 17 日的更新里写道，很多参与者拿到代币后马上通过 DEX 的流动性池换成其他代币，高滑点让一部分资金无法再追回；另一些白帽归还的币种与拿走的不同，增加了记账难度<a class="ref" href="#s3">[3]</a>。被起诉的 Gurevich，按引渡请求的说法，把约 280 万美元分散到多个地址并换成其他币种<a class="ref" href="#s14">[14]</a>；TRM Labs 称他用过 Tornado Cash，并把 ETH 换成 Monero、Dash 等隐私币<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>各家数字为什么不一样</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th class="n">数字</th><th>出处与口径</th></tr></thead>
+            <tbody>
+              <tr><th colspan="2">被盗资产</th></tr>
+              <tr><td class="n">约 1.86 亿美元</td><td>Coinbase 统计 8 月 1 日 21:32 至 8 月 2 日 05:49（UTC）的 ERC-20 转出<a class="ref" href="#s15">[15]</a>；Nomad、FTC 用同一数字<a class="ref" href="#s3">[3]</a><a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td class="n">约 1.9 亿美元</td><td>rekt、Mandiant、Halborn<a class="ref" href="#s16">[16]</a><a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a></td></tr>
+              <tr><td class="n">1.564 亿美元</td><td>Elliptic，8 月初的统计，未说明计算方法<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><th colspan="2">参与规模</th></tr>
+              <tr><td class="n">300 个以上</td><td>Nomad：参与的“unique addresses”<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td class="n">532 个</td><td>Mandiant：只计单个拿走超过 1,000 美元的地址<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td class="n">40 余个</td><td>Elliptic：参与者数量，另有 200 多个专门部署的攻击合约<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td class="n">960 笔</td><td>Halborn：交易笔数，含 1,175 次提款<a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><th colspan="2">持续时间</th></tr>
+              <tr><td class="n">约 8 小时</td><td>Coinbase 记录的首末两笔盗取交易之间<a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td class="n">约 2.5 小时</td><td>rekt 对攻击主体的描述<a class="ref" href="#s20">[20]</a></td></tr>
+              <tr><th colspan="2">追回与净损失</th></tr>
+              <tr><td class="n">3,600 万美元</td><td>Mandiant，2022 年 11 月<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td class="n">约 3,880 万美元</td><td>Nomad，2022 年 11 月 11 日回收钱包的总额<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td class="n">约 3,750 万美元</td><td>FTC，按事发时的名义价值<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td class="n">超过 1 亿美元</td><td>FTC：用户净损失<a class="ref" href="#s10">[10]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>差异主要来自口径：算不算小额地址和粉尘，按哪个时点的价格折算，换过币种的归还怎么计价。本页正文以约 1.86 亿美元（被盗）和约 3,750 万美元（追回）为准。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>依赖 Nomad 的链</h3>
+        <p>以太坊上的托管被搬空后，Moonbeam、Evmos、Milkomeda 等链上的 madWBTC、madUSDC 等资产一夜之间失去了 1:1 的支撑。rekt 在 8 月 2 日给出的锁仓量（TVL）变化如下<a class="ref" href="#s20">[20]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>链</th><th class="n">攻击前 TVL</th><th class="n">8 月 2 日 TVL</th></tr></thead>
+            <tbody>
+              <tr><td>Moonbeam</td><td class="n">约 3 亿美元</td><td class="n">约 1.35 亿美元</td></tr>
+              <tr><td>Milkomeda</td><td class="n">约 3,100 万美元</td><td class="n">约 2,000 万美元</td></tr>
+              <tr><td>Evmos</td><td class="n">约 700 万美元</td><td class="n">约 300 万美元</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>TVL 同时受币价和资金撤出影响，不等于 mad 资产的损失。Nomad 后来在重启说明里明确，被攻击的只有以太坊一侧；如果用户跨的是其他链的原生资产，比如 Moonbeam 的 GLMR、Evmos 的 EVMOS，完成 KYC 后可以照常跨回<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>人人都能参与的抢劫</h3>
+        <p>Nomad 回顾此前的几起跨链桥事件时写道，那些攻击据报道都只有一个攻击者<a class="ref" href="#s3">[3]</a>。这一次，漏洞随着攻击交易出现在公开内存池里，会复制粘贴的人都能参与，结果有两个。一是处置窗口被压缩：几百个地址并行提款，桥的资产在几小时内被分光，任何一个提款者停手都不会让损失变小。二是“攻击者”“白帽”“围观者”之间的界线变得模糊：有人声称是为了保护资金才提走，有人全额归还，有人部分归还，有人一分不还。Coinbase 在分析中按归还情况把参与者分成白帽、灰帽、黑帽三类，同时特别注明，即使是“白帽”，最初的提取也未经授权，Coinbase 不认可这种做法<a class="ref" href="#s15">[15]</a>。</p>
+        <p>此后几年，司法和监管机构的态度一致：漏洞容易被利用，不会让提款变得合法。以色列最高法院在引渡案中写明，利用智能合约的漏洞与利用其他任何程序的漏洞没有区别<a class="ref" href="#s14">[14]</a>；FTC 则把矛头对准了项目方自身的安全做法<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>放在 2022 年的跨链桥事件里看</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th class="n">损失</th><th>被突破的环节</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2022-wormhole.html">Wormhole</a></td><td>2022-02</td><td class="n">约 3.26 亿美元</td><td>Solana 端的守护者签名验证被绕过</td></tr>
+              <tr><td><a href="2022-ronin-bridge.html">Ronin</a></td><td>2022-03</td><td class="n">约 6.24 亿美元</td><td>9 个验证者中 5 把私钥失守</td></tr>
+              <tr><td><a href="2022-harmony-horizon.html">Harmony Horizon</a></td><td>2022-06</td><td class="n">约 1 亿美元</td><td>2/5 多签中的 2 把私钥被盗</td></tr>
+              <tr><td>Nomad</td><td>2022-08</td><td class="n">约 1.86 亿美元</td><td>接收端把未经证明的消息当作已证明</td></tr>
+              <tr><td><a href="2022-bnb-bridge.html">BNB Bridge</a></td><td>2022-10</td><td class="n">名义约 5.7 亿美元</td><td>伪造的 IAVL 默克尔证明通过了校验</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Ronin 和 Harmony 丢的是签名者的私钥，Wormhole 和 BNB Bridge 是签名或证明被伪造。Nomad 的签名者从头到尾没有出问题，Updater 没被攻破，也没有签过任何假根；出问题的是接收端根本没去检查消息有没有被签过、被证明过。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>止血：移除 Replica</h3>
+        <p>Nomad 的应急手段是把 Replica 从 Bridge 和治理合约里移除。BridgeRouter 的 <code>handle()</code> 先检查 <code>onlyReplica</code>，Replica 被注销后，任何消息都投递不进来，漏洞随之关闭，正常的跨链消息也一起停了。根因分析写明，新的跨链转账仍可发起，但不会被处理，前端界面也已下线<a class="ref" href="#s1">[1]</a>。这一步来得太晚，桥已经基本空了。</p>
+        <p>合约设计本身也有局限。Watcher 可以签名注销 Replica，但这个功能是为“Updater 作恶”准备的<a class="ref" href="#s7">[7]</a>；这次的漏洞不涉及 Updater 的签名，Watcher 根本不会被触发<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>赏金与回收地址</h3>
+        <p>8 月 3 日，Nomad 在推特和链上公布官方回收地址<a class="ref" href="#s15">[15]</a>。8 月 4 日（美国时间）又宣布赏金：归还至少 90% 的人被视为白帽，最多可以留下 10%，Nomad 不追究法律责任，会向第三方说明其白帽身份，并向执法机构建议不提起刑事指控<a class="ref" href="#s2">[2]</a>。Mandiant 记录，归还者还会收到一枚“Whitehat”NFT 作为感谢<a class="ref" href="#s16">[16]</a>。由于赏金是在回收地址之后才宣布的，一些早先已全额归还的人事后申请 10%，Nomad 同意兑现，到 11 月这部分约 61 万美元<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <p>骗子也跟了上来。有人注册冒充 Nomad 的 ENS 域名，在链上给归还者发消息，让他们把钱打到与官方回收地址开头相同的靓号地址，有的消息还许诺“10% 赏金”<a class="ref" href="#s15">[15]</a>。Nomad 的赏金公告专门提醒要警惕冒充者<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>重启：按比例分配，不搞先到先得</h3>
+        <p>如果直接重开桥，最先跨回的人能按 1:1 换走剩下的原生代币，后来的人什么也拿不到。Nomad 因此重新设计了桥，2022 年 12 月 20 日上线<a class="ref" href="#s5">[5]</a>：</p>
+        <ol class="steps">
+          <li><b>KYC</b>用户通过 CoinList 完成身份验证，并绑定钱包地址。</li>
+          <li><b>跨回并领取 NFT</b>把 mad 资产跨回以太坊，得到一枚不可转让的 NFT，记录可领取的资产种类和数量。</li>
+          <li><b>按比例领取</b>NFT 按每种代币的追回比例兑付。例如被盗的 ETH 追回了 10%，代表 20 ETH 的 NFT 可以领 2 ETH。领取后 NFT 仍归用户所有，以后再追回的资金可以接着领。</li>
+        </ol>
+        <p>重启后的桥在任何链上都不再接收新的原生资产。12 月 20 日的更新显示，暂存钱包里还有约 120 万美元，其中约 60.5 万美元在等待换回原币种，约 58.8 万美元留作待付的赏金<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>FTC 的行政控诉</h3>
+        <p>2025 年 12 月 16 日，FTC 对 Nomad 的运营公司 Illusory Systems 提起行政控诉，指控它宣传“security-first”，实际却没有采取合理的安全措施。控诉包括“不公平的安全做法”和“对安全做法的虚假陈述”两项，称用户损失超过 1 亿美元<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。控诉书列出的具体问题包括：</p>
+        <ul>
+          <li>测试主要覆盖“happy path”，没有测试非法输入会不会被当作合法处理。</li>
+          <li>没有接收和处理漏洞报告的明确流程，没有书面的信息安全计划和足够的事故响应流程，应对攻击时出现混乱和拖延。</li>
+          <li>没有自动检测异常交易的系统，第一个预警来自社交媒体用户。</li>
+          <li>没有部署熔断机制（circuit breaker）或“kill switch”。Nomad 自己的营销页面写过“让 1 亿美元在一笔交易里流出、没有任何熔断机制是荒谬的”，一名高级工程师也曾建议建立熔断机制。</li>
+          <li>一家潜在合作方曾提醒“升级本身就有风险，可能导致资金无法找回”，Nomad 没有理会，照样把后来被利用的代码推上了生产环境。</li>
+        </ul>
+        <p>同时公布的和解令草案要求<a class="ref" href="#s11">[11]</a>：</p>
+        <ul>
+          <li>不得就安全做法作虚假陈述；建立全面的信息安全计划，包括安全的开发与测试流程、每年至少一次的安全培训，以及监控所有与用户资产安全有关的服务、识别异常活动的技术手段。</li>
+          <li>对于资金转出不可撤销的系统，要有在出现异常时快速暂停或限制其功能的手段；如果技术上做不到，负责的高管要在 90 天内向 FTC 提交书面声明，以伪证罪为担保说明原因。</li>
+          <li>每年评估和测试一次安全措施；十年内由独立第三方每两年评估一次。</li>
+          <li>把事发后追回、按事发时名义价值约 3,750 万美元的资产中尚未返还的部分，通过原有的赏金流程和“恢复桥”流程返还给用户。</li>
+        </ul>
+        <p>委员会以 2:0 表决接受控诉和和解令草案并征求公众意见。按和解协议，Illusory Systems 对控诉中的指控既不承认也不否认；和解令一旦生效，期限为十年<a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。截至 2026 年 10 月，FTC 的案件页面状态仍为“Pending”，没有发布最终决定。</p>
+        <h3>刑事案件</h3>
+        <p>被告人原名 Alexander Gurevich，以色列和俄罗斯双重国籍，2025 年 4 月改姓 Block<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。按以色列媒体援引的起诉和引渡文件，他在攻击前测试过漏洞，2022 年 8 月 1 日前后分四次提走价值 280 多万美元的代币，再分散到多个地址、换成其他币种；几天后以假身份在 Telegram 上联系 Nomad 的 CTO，自称是“业余地”探查漏洞并道歉，说已经往回收钱包打了约 16.2 万美元，同时索要 50 万美元的“漏洞奖励”。Nomad 只同意按赏金规则给 10%，他说要咨询律师，此后断了联系，Nomad 随后把此事交给了美国当局<a class="ref" href="#s12">[12]</a><a class="ref" href="#s14">[14]</a>。</p>
+        <p>2023 年 8 月 16 日，加州北区联邦法院对他提起八项罪名的起诉。Unchained 援引以色列最高法院的判决，列出的是三项洗钱、四项计算机欺诈和一项运输被盗财产<a class="ref" href="#s14">[14]</a>；TRM Labs 的文章写的是电信欺诈、共谋和洗钱<a class="ref" href="#s17">[17]</a>，两者不一致，本页以法院文件的说法为准。美国在 2024 年 12 月 10 日提出引渡请求。2025 年 5 月 1 日，他在本-古里安机场准备登机飞往俄罗斯时被捕，距他改名只有两天<a class="ref" href="#s12">[12]</a>。</p>
+        <p>耶路撒冷地区法院在 2025 年 7 月裁定他可以被引渡。2026 年 3 月 8 日，以色列最高法院合议庭维持原判，判决由 Ofer Grosskopf 法官撰写。辩方主张他只是按合约原样使用，没有被指控修改代码；法院不接受，认为利用智能合约的缺陷与利用任何其他程序的缺陷没有区别，就像一台有制造缺陷、塞进一张白纸就吐钱的 ATM，取走这笔钱并不因此就不算犯罪。法院也驳回了“区块链记录公开所以不构成洗钱”的说法，指出链上记录只显示钱包，不显示谁控制钱包。最高法院院长 Isaac Amit 随后拒绝了他再次审理的申请<a class="ref" href="#s14">[14]</a>。2026 年 10 月 29 日，以色列把他移交美国<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</p>
+        <p>以上都是指控和引渡程序中的认定，不是有罪判决，他在美国受审前应被推定无罪。在本页查阅的公开报道里，几百个参与者中只有他一人被提起刑事指控。</p>
+        <div class="note doubt">
+          <span class="h">谁是“第一个”，来源说法不一</span>
+          <p>Coinbase 的分析显示，最早的两笔攻击交易经 Flashbots 私下提交、通过辅助合约执行，攻击数据是随后直接调用合约的交易公开出去的<a class="ref" href="#s15">[15]</a>。以色列媒体援引的引渡文件则称，Gurevich 的几笔提款让其他人看到了方法<a class="ref" href="#s14">[14]</a>。TRM Labs 称他与他人合谋实施攻击，并在洗钱环节扮演核心角色<a class="ref" href="#s17">[17]</a>。这几种说法并不完全吻合，本页查阅的来源也没有公开说明哪些链上地址对应哪个人，所以无法判断他与首批四笔交易的关系。另外，TRM 的文章最初写错了嫌疑人的名字，后来更正；它的标题在 2025 年 5 月就写“已引渡”，而实际移交发生在 2026 年 10 月<a class="ref" href="#s17">[17]</a>。</p>
+        </div>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <p>从 4 月部署到 8 月被盗，下面每个环节都有机会拦住这次攻击：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>环节与当时发生了什么</th><th>本可以怎样拦住</th></tr></thead>
+            <tbody>
+              <tr><td><b>2022-04 部署</b><br>起始可信根传入 0x00，<code>confirmAt[0x00] = 1</code> 写进存储</td><td>在 <code>initialize</code> 里拒绝零根，“没设置”用单独的标志表示</td></tr>
+              <tr><td><b>2022-05 改代码</b><br><code>messages</code> 的含义变了，<code>acceptableRoot()</code> 没有拒绝 0x00</td><td>改数据含义时，把每个可能的取值（0x00、1、2、R）逐一过一遍；补反向测试</td></tr>
+              <tr><td><b>2022-06 审计</b><br>QSP-19 指出“零值被当成存在的数据”，回复没有对上问题</td><td>把它当作一类问题，排查所有读取默认值为零的地方</td></tr>
+              <tr><td><b>2022-06-21 升级</b><br>新代码遇上旧存储</td><td>在带真实存储的主网分叉上跑升级，再提交伪造消息做测试</td></tr>
+              <tr><td><b>2022-07-31 试探</b><br>小额消息不带证明直接 <code>process()</code></td><td>监控每次 <code>process()</code> 是否有对应的证明记录，没有就报警</td></tr>
+              <tr><td><b>2022-08-01 首批交易</b><br>四笔各提走 100 WBTC</td><td>按币种、按时间窗口限制流出总量，超限自动暂停</td></tr>
+              <tr><td><b>跟风阶段</b><br>几百个地址照抄，数小时搬空</td><td>预先确定谁能一键暂停，并演练过；值班覆盖所有时区</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>不要让“默认值”有含义。Solidity 的 mapping 对没写过的键返回 0；如果 0 恰好也是一个合法状态（零根、空叶子、零地址），“从没写过”就等于“已授权”。凡是从 mapping 读出来再拿去做判断的值，都要确认 0 被显式拒绝，或者用单独的标志区分。</li>
+            <li>升级要连同链上已有的状态一起测。4 月的那条记录在旧逻辑下无害，是 6 月的代码改变了它的意义。只审 diff 看不出来，要在带真实存储的分叉上跑新代码。</li>
+            <li>除了 happy path，更要写“应该失败”的测试。把“process 成功意味着消息此前被证明过”写成不变量，做 fuzz 或形式化验证，一条这样的测试就能发现这个漏洞。</li>
+            <li>审计意见被驳回时，要确认驳回的理由针对的是审计师描述的那个问题。QSP-19 的回复答非所问，审计师在报告里写明了这一点，这正是该停下来重看的时候。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给跨链桥和协议运营方</span>
+          <ul>
+            <li>设限额和熔断，让验证层即使完全失效，也不能让全部余额在几小时内流出。按币种、按时间窗口限制流出，超限自动暂停。FTC 和解令也要求具备快速暂停或限制的手段。</li>
+            <li>监控要盯协议行为，不能只盯签名者。Nomad 的 Watcher 只检查 Updater 有没有签假根；“每笔 process 是否都有对应的证明”这条规则简单得多，也能更早报警。</li>
+            <li>暂停权限和流程要事先定好：谁能暂停、需要几个签名、是否覆盖所有时区。工程师在飞机上用聊天传代码，是任何演练都不该接受的情况。</li>
+            <li>攻击交易一旦出现在公开内存池里，按分钟计算。容易复制的漏洞会被迅速复制，响应是几分钟还是几小时，基本决定了损失多少。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户和集成方</span>
+          <ul>
+            <li>跨链包装资产的价值完全取决于另一条链上的托管。Moonbeam 上的 madUSDC 值钱，只是因为以太坊的 BridgeRouter 里锁着 USDC；桥出事时，所有链上的包装资产同时失去支撑。持有包装资产的风险，等于这座桥最弱一环的风险。</li>
+            <li>自称白帽不会让行为变得合法。Nomad 的赏金换回了约 20% 的资金，但法院和监管机构都把“复制交易取走别人的资产”定性为未经授权的取得，以色列最高法院明确驳回了“只是按合约原样使用”的辩护。</li>
+            <li>同类问题没有消失。2026 年的 <a href="2026-kelpdao.html">KelpDAO</a> 事件中，攻击者同样伪造了跨链消息，在目标链上放出了没有对应锁仓的资产。跨链设计里最该审视的，仍然是消息验证这一环的信任模型。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Nomad，《Nomad Bridge Hack: Root Cause Analysis》，2022-08-05。<a href="https://medium.com/nomad-xyz-blog/nomad-bridge-hack-root-cause-analysis-875ad2e5aacd">medium.com</a></li>
+          <li id="s2">Nomad，《Nomad Bridge Hack Bounty and FAQs》，2022-08-05（UTC，美国时间 8 月 4 日）。<a href="https://medium.com/nomad-xyz-blog/nomad-bridge-hack-bounty-and-faqs-d7726aaf359e">medium.com</a></li>
+          <li id="s3">Nomad，《The Road to Recovery》，2022-08-17。<a href="https://medium.com/nomad-xyz-blog/the-road-to-recovery-6abe5eec8ff1">medium.com</a></li>
+          <li id="s4">Nomad，《Recovery Wallet Operations》，2022-11-11。<a href="https://medium.com/nomad-xyz-blog/recovery-wallet-operations-612d7f9644d3">medium.com</a></li>
+          <li id="s5">Nomad，《Nomad Bridge Relaunch Guide》，2022-12-07，含 2022-12-20 更新。<a href="https://medium.com/nomad-xyz-blog/nomad-bridge-relaunch-guide-3a4ef6624f90">medium.com</a></li>
+          <li id="s6">Nomad，《Nomad announces new cohort of investors to help grow security-first cross-chain messaging solution》与《Nomad Raises $22M Seed Round for Security-first Interoperability》，Medium 发布日期均为 2022-07-28。<a href="https://medium.com/nomad-xyz-blog/nomad-announces-new-cohort-of-investors-to-help-grow-security-first-cross-chain-messaging-solution-d538f955d8c">medium.com</a>，<a href="https://medium.com/nomad-xyz-blog/nomad-raises-22m-seed-round-for-security-first-interoperability-5d6b15c96007">medium.com</a></li>
+          <li id="s7">Nomad Docs，《Optimistic Verification》与 Off-chain Agents（Updater、Watchers）页面。<a href="https://docs.nomad.xyz/the-nomad-protocol/verification-mechanisms/optimistic-verification">docs.nomad.xyz</a>，<a href="https://docs.nomad.xyz/the-nomad-protocol/off-chain-agents/watchers">docs.nomad.xyz</a></li>
+          <li id="s8">nomad-xyz/monorepo 源码：提交 7510d54 中的 Replica.sol、BridgeRouter.sol、Router.sol、Message.sol、BridgeMessage.sol；PR #289（提交 46d1457，2022-05-27 UTC）；修复 PR #441（提交 0e02cc1，2022-09-04）；审计改动 PR #486（提交 3a997a4，2022-10-26）。<a href="https://github.com/nomad-xyz/monorepo/blob/7510d54a5cd334d283d84fdff59827abfceb2da7/packages/contracts-core/contracts/Replica.sol">Replica.sol</a>，<a href="https://github.com/nomad-xyz/monorepo/commit/46d14571f3eada6ecf9ffce8fdc3adea11e73031">46d1457</a>，<a href="https://github.com/nomad-xyz/monorepo/commit/0e02cc1f09d16f809f5d2d8f05abbeea6d1af04e">0e02cc1</a>，<a href="https://github.com/nomad-xyz/monorepo/commit/3a997a448abb491ca8590f7c23532a38a0fde93b">3a997a4</a></li>
+          <li id="s9">美国 FTC，《FTC Will Require Illusory Systems to Return Money Stolen by Hackers and Implement an Information Security Program》，2025-12-16；案件页面 Illusory Systems/Nomad。<a href="https://www.ftc.gov/news-events/news/press-releases/2025/12/ftc-will-require-illusory-systems-return-money-stolen-hackers-implement-information-security-program">ftc.gov</a>，<a href="https://www.ftc.gov/legal-library/browse/cases-proceedings/illusory-systemsnomad">ftc.gov</a></li>
+          <li id="s10">美国 FTC，In the Matter of Illusory Systems, Inc.，Complaint，File No. 2323016，2025-12-16。<a href="https://www.ftc.gov/system/files/ftc_gov/pdf/NomadComplaintclean.pdf">ftc.gov</a></li>
+          <li id="s11">美国 FTC，Agreement Containing Consent Order 及 Decision and Order 草案，File No. 2323016，2025-12-16。<a href="https://www.ftc.gov/system/files/ftc_gov/pdf/NomadOrder.pdf">ftc.gov</a></li>
+          <li id="s12">Yoav Etiel，《Israel arrests crypto hack suspect wanted by US for extradition》，The Jerusalem Post，2025-05-03。<a href="https://www.jpost.com/israel-news/article-852464">jpost.com</a></li>
+          <li id="s13">Sarah Ben-Nun，《Israel extradites Israeli-Russian citizen to US over alleged USD 2.8 million crypto theft》，The Jerusalem Post，2026-10-29。<a href="https://www.jpost.com/israel-news/crime-in-israel/article-913280">jpost.com</a></li>
+          <li id="s14">Unchained，《Israel Extradites Nomad Suspect After Supreme Court Rejected His Code-Bug Defense》，2026-10-30。<a href="https://unchainedcrypto.com/israel-extradites-nomad-suspect-after-supreme-court-rejected-his-code-bug-defense/">unchainedcrypto.com</a></li>
+          <li id="s15">Peter Kacherginsky、Heidi Wilder，《Nomad Bridge incident analysis》，Coinbase，2022-08-09。<a href="https://www.coinbase.com/blog/nomad-bridge-incident-analysis">coinbase.com</a></li>
+          <li id="s16">Randi Eitzman、Joe Dobson，《Decentralized Robbery: Dissecting the Nomad Bridge Hack and Following the Money》，Mandiant（Google Cloud），2022-11-29。<a href="https://cloud.google.com/blog/topics/threat-intelligence/dissecting-nomad-bridge-hack">cloud.google.com</a></li>
+          <li id="s17">TRM Labs，《Key Suspect in $190M Nomad Bridge Exploit Extradited to the United States》，2025-05-15（文末注明曾更正嫌疑人姓名）。<a href="https://www.trmlabs.com/resources/blog/key-suspect-in-190m-nomad-bridge-exploit-extradited-to-the-united-states">trmlabs.com</a></li>
+          <li id="s18">Elliptic，《Nomad Loses $156 Million in Seventh Major Crypto Bridge Exploit of 2022》，2022-08（含 8 月 3 日更新，页面显示日期为 2023-05-09）。<a href="https://www.elliptic.co/blog/nomad-loses-156-million-in-seventh-major-crypto-bridge-exploit-of-2022">elliptic.co</a></li>
+          <li id="s19">Halborn，《The Nomad Bridge Hack: A Deeper Dive》，2022-08-15。<a href="https://www.halborn.com/blog/post/the-nomad-bridge-hack-a-deeper-dive">halborn.com</a></li>
+          <li id="s20">rekt.news，《Nomad Bridge - REKT》，2022-08-02（文中附 Quantstamp 审计报告 QSP-19 的截图）。<a href="https://rekt.news/nomad-rekt/">rekt.news</a></li>
+          <li id="s21">Corin Faife，《Nomad crypto bridge loses $200 million in ‘chaotic’ hack》，The Verge，2022-08-02。<a href="https://www.theverge.com/2022/8/2/23288785/nomad-bridge-200-million-chaotic-hack-smart-contract-cryptocurrency">theverge.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

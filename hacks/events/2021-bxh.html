@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BXH 管理员私钥泄露｜区块链被盗事件编年史</title>
+<meta name="description" content="2021 年 BXH（笨小孩）BSC 侧一把管理员私钥泄露，约 1.39 亿美元策略资金被转走的经过：机枪池的权限结构、被盗资产分布、项目方的处置，以及 2022 年再次失守。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-bxh">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>BXH 管理员私钥泄露</h1>
+    <p class="lede">2021 年 10 月 30 日，DEX 与收益平台 BXH 宣布它在 BSC 上的资产被盗。安全公司 PeckShield 确认，攻击者拿到了一把管理员私钥，用它转走了 BXH 部署在 BSC 上的策略合约里的大部分资金，损失约 1.39 亿美元。动用这些用户资产只需要这一个签名，而私钥是被外部窃取还是内部泄露，项目方至今没有给出结论。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">BXH（中文名“笨小孩”）是从 HECO 起家、后来扩展到 BSC 等链的 DEX 与收益平台。它的金库把用户存入的资产交给策略合约，去其他协议挖矿复投，这类产品在中文社区常被称为“机枪池”。策略合约留有管理函数，管理员可以用它们把合约里的资产转出。在 BSC 上，调用这些函数只需要一把私钥。</p>
+        <p>2021 年 10 月 30 日 08:35（UTC），BXH 在 Twitter 上宣布 BSC 上的资产遭到攻击，其他链上的资产安全，存取款已暂停<a class="ref" href="#s1">[1]</a>。11 月 1 日，PeckShield 确认事件由一把泄露的管理员私钥造成，攻击者用它转走了 BSC 上已部署策略中的大部分资金<a class="ref" href="#s2">[2]</a>。SlowMist 统计的损失为 139,195,315 美元<a class="ref" href="#s5">[5]</a>，CoinDesk 等媒体报道约 1.39 亿美元<a class="ref" href="#s3">[3]</a>。</p>
+        <p>截至 11 月 1 日，被盗资产分布在以太坊、BSC 和比特币网络上的四个地址，其中约 9,482 枚 ETH/WETH 和约 624 枚 BTC 已经离开 BSC<a class="ref" href="#s2">[2]</a>。BXH 悬赏 100 万美元，向中国网警报案；CEO 表示攻击者可能是外部黑客，也可能是公司自己的技术人员<a class="ref" href="#s3">[3]</a>。项目方承诺追不回资金就“承担全部责任”并制定偿还方案，但本文没有找到这一方案后来公布或执行的公开记录。</p>
+        <p>2022 年 9 月，BXH 又因一把“原 owner”私钥疑似被盗，在三条链上损失约 250 万美元和 3,800 万枚 BXH 代币；一周后，它更新过的合约又被闪电贷攻击<a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。此后 BXH 的锁仓量一直在 100 万美元上下，到 2026 年已经归零<a class="ref" href="#s9">[9]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>BXH 全称 Boy X Highspeed<a class="ref" href="#s3">[3]</a>，中文社区叫它“笨小孩”<a class="ref" href="#s5">[5]</a>。DefiLlama 对它的描述是“基于 HECO 链开发的 DEX 交易平台”，收录的链有 HECO、BSC、OKExChain（OEC）、以太坊和 Avalanche<a class="ref" href="#s9">[9]</a>。HECO 是火币推出的公链，2021 年上半年它和 BSC 上涌现了大量收益聚合产品。DefiLlama 记录的 BXH 锁仓量在 2021 年 7 月 19 日约为 1.18 亿美元，此后到 2022 年 3 月有一段数据缺失<a class="ref" href="#s9">[9]</a>。</p>
+        <p>CoinDesk 报道，BXH 的 CEO 名叫 Neo Wang，技术团队大部分在中国<a class="ref" href="#s3">[3]</a>。DefiLlama 的协议资料里没有登记任何审计报告<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>机枪池的资金放在哪里</h3>
+        <p>收益聚合产品的结构大同小异。用户把代币存进金库合约，金库把资金交给策略合约，策略合约再去其他协议提供流动性或质押，定期收割奖励并复投。用户手里拿的是金库的份额凭证，真正的资产躺在策略合约里。</p>
+        <p>策略合约需要日常维护：换挖矿目标、调参数、紧急撤出、取回误转入的代币。这些操作都靠管理函数完成，管理函数只允许 owner 或 gov 地址调用。谁控制这个地址，谁就能动策略里的资产。BXH 的问题出在这个地址由谁控制、怎样控制上。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-07-19</time><div class="ev">DefiLlama 记录的 BXH 锁仓量达到约 1.18 亿美元，这是它收录数据里的最高值<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk key"><time>2021-10-30 前</time><div class="ev">攻击者用泄露的管理员私钥转走 BXH 在 BSC 上已部署策略中的大部分资金<a class="ref" href="#s2">[2]</a>。公开资料没有给出第一笔攻击交易的时间，Halborn 把事件日期记为 10 月 29 日<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>2021-10-30 08:35</time><div class="ev">BXH 发布公告：BSC 上的资产被攻击，HECO、OEC 和以太坊上的资产安全，存取款暂停。公告列出攻击者的 BSC/以太坊地址和比特币地址，请交易所和 DeFi 服务拉黑冻结，并表示资金退回即按白帽处理、给予奖励<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2021-11-01 08:51</time><div class="ev">PeckShield 确认事件由一把泄露的管理员私钥造成，并公布截至 08:18（UTC）的被盗资产分布表<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2021-11-01</time><div class="ev">CoinDesk 报道损失约 1.39 亿美元。BXH 悬赏 100 万美元给协助追回的团队，已向中国网警报案；CEO 称私钥持有人可能因点开植入在 BXH 自家网站上的病毒而中招，攻击者也可能是 BXH 的技术人员<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2022-09-21</time><div class="ev">BXH 金库合约 VaultPool“原 owner”的私钥疑似被盗，攻击者调用 <code>inCaseTokensGetStuck</code> 转走约 250 万美元资产和 3,800 万枚 BXH 代币，涉及 BSC、Avalanche 和 HECO 三条链<a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2022-09-23</time><div class="ev">BXH 团队发布被盗通告<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2022-09-24</time><div class="ev">SlowMist MistTrack 称这次被盗的资金已跨链换到以太坊，共 1,865 ETH 全部转入 Tornado Cash<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2022-09-28</time><div class="ev">BXH 更新后的 TokenStakingPoolDelegate 合约被闪电贷攻击，损失 40,085 USDT<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2022-12-31</time><div class="ev">DefiLlama 记录的 BXH 锁仓量约为 60 万美元<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">DefiLlama 显示 BXH 锁仓量为 0<a class="ref" href="#s9">[9]</a>。本文没有找到用户获赔、追回资金或案件侦破的公开记录。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次事件没有利用合约代码的漏洞。合约照它被写好的规则执行，攻击者只是拿到了有权调用管理函数的那把私钥。要讲清楚它为什么能转走这么多钱，要看三件事：管理函数能做什么，谁有权调用，调用之后多久生效。</p>
+        <h3>一个签名就够</h3>
+        <p>链上合约判断调用者有没有权限，只看一件事：交易的签名者是不是记录在案的管理员地址，也就是 <code>msg.sender == owner</code> 这类检查。私钥一旦被别人拿到，攻击者签出的交易和真正的管理员签出的交易没有任何区别，检查照样通过。PeckShield 的结论是，攻击者使用的是“一把泄露的单一管理员私钥”，用它转走了 BSC 上已部署策略中的大部分资金<a class="ref" href="#s2">[2]</a>。</p>
+        <p>如果这个管理员地址是一个多签钱包，攻击者需要同时拿到多个持有人的私钥；如果管理操作要先排入时间锁，等待数小时到数天才能执行，团队和用户就有时间发现异常、撤出资金。从 PeckShield 的结论看，BXH 在 BSC 上的这些策略合约，至少有一部分资产只靠一个签名就能转走。2021 年事件中攻击者具体调用了哪个管理函数，项目方和安全公司都没有公开。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 396" role="img" aria-labelledby="bxh-path-t bxh-path-d">
+            <title id="bxh-path-t">BXH 策略资金的正常路径与被盗路径</title>
+            <desc id="bxh-path-d">上排是正常路径：用户把代币存入金库合约，金库交给策略合约，策略合约到其他协议挖矿复投，资产实际放在策略合约里。下排是被盗路径：攻击者拿到一把管理员私钥，调用策略合约的管理函数，把资产转到攻击者地址，再跨链转到以太坊和比特币网络。合约只检查调用者是不是管理员地址。</desc>
+            <defs>
+              <marker id="bxh-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bxh-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t s" x="20" y="26">正常资金路径</text>
+            <rect class="d-box" x="20" y="40" width="110" height="60" rx="4"/>
+            <text class="d-t b" x="75" y="66" text-anchor="middle">用户</text>
+            <text class="d-t s" x="75" y="86" text-anchor="middle">存入代币</text>
+            <rect class="d-box" x="185" y="40" width="130" height="60" rx="4"/>
+            <text class="d-t b" x="250" y="66" text-anchor="middle">金库合约</text>
+            <text class="d-t s m" x="250" y="86" text-anchor="middle">VaultPool</text>
+            <rect class="d-box" x="370" y="40" width="150" height="60" rx="4"/>
+            <text class="d-t b" x="445" y="66" text-anchor="middle">策略合约</text>
+            <text class="d-t s" x="445" y="86" text-anchor="middle">资产实际放在这里</text>
+            <rect class="d-box soft" x="575" y="40" width="165" height="60" rx="4"/>
+            <text class="d-t b" x="657" y="66" text-anchor="middle">其他协议</text>
+            <text class="d-t s" x="657" y="86" text-anchor="middle">提供流动性、质押挖矿</text>
+            <line class="d-line" x1="130" y1="70" x2="183" y2="70" marker-end="url(#bxh-ah)"/>
+            <text class="d-t s halo" x="157" y="62" text-anchor="middle">存入</text>
+            <line class="d-line" x1="315" y1="70" x2="368" y2="70" marker-end="url(#bxh-ah)"/>
+            <text class="d-t s halo" x="341" y="62" text-anchor="middle">分配</text>
+            <line class="d-line" x1="520" y1="70" x2="573" y2="70" marker-end="url(#bxh-ah)"/>
+            <text class="d-t s halo" x="546" y="62" text-anchor="middle">复投</text>
+            <text class="d-t s atk" x="20" y="200">被盗路径</text>
+            <rect class="d-box atk" x="20" y="210" width="200" height="60" rx="4"/>
+            <text class="d-t b" x="120" y="236" text-anchor="middle">一把管理员私钥</text>
+            <text class="d-t s" x="120" y="256" text-anchor="middle">泄露后落入攻击者手里</text>
+            <rect class="d-box atk" x="370" y="210" width="150" height="60" rx="4"/>
+            <text class="d-t b" x="445" y="236" text-anchor="middle">攻击者地址</text>
+            <text class="d-t s m" x="445" y="256" text-anchor="middle">0x48C9…7d79</text>
+            <rect class="d-box atk" x="575" y="210" width="165" height="60" rx="4"/>
+            <text class="d-t b" x="657" y="236" text-anchor="middle">以太坊、比特币</text>
+            <text class="d-t s" x="657" y="256" text-anchor="middle">约 9,482 ETH、624 BTC</text>
+            <line class="d-line atk" x1="120" y1="210" x2="408" y2="103" marker-end="url(#bxh-ah-atk)"/>
+            <text class="d-t atk halo" x="230" y="140" text-anchor="middle">① 调用管理函数</text>
+            <line class="d-line atk" x1="480" y1="100" x2="480" y2="207" marker-end="url(#bxh-ah-atk)"/>
+            <text class="d-t atk halo" x="490" y="160">② 转出策略资产</text>
+            <line class="d-line atk" x1="520" y1="240" x2="572" y2="240" marker-end="url(#bxh-ah-atk)"/>
+            <text class="d-t atk halo" x="546" y="230" text-anchor="middle">③ 跨链</text>
+            <rect class="d-box soft" x="20" y="300" width="720" height="84" rx="4"/>
+            <text class="d-t s" x="40" y="325">合约只检查调用者是不是管理员地址。私钥被盗后，攻击者的签名同样有效，链上无从分辨。</text>
+            <text class="d-t s" x="40" y="348">多签要求多个持有人共同签名，时间锁让管理操作延后生效，两者都能拦在私钥和资金之间。</text>
+            <text class="d-t s" x="40" y="371">2021 年攻击者具体调用了哪些函数没有公开，图中按 PeckShield 的结论画出大致路径。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：上排是用户资金的正常去处，下排是被盗路径，红色为攻击方。资产放在策略合约里，一把管理员私钥就能调用管理函数把它们转走。数量取自 PeckShield 截至 2021-11-01 的统计<a class="ref" href="#s2">[2]</a>。</figcaption>
+        </figure>
+        <h3>管理函数可以写得更窄</h3>
+        <p>BXH 的合约源码没有公开托管在代码仓库里，本文没能读到它的策略合约。作为对照，下面是同一时期 BSC 上另一个收益聚合器 Autofarm 开源的策略合约。它也有一个“取回卡住代币”的函数 <code>inCaseTokensGetStuck</code>，本意是把误转进合约的代币退回去<a class="ref" href="#s10">[10]</a>：</p>
+<pre class="code"><code><span class="c">// StratX2.sol（Autofarm V2），只有 gov 地址能调用管理函数</span>
+modifier onlyAllowGov() {
+    require(msg.sender == govAddress, "!gov");
+    _;
+}
+
+function inCaseTokensGetStuck(
+    address _token,
+    uint256 _amount,
+    address _to
+) public virtual onlyAllowGov {
+<span class="good">    require(_token != earnedAddress, "!safe");   <span class="c">// 不能取走挖矿奖励代币</span></span>
+<span class="good">    require(_token != wantAddress, "!safe");     <span class="c">// 不能取走用户存入的本金代币</span></span>
+    IERC20(_token).safeTransfer(_to, _amount);
+}</code></pre>
+        <p class="code-cap">来源：autofarm-network/autofarmV2_CrossChain 仓库 master 分支，StratX2.sol 第 100–103 行、第 477–484 行。中文注释为本站所加。</p>
+        <p>两行 <code>require</code> 把用户本金和奖励代币排除在外。即使 gov 地址失守，攻击者也不能用这个函数直接搬走用户存进去的钱。2022 年 BXH 第二次出事时，被调用的正是同名函数：SlowMist 认为 VaultPool“原 owner”的私钥疑似被盗，攻击者用它调用 <code>inCaseTokensGetStuck</code>，把合约里的资金转到自己的地址；按 Halborn 的描述，BXH 的这个函数在测试期结束后被调用，就能把池子里的代币转到任意指定地址<a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a>。从被转走的资产看，BXH 的版本显然没有把质押资产排除在外。</p>
+        <h3>时间锁给出反应时间</h3>
+        <p>只收窄一个函数还不够。策略合约往往还有更换策略、迁移资金、修改收款地址等管理函数，其中任何一个被滥用，都可能把资产转走。更通用的办法是让 gov 地址本身成为一个时间锁合约。Autofarm 同一仓库里的 <code>AutoFarmTimelock</code> 就是这样设计的<a class="ref" href="#s10">[10]</a>：</p>
+<pre class="code"><code><span class="c">// AutoFarmTimelock.sol（Autofarm V2）</span>
+uint256 public minDelay; // seconds - to be increased in production
+
+<span class="c">// 日常操作：收割复投，不会把资产转到任意地址，执行者可以直接调用</span>
+function earn(address _stratAddress) public onlyRole(EXECUTOR_ROLE) {
+    IStrategy(_stratAddress).earn();
+}
+
+<span class="c">// 其他操作必须先排期，等待至少 minDelay 才能执行</span>
+function _schedule(bytes32 id, uint256 delay) private {
+    require(_timestamps[id] == 0, "TimelockController: operation already scheduled");
+<span class="good">    require(delay &gt;= minDelay, "TimelockController: insufficient delay");</span>
+    _timestamps[id] = SafeMath.add(block.timestamp, delay);
+}</code></pre>
+        <p class="code-cap">来源：同上，AutoFarmTimelock.sol 第 89 行、第 591–593 行、第 342–350 行，省略了原有的一行注释，第一个 <code>require</code> 合并为一行。</p>
+        <p>这样分工之后，执行者的私钥即使被盗，攻击者也只能触发收割复投；任何会改变资金去向的操作都要先公开排期，在链上等待一段时间。这段时间足够社区发现异常、用户撤出资金。要注意，延迟时长是部署时设定的参数，原注释也写着“生产环境要调大”，时间锁设成几秒，就和没有一样。</p>
+        <div class="note doubt">
+          <span class="h">私钥是怎么泄露的</span>
+          <p>BXH 没有公布私钥泄露的调查结果。CEO Neo Wang 给出过两种可能：持钥人点开了植入在 BXH 自家网站上的病毒，或者攻击者就是 BXH 的技术人员；调查显示攻击者在中国<a class="ref" href="#s3">[3]</a>。Halborn 的分析认为，从细节看“很可能是内部作案”<a class="ref" href="#s4">[4]</a>。这些都是项目方和安全公司的判断，没有经过司法认定。</p>
+        </div>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击者没有公开露面，也没有安全公司发布过逐笔交易的分析。下面的步骤按 BXH 的公告和 PeckShield 的结论整理，只到公开资料能确认的程度。</p>
+        <ol class="steps">
+          <li><b>拿到管理员私钥</b>途径不明。项目方怀疑是持钥人电脑中毒或内部人员所为<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>用管理权限转走策略资金</b>攻击者以管理员身份调用 BXH 在 BSC 上的策略合约，把其中大部分资金转出<a class="ref" href="#s2">[2]</a>。BXH 公告给出的攻击者地址在 BSC 和以太坊上相同，为 <span class="addr">0x48C94305BDDfd80c6F4076963866D968Cac27d79</span><a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>跨链转移</b>到 11 月 1 日，一部分资产已经出现在以太坊和比特币网络上，说明攻击者在两天内完成了兑换和跨链<a class="ref" href="#s2">[2]</a>。BXH 的首条公告同时 @ 了 Anyswap、O3Swap 和 Ren 等跨链服务的账号<a class="ref" href="#s1">[1]</a>，但哪部分资金走了哪条路径，公开资料没有说明。</li>
+          <li><b>被发现</b>10 月 30 日 08:35（UTC），BXH 发布公告并暂停存取款<a class="ref" href="#s1">[1]</a>。从资金被转走到公告之间隔了多久，没有公开资料能确认。</li>
+        </ol>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>PeckShield 在 11 月 1 日公布了被盗资产的分布，数据截至当天 08:18（UTC）<a class="ref" href="#s2">[2]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>链</th><th>地址</th><th class="n">数量</th><th>资产</th></tr></thead>
+            <tbody>
+              <tr><td>以太坊</td><td><span class="addr">0x48C9…7d79</span></td><td class="n">3,987.78</td><td>WETH</td></tr>
+              <tr><td>以太坊</td><td><span class="addr">0x44Cc…6316</span></td><td class="n">5,494.50</td><td>ETH</td></tr>
+              <tr><td>BSC</td><td><span class="addr">0x48C9…7d79</span></td><td class="n">15,546.10</td><td>BNB</td></tr>
+              <tr><td>BSC</td><td><span class="addr">0x48C9…7d79</span></td><td class="n">24,669,898.22</td><td>BSC-USD（BSC 上的 USDT）</td></tr>
+              <tr><td>BSC</td><td><span class="addr">0x48C9…7d79</span></td><td class="n">6,415,713.73</td><td>BUSD</td></tr>
+              <tr><td>BSC</td><td><span class="addr">0x48C9…7d79</span></td><td class="n">2,428,246.61</td><td>USDC</td></tr>
+              <tr><td>BSC</td><td><span class="addr">0x48C9…7d79</span></td><td class="n">2,303.60</td><td>ETH</td></tr>
+              <tr><td>BSC</td><td><span class="addr">0x48C9…7d79</span></td><td class="n">13,999.55</td><td>CAKE</td></tr>
+              <tr><td>BSC</td><td><span class="addr">0x44Cc…6316</span></td><td class="n">1,040.00</td><td>WETH</td></tr>
+              <tr><td>比特币</td><td><span class="addr">1Frnm…UsVow</span></td><td class="n">229.31</td><td>BTC</td></tr>
+              <tr><td>比特币</td><td><span class="addr">1JwQx…Ku9oU</span></td><td class="n">394.50</td><td>BTC</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>完整地址：第二个以太坊/BSC 地址为 <span class="addr">0x44Cc771fBE10DeA3836f37918cF89368589b6316</span>，两个比特币地址为 <span class="addr">1Frnm3PNyTq3PudT8N6un7tKwcS5BUsVow</span> 和 <span class="addr">1JwQxqfcHJn3nRgjFv3ZJD2MqUywbKu9oU</span><a class="ref" href="#s2">[2]</a>。表中只有资产数量，PeckShield 没有逐项折算美元，1.39 亿美元的总额来自 CoinDesk 的报道和 SlowMist 的统计，两者都没有公布折算方法<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <ol class="flow">
+          <li class="atk"><b>BSC 策略合约</b>管理员私钥被用来转出大部分资金</li>
+          <li class="atk"><b>攻击者地址</b><span class="addr">0x48C9…7d79</span> 等，BXH 请交易所拉黑</li>
+          <li class="atk"><b>跨链</b>约 9,482 ETH/WETH 到以太坊，约 624 BTC 到比特币网络</li>
+          <li class="doubt"><b>此后</b>没有找到可靠的公开追踪记录</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">“转入 Tornado Cash”说的是哪一次</span>
+          <p>有些资料把“BXH 被盗资金转入 Tornado Cash”归在这起事件名下。本文能找到明确出处的，是 2022 年 9 月那一次：SlowMist MistTrack 称，那次被盗的资金跨链换成 1,865 ETH 后全部转入 Tornado Cash<a class="ref" href="#s6">[6]</a>。2021 年这 1.39 亿美元此后的去向，本文没有找到安全公司或执法机构发布的追踪报告。</p>
+        </div>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>对用户</h3>
+        <p>被转走的是用户存在 BSC 策略里的资产。BXH 当时承诺，追不回资金就“承担全部责任”并制定偿还方案<a class="ref" href="#s3">[3]</a>。本文没有找到这个方案的正式公告，也没有找到用户获赔的报道。DefiLlama 的数据只能从侧面参照：BXH 锁仓量在 2021 年 7 月约 1.18 亿美元，2022 年 3 月重新有记录时约 100 万美元<a class="ref" href="#s9">[9]</a>。中间有八个月没有数据，下降的时点和原因无法从这组数据里直接判断。</p>
+        <h3>同一周的两起大案</h3>
+        <p>三天前的 10 月 27 日，<a href="2021-cream-finance.html">Cream Finance</a> 刚被盗约 1.3 亿美元<a class="ref" href="#s3">[3]</a>。两起事件手法完全不同：Cream 是经济设计被利用，攻击者不需要任何权限；BXH 是一把私钥失守，合约本身没有被攻破。两起事件说明，DeFi 用户既要承担合约设计的风险，也要承担项目方保管私钥的风险。</p>
+        <h3>“去中心化”的后台</h3>
+        <p>媒体和安全公司把 BXH 称为“去中心化跨链交易所”或“去中心化交易协议”<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。交易确实在链上执行，资金却可以被一把私钥调走。Halborn 在分析里给出的建议是用多签钱包保护大额资产，要求多把私钥共同签名才能执行交易<a class="ref" href="#s4">[4]</a>。这个问题在 2022 年以更大的规模重演：<a href="2022-ronin-bridge.html">Ronin</a> 跨链桥 9 个验证者中只需 5 个签名，<a href="2022-harmony-horizon.html">Harmony Horizon</a> 跨链桥只需 5 个中的 2 个，都是攻破少数几把私钥就动用了整座桥的资金。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>事发当时</h3>
+        <p>BXH 的应对集中在头几天：暂停存取款，确认其他链资产安全；公布攻击者地址，请交易所和 DeFi 服务拉黑冻结；喊话攻击者归还资金，承诺按白帽处理并给予奖励<a class="ref" href="#s1">[1]</a>；与 BSC 安全团队和 PeckShield 一起追踪；悬赏 100 万美元给协助追回的团队，向中国网警报案，承诺追不回就兜底<a class="ref" href="#s3">[3]</a>。这些措施的结果没有后续公开报道：本文没有找到资金被冻结或追回的记录，也没有找到报案的后续进展。</p>
+        <h3>2022 年再次失守</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>日期</th><th>事件</th><th class="n">损失</th><th>原因</th></tr></thead>
+            <tbody>
+              <tr><td>2021-10-30</td><td>BSC 策略资金被转走</td><td class="n">约 1.39 亿美元</td><td>一把管理员私钥泄露<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>2022-09-21</td><td>VaultPool 资金被转走，涉及 BSC、Avalanche、HECO</td><td class="n"><span class="dispute">约 250 万美元</span>及 3,800 万 BXH</td><td>原 owner 私钥疑似被盗，调用 <code>inCaseTokensGetStuck</code><a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>2022-09-28</td><td>TokenStakingPoolDelegate 被闪电贷攻击</td><td class="n">40,085 USDT</td><td>用 <code>getReserves()</code> 的瞬时报价计算奖励<a class="ref" href="#s8">[8]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>2022 年 9 月那次的金额有两种说法。SlowMist 根据 BXH 9 月 23 日的通告，记为约 250 万美元资产加 3,800 万枚 BXH 代币，最终转入 Tornado Cash 的是 1,865 ETH<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。Halborn 列出了两个估计：一说被提取约 1,250 万美元，另一说约 1,865 ETH，按当时价格约 243 万美元<a class="ref" href="#s7">[7]</a>。Halborn 还提到这次事件“据称是钓鱼攻击”，同时提醒这类集中的特权函数也可能被项目方自己用来卷款<a class="ref" href="#s7">[7]</a>。</p>
+        <p>“原 owner”这个说法值得注意。如果 SlowMist 的判断成立，部署时的那把私钥直到被盗前仍然有权调用这个函数。2021 年出事之后，至少这一处权限没有被收回或换成多签。</p>
+        <p>9 月 28 日的攻击来自 BXH 在上次被盗后更新的合约。它用交易对的 <code>getReserves()</code> 读取瞬时价格来计算奖励，攻击者用闪电贷在同一笔交易里拉动价格，扣掉闪电贷手续费后获利 31,794 USDT<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>结局</h3>
+        <p>DefiLlama 记录的 BXH 锁仓量在 2022 年底约 60 万美元，2026 年 10 月为 0<a class="ref" href="#s9">[9]</a>。本文没有找到 BXH 宣布停止运营、公布赔付结果或案件侦破的公开信息。2021 年的用户损失，按现有资料看基本没有得到弥补。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>能动用户资产的管理权限交给多签加时间锁，不要留在单个外部账户（EOA）手里。时间锁的延迟要长到足够让人发现异常并撤资。</li>
+            <li>把管理函数写窄。“取回卡住代币”这类函数要排除用户本金和奖励代币，收款地址最好固定为金库，而不是由调用者任意指定。</li>
+            <li>部署完成后转移 owner 权限，并确认部署用的私钥不再残留任何权限。BXH 2022 年被调用的据称是“原 owner”的私钥。</li>
+            <li>出事后重写的合约也要审计。BXH 更新后的合约用 <code>getReserves()</code> 的瞬时报价算奖励，一周后就被闪电贷攻击；计价要用时间加权价格或外部预言机。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给团队的运维</span>
+          <ul>
+            <li>管理员私钥放在专用设备或硬件钱包上，不在日常办公的电脑上使用，不点来路不明的链接和文件。</li>
+            <li>CEO 自己提到了内部作案的可能。重要操作要求多人复核，单个员工不应该独自掌握能转走全部资金的私钥。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>存钱之前，先在区块浏览器上查合约的 owner 是不是多签、有没有时间锁。“去中心化交易所”只说明交易在链上执行，不说明资金不受项目方控制。</li>
+            <li>没有审计记录是一个信号。DefiLlama 上 BXH 登记的审计数量为 0。</li>
+            <li>同一个项目出过私钥事故，要看它之后有没有改变权限结构，而不只是看它承诺了什么赔付。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">BXH（@BXH_Blockchain），被攻击公告（含附图公告全文），Twitter，2021-10-30 08:35 UTC。<a href="https://twitter.com/BXH_Blockchain/status/1454366374353010695">twitter.com</a></li>
+          <li id="s2">PeckShield（@peckshield），关于 BXH 事件的进展及《BXH Stolen Assets Status (Updated 2021-11-01 08:18 UTC)》附表，Twitter，2021-11-01 08:51 UTC。<a href="https://twitter.com/peckshield/status/1455095236707774469">twitter.com</a></li>
+          <li id="s3">Eliza Gkritsi，《$139M BXH Exchange Hack Was the Result of Leaked Admin Key》，CoinDesk，2021-11-01。<a href="https://www.coindesk.com/tech/2021/11/01/139m-bxh-exchange-hack-was-the-result-of-leaked-admin-key/">coindesk.com</a></li>
+          <li id="s4">Halborn，《Explained: The BXH Exchange Hack (October 2021)》。<a href="https://www.halborn.com/blog/post/explained-the-bxh-exchange-hack-october-2021">halborn.com</a></li>
+          <li id="s5">SlowMist，SlowMist Hacked 区块链被黑档案库，BXH 条目（2021-10-30、2022-09-21、2022-09-28 共 3 条，站内搜索“BXH”）。<a href="https://hacked.slowmist.io/">hacked.slowmist.io</a></li>
+          <li id="s6">金色财经，《安全团队：疑似 BXH 9 月 21 日被盗资金出现异动，1865 ETH 转移到 Tornado Cash》，钜亨网转载，2022-09-24。<a href="https://news.cnyes.com/news/id/4962622">news.cnyes.com</a></li>
+          <li id="s7">Halborn，《Explained: The Boy X Highspeed (BXH) Rug Pull (September 2022)》，2022-09-29。<a href="https://www.halborn.com/blog/post/explained-the-boy-x-highspeed-bxh-rug-pull-september-2022">halborn.com</a></li>
+          <li id="s8">Odaily 星球日报，《BXH 再次遭受闪电贷攻击，攻击者获利 31794 USDT》，2022-09-29。<a href="https://www.odaily.news/zh-CN/newsflash/300625">odaily.news</a></li>
+          <li id="s9">DefiLlama，BXH 协议页面与 TVL 历史数据（api.llama.fi/protocol/bxh），2026-10-31 读取。<a href="https://defillama.com/protocol/bxh">defillama.com</a></li>
+          <li id="s10">Autofarm，autofarm-network/autofarmV2_CrossChain 仓库（StratX2.sol、AutoFarmTimelock.sol），master 分支，最后提交于 2021-05-03。<a href="https://github.com/autofarm-network/autofarmV2_CrossChain">github.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

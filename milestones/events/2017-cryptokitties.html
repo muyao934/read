@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CryptoKitties 走红：一款养猫游戏堵塞以太坊｜区块链大事记</title>
+<meta name="description" content="2017 年 12 月 CryptoKitties 堵塞以太坊的经过：一只猫在合约里存了什么，配一次种为什么要两笔交易，繁殖费怎样跟着 gas 价格往上调，各家报的 4% 到 25% 为什么对不上，核心开发者讨论的扩容办法，早期 ERC-721 和定稿的差别，以及 Dapper Labs 后来做的 Flow。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2017-cryptokitties">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2017 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>CryptoKitties 走红：一款养猫游戏堵塞以太坊</h1>
+    <p class="lede">2017 年 11 月 28 日，Axiom Zen 在以太坊主网公开上线 CryptoKitties：玩家用 ETH 买卖和繁殖卡通猫，每只猫是合约里的一条记录。12 月 2 日 1 号猫 Genesis 以约 246 ETH 成交，玩家随后大量涌入。到 12 月 4 日，它占以太坊全部交易笔数的 11.77%，待确认的交易约为上线时的六倍，团队两天里两次调高繁殖费。12 月 15 日的核心开发者会议把这次拥堵列为议题，记录写道，gas 上限调到 800 万以后区块仍然基本是满的。游戏的热度 12 月 10 日见顶，此后很快回落；它的合约是 ERC-721 的早期实现，后来被定稿列为先例。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">CryptoKitties 由温哥华的 Axiom Zen 开发，感恩节（2017 年 11 月 23 日）先向约 200 人开放，11 月 28 日公开上线<a class="ref" href="#s20">[20]</a><a class="ref" href="#s22">[22]</a>。每只猫是 KittyCore 合约里的一条记录，核心是出生时就定下、此后不变的 256 位基因。配种要两笔交易：第一笔让母猫怀孕，同时预付一笔繁殖费；冷却结束后，任何人都可以发第二笔交易让小猫出生，领走这笔费用。第一代猫由合约定时拍卖，起价随最近几只的成交价上涨<a class="ref" href="#s1">[1]</a><a class="ref" href="#s17">[17]</a>。</p>
+        <p>12 月 2 日，1 号猫 Genesis 以约 246 ETH 成交，消息传开，玩家大量涌入<a class="ref" href="#s17">[17]</a><a class="ref" href="#s21">[21]</a>。Quartz 引用 ETH Gas Station 的数据，12 月 4 日 CryptoKitties 占以太坊全部交易笔数的 11.77%，两天前约为 4%；按 Etherscan 的数据，待确认的交易约为游戏上线时的六倍<a class="ref" href="#s15">[15]</a>。为了让接生交易按时上链，团队 12 月 3 日把繁殖费从 0.001 ETH 调到 0.002 ETH，4 日又调到 0.015 ETH<a class="ref" href="#s15">[15]</a><a class="ref" href="#s20">[20]</a>。</p>
+        <p>12 月 15 日第 30 次核心开发者会议的记录写道，矿工把 gas 上限从 670 万调到 800 万，区块仍然基本是满的<a class="ref" href="#s7">[7]</a>。开发者讨论了提高读取账户和存储的 gas 价格、无状态客户端等办法<a class="ref" href="#s7">[7]</a><a class="ref" href="#s9">[9]</a>；一个月后的会议说，长期要靠分片<a class="ref" href="#s8">[8]</a>。东南大学的 Xin-Jian Jiang 和香港城市大学的 Xiao Fan Liu 按每天参与游戏的地址数统计，热度上升只持续了不到十天，12 月 10 日见顶，2018 年初已不到高峰的一成<a class="ref" href="#s21">[21]</a>。2018 年 3 月，CryptoKitties 融资 1,200 万美元，从 Axiom Zen 分拆出来<a class="ref" href="#s23">[23]</a>；开发方 Dapper Labs 后来做了自己的链 Flow<a class="ref" href="#s27">[27]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>2017 年底的以太坊</h3>
+        <p>当时以太坊还用工作量证明，KittyCore 的代码按约 15 秒一个区块估算<a class="ref" href="#s1">[1]</a>。交易费靠用户自己出价，矿工挑出价高的打包，这套一价拍卖 2021 年才改掉，经过见<a href="2021-eip1559.html">EIP-1559 与 London 升级</a>。Bloomberg 写道，以太坊的 ether 是仅次于比特币的第二大加密货币，以太坊也被大量用来发行 <a href="2017-ico-boom.html">ICO 代币</a><a class="ref" href="#s16">[16]</a>。以太坊基金会 2018 年 1 月写道，每个节点都要处理每一笔交易，整个系统的处理能力因此受限于单个节点；以太坊每天的交易已经达到 100 万笔，经常跑满容量<a class="ref" href="#s12">[12]</a>。</p>
+        <p>KittyCore 的作者在注释里算过一笔账：猫的编号用 32 位整数，上限“只有”约 40 亿只，看起来不多，可是以太坊当时一年大约只能处理 5 亿笔交易，所以几年之内不会成为问题<a class="ref" href="#s1">[1]</a>。一年 5 亿笔，折合每秒约 16 笔（本站换算）。</p>
+        <p>扩容的办法当时还在纸面上。2017 年 8 月，Joseph Poon 和 Vitalik Buterin 发出 Plasma 的工作草稿，设想让区块链承载每秒大量的状态更新，“可能达到数十亿次”<a class="ref" href="#s13">[13]</a>；分片也还在研究阶段<a class="ref" href="#s7">[7]</a><a class="ref" href="#s12">[12]</a>。同一年，比特币社区为区块大小争执不下，8 月分出 Bitcoin Cash，经过见<a href="2017-blocksize-war.html">比特币区块大小之争</a>。</p>
+        <h3>Axiom Zen 和 ERC-721 草案</h3>
+        <p>Axiom Zen 在旧金山和温哥华都有办公室，帮创业项目孵化数字产品。它的传播经理 Bryce Bladon 对 Bloomberg 说，团队想让普通用户也能用上区块链技术，相信这是这项技术被广泛采用的关键一步<a class="ref" href="#s16">[16]</a>。</p>
+        <p>2017 年 9 月 22 日，GitHub 用户 dete 在以太坊 EIPs 仓库开了第 721 号 issue，提出不可替代代币（NFT）的标准接口，动机是让 NFT 能在标准化的钱包里被追踪、在交易所里交易<a class="ref" href="#s4">[4]</a>。定稿的 ERC-721 作者栏写的是 Dieter Shirley &lt;dete@axiomzen.co&gt;<a class="ref" href="#s5">[5]</a>；VentureBeat 后来称 Shirley 为 Dapper Labs 的 CTO、ERC-721 这项 NFT 标准的原作者<a class="ref" href="#s26">[26]</a>。</p>
+        <h3>上线前的漏洞赏金</h3>
+        <p>上线之前，团队在 Rinkeby 测试网办了一次漏洞赏金，时间是 2017 年 11 月 16 日 00:01 至 20 日 23:59（GMT）。范围只有合约代码；按 OWASP 的风险评级给分，1 分折合 1 美元，用 ETH 支付<a class="ref" href="#s2">[2]</a>。</p>
+        <p>赏金开始当天，GitHub 用户 Arachnid 提交了第 4 号 issue，标题是“列出一个用户的全部猫是 O(n²)”。<code>tokensOfOwnerByIndex</code> 每次都从头扫描所有的猫，找某人名下的第几只；猫一共 n 只、其中 m 只属于这个人，列完就要 O(m×n) 的时间，猫一多，即使在链下调用也会慢得没法用<a class="ref" href="#s3">[3]</a>。主网合约里没有这个函数，换成了扫描一遍、返回整个列表的 <code>tokensOfOwner</code>，注释写明它绝不能被智能合约代码调用，因为它要遍历整个猫数组<a class="ref" href="#s1">[1]</a>。ERC-721 定稿引用了这个 issue，提醒实现者不要在代码里用 for 或 while 循环，否则 gas 成本会随规模无限上涨<a class="ref" href="#s5">[5]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>日期按原始记录或报道的日期。加粗的条目是游戏上线、拥堵被广泛报道、热度见顶和标准定稿的日子，其余是别的报道、讨论、融资和后来的事。</p>
+        <ol class="timeline">
+          <li><time>2017-09-22</time><div class="ev">dete（Dieter Shirley）在 EIPs 仓库开第 721 号 issue，提出 NFT 标准接口<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2017-11-16 至 20</time><div class="ev">Rinkeby 测试网上的漏洞赏金；第一天 Arachnid 报告列出一个人的全部猫是 O(n²)<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2017-11-23</time><div class="ev">感恩节，游戏先向约 200 人开放<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="key"><time>2017-11-28</time><div class="ev">经过五天封闭测试，CryptoKitties 在主网公开上线；IEEE Spectrum 引 nonfungible.com，当天售出约 1,500 只<a class="ref" href="#s20">[20]</a><a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2017-12-02</time><div class="ev">1 号猫 Genesis 以约 246 ETH 成交，Jiang 和 Liu 记为 247 ETH；CryptoKitties 约占以太坊交易笔数的 4%<a class="ref" href="#s17">[17]</a><a class="ref" href="#s21">[21]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2017-12-03</time><div class="ev">TechCrunch 报道它占以太坊网络流量的约 15%；团队发推，因为拥堵把繁殖费从 0.001 ETH 调到 0.002 ETH<a class="ref" href="#s17">[17]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="key"><time>2017-12-04</time><div class="ev">ETH Gas Station：CryptoKitties 占全部交易笔数的 11.77%；Etherscan 上待确认的交易约为上线时的六倍。繁殖费调到 0.015 ETH<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2017-12-05</time><div class="ev">BBC 报道拥堵；Alexey Akhunov 发文，分析 geth 的区块传播为什么慢<a class="ref" href="#s19">[19]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2017-12-06</time><div class="ev">CNBC：SophiaTX 因为拥堵把代币发售推迟 48 小时。ETH Gas Station 当晚的统计里 CryptoKitties 占 8.55%，仍排第一<a class="ref" href="#s20">[20]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="key"><time>2017-12-10</time><div class="ev">参与游戏的地址数见顶<a class="ref" href="#s21">[21]</a>；IEEE Spectrum 引 nonfungible.com，销量涨到 52,000 多只<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2017-12-12</time><div class="ev">Buterin 在第 30 次核心开发者会议的议程下留言，建议提高读取账户和存储的 gas 价格<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2017-12-15</time><div class="ev">第 30 次核心开发者会议讨论“数字猫造成的拥堵”，记录 gas 上限已到 800 万，区块基本是满的<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2018-01-02</time><div class="ev">以太坊基金会公布扩容研发资助计划<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2018-01-12</time><div class="ev">第 31 次会议：Constantinople 不会带来扩容上的改进<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2018-01-24</time><div class="ev">William Entriken 以“EIP-721 Deed Standard”为题把标准提交进 EIPs 仓库<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2018-03-20</time><div class="ev">CryptoKitties 融资 1,200 万美元，由 Andreessen Horowitz 和 Union Square Ventures 领投，从 Axiom Zen 分拆出来<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="key"><time>2018-06-22</time><div class="ev">ERC-721 定稿<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2018-09-04</time><div class="ev">一只叫 Dragon 的猫以 600 ETH 成交，约合 17 万美元<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2018-11-01</time><div class="ev">Dapper Labs 融资 1,500 万美元，Venrock 领投<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li><time>2019-09-12</time><div class="ev">Dapper Labs 的研究人员发表 Flow 的论文<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li><time>2020-10-02</time><div class="ev">Buterin 提出以 rollup 为中心的以太坊路线图<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2020-10</time><div class="ev">Dapper Labs 和 NBA 推出 Top Shot<a class="ref" href="#s29">[29]</a>。</div></li>
+          <li><time>2021-03-11</time><div class="ev">Engadget 写道，CryptoKitties 不久将从以太坊迁到 Flow<a class="ref" href="#s29">[29]</a>。</div></li>
+          <li><time>2022-04-30</time><div class="ev">Yuga Labs 发售 Otherdeeds，以太坊的平均 gas 价格一度超过 450 美元<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2022-08-10</time><div class="ev">IEEE Spectrum 写道，CryptoKitties 现在一天很难超过 100 笔成交<a class="ref" href="#s22">[22]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>CryptoKitties 没有改以太坊的任何规则。它是部署在以太坊上的一组智能合约，买猫、配种、接生、拍卖，每个动作都是一笔普通交易，和网络上的其他交易一起排队，等矿工打包。下面的代码引自 KittyCore 合约（<span class="addr">0x06012c8cf97bead5deae237070f9587f8e7a266d</span>）在 Etherscan 上的已验证源码，编译器 v0.4.18<a class="ref" href="#s1">[1]</a>。主合约分几层继承：KittyBase 存数据，KittyOwnership 管归属，KittyBreeding 管配种，KittyAuction 和 KittyMinting 管拍卖和发行第一代猫，最后合成 KittyCore；拍卖本身由另外的 ClockAuction 合约处理<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>一只猫存了什么</h3>
+<pre class="code"><code><span class="c">// KittyBase（节选）</span>
+struct Kitty {
+    uint256 genes;            <span class="c">// 基因，出生时定下，此后不变</span>
+    uint64 birthTime;         <span class="c">// 出生时的区块时间戳</span>
+    uint64 cooldownEndBlock;  <span class="c">// 冷却到第几个区块结束</span>
+    uint32 matronId;          <span class="c">// 母亲的编号，第一代为 0</span>
+    uint32 sireId;            <span class="c">// 父亲的编号</span>
+    uint32 siringWithId;      <span class="c">// 怀孕时记下父亲的编号，非 0 即怀孕</span>
+    uint16 cooldownIndex;     <span class="c">// 冷却档位，每配一次升一档</span>
+    uint16 generation;        <span class="c">// 代数：父母中较大的代数加 1</span>
+}
+uint32[14] public cooldowns = [
+    uint32(1 minutes), uint32(2 minutes), uint32(5 minutes), uint32(10 minutes),
+    uint32(30 minutes), uint32(1 hours), uint32(2 hours), uint32(4 hours),
+    uint32(8 hours), uint32(16 hours), uint32(1 days), uint32(2 days),
+    uint32(4 days), uint32(7 days)
+];
+<span class="c">// An approximation of currently how many seconds are in between blocks.</span>
+uint256 public secondsPerBlock = 15;</code></pre>
+        <p class="code-cap">出处：KittyCore 已验证源码，KittyBase，节选；结构体字段的英文注释从略，数组按每行四项合并<a class="ref" href="#s1">[1]</a>。英文注释为原文，中文注释为本站所加。</p>
+        <p>结构体的注释写道，字段的顺序照以太坊的打包规则排过，一只猫正好占两个 256 位的存储字<a class="ref" href="#s1">[1]</a>。写存储按字付 gas，字越少越省。基因的格式没有公开，注释称它“超级机密”；混合基因的算法放在另一个合约 GeneScience 里，主合约只存它的地址<a class="ref" href="#s1">[1]</a>。赏金页面说，这些合约能组合出超过 40 亿种外观和基因型<a class="ref" href="#s2">[2]</a>。</p>
+        <p>冷却分 14 档，从 1 分钟到 7 天，每配一次种升一档，升到第 14 档为止；第一代猫从第 1 档（1 分钟）起步，其他猫从第“代数 ÷ 2 取整 + 1”档起步，代数越高，起步的冷却越长<a class="ref" href="#s1">[1]</a>。合约读不到钟表，配种时把这一档的秒数除以 <code>secondsPerBlock</code>，折成区块数，加上当前区块号，记进 <code>cooldownEndBlock</code>。按 15 秒一个区块，1 分钟是 4 个区块，7 天是 40,320 个区块（本站换算）。字段名和代码都按区块号算，原注释写的却是“时间戳”<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>配一次种，两笔交易</h3>
+        <p>第一笔交易由母猫的主人发出：调用 <code>breedWithAuto</code>，同时付上繁殖费 <code>autoBirthFee</code>。合约检查付款、归属、配种许可、冷却和亲缘关系，然后让母猫怀孕，双方进入冷却。小猫这时还没有出生。冷却结束以后，要有人再发第二笔交易，调用 <code>giveBirth</code><a class="ref" href="#s1">[1]</a>。</p>
+<pre class="code"><code><span class="c">// KittyBreeding（节选）</span>
+<span class="c">/// @notice The minimum payment required to use breedWithAuto(). This fee goes towards</span>
+<span class="c">///  the gas cost paid by whatever calls giveBirth(), and can be dynamically updated by</span>
+<span class="c">///  the COO role as the gas price changes.</span>
+uint256 public autoBirthFee = 2 finney;      <span class="c">// 0.002 ETH</span>
+
+function setAutoBirthFee(uint256 val) external onlyCOO {
+    autoBirthFee = val;                      <span class="c">// 只有 COO 账户能改</span>
+}
+
+function breedWithAuto(uint256 _matronId, uint256 _sireId) external payable whenNotPaused {
+    require(msg.value &gt;= autoBirthFee);       <span class="c">// 先付繁殖费</span>
+    require(_owns(msg.sender, _matronId));    <span class="c">// 母猫必须归调用者</span>
+    <span class="c">// ……检查配种许可、双方都不在冷却中、不是近亲……</span>
+    _breedWith(_matronId, _sireId);           <span class="c">// 母猫怀孕，双方进入冷却</span>
+}
+
+function _triggerCooldown(Kitty storage _kitten) internal {
+    <span class="c">// 把这一档冷却的秒数折成区块数，加上当前区块号</span>
+    _kitten.cooldownEndBlock =
+        uint64((cooldowns[_kitten.cooldownIndex]/secondsPerBlock) + block.number);
+    if (_kitten.cooldownIndex &lt; 13) { _kitten.cooldownIndex += 1; }
+}
+
+function giveBirth(uint256 _matronId) external whenNotPaused returns(uint256) {
+    <span class="c">// ……母猫必须在怀孕中，且 cooldownEndBlock &lt;= 当前区块号……</span>
+    uint256 childGenes = geneScience.mixGenes(matron.genes, sire.genes,
+                                              matron.cooldownEndBlock - 1);
+    address owner = kittyIndexToOwner[_matronId];   <span class="c">// 小猫归母猫的主人</span>
+    uint256 kittenId = _createKitty(_matronId, matron.siringWithId, parentGen + 1,
+                                    childGenes, owner);
+    <span class="c">// ……</span>
+    <span class="c">// Send the balance fee to the person who made birth happen.</span>
+    msg.sender.send(autoBirthFee);            <span class="c">// 繁殖费付给发这笔交易的人</span>
+    return kittenId;
+}</code></pre>
+        <p class="code-cap">出处：KittyCore 已验证源码，KittyBreeding，节选；函数头合成一行，长语句折行，检查的部分从略<a class="ref" href="#s1">[1]</a>。英文注释为原文，中文注释为本站所加。</p>
+        <p><code>giveBirth</code> 的注释写明，谁都可以调用它，只要愿意付 gas，小猫总是归母猫的主人<a class="ref" href="#s1">[1]</a>。这样玩家只要发一笔交易，等着小猫出生就行，第二笔交易由别人代发。<code>setAutoBirthFee</code> 的注释说，这笔钱用来抵消“自动接生程序”（autobirth daemon）付出的 gas<a class="ref" href="#s1">[1]</a>；Jiang 和 Liu 把调用 <code>giveBirth</code> 的人称为“接生者”，繁殖费就是付给接生者的 gas 补偿<a class="ref" href="#s21">[21]</a>。繁殖费存在合约的状态里，COO 账户随时可以改，不用升级合约<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>第一代猫的拍卖</h3>
+        <p>第一代（Gen 0）猫只能由 COO 账户铸造，上限 45,000 只，另有最多 5,000 只推广用的猫。每只 Gen 0 挂出一天的拍卖，价格一天之内从起价降到 0；起价是最近 5 只 Gen 0 成交均价的 1.5 倍，最低 0.01 ETH<a class="ref" href="#s1">[1]</a>。TechCrunch 写道，游戏开局有 100 只 Founder 猫，此后每 15 分钟放出一只 Gen 0<a class="ref" href="#s17">[17]</a>。买得越快、出价越高，下一只的起价就越高；Mashable 12 月 4 日写道，一只 Gen 0 当时约 7.7 ETH<a class="ref" href="#s18">[18]</a>。玩家之间也可以拍卖猫，或者把猫的配种权挂出去出租；在官方市场成交，游戏方抽成交价的 3.75%<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>早期的 ERC-721</h3>
+<pre class="code"><code><span class="c">// KittyOwnership（节选）</span>
+string public constant name = "CryptoKitties";
+string public constant symbol = "CK";
+
+bytes4 constant InterfaceSignature_ERC721 =
+    bytes4(keccak256('name()')) ^
+    bytes4(keccak256('symbol()')) ^
+    bytes4(keccak256('totalSupply()')) ^
+    bytes4(keccak256('balanceOf(address)')) ^
+    bytes4(keccak256('ownerOf(uint256)')) ^
+    bytes4(keccak256('approve(address,uint256)')) ^
+    bytes4(keccak256('transfer(address,uint256)')) ^
+    bytes4(keccak256('transferFrom(address,address,uint256)')) ^
+    bytes4(keccak256('tokensOfOwner(address)')) ^
+    bytes4(keccak256('tokenMetadata(uint256,string)'));
+
+function supportsInterface(bytes4 _interfaceID) external view returns (bool) {
+    <span class="c">// 原文这里有一行调试用的注释，写明这个值等于 0x9a20483d</span>
+    return ((_interfaceID == InterfaceSignature_ERC165) ||
+            (_interfaceID == InterfaceSignature_ERC721));
+}
+
+<span class="c">// ClockAuction（节选）：部署时检查猫合约声明支持同一个接口号</span>
+bytes4 constant InterfaceSignature_ERC721 = bytes4(0x9a20483d);
+require(candidateContract.supportsInterface(InterfaceSignature_ERC721));</code></pre>
+        <p class="code-cap">出处：KittyCore 已验证源码，KittyOwnership 和 ClockAuction，节选；return 语句折行，ClockAuction 的 require 写在构造函数里<a class="ref" href="#s1">[1]</a>。中文注释为本站所加。</p>
+        <p>KittyOwnership 的标题写明它“符合 ERC-721（草案）”，并链到第 721 号 issue<a class="ref" href="#s1">[1]</a>。它把十个函数签名的 Keccak 哈希各取前 4 个字节，异或起来作为接口号，拍卖合约 ClockAuction 部署时反过来检查猫合约是否声明支持这个接口号<a class="ref" href="#s1">[1]</a>。这一版接口有 <code>transfer</code>、<code>approve</code>、<code>transferFrom</code> 和返回全部代币的 <code>tokensOfOwner</code>，没有后来定稿里的 <code>safeTransferFrom</code> 和 <code>setApprovalForAll</code><a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>2018 年 6 月定稿的 ERC-721 规定的 ERC-165 接口号是 0x80ac58cd<a class="ref" href="#s5">[5]</a>，和 KittyCore 认的 0x9a20483d 不同。定稿列举 2018 年 2 月时的实现，第一个就是 CryptoKitties，注明它“和本标准的早期版本兼容”；讲到实现可以在哪些情况下拒绝转账时，定稿两次把“CryptoKitties 已部署的合约”列为先例：合约暂停时禁止转账，禁止某些地址接收 NFT<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>为什么会堵</h3>
+        <p>CryptoKitties 的交易和以太坊上所有其他交易争同样的区块。每个区块有 gas 上限，矿工按出价挑交易，需求超过上限，出价低的就往后排<a class="ref" href="#s7">[7]</a>。配一次种至少两笔交易；Gen 0 拍卖、玩家之间的买卖、出租配种权，也都要各自发交易<a class="ref" href="#s1">[1]</a>。</p>
+        <p>冷却按区块号计时，网络再堵，怀孕也会按时到期；卡住的是接生那笔交易。发这笔交易的人先垫付 gas，再从合约领回繁殖费<a class="ref" href="#s1">[1]</a>。Jiang 和 Liu 写道，游戏的交易造成拥堵，gas 费随之上涨，游戏方因此调高了繁殖费<a class="ref" href="#s21">[21]</a>。团队 12 月 3 日的推文写道，多收的部分是为了激励矿工把接生交易打包上链<a class="ref" href="#s15">[15]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 476" role="img" aria-labelledby="ck-svg-t ck-svg-d">
+            <title id="ck-svg-t">配一次种要几笔交易，2017 年 12 月初每一步遇到了什么</title>
+            <desc id="ck-svg-d">左列从上到下是一只猫从拍卖到生出下一代的步骤：Gen 0 每 15 分钟拍卖一只，起价随最近 5 只的成交价上涨；第一笔交易 breedWithAuto，玩家付 gas 和繁殖费，母猫怀孕，双方进入冷却；冷却从 1 分钟到 7 天，按 15 秒一个区块折成区块数；第二笔交易 giveBirth，谁都可以发，先垫付 gas，事后领走繁殖费；小猫归母猫的主人，可以再拍卖、再配种，每一步又是新的交易。右列是 12 月初每一步遇到的情况：待确认的交易约为上线时的六倍；区块的 gas 有上限，矿工按出价挑交易，出价低的往后排；怀孕按区块号到期，和网络堵不堵无关；接生交易出价不够就卡住，繁殖费两天里两次上调，调到 0.015 ETH；gas 上限从 670 万调到 800 万，区块仍然基本是满的。</desc>
+            <defs>
+              <marker id="ck-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <text class="d-t b" x="190" y="24" text-anchor="middle">一只猫从拍卖到下一代</text>
+            <text class="d-t b" x="570" y="24" text-anchor="middle">12 月初每一步遇到什么</text>
+            <rect class="d-box" x="20" y="44" width="340" height="64" rx="3"/><text class="d-t b" x="190" y="70" text-anchor="middle">Gen 0 拍卖</text><text class="d-t s" x="190" y="92" text-anchor="middle">每 15 分钟一只，起价随最近 5 只的成交价上涨</text>
+            <rect class="d-box" x="20" y="132" width="340" height="64" rx="3"/><text class="d-t b" x="190" y="158" text-anchor="middle">第一笔交易：breedWithAuto</text><text class="d-t s" x="190" y="180" text-anchor="middle">玩家付 gas 和繁殖费，母猫怀孕，双方进入冷却</text>
+            <rect class="d-box" x="20" y="220" width="340" height="64" rx="3"/><text class="d-t b" x="190" y="246" text-anchor="middle">等冷却结束</text><text class="d-t s" x="190" y="268" text-anchor="middle">1 分钟到 7 天，按 15 秒一块折成区块数</text>
+            <rect class="d-box" x="20" y="308" width="340" height="64" rx="3"/><text class="d-t b" x="190" y="334" text-anchor="middle">第二笔交易：giveBirth</text><text class="d-t s" x="190" y="356" text-anchor="middle">谁都能发，先垫付 gas，事后领走繁殖费</text>
+            <rect class="d-box" x="20" y="396" width="340" height="64" rx="3"/><text class="d-t b" x="190" y="422" text-anchor="middle">小猫归母猫的主人</text><text class="d-t s" x="190" y="444" text-anchor="middle">可以再拍卖、再配种，每一步又是新的交易</text>
+            <rect class="d-box soft" x="400" y="44" width="340" height="64" rx="3"/><text class="d-t b" x="570" y="70" text-anchor="middle">待确认的交易约为六倍</text><text class="d-t s" x="570" y="92" text-anchor="middle">Etherscan 的数据，和 11 月 28 日上线时相比</text>
+            <rect class="d-box soft" x="400" y="132" width="340" height="64" rx="3"/><text class="d-t b" x="570" y="158" text-anchor="middle">矿工按出价挑交易</text><text class="d-t s" x="570" y="180" text-anchor="middle">区块的 gas 有上限，出价低的往后排</text>
+            <rect class="d-box soft" x="400" y="220" width="340" height="64" rx="3"/><text class="d-t b" x="570" y="246" text-anchor="middle">怀孕照样按时到期</text><text class="d-t s" x="570" y="268" text-anchor="middle">到期看区块号，和网络堵不堵无关</text>
+            <rect class="d-box soft" x="400" y="308" width="340" height="64" rx="3"/><text class="d-t b" x="570" y="334" text-anchor="middle">接生交易出价不够就卡住</text><text class="d-t s" x="570" y="356" text-anchor="middle">繁殖费两天里两次上调，调到 0.015 ETH</text>
+            <rect class="d-box soft" x="400" y="396" width="340" height="64" rx="3"/><text class="d-t b" x="570" y="422" text-anchor="middle">上限调高，区块仍是满的</text><text class="d-t s" x="570" y="444" text-anchor="middle">gas 上限从 670 万调到 800 万</text>
+            <line class="d-line" x1="190" y1="108" x2="190" y2="128" marker-end="url(#ck-ah)"/>
+            <line class="d-line" x1="190" y1="196" x2="190" y2="216" marker-end="url(#ck-ah)"/>
+            <line class="d-line" x1="190" y1="284" x2="190" y2="304" marker-end="url(#ck-ah)"/>
+            <line class="d-line" x1="190" y1="372" x2="190" y2="392" marker-end="url(#ck-ah)"/>
+            <line class="d-line dash" x1="360" y1="76" x2="396" y2="76" marker-end="url(#ck-ah)"/>
+            <line class="d-line dash" x1="360" y1="164" x2="396" y2="164" marker-end="url(#ck-ah)"/>
+            <line class="d-line dash" x1="360" y1="252" x2="396" y2="252" marker-end="url(#ck-ah)"/>
+            <line class="d-line dash" x1="360" y1="340" x2="396" y2="340" marker-end="url(#ck-ah)"/>
+            <line class="d-line dash" x1="360" y1="428" x2="396" y2="428" marker-end="url(#ck-ah)"/>
+          </svg>
+          </div>
+          <figcaption>左列是一只猫从拍卖到生出下一代要经过的步骤，据 KittyCore 源码和 TechCrunch 的介绍<a class="ref" href="#s1">[1]</a><a class="ref" href="#s17">[17]</a>；右列浅色框是 2017 年 12 月初每一步遇到的情况：待确认的交易据 Quartz 引用的 Etherscan 数据<a class="ref" href="#s15">[15]</a>，繁殖费据团队的推文和 CNBC<a class="ref" href="#s15">[15]</a><a class="ref" href="#s20">[20]</a>，gas 上限据第 30 次核心开发者会议的记录<a class="ref" href="#s7">[7]</a>。</figcaption>
+        </figure>
+        <p>Citizen Hex 的联合创始人兼 CEO Benjamin Roberts 对 CNBC 说，有了 CryptoKitties，每个以太坊用户都突然承担起运行一个主流应用的计算开销，网络上的每一笔交易都受影响<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>调高 gas 上限的代价</h3>
+        <p>gas 上限当时由矿工调整<a class="ref" href="#s7">[7]</a>。Alexey Akhunov 12 月 5 日写道，最近有人呼吁矿工调高 gas 上限；他同意另一些人的看法，除非能证明区块的传播时间可以大幅缩短，否则调高上限会降低挖矿的收益，矿工不太会接受<a class="ref" href="#s10">[10]</a>。Buterin 12 月 12 日在会议议程下写了一个近似关系：叔块率 ≈ k1 ÷ 出块间隔 + k2 × 每秒的 gas 用量，两项相加；他说眼下的问题出在第二项，他个人反对再拉长出块间隔<a class="ref" href="#s9">[9]</a>。叔块指几乎同时挖出、没能进入主链的有效区块。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>11 月 23 日至 12 月 1 日：上线</h3>
+        <p>CNBC 写道，CryptoKitties 感恩节先向 200 名用户开放，11 月 28 日（周二）向公众开放<a class="ref" href="#s20">[20]</a>。IEEE Spectrum 写道，游戏在五天的封闭测试之后上线，打出的口号是“世界上第一款以太坊游戏”；Bladon 回忆，游戏一上线几乎马上就火了，“那段时间让人摸不着头脑”。据 nonfungible.com，上线当天售出约 1,500 只<a class="ref" href="#s22">[22]</a>。开发者告诉 Quartz，12 月 1 日游戏有 1,165 名玩家<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>12 月 2 日至 4 日：占比涨到三倍</h3>
+        <p>12 月 2 日（周六），1 号猫 Genesis 售出。各家记的价格不一：TechCrunch 写约 246 ETH，约合 11.3 万美元<a class="ref" href="#s17">[17]</a>；BBC 和 Quartz 引用 Crypto Kitty Sales，写 117,712.12 美元<a class="ref" href="#s19">[19]</a><a class="ref" href="#s15">[15]</a>；CNBC 引用开发者 Niel de la Rouviere 的数据，写 114,481.59 美元<a class="ref" href="#s20">[20]</a>；Jiang 和 Liu 记为 247 ETH，他们写道，这条消息在网上迅速传开，引来大量关注<a class="ref" href="#s21">[21]</a>。</p>
+        <p>12 月 3 日，TechCrunch 写道，以太坊网络约 15% 的流量花在这款游戏上，第二名 EtherDelta 约占 8%；流量让游戏很难玩，买卖猫的交易要等很久。报道认为，一款还没走出科技圈的游戏就能拖慢网络，扩容是整个以太坊网络的隐忧<a class="ref" href="#s17">[17]</a>。团队当天发推，说因为网络拥堵，繁殖费从 0.001 ETH 调到 0.002 ETH，好让小猫按时出生，长期的办法很快会研究<a class="ref" href="#s15">[15]</a>。</p>
+        <p>12 月 4 日（周一），Quartz 引用 ETH Gas Station 的数据：CryptoKitties 合约成了以太坊上最忙的地址，占全部交易的 11.77%，是周六约 4% 的三倍，EtherDelta 占 8.85%<a class="ref" href="#s15">[15]</a>。Bloomberg 当天的报道同样引用 ETH Gas Station，写 11%；CoinDesk 的研究主管 Nolan Bauerle 在邮件里说，过去 24 小时以太坊上待确认的交易激增，主要来自 CryptoKitties<a class="ref" href="#s16">[16]</a>。CNBC 写道，团队当天又把繁殖费从 0.002 ETH（约 90 美分）调到 0.015 ETH（约 6.69 美元）<a class="ref" href="#s20">[20]</a>。Axiom Zen 的 Benny Giang 说，这天的活跃玩家有 6,600 名<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>12 月 5 日至 10 日：报道和高峰</h3>
+        <p>BBC 12 月 5 日报道了这次拥堵。剑桥大学的 Garrick Hileman 对 BBC 说，有人担心一个无足轻重的游戏会挤掉更严肃的商业用途；在他看来，更大的问题是别的大玩家会去找以太坊的替代品，以太坊急需解决这个问题<a class="ref" href="#s19">[19]</a>。</p>
+        <p>CNBC 12 月 6 日报道，区块链项目 SophiaTX 因为拥堵，把代币发售推迟 48 小时，改到周四；Roberts 说，周三上午 CryptoKitties 约占以太坊网络的 13.5%<a class="ref" href="#s20">[20]</a>。</p>
+        <p>Jiang 和 Liu 按每天参与游戏的地址数划分阶段：12 月 2 日起大量玩家进入，热度迅速上升，12 月 10 日见顶<a class="ref" href="#s21">[21]</a>。IEEE Spectrum 引用 nonfungible.com，销量从上线当天的约 1,500 只涨到 12 月 10 日的 52,000 多只<a class="ref" href="#s22">[22]</a>。</p>
+        <div class="note doubt"><span class="h">52,000 只是哪一种数</span><p>IEEE Spectrum 没有说明 52,000 多只是 12 月 10 日当天的销量，还是到这天为止的累计<a class="ref" href="#s22">[22]</a>。CNBC 12 月 6 日引用 de la Rouviere 的数据，写累计售出 41,000 多只<a class="ref" href="#s20">[20]</a>；Bloomberg 12 月 4 日引用 Crypto Kitty Sales，写已售出 22,000 多只<a class="ref" href="#s16">[16]</a>。几个数字出自不同的统计，本页分开写，不互相推算。</p></div>
+        <h3>12 月中旬以后：退潮</h3>
+        <p>12 月 15 日的核心开发者会议上，区块仍然基本是满的<a class="ref" href="#s7">[7]</a>，游戏本身却已经在退潮。Jiang 和 Liu 写道，见顶以后热度急剧下降，2018 年初不到高峰的一成，1 月 15 日以后进入长期缓慢的下降<a class="ref" href="#s21">[21]</a>。IEEE Spectrum 写道，每天的销量 2017 年 12 月初见顶，1 月一路下滑，到 3 月平均不到 3,000<a class="ref" href="#s22">[22]</a>。</p>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>Axiom Zen</h3>
+        <p>团队手里能直接调的只有繁殖费。12 月 3 日从 0.001 ETH 调到 0.002 ETH，4 日调到 0.015 ETH<a class="ref" href="#s15">[15]</a><a class="ref" href="#s20">[20]</a>；Jiang 和 Liu 写道，后来又调回 0.008 ETH，此后还调过几次，最后稳定在 0.008 ETH<a class="ref" href="#s21">[21]</a>。Bladon 后来对 IEEE Spectrum 说，项目确实跌跌撞撞：停机过很多次，要应付很多从没用过区块链的人，还有一个 bug 漏掉了价值数万美元的以太币<a class="ref" href="#s22">[22]</a>。报道没有说是哪个 bug，本站也没有查到。</p>
+        <div class="note doubt"><span class="h">繁殖费一开始是多少</span><p>主网合约里 <code>autoBirthFee</code> 的初始值是 2 finney，即 0.002 ETH<a class="ref" href="#s1">[1]</a>，Jiang 和 Liu 也写发布时是 0.002 ETH<a class="ref" href="#s21">[21]</a>；团队 12 月 3 日的推文却说是从 0.001 ETH 调到 0.002 ETH<a class="ref" href="#s15">[15]</a>，赏金测试网版本的初始值也是 0.001 ETH<a class="ref" href="#s2">[2]</a>。COO 账户随时可以改这个值<a class="ref" href="#s1">[1]</a>，上线以后是否先调低过，本站没有查链上记录，两种说法并列。</p></div>
+        <h3>矿工</h3>
+        <p>第 30 次核心开发者会议的记录写道，gas 上限原来是 670 万，CryptoKitties 每个区块带来 100 万到 200 万 gas 的需求，推高了交易费；矿工把上限调高了一些，用量涨得更多，到会议时上限是 800 万，区块基本是满的<a class="ref" href="#s7">[7]</a>。维基百科写道，矿工因为 CryptoKitties 调高了 gas 上限，出处标的是 Quartz<a class="ref" href="#s30">[30]</a>；本站读到的 Quartz 存档里没有这句话<a class="ref" href="#s15">[15]</a>，gas 上限的数字用会议记录。</p>
+        <h3>以太坊核心开发者</h3>
+        <p>12 月 12 日，Buterin 在第 30 次会议的议程下留言，提议再做一轮调价。他说读取账户的操作码（BALANCE、EXTCODESIZE 等）和 SLOAD 仍是抗 DoS 的主要弱点，建议 SLOAD 调到 320，BALANCE 调到 800，EXTCODESIZE、CALL、DELEGATECALL 等调到 1,200；再用 EIP-168、169 的某种变体减缓状态的增长；向当前为空的账户发交易，多收 30,000 gas。他说自己完全支持无状态客户端，只要矿工保存状态，不改核心协议现在就能实现<a class="ref" href="#s9">[9]</a>。</p>
+        <p>12 月 15 日的第 30 次会议把这件事列为第二项议题，标题是“数字猫这个月造成了网络拥堵。喵。”会上介绍了 Akhunov 的无状态设计：矿工出块时附上一个“见证”块，里面有处理这个区块的全部交易所需的数据和 Merkle 证明，节点验证区块时不用再读磁盘，验证时间应当大幅缩短，gas 上限就能调高很多<a class="ref" href="#s7">[7]</a><a class="ref" href="#s10">[10]</a>。记录写道，Buterin 一直在推无状态的设计，因为这是分片研究的方向；实现它要大改 gas 价格等许多方面<a class="ref" href="#s7">[7]</a>。</p>
+        <p>有人担心读取变贵以后，区块会更快被填满。记录写道，Buterin 认为重新定价针对的是最坏的情况；一次攻击哪怕只占满区块 gas 上限的三分之一，也会把交易费推到 2 美元以上，几天里烧掉一百万美元。记录还写道，低成本的扩容办法有可能放进 Constantinople；状态通道是不改协议的链下扩容办法，应用开发者应当关注<a class="ref" href="#s7">[7]</a>。</p>
+        <p>2018 年 1 月 12 日的第 31 次会议上，有人问 Constantinople 会不会带来扩容上的改进。回答是不会：它可能包含 Casper 共识的第一步和一些账户抽象的 EIP，两者都不缓解扩容问题；眼下主要受限于数据库和处理速度，短期可以在客户端改进磁盘读写，长期需要分片<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>以太坊基金会</h3>
+        <p>2018 年 1 月 2 日，Buterin 在以太坊基金会博客上写道，社区一直认为扩容可能是区块链应用走向大众之前最重要的技术难题。基金会把分片和二层协议看作互补的两条路，公布了两项资助计划，每笔资助 5 万到 100 万美元<a class="ref" href="#s12">[12]</a>。文章没有提到 CryptoKitties。</p>
+        <h3>评论者</h3>
+        <p>Bloomberg 写道，这款游戏是区块链上第一个成功的、和币无关的应用<a class="ref" href="#s16">[16]</a>。CNBC 写道，有人批评以太坊明显缺乏应付这种需求的规模；以太坊联合创始人 Joseph Lubin 回应说，以太坊拥有区块链平台里规模最大的开发者社区，尤其在这样的早期阶段，处在很好的位置，能够兑现它的潜力<a class="ref" href="#s20">[20]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>占以太坊多少</h3>
+        <p>各家报的比例从 4% 到 25% 不等，时点和口径都不一样：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源与时点</th><th class="n">占比</th><th>口径</th></tr></thead>
+          <tbody>
+            <tr><td>ETH Gas Station，Quartz 和 Bloomberg 引用，12 月 2 日<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a></td><td class="n">约 4%</td><td>交易笔数</td></tr>
+            <tr><td>TechCrunch，12 月 3 日<a class="ref" href="#s17">[17]</a></td><td class="n">约 15%</td><td>网络流量，没有说明算法</td></tr>
+            <tr><td>ETH Gas Station，Quartz 引用，12 月 4 日<a class="ref" href="#s15">[15]</a></td><td class="n">11.77%</td><td>交易笔数</td></tr>
+            <tr><td>Bloomberg 引用 ETH Gas Station，12 月 4 日<a class="ref" href="#s16">[16]</a></td><td class="n">11%</td><td>交易笔数</td></tr>
+            <tr><td>BBC 引用 ETH Gas Station，12 月 5 日<a class="ref" href="#s19">[19]</a></td><td class="n">一成以上</td><td>网络流量</td></tr>
+            <tr><td>CNBC 引用 Roberts，12 月 6 日上午<a class="ref" href="#s20">[20]</a></td><td class="n">约 13.5%</td><td>原文是“power”，没有说明算法</td></tr>
+            <tr><td>ETH Gas Station 存档，12 月 6 日 21:02（UTC）<a class="ref" href="#s11">[11]</a></td><td class="n">8.55%</td><td>最近 1,500 个区块的交易笔数</td></tr>
+            <tr><td>第 30 次核心开发者会议记录，12 月 15 日<a class="ref" href="#s7">[7]</a></td><td class="n">15% 至 30%</td><td>每块 100 万至 200 万 gas，除以 670 万的上限（本站换算）</td></tr>
+            <tr><td>VentureBeat，2018 年 10 月<a class="ref" href="#s25">[25]</a></td><td class="n">约 25%</td><td>网络流量，没有说明时点</td></tr>
+            <tr><td>维基百科<a class="ref" href="#s30">[30]</a></td><td class="n">约 25%</td><td>网络流量，标注的出处是 CNBC 和 BBC</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">这些比例为什么对不上</span><p>ETH Gas Station 按最近若干个区块的交易笔数统计，12 月 6 日的存档注明是最近 1,500 个区块<a class="ref" href="#s11">[11]</a>，按 15 秒一块约 6 小时（本站换算），数字随时在变：12 月 2 日约 4%，4 日 11.77%，6 日晚上 8.55%<a class="ref" href="#s15">[15]</a><a class="ref" href="#s11">[11]</a>。TechCrunch、BBC 和 VentureBeat 写的是“流量”，没有说明怎样算<a class="ref" href="#s17">[17]</a><a class="ref" href="#s19">[19]</a><a class="ref" href="#s25">[25]</a>。会议记录给的是 gas 用量，按 670 万的上限算是 15% 到 30%，按 800 万算是 12.5% 到 25%（本站换算）<a class="ref" href="#s7">[7]</a>。维基百科写约 25%，标注的出处是 CNBC 和 BBC，两篇原文分别写约 13.5% 和“一成以上”<a class="ref" href="#s30">[30]</a><a class="ref" href="#s20">[20]</a><a class="ref" href="#s19">[19]</a>。本站的规模数字用 11.77%，它的出处、日期和口径都明确<a class="ref" href="#s15">[15]</a>。</p></div>
+        <h3>交易变慢、变贵</h3>
+        <p>BBC 写道，流量越大，想让交易快点执行就越贵<a class="ref" href="#s19">[19]</a>。按 Etherscan 的数据，待确认的交易约为游戏上线时的六倍<a class="ref" href="#s15">[15]</a><a class="ref" href="#s19">[19]</a>。网络一直在出块，只是区块基本是满的<a class="ref" href="#s7">[7]</a>；受影响的是所有要上链的交易，SophiaTX 就因此推迟了代币发售<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>成交额</h3>
+        <p>上线头一两周的成交额，各家引用的统计不同。Quartz 引用 Crypto Kitty Sales，六天成交约 270 万美元<a class="ref" href="#s15">[15]</a>；Bloomberg 12 月 4 日引用同一来源，售出 22,000 多只，共约 300 万美元，平均每只约 109 美元<a class="ref" href="#s16">[16]</a>；BBC 12 月 5 日估计约 450 万美元，中位价约 23.06 美元<a class="ref" href="#s19">[19]</a>；CNBC 12 月 6 日引用 de la Rouviere 的数据，写 670 万美元，中位价 25.04 美元<a class="ref" href="#s20">[20]</a>。成交额是玩家之间转手的 ETH 折成的美元，不是损失。</p>
+        <h3>第一个走红的 NFT 应用</h3>
+        <p>IEEE Spectrum 称它为第一款大型区块链游戏<a class="ref" href="#s22">[22]</a>。Jiang 和 Liu 统计了它此后约三年的数据：10 万个地址参与了约 500 万笔交易；84.6% 的地址在官方市场买过猫，64.9% 配过种<a class="ref" href="#s21">[21]</a>。直接调用核心合约转让猫只要付 gas，不交 3.75% 的抽成，于是出现了收费更低的第三方平台，例如抽成 2.5% 的 OpenSea<a class="ref" href="#s21">[21]</a>。2021 年的 NFT 热潮见<a href="2021-beeple.html">Beeple 的 NFT 在佳士得拍出 6,935 万美元</a>。</p>
+        <h3>越繁殖越不稀有</h3>
+        <p>Liu 对 IEEE Spectrum 说，一只猫的价格首先看基因决定的稀有度，其次看市场上有多少猫；人来得越多，猫也越多。繁殖让供给跟着需求一起涨，每只猫的稀有度很快被稀释，Bladon 也同意这个判断<a class="ref" href="#s22">[22]</a>。IEEE Spectrum 还写道，游戏越成功，玩家付的 gas 越多；过去三个月一只猫的中位价约 0.04 ETH，合 40 到 50 美元，常常不够付完成交易所需的 gas。它的判断是，gas 很可能最终让这款游戏玩不下去<a class="ref" href="#s22">[22]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>分拆和融资</h3>
+        <p>2018 年 3 月 20 日，CryptoKitties 宣布融资 1,200 万美元，由 Andreessen Horowitz 和 Union Square Ventures 领投；TechCrunch 写道，游戏将从 Axiom Zen 分拆出来<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。9 月 4 日，一只叫 Dragon 的猫以 600 ETH 成交，当时约合 17 万美元<a class="ref" href="#s22">[22]</a>。VentureBeat 10 月写道，玩家繁殖出的猫超过 100 万只，CryptoKitties 的合约上发生了超过 320 万笔交易<a class="ref" href="#s25">[25]</a>。11 月 1 日，开发方 Dapper Labs 宣布融资 1,500 万美元，Venrock 领投，GV 和 Samsung NEXT 参投<a class="ref" href="#s26">[26]</a>。</p>
+        <h3>ERC-721 定稿</h3>
+        <p>2018 年 1 月 24 日，William Entriken 以“EIP-721 Deed Standard”为题把标准提交进 EIPs 仓库；6 月 4 日进入为期两周的审议，6 月 22 日定稿<a class="ref" href="#s6">[6]</a>。定稿的作者是 Entriken、Shirley、Jacob Evans 和 Nastassia Sachs，依赖 ERC-165<a class="ref" href="#s5">[5]</a>。KittyCore 的 <code>supportsInterface</code> 只对 ERC-165 本身和 0x9a20483d 返回 true<a class="ref" href="#s1">[1]</a>；用定稿的接口号 0x80ac58cd 去问它，按这段代码会得到 false（本站据源码判断）。</p>
+        <h3>Flow</h3>
+        <p>2019 年 9 月，Dapper Labs 的 Alexander Hentschel 等人发表 Flow 的论文。论文开头写道，现有区块链架构的吞吐量限制有据可查，是它们普及的最主要障碍之一，引用的文献里有 BBC 那篇 CryptoKitties 拖慢以太坊的报道<a class="ref" href="#s27">[27]</a><a class="ref" href="#s19">[19]</a>。论文写道，以太坊用 gas 上限限制每个区块的计算量，吞吐量也因此受限<a class="ref" href="#s27">[27]</a>。</p>
+        <p>2020 年的 Flow Primer 写道，开发 CryptoKitties 和 Dapper 智能合约钱包这类应用的经验，让团队把许多改善开发体验的设计直接放进了协议层。Flow 把验证节点的工作拆成收集、共识、执行、验证四种角色，扩容不靠分片；Primer 举例说，在分片的链上用稳定币给一只 CryptoKitty 买一顶帽子，可能要 12 笔交易、7 个区块<a class="ref" href="#s28">[28]</a>。Dapper Labs 和 NBA 2020 年 10 月推出了 Top Shot<a class="ref" href="#s29">[29]</a>。</p>
+        <div class="note doubt"><span class="h">CryptoKitties 迁到 Flow 了吗</span><p>Engadget 2021 年 3 月写道，CryptoKitties 不久将从以太坊迁到 Flow<a class="ref" href="#s29">[29]</a>。本站没有找到迁移完成的公告。IEEE Spectrum 2022 年 8 月写到的 CryptoKitties 成交仍以 ether 计价、要付以太坊的 gas<a class="ref" href="#s22">[22]</a>。</p></div>
+        <h3>以太坊的扩容路线</h3>
+        <p>2018 年初，开发者把希望放在客户端的优化和分片上<a class="ref" href="#s8">[8]</a><a class="ref" href="#s12">[12]</a>。2020 年 10 月 2 日，Buterin 提出以 rollup 为中心的以太坊路线图；他写道，eth1 上的 gas 价格涨到新高，一些非金融的 dapp 被迫关停，另一些只能跑在测试网上<a class="ref" href="#s14">[14]</a>。2021 年 8 月，EIP-1559 改了交易费的算法，费用的水平没有因此下降，经过见<a href="2021-eip1559.html">EIP-1559 与 London 升级</a>。2022 年 4 月 30 日，Yuga Labs 发售 Otherdeeds，以太坊的平均 gas 价格一度超过 450 美元，前一天约 50 美元<a class="ref" href="#s22">[22]</a>。</p>
+        <p>别的链也遇到过同样的事。2022 年 4 月 30 日，和 Otherdeeds 发售同一天，Solana 被 NFT 铸造机器人的交易压垮，停了约 7 小时，经过见<a href="2021-solana-outage.html">Solana 多次全网停机</a>。2023 年起，比特币上的 Ordinals 铭文占用区块空间，主张过滤的开发者说它挤占了支付交易，经过见<a href="2023-ordinals.html">Ordinals 铭文上线</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给应用开发者</span>
+          <ul>
+            <li>用户的每个动作都是一笔要排队的交易。CryptoKitties 配一次种要两笔交易，网络一堵，接生交易就要靠更高的出价抢位置<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a>。</li>
+            <li>和 gas 价格挂钩的参数要能调。繁殖费写在合约的状态里，COO 账户随时能改，团队两天里调了两次，不用升级合约<a class="ref" href="#s1">[1]</a><a class="ref" href="#s20">[20]</a>。</li>
+            <li>遍历全部数据的代码会随规模变慢、变贵。赏金期间就有人报告，列出一个人的猫要 O(m×n) 的时间；ERC-721 定稿引用这个 issue，提醒实现者不要写这样的循环<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>区块空间是全网共用的。一个应用走红，所有人的交易都要排队、加价；SophiaTX 因此推迟了代币发售<a class="ref" href="#s20">[20]</a>。</li>
+            <li>调高上限有代价。按 Buterin 的近似关系，每秒处理的 gas 越多，叔块率越高<a class="ref" href="#s9">[9]</a>；Akhunov 认为，区块传播没有变快之前，矿工不会接受大幅调高上限<a class="ref" href="#s10">[10]</a>。</li>
+            <li>扩容要花好几年。2018 年初的答案是改进客户端和分片<a class="ref" href="#s8">[8]</a>，2020 年转向以 rollup 为中心<a class="ref" href="#s14">[14]</a>；2022 年一次 NFT 发售仍能把平均 gas 价格推到 450 美元以上<a class="ref" href="#s22">[22]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给玩家和收藏者</span>
+          <ul>
+            <li>资产便宜、gas 贵的时候，交易不划算。2022 年一只猫的中位价约 0.04 ETH，常常不够付完成交易所需的 gas<a class="ref" href="#s22">[22]</a>。</li>
+            <li>能无限繁殖的收藏品，稀有度会被稀释。人来得越多，猫也越多<a class="ref" href="#s22">[22]</a>。</li>
+            <li>早期标准的实现不一定和定稿兼容。KittyCore 认的是草案的接口号 0x9a20483d，定稿是 0x80ac58cd<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Etherscan，KittyCore 合约已验证源码，地址 <span class="addr">0x06012c8cf97bead5deae237070f9587f8e7a266d</span>，编译器 v0.4.18+commit.9cf6e910，2026 年 11 月查阅。<a href="https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code">etherscan.io</a></li>
+          <li id="s2">Axiom Zen（现 Dapper Labs），GitHub 仓库 cryptokitties-bounty 的 README 和赏金版合约代码，赏金期 2017-11-16 至 2017-11-20。<a href="https://github.com/dapperlabs/cryptokitties-bounty">github.com</a></li>
+          <li id="s3">GitHub 用户 Arachnid，《Listing all kitties owned by a user is O(n^2)》，cryptokitties-bounty issue #4，2017-11-16。<a href="https://github.com/dapperlabs/cryptokitties-bounty/issues/4">github.com</a></li>
+          <li id="s4">Dieter Shirley（GitHub 用户 dete），《ERC: Non-fungible Token Standard》，ethereum/EIPs issue #721，2017-09-22。<a href="https://github.com/ethereum/EIPs/issues/721">github.com</a></li>
+          <li id="s5">William Entriken、Dieter Shirley、Jacob Evans、Nastassia Sachs，《ERC-721: Non-Fungible Token Standard》，2018-01-24 创建，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-721">eips.ethereum.org</a></li>
+          <li id="s6">ethereum/EIPs 仓库，EIPS/eip-721.md 的提交记录：31ed49ea42（2018-01-24）、c9a9320e9d（2018-06-04）、b015a86658（2018-06-22）。<a href="https://github.com/ethereum/EIPs/commits/master/EIPS/eip-721.md">github.com</a></li>
+          <li id="s7">ethereum/pm 仓库，《Ethereum Core Devs Meeting 30 Notes》，2017-12-15。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%2030.md">github.com</a></li>
+          <li id="s8">ethereum/pm 仓库，《Ethereum Core Devs Meeting 31 Notes》，2018-01-12。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%2031.md">github.com</a></li>
+          <li id="s9">Vitalik Buterin，ethereum/pm issue #28（第 30 次会议议程）下的留言，2017-12-12。<a href="https://github.com/ethereum/pm/issues/28#issuecomment-350941632">github.com</a></li>
+          <li id="s10">Alexey Akhunov，《How to speed up Ethereum in the face of Crypto-Kitties》，Medium，2017-12-05（Internet Archive 存档）。<a href="https://web.archive.org/web/20190216142928/https://medium.com/@akhounov/how-to-speed-up-ethereum-in-the-face-of-crypto-kitties-7a9c901d98e9">web.archive.org</a></li>
+          <li id="s11">ETH Gas Station，Gas Guzzlers 页面（按最近 1,500 个区块的交易笔数排列合约），2017-12-06 21:02（UTC）的 Internet Archive 存档。<a href="https://web.archive.org/web/20171206210203/https://ethgasstation.info/gasguzzlers.php">web.archive.org</a></li>
+          <li id="s12">Vitalik Buterin，《Ethereum scalability research and development subsidy programs》，以太坊基金会博客，2018-01-02。<a href="https://blog.ethereum.org/2018/01/02/ethereum-scalability-research-development-subsidy-programs">blog.ethereum.org</a></li>
+          <li id="s13">Joseph Poon、Vitalik Buterin，《Plasma: Scalable Autonomous Smart Contracts》，工作草稿，2017-08-11。<a href="https://plasma.io/">plasma.io</a></li>
+          <li id="s14">Vitalik Buterin，《A rollup-centric ethereum roadmap》，Ethereum Magicians，2020-10-02。<a href="https://ethereum-magicians.org/t/a-rollup-centric-ethereum-roadmap/4698">ethereum-magicians.org</a></li>
+          <li id="s15">Quartz（Joon Ian Wong），《CryptoKitties is causing ethereum network congestion》，2017-12-04（Internet Archive 存档）。<a href="https://web.archive.org/web/20171205231301/https://qz.com/1145833/cryptokitties-is-causing-ethereum-network-congestion/">web.archive.org</a></li>
+          <li id="s16">Bloomberg（Olga Kharif），《CryptoKitties Mania Overwhelms Ethereum Network's Processing》，2017-12-04（Internet Archive 存档）。<a href="https://web.archive.org/web/20171206015913/https://www.bloomberg.com/news/articles/2017-12-04/cryptokitties-quickly-becomes-most-widely-used-ethereum-app">web.archive.org</a></li>
+          <li id="s17">TechCrunch（Fitz Tepper），《People have spent over $1M buying virtual cats on the Ethereum blockchain》，2017-12-03。<a href="https://techcrunch.com/2017/12/03/people-have-spent-over-1m-buying-virtual-cats-on-the-ethereum-blockchain/">techcrunch.com</a></li>
+          <li id="s18">Mashable（Stan Schroeder），《Learn how to master CryptoKitties》，2017-12-04。<a href="https://mashable.com/article/how-to-play-cryptokitties">mashable.com</a></li>
+          <li id="s19">BBC News，《CryptoKitties craze slows down transactions on Ethereum》，2017-12-05。<a href="https://www.bbc.com/news/technology-42237162">bbc.com</a></li>
+          <li id="s20">CNBC（Evelyn Cheng），《Meet CryptoKitties, the new digital beanie babies selling for $100k》，2017-12-06。<a href="https://www.cnbc.com/2017/12/06/meet-cryptokitties-the-new-digital-beanie-babies-selling-for-100k.html">cnbc.com</a></li>
+          <li id="s21">Xin-Jian Jiang、Xiao Fan Liu，《CryptoKitties Transaction Network Analysis: The Rise and Fall of the First Blockchain Game Mania》，Frontiers in Physics 第 9 卷，2021-03-03。<a href="https://www.frontiersin.org/journals/physics/articles/10.3389/fphy.2021.631665/full">frontiersin.org</a></li>
+          <li id="s22">IEEE Spectrum（Matthew S. Smith），《The Spectacular Collapse of CryptoKitties, the First Big Blockchain Game》，2022-08-10。<a href="https://spectrum.ieee.org/cryptokitties">spectrum.ieee.org</a></li>
+          <li id="s23">TechCrunch（Fitz Tepper），《CryptoKitties raises $12M from Andreessen Horowitz and Union Square Ventures》，2018-03-20。<a href="https://techcrunch.com/2018/03/20/cryptokitties-raises-12m-from-andreessen-horowitz-and-union-square-ventures/">techcrunch.com</a></li>
+          <li id="s24">CryptoKitties 官方 Medium，《CryptoKitties receives $12M in funding》，2018-03-20（Internet Archive 存档）。<a href="https://web.archive.org/web/20180322230625/https://medium.com/cryptokitties/cryptokitties-receives-12m-in-funding-38322f90ab65">web.archive.org</a></li>
+          <li id="s25">VentureBeat（Dean Takahashi），《CryptoKitties explained: Why players have bred over a million blockchain felines》，2018-10-06（Internet Archive 存档）。<a href="https://web.archive.org/web/20181023034738/https://venturebeat.com/2018/10/06/cryptokitties-explained-why-players-have-bred-over-a-million-blockchain-felines/">web.archive.org</a></li>
+          <li id="s26">VentureBeat（Dean Takahashi），《CryptoKitties creator Dapper Labs raises $15 million to build more blockchain cats》，2018-11-01（Internet Archive 存档）。<a href="https://web.archive.org/web/20181125030459/https://venturebeat.com/2018/11/01/cryptokitties-creator-dapper-labs-raises-15-million-to-build-more-blockchain-cats/">web.archive.org</a></li>
+          <li id="s27">Alexander Hentschel 等（Dapper Labs），《Flow: Separating Consensus and Compute》，arXiv:1909.05821，2019-09-12。<a href="https://arxiv.org/abs/1909.05821">arxiv.org</a></li>
+          <li id="s28">Flow，《Flow Primer》，2020-07-01 的 Internet Archive 存档。<a href="https://web.archive.org/web/20200701150049/https://www.onflow.org/primer">web.archive.org</a></li>
+          <li id="s29">Engadget，《A guide to the NFT craze》，2021-03-11（Internet Archive 存档）。<a href="https://web.archive.org/web/20210315225325/https://www.engadget.com/nft-explainer-digital-art-collectibles-blockchain-environment-business-investment-cryptocurrency-153023551.html">web.archive.org</a></li>
+          <li id="s30">维基百科，《CryptoKitties》。<a href="https://en.wikipedia.org/wiki/CryptoKitties">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

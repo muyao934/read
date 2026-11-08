@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inferno Drainer：按分成出租的盗币工具包｜区块链诈骗与骗局</title>
+<meta name="description" content="Inferno Drainer 把假网站模板、盗币脚本和收款合约租给“客户”，按被盗金额抽 20%。本页讲钓鱼即服务怎样分工，受害者签下的 approve、Permit、Permit2、setApprovalForAll 各给出了什么权限，钱包为什么看不出危险，2023 年 11 月 26 日宣布关闭以后它怎样继续活动，以及各家机构统计的受害者和金额。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-inferno-drainer">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　<a href="../index.html#cat-phish">钓鱼与授权盗币</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Inferno Drainer：按分成出租的盗币工具包</h1>
+    <p class="lede">2023 年 11 月 26 日，盗币工具包 Inferno Drainer 的开发者在 Telegram 上宣布关闭。它把盗币脚本、后台面板和收款合约租给“客户”，客户把受害者引到冒充项目方的假网站，骗他们签下授权，被盗的钱开发者抽 20%。据 ScamSniffer 统计，2023 年它涉及约 13.4 万名受害者、约 8,100 万美元。关闭没有兑现：后台一直在线，2024 年它又成了份额最大的盗币工具，2025 年 Check Point 仍追到它的新版本。到 2026 年 11 月，没有查到针对开发者或客户的起诉。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">“drainer”是装在钓鱼网站上的盗币程序：受害者连上钱包后，它弹出一笔看似正常的签名请求，受害者一签，钱包里的币就被转走<a class="ref" href="#s16">[16]</a>。Inferno Drainer 自己不搭钓鱼网站，它把整套工具出租。Group-IB 称这种模式为“诈骗即服务”：开发者提供脚本、面板和合约，客户负责搭假网站、找受害者，被盗资产开发者拿 20%，客户拿 80%<a class="ref" href="#s7">[7]</a>。受害者的私钥没有泄露，每一笔授权都是受害者自己签的。</p>
+        <p>Inferno 的 Telegram 频道 2022 年 11 月 5 日开张，2023 年春天起量<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>。Group-IB 统计，用它的钓鱼页面分布在 16,000 多个域名上，冒充了 100 多个加密品牌<a class="ref" href="#s7">[7]</a>。诱饵多是“免费空投”“铸 NFT 领奖励”和“项目被黑后的补偿”<a class="ref" href="#s7">[7]</a>。按 ScamSniffer 的年度报告，它是 2023 年被盗金额最多的 drainer<a class="ref" href="#s6">[6]</a>。</p>
+        <p>2023 年 11 月 26 日，团伙宣布关闭，说要“继续前进”，但文件和基础设施不销毁，让客户“平稳过渡”<a class="ref" href="#s5">[5]</a>。Group-IB 发现客户后台到 2024 年 1 月仍在线<a class="ref" href="#s7">[7]</a>；Check Point 发现，团伙 2023 年 9 月部署的收款合约到 2025 年还在用<a class="ref" href="#s17">[17]</a>。2024 年 10 月它再次宣布退出，说服务由另一家 Angel Drainer 接管<a class="ref" href="#s15">[15]</a>；Check Point 2025 年 5 月的报告说它此前半年又从 3 万多个钱包盗走至少 900 万美元<a class="ref" href="#s17">[17]</a>。开发者和客户的身份都没有公开。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>Monkey Drainer 之后</h3>
+        <p>按 ScamSniffer 的统计，最早成规模的出租式 drainer 之一是 Monkey Drainer，2022 年 8 月起活跃，半年里盗走约 1,600 万美元；被链上调查者 ZachXBT 曝光后，它在 2023 年 3 月宣布退出<a class="ref" href="#s6">[6]</a><a class="ref" href="#s5">[5]</a>。它的客户先转到 Venom Drainer；Venom 4 月前后停止服务，<a href="2023-ms-drainer.html">MS</a>、Inferno、Angel、Pink 等几家几乎同时在 3 月前后冒出来<a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a>。ScamSniffer 说，每当一家 drainer 退出，就有另一家接替<a class="ref" href="#s6">[6]</a>。</p>
+        <p>Inferno 的全称是 Inferno Multichain Drainer，“多链”指它能在以太坊、Arbitrum、Polygon、BNB Chain 等多条 EVM 链上盗币<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。Group-IB 说，它的 Telegram 频道第一条帖子发于 2022 年 11 月 5 日，频道里只留了一个联络账号，Group-IB 推测这人既是开发者又是唯一的技术支持<a class="ref" href="#s7">[7]</a>。BankInfoSecurity 写道，它 2022 年 11 月就宣布上线，到 2023 年 3 月才真正起量<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>开发者和客户怎样分工</h3>
+        <p>Group-IB 研究了 Inferno 的客户后台。客户拿到一个面板和一个 Telegram 频道；面板首页显示连上钱包的人数、成功签名的次数和被盗资产的价值；客户可以在“存储配置”里调整功能，面板再给每个客户编译一份独有的 JavaScript，文件名里带一串 UUID<a class="ref" href="#s7">[7]</a>。Group-IB 说，研究人员可以凭这串编号区分不同的客户<a class="ref" href="#s7">[7]</a>。</p>
+        <p>客户把这份脚本和配套的 seaport.js、coinbase.js、wallet-connect.js 放进自己网站的 head 里，脚本名冒充的是 OpenSea 的 Seaport 协议、Coinbase 钱包和 WalletConnect<a class="ref" href="#s7">[7]</a>。不会做网站的客户，可以让开发者代建、代托管钓鱼站。ScamSniffer 和 BleepingComputer 报道，代建的抽成是 30%，而且只给“好客户或潜力大的人”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>；Group-IB 说代建有时免费，有时收 30%<a class="ref" href="#s7">[7]</a>。区块链安全公司 CertiK 对 Cointelegraph 说，Inferno 和许多 drainer 一样“收 20% 的佣金”，而 Venom 另收首次使用费 1,000 美元<a class="ref" href="#s3">[3]</a>。</p>
+        <p>这种分工让不懂合约的人也能盗币。新加坡警方和网络安全局 2024 年 1 月 31 日的联合警示说，商业化的 drainer 套件让新手不用预付成本就能拿到成熟的恶意软件，事后按约定比例和服务商分赃<a class="ref" href="#s12">[12]</a>。Blockaid 的研究员 Oz Tamir 则认为 Inferno 没有特别的技术优势，骗子选哪家 drainer，看的是当时能用哪家、抽成多少<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>为什么算诈骗</h3>
+        <p>本站按转账是谁签的来分：受害者自己签的转账和授权算诈骗，攻击者拿到私钥后自己转走的算被盗。Inferno 的每一笔都要受害者确认，Group-IB 特别指出，drainer 每次切换链、每发起一笔交易，都要受害者同意<a class="ref" href="#s7">[7]</a>。被盗站的 <a href="../../hacks/events/2021-badgerdao.html">BadgerDAO 前端注入</a>里，用户签的也是授权，但那是项目方自己的官网被攻击者改了页面，用户访问的是真网站，所以写在被盗站。Inferno 用的是骗子自建的假网站，受害者是被骗到了错误的地址。同属钓鱼类的<a href="2024-address-poisoning.html">地址投毒</a>不需要受害者签授权，骗子等受害者自己把钱转到相似的假地址。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li><time>2022-08</time><div class="ev">按 ScamSniffer 的统计，出租式的 Monkey Drainer 开始活动<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2022-11-05</time><div class="ev">Inferno Multichain Drainer 的 Telegram 频道发出第一条帖子<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2023-03</time><div class="ev">Monkey Drainer 宣布退出；Inferno、MS、Angel、Pink 等前后起量<a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>2023-03-27</time><div class="ev">ScamSniffer 追到的第一批 Inferno 钓鱼站从这天起出现<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2023-05-19</time><div class="ev">ScamSniffer 发布报告：689 个钓鱼站、约 4,888 名受害者、590 万美元<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-07</time><div class="ev">据 ScamSniffer 的数据看板，Inferno 年初以来盗走 2,120 多万美元，受害者近 45,800 人<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2023-09-09</time><div class="ev">团伙部署收款用的 StorageContract 和 Receiver 合约，到 2025 年仍在用<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2023-11-12</time><div class="ev">ScamSniffer 披露有 drainer 用 CREATE2 预先算出的空地址绕过钱包警告<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk key"><time>2023-11-26</time><div class="ev">团伙在 Telegram 宣布关闭，称“希望你们记住我们是史上最好的 drainer”<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>2023-12</time><div class="ev">后台原域名 12 月 10 日过期，换到新域名继续在线<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2024-01-16</time><div class="ev">Group-IB 发布调查：16,000 多个钓鱼域名，冒充 100 多个品牌<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2024-01-31</time><div class="ev">新加坡警方和网络安全局联合发布 drainer 警示<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2024-05</time><div class="ev">Pink Drainer 退出，它的份额转到 Inferno<a class="ref" href="#s16">[16]</a>；据 Check Point，团伙自称累计盗走超过 2.5 亿美元<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2024-07-09</time><div class="ev">174 枚 ETH 想经隐私协议 Railgun 洗白，被拒收，只能退回原地址<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk"><time>2024-07</time><div class="ev">据 Blockaid，用 Inferno 的新恶意 DApp 累计约 4 万个，每周新增约 2,400 个<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2024-10-16</time><div class="ev">Tether 冻结三个和 drainer 有关的钱包，一名调查员称是应执法机构要求<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="atk"><time>2024-10-19</time><div class="ev">Inferno 宣布服务由 Angel Drainer 接管<a class="ref" href="#s15">[15]</a>；此后它的份额仍有四成多<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="atk"><time>2025-01</time><div class="ev">Check Point 发现冒充 Collab.Land 机器人的 Discord 钓鱼，背后是 Inferno<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2025-05-07</time><div class="ev">Check Point 发布报告：此前半年 3 万多个钱包被盗，至少 900 万美元<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="atk"><time>2025-10-01</time><div class="ev">BNB Chain 的英文 X 账号被盗、发出钓鱼链接，SlowMist 的安全负责人认为钓鱼域名属于 Inferno<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2026-01-03</time><div class="ev">ScamSniffer 年报：2025 年所有 drainer 造成的损失降到 8,385 万美元，比上一年少 83%<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2026-11</time><div class="ev">没有查到针对 Inferno 开发者或客户的起诉、逮捕或制裁的公开报道。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>按 Group-IB 的梳理，一次 Inferno 盗币分七步：开发者给客户面板和脚本；客户把脚本放上网站，在 X、Discord 等处推广；受害者扫网页上的二维码连接钱包；drainer 先查钱包里最值钱、最好转的资产；它发起一笔恶意交易；受害者确认；资产转出，20% 归开发者，80% 归客户<a class="ref" href="#s7">[7]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 560" role="img" aria-labelledby="id-flow-t id-flow-d">
+            <title id="id-flow-t">Inferno Drainer 的出租模式和一次盗币的经过</title>
+            <desc id="id-flow-d">上方两个框：左边是 Inferno 开发者，写脚本、后台面板和收款合约，按被盗金额抽成；右边是客户，租用工具包，搭冒充项目方的假网站，在 X 和 Discord 上发链接。开发者向客户出租工具包。两者都指向中间的假网站：冒充 100 多个品牌，以免费空投、铸 NFT、被黑补偿为诱饵。假网站指向受害者钱包：连接后 drainer 先估算资产，低于 100 美元不动手，然后弹出 approve、Permit、Permit2、setApprovalForAll 或假的 Claim 签名。受害者签名后，收款合约用 multicall 在一笔交易里转走资产并分账：约 80% 给客户，约 20% 给开发者。</desc>
+            <defs>
+              <marker id="id-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="id-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="300" height="100" rx="4"/>
+            <text class="d-t b atk" x="36" y="46">Inferno 开发者</text>
+            <text class="d-t s" x="36" y="70">写盗币脚本、后台面板和收款合约</text>
+            <text class="d-t s" x="36" y="90">给每个客户编译一份独有的脚本</text>
+            <text class="d-t s" x="36" y="110">按被盗金额抽成，代建网站另收费</text>
+            <rect class="d-box atk" x="440" y="20" width="300" height="100" rx="4"/>
+            <text class="d-t b atk" x="456" y="46">客户（附属者）</text>
+            <text class="d-t s" x="456" y="70">租用工具包，搭冒充项目方的网站</text>
+            <text class="d-t s" x="456" y="90">在 X、Discord 上发链接、买广告</text>
+            <text class="d-t s" x="456" y="110">在面板里看连接数和盗到的金额</text>
+            <line class="d-line atk" x1="320" y1="56" x2="436" y2="56" marker-end="url(#id-ah-atk)"/>
+            <text class="d-t s" x="378" y="46" text-anchor="middle">出租工具包</text>
+            <path class="d-line atk" d="M170,120 L170,150 L300,150 L300,170" marker-end="url(#id-ah-atk)"/>
+            <path class="d-line atk" d="M590,120 L590,150 L460,150 L460,170" marker-end="url(#id-ah-atk)"/>
+            <rect class="d-box atk" x="160" y="172" width="440" height="80" rx="4"/>
+            <text class="d-t b atk" x="380" y="198" text-anchor="middle">假网站</text>
+            <text class="d-t s" x="380" y="220" text-anchor="middle">冒充 100 多个加密品牌，16,000 多个域名</text>
+            <text class="d-t s" x="380" y="240" text-anchor="middle">诱饵：免费空投、铸 NFT 领奖励、被黑后的补偿</text>
+            <line class="d-line atk" x1="380" y1="252" x2="380" y2="282" marker-end="url(#id-ah-atk)"/>
+            <rect class="d-box" x="160" y="284" width="440" height="100" rx="4"/>
+            <text class="d-t b" x="380" y="310" text-anchor="middle">受害者的钱包</text>
+            <text class="d-t s" x="380" y="332" text-anchor="middle">连上后 drainer 先估资产，不到 100 美元不动手</text>
+            <text class="d-t s" x="380" y="352" text-anchor="middle">弹出签名：approve、Permit、Permit2、</text>
+            <text class="d-t s" x="380" y="372" text-anchor="middle">setApprovalForAll，或假的 Claim、Verify</text>
+            <line class="d-line atk" x1="380" y1="384" x2="380" y2="414" marker-end="url(#id-ah-atk)"/>
+            <text class="d-t s" x="392" y="404">受害者签名</text>
+            <rect class="d-box atk" x="160" y="416" width="440" height="60" rx="4"/>
+            <text class="d-t b atk" x="380" y="442" text-anchor="middle">收款合约用 multicall 一笔转走并分账</text>
+            <text class="d-t s" x="380" y="462" text-anchor="middle">收款地址常是刚算出来的空地址，钱包黑名单里没有</text>
+            <path class="d-line atk" d="M300,476 L300,500 L170,500 L170,512" marker-end="url(#id-ah-atk)"/>
+            <path class="d-line atk" d="M460,476 L460,500 L590,500 L590,512" marker-end="url(#id-ah-atk)"/>
+            <rect class="d-box atk" x="20" y="514" width="300" height="38" rx="4"/>
+            <text class="d-t b atk" x="170" y="538" text-anchor="middle">约 80% 归客户</text>
+            <rect class="d-box atk" x="440" y="514" width="300" height="38" rx="4"/>
+            <text class="d-t b atk" x="590" y="538" text-anchor="middle">约 20% 归开发者</text>
+          </svg>
+          </div>
+          <figcaption>流程和分成据 Group-IB<a class="ref" href="#s7">[7]</a>，品牌和域名数也据 Group-IB；低于 100 美元不动手据 Group-IB<a class="ref" href="#s7">[7]</a>，签名类型据 ScamSniffer 和 Check Point<a class="ref" href="#s6">[6]</a><a class="ref" href="#s17">[17]</a>，空地址据 ScamSniffer<a class="ref" href="#s4">[4]</a>。Check Point 2025 年看到的抽成是 15% 到 20%<a class="ref" href="#s17">[17]</a>。</figcaption>
+        </figure>
+        <h3>受害者签下的是什么</h3>
+        <p>以太坊上的代币，除了持有人自己转，还可以由持有人先给另一个地址一笔额度，对方以后凭额度随时转走。drainer 骗的就是这笔额度。Check Point 写道，Inferno 和其他 drainer 一样，主要靠 ERC-20 的 <code>approve</code>，拿到授权后再调用 <code>transferFrom</code> 把币转走<a class="ref" href="#s17">[17]</a>。按资产不同，签名的种类也不同：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>签名</th><th>钱包里看到的</th><th>实际给出的权限</th></tr></thead>
+          <tbody>
+            <tr><td><code>approve</code>、<code>increaseAllowance</code>（ERC-20）</td><td>一笔调用代币合约的链上交易，要付手续费</td><td>被授权的地址可以在额度内随时转走这种代币，不用再问持有人</td></tr>
+            <tr><td><code>Permit</code>（ERC-2612）</td><td>一段要求签名的结构化消息，不是交易，不花手续费</td><td>任何人拿到这段签名都能提交上链，额度随即生效；期限可以设成永不过期<a class="ref" href="#s20">[20]</a></td></tr>
+            <tr><td>Uniswap <code>Permit2</code></td><td>同上，一段结构化消息</td><td>持有人以前给 Permit2 合约做过授权的代币，签一次就把额度和期限分给消息里写的地址<a class="ref" href="#s23">[23]</a></td></tr>
+            <tr><td><code>setApprovalForAll</code>（NFT）</td><td>一笔链上交易</td><td>被授权的地址可以转走这个合约下持有人的全部 NFT<a class="ref" href="#s22">[22]</a></td></tr>
+            <tr><td>假的 <code>Claim</code>、<code>Verify</code></td><td>一笔“领取”或“验证”的合约调用，常附带 ETH</td><td>附带的 ETH 直接转进团伙的收款合约<a class="ref" href="#s17">[17]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>ScamSniffer 统计的 2023 年损失最重的 13 名受害者（不限于 Inferno），签的是 Increase Allowance、Approve、ERC20 Permit、Uniswap Permit2 等<a class="ref" href="#s6">[6]</a>；2024 年的大额案件里，Permit 占损失的 56.7%，setOwner 占 31.9%<a class="ref" href="#s16">[16]</a>；按本站推算，后者基本就是那起 <a href="2024-dai-phishing.html">DAI 签名钓鱼</a>。ScamSniffer 2023 年 5 月追到 Inferno 在 Telegram 上炫耀的一笔 10.3 万美元的盗币，用的就是 Permit2<a class="ref" href="#s1">[1]</a>。Check Point 说，受害者钱包里没有 ETH 付手续费时，drainer 会改用 Permit，因为签名不花钱<a class="ref" href="#s17">[17]</a>。更早骗签链下挂单、把 NFT 以 0 价格卖给骗子的见 <a href="2022-opensea-phishing.html">OpenSea 签名钓鱼</a>。</p>
+        <h3>Permit 和 Permit2 的几行源码</h3>
+        <p>下面是 OpenZeppelin 的 ERC-2612 实现。它只核对两件事：签名没过期，签名人是 <code>owner</code>。通过后就把额度写进账本，谁来提交都一样<a class="ref" href="#s21">[21]</a>：</p>
+<pre class="code"><code><span class="c">// openzeppelin-contracts v5.0.0，contracts/token/ERC20/extensions/ERC20Permit.sol（节选）</span>
+function permit(address owner, address spender, uint256 value, uint256 deadline,
+                uint8 v, bytes32 r, bytes32 s) public virtual {
+    if (block.timestamp &gt; deadline) {
+        revert ERC2612ExpiredSignature(deadline);
+    }
+    bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, _useNonce(owner), deadline));
+    bytes32 hash = _hashTypedDataV4(structHash);
+    address signer = ECDSA.recover(hash, v, r, s);
+    if (signer != owner) {
+        revert ERC2612InvalidSigner(signer, owner);
+    }
+<span class="bad">    _approve(owner, spender, value);   </span><span class="c">// 受害者签过名，spender 就拿到 value 的额度</span>
+}</code></pre>
+        <p class="code-cap">出处：OpenZeppelin/openzeppelin-contracts，v5.0.0 标签，contracts/token/ERC20/extensions/ERC20Permit.sol，节选，参数换行为本站所加<a class="ref" href="#s21">[21]</a>。中文注释为本站所加。</p>
+        <p>Permit2 让不支持 ERC-2612 的代币也能用签名授权。前提是持有人先在代币合约里给 Permit2 合约做一次授权，此后每次只要签一段消息<a class="ref" href="#s23">[23]</a>。骗子拿到这段签名后，先调用 <code>permit</code> 把额度记到自己名下，再调用 <code>transferFrom</code> 取走：</p>
+<pre class="code"><code><span class="c">// Uniswap/permit2，标签 0x000000000022D473030F116dDEE9F6B43aC78BA3，src/AllowanceTransfer.sol（节选）</span>
+function permit(address owner, PermitSingle memory permitSingle, bytes calldata signature) external {
+    if (block.timestamp &gt; permitSingle.sigDeadline) revert SignatureExpired(permitSingle.sigDeadline);
+    signature.verify(_hashTypedData(permitSingle.hash()), owner);
+<span class="bad">    _updateApproval(permitSingle.details, owner, permitSingle.spender);</span>
+}
+
+function _transfer(address from, address to, uint160 amount, address token) private {
+    PackedAllowance storage allowed = allowance[from][token][msg.sender];
+    if (block.timestamp &gt; allowed.expiration) revert AllowanceExpired(allowed.expiration);
+    <span class="c">// 只核对额度和期限，不再需要受害者签名</span>
+    ...
+    ERC20(token).safeTransferFrom(from, to, amount);
+}</code></pre>
+        <p class="code-cap">出处：Uniswap/permit2，以部署地址命名的标签（commit cc306b6），src/AllowanceTransfer.sol，节选，省略了额度扣减的几行和注释<a class="ref" href="#s23">[23]</a>。中文注释为本站所加。</p>
+        <p>NFT 的 <code>setApprovalForAll</code> 更宽：OpenZeppelin 的 ERC-721 实现里，只要 <code>isApprovedForAll(owner, spender)</code> 为真，被授权方就能转走持有人在这个合约下的任何一枚 NFT<a class="ref" href="#s22">[22]</a>。这些函数本身没有漏洞，正当的交易所和 NFT 市场每天都在用。骗子要做的只是让受害者把授权给错人。</p>
+        <h3>钱包为什么看不出危险</h3>
+        <p>几方面的说法合起来，可以看出几个原因。</p>
+        <ul>
+          <li>签名请求本身很常见。Check Point 指出，正牌的 Collab.Land 本来就要求用户签名验证资产，所以老用户看到签名请求会习惯性地点“Approve”<a class="ref" href="#s17">[17]</a>。Permit 这类签名不是交易，不花手续费，看上去比转账更无害<a class="ref" href="#s17">[17]</a><a class="ref" href="#s20">[20]</a>。</li>
+          <li>签名内容看不懂。ScamSniffer 说，Seaport、Blur、X2Y2 这些 NFT 协议的签名对用户是“不可读”的，比如 Blur 批量挂单要签的只是一串 Root 值；受害者在 Blur 上有资产，drainer 就发起对应的签名去偷已授权在 Blur 交易的 NFT<a class="ref" href="#s3">[3]</a>。</li>
+          <li>收款地址没有前科。钱包会查目标地址在不在黑名单上。ScamSniffer 2023 年 11 月发现，有 drainer 用 CREATE2 事先算出合约地址，受害者签名时这个地址上什么都没有，受害者签完才部署合约、转走资产，钱包的黑名单就失效了<a class="ref" href="#s4">[4]</a>。Check Point 看到，Inferno 冒充代币的中转合约用不到 24 小时就弃用，以太坊上同样字节码的合约有 500 多个<a class="ref" href="#s17">[17]</a>。</li>
+          <li>网站本身做了伪装。Group-IB 说，Inferno 的钓鱼站禁用右键和快捷键，不让访客查看源码<a class="ref" href="#s7">[7]</a>。Check Point 在 2025 年的版本里看到，钓鱼链接只在约 5 分钟内有效，钓鱼域名几天一换，安全公司很难扫描到<a class="ref" href="#s17">[17]</a>。</li>
+        </ul>
+        <p>“领取空投”的那一步也做了手脚。Check Point 复原了冒充代币的中转合约：它看起来有 <code>transfer</code>、<code>approve</code> 等常见的代币函数，但受害者调用的 <code>Claim</code> 或 <code>Verify</code> 在合约里根本没有定义，调用会落进合约的兜底函数，附带的 ETH 被原样转给团伙的收款合约<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>挑大户，等大钱包</h3>
+        <p>Group-IB 写道，drainer 会先看钱包里的资产，不到 100 美元就不发起交易；有时它会等很久才动手。Group-IB 的解释是，很多人先用一个钱不多的钱包试探网站，觉得可信再连上大钱包，drainer 等的就是第二个<a class="ref" href="#s7">[7]</a>。Check Point 解出的日志类型里，有“连上了但没有可偷的”一项，也有“连上后提示输入助记词”一项<a class="ref" href="#s17">[17]</a>。后一种如果得手，钱是骗子拿助记词自己转走的，按本站的分界属于被盗。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>2023 年春：起量</h3>
+        <p>ScamSniffer 是在自己的 Telegram 群里注意到 Inferno 的：一名疑似成员的个人简介链到 Inferno 的推广频道，频道截图里有一笔 10.3 万美元的盗币，ScamSniffer 按截图里被遮住部分的交易哈希在自己的数据库里找到了它，再把它和已知的恶意地址关联起来<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。2023 年 5 月 19 日，它发报告说，Inferno 自 3 月 27 日起建了 689 个钓鱼站，冒充 Pepe、Collab.Land、zkSync、Sui、LayerZero 等 220 多个品牌，从约 4,888 名受害者手里盗走 590 万美元，其中以太坊主网 430 万、Arbitrum 79 万、Polygon 41 万、BNB Chain 39 万<a class="ref" href="#s1">[1]</a>。</p>
+        <p>报告里最大的一名受害者损失 40 万美元，事后在链上联系骗子，提出只要还一半就不追究，对方没有理会<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。BleepingComputer 转述，Inferno 在广告里列出的卖点包括多链盗币、盗取 Aave 和 Art Blocks 资产、利用 MetaMask 的代币授权，还提供试用<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>2023 年夏秋：扩张</h3>
+        <p>7 月，Cointelegraph 引 ScamSniffer 的数据看板，Inferno 年初以来盗走 2,120 多万美元，金额排第二，受害者近 45,800 人，是金额第一的 Venom 的三倍<a class="ref" href="#s3">[3]</a>。Group-IB 查到，开发者 8 月在 Telegram 上给客户发了操作说明，附的 ZIP 包里就是那几个冒充协议的脚本；改成打包分发后，开发者不再需要 GitHub 仓库<a class="ref" href="#s7">[7]</a>。Group-IB 后来统计，带冒充 Seaport 脚本的网站有 14,000 多个，冒充 WalletConnect 的 5,500 多个，冒充 Coinbase 的 550 多个，一个钓鱼站可以同时挂几种<a class="ref" href="#s7">[7]</a>。</p>
+        <p>9 月 9 日，团伙在链上部署了收款用的 StorageContract 和 Receiver 合约<a class="ref" href="#s17">[17]</a>。11 月 12 日，ScamSniffer 披露有 drainer 开始用 CREATE2 生成一次性收款地址，这个 drainer 半年里从约 99,000 名受害者手里盗走近 6,000 万美元<a class="ref" href="#s4">[4]</a>。ScamSniffer 在这篇里没写 drainer 的名字；文中那个负责部署一次性合约的工厂合约，地址和 Check Point 2025 年列出的 Inferno 以太坊工厂合约相同<a class="ref" href="#s4">[4]</a><a class="ref" href="#s17">[17]</a>。</p>
+        <h3>2023 年 11 月 26 日：宣布关闭</h3>
+        <p>团伙在 Telegram 上写道：“我们和你们一起度过了很长一段时间……可惜没有什么能永远持续。”“希望你们记住我们是史上最好的 drainer，记住我们帮你们完成了赚钱的探索。”它说，运行 drainer 需要的文件和基础设施不会销毁，以便客户“平稳过渡”到别的服务；它删除了用来联络客户的 Telegram 账号，并提醒客户以后不要相信冒用它名字的 drainer<a class="ref" href="#s5">[5]</a>。CertiK 对 Cointelegraph 说，Inferno 是它见过的对社区“危害最大的钓鱼工具包之一”<a class="ref" href="#s5">[5]</a>。</p>
+        <p>关闭以后，客户还在用。Group-IB 说，后台原域名 12 月 10 日到期，后台搬到新域名上，2024 年 1 月仍在线；它推测这是留给客户关账户、转资产的<a class="ref" href="#s7">[7]</a>。ScamSniffer 2024 年 1 月 22 日记录了一名受害者：钓鱼授权让他被盗约 400 万美元的 Aave ETH，他没有及时撤销授权，清算后余额回升，drainer 又转走 95 枚 ETH，引发再次清算，再损失 158 枚 ETH<a class="ref" href="#s11">[11]</a>。SlowMist 分析那个一次性合约时发现，只有一个地址能调用它；Check Point 后来把同一个地址列为 Inferno 的 drainer 所有者地址<a class="ref" href="#s11">[11]</a><a class="ref" href="#s17">[17]</a>。</p>
+        <h3>2024 年：回来，再“退出”</h3>
+        <p>Check Point 认为 2023 年的关闭是“声东击西”，2024 年初就有继续运营的证据<a class="ref" href="#s17">[17]</a>。Cointelegraph Magazine 写道，Inferno 宣布退休后沉寂了一段时间，在 Pink Drainer 2024 年 5 月退出后重新冒头<a class="ref" href="#s15">[15]</a>。2024 年 8 月的 <a href="2024-dai-phishing.html">5,547 万 DAI 签名钓鱼</a>，CertiK 认为用的就是 Inferno 的工具。ScamSniffer 的年报说，Pink 退出时占 28% 的份额，被 Inferno 吸收；第三季度 Inferno 占 43%，Angel 占 25%<a class="ref" href="#s16">[16]</a>。安全公司 Blockaid 统计，到 2024 年 7 月底，用 Inferno 的新恶意 DApp 累计约 4 万个，年初每周约 800 个，7 月每周约 2,400 个<a class="ref" href="#s14">[14]</a>。</p>
+        <p>10 月 19 日，Inferno 宣布服务由 Angel Drainer 接管<a class="ref" href="#s15">[15]</a>。三天前，Tether 冻结了三个和 drainer 有关的钱包<a class="ref" href="#s15">[15]</a>。ScamSniffer 的年报里，这次“接管”之后 Angel 的份额下降，Inferno 仍有 40% 到 45%<a class="ref" href="#s16">[16]</a>。Check Point 看到，此前所有收款地址从 2024 年 10 月起不再收钱，换成寿命更短、更频繁更换的地址<a class="ref" href="#s17">[17]</a>。浏览器安全插件 Kerberus 的 CEO Alex Katz 对 Cointelegraph 说，drainer 说关门要打个折扣，它们可能是想让安全公司放松警惕，换个名字再回来<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>2025 年：新版本</h3>
+        <p>2025 年 1 月，Check Point 发现一个加密社区的成员被一套 Discord 钓鱼盯上。骗子抢注了项目方过期的 Discord 自定义邀请链接，用户从项目方的真网站点进去，进的是骗子的服务器；里面只有一个叫 verify-here 的频道，一个冒充 Collab.Land 的机器人请用户“验证资产”，两次点击后就到了钓鱼站<a class="ref" href="#s17">[17]</a>。Check Point 说，项目方很快处理了，这次没有造成大的损失，但它借此把这套钓鱼和 Inferno 联系了起来<a class="ref" href="#s17">[17]</a>。同一份报告还提到，2025 年 1 月 17 日 TRUMP 代币上线后，Inferno 的客户很快搭起了假的 TRUMP 空投站<a class="ref" href="#s17">[17]</a>。</p>
+        <p>Check Point 写道，新版本把指挥服务器的地址加密后存在 BNB Chain 的合约里；2025 年 3 月起，有的版本连这台服务器也不直接连，改由客户在自己服务器上装的代理转发，Inferno 的真正基础设施几乎无从追查<a class="ref" href="#s17">[17]</a>。2025 年 10 月 1 日，BNB Chain 的英文 X 账号被盗、发出冒充 WalletConnect 的钓鱼链接，SlowMist 的首席信息安全官认为钓鱼域名属于 Inferno<a class="ref" href="#s18">[18]</a>。</p>
+        <div class="note doubt"><span class="h">起始时间各说不一</span><p>Group-IB 说 Inferno 2022 年 11 月到 2023 年 11 月活跃，Telegram 频道 2022 年 11 月 5 日开张，但它查到的最早一个带这批脚本的网站是 2023 年 5 月 15 日<a class="ref" href="#s7">[7]</a>。ScamSniffer 2023 年 5 月说 Inferno 2 月起活跃，钓鱼站从 3 月 27 日起出现<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>；它的年报写的起始是 2023 年 3 月<a class="ref" href="#s6">[6]</a>。Cointelegraph 7 月写的是“1 月以来”<a class="ref" href="#s3">[3]</a>，2024 年 7 月引 Dune 看板又写成“2023 年 8 月起”<a class="ref" href="#s13">[13]</a>。本站以 Telegram 频道开张记起点，以 2023 年 11 月 26 日的关闭公告记事件日期。</p></div>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <h3>一笔交易里分账</h3>
+        <p>ScamSniffer 说，从 Inferno 开始，drainer 更多地用合约来转钱。过去分账要两笔交易，第二笔可能来不及，受害者在中间就撤销了授权；改用 multicall 以后，一笔交易里就能转走资产并分完<a class="ref" href="#s6">[6]</a>。Check Point 复原了这一步：团伙的地址调用 multicall 合约，把钱同时分给客户的地址和开发者的地址，开发者留下的“佣金”通常是 15% 到 20%<a class="ref" href="#s17">[17]</a>。原生的 ETH 先进 Receiver 合约，只有存储合约里登记的团伙地址才能取出<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>开发者的收款地址</h3>
+        <p>ScamSniffer 2023 年 5 月追到，抽成收入约 1,699 枚 ETH，分在 5 个大地址里，每个地址刻意保持在 300 到 400 枚 ETH<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。Check Point 列出的开发者收款地址，最早的一个从 2023 年 2 月 3 日开始收钱；到 2024 年 10 月，这些老地址全部停用，改用一两个月一换的新地址，Check Point 认为是为了躲开安全公司和执法机构的拉黑和冻结<a class="ref" href="#s17">[17]</a>。</p>
+        <p>开发者到底赚了多少，没有一个可靠的数字。ScamSniffer 按 20% 的费率估算，2023 年它统计的各家 drainer 开发者合计至少赚了 4,700 万美元<a class="ref" href="#s6">[6]</a>。按它列出的数字，这是七家 drainer 被盗金额之和乘以 20%，不是 Inferno 一家。</p>
+        <h3>洗钱和冻结</h3>
+        <p>2024 年 7 月 9 日，有人想把略多于 174 枚 ETH（约 53.3 万美元）经隐私协议 Railgun 洗白。链上追踪工具 MistTrack 第二天发现，Railgun 的“私人无罪证明”（PPOI）系统识别出这笔钱，拒绝处理，币只能退回原来的 Inferno 地址<a class="ref" href="#s13">[13]</a>。Railgun 的贡献者 Alan Scott Jr. 对 Cointelegraph 说，这正是系统的设计：被拒的钱只能原路退回，整条路径仍然可以追踪<a class="ref" href="#s13">[13]</a>。</p>
+        <p>2024 年 10 月 16 日，Tether 冻结了至少三个和 drainer 有关的钱包。Tether 没有回应 Cointelegraph 的询问；一名 Cointelegraph 确认在协助执法机构查 drainer 案的私家调查员说，冻结是应执法机构要求<a class="ref" href="#s15">[15]</a>。同一篇报道举了一个 2024 年 3 月的例子：一名受害者被装了 Inferno 工具的骗子盗走 439 万美元，MistTrack 怀疑其中一个归集地址属于 Inferno，约 76.8 万美元的 WETH 经 CoW Protocol 换成了 USDT<a class="ref" href="#s15">[15]</a>。保险公司 Fairside Network 的调查负责人不同意：他认为这些钱包更可能属于 Inferno 的客户，客户把赃款归集起来，而抽成已经另付给了 Inferno<a class="ref" href="#s15">[15]</a>。</p>
+        <div class="note doubt"><span class="h">开发者的钱和客户的钱分不清</span><p>Inferno 的分账让一笔被盗资产在同一笔交易里分到两类地址，此后两边各自转移。安全公司追到的归集和换币，往往说不清是开发者还是哪个客户在动钱，上面 Fairside Network 和 MistTrack 的分歧就是一例<a class="ref" href="#s15">[15]</a>。ScamSniffer 的创始人 Fun 说，Inferno、Pink 这些名字只是骗子用的服务，“真正的作恶者藏在这些 drainer 名字后面”<a class="ref" href="#s15">[15]</a>。本站不做链上取证，只转述已发表的追踪结论。</p></div>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>谁被骗</h3>
+        <p>受害者多是追空投、玩 NFT、参加新项目的链上用户。Group-IB 列出的钓鱼域名里有 lensprotocol-whitelist、base-whitelist、scroll-wl、zk-sync-register、layer-zero-register 等，都是在等空投或白名单的热门项目<a class="ref" href="#s7">[7]</a>。ScamSniffer 说，2023 年钓鱼站的流量来自几种渠道：项目方的 Discord、X 账号被盗后发的链接；空投；被抢注的过期 Discord 链接；X 上的垃圾回复；Google 和 X 的付费广告<a class="ref" href="#s6">[6]</a>。靠付费广告引流的见 <a href="2023-ms-drainer.html">MS Drainer</a>。账号被盗的情况社区一般 10 到 50 分钟就会发现，后几种更不容易察觉<a class="ref" href="#s6">[6]</a>。</p>
+        <p>按 ScamSniffer 2023 年 5 月的数据，约 4,888 名受害者共损失 590 万美元，最大一名是 40 万美元<a class="ref" href="#s1">[1]</a>。受害者的身份没有公开，报道里只有链上地址。</p>
+        <h3>各方统计</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>出处</th><th>范围</th><th class="n">金额</th><th class="n">受害者</th></tr></thead>
+          <tbody>
+            <tr><td>ScamSniffer，2023 年 5 月</td><td>3 月 27 日至报告时，689 个钓鱼站</td><td class="n">590 万美元<a class="ref" href="#s1">[1]</a></td><td class="n">约 4,888</td></tr>
+            <tr><td>ScamSniffer 看板，Cointelegraph 2023 年 7 月引</td><td>2023 年 1 月至 7 月</td><td class="n">2,120 万美元以上<a class="ref" href="#s3">[3]</a></td><td class="n">近 45,800</td></tr>
+            <tr><td>ScamSniffer，Cointelegraph 2023 年 11 月引</td><td>2023 年 2 月至关闭</td><td class="n">近 7,000 万美元<a class="ref" href="#s5">[5]</a></td><td class="n">10 万以上</td></tr>
+            <tr><td>团伙自称，同上</td><td>到关闭时</td><td class="n">8,000 万美元以上<a class="ref" href="#s5">[5]</a></td><td class="n">未说</td></tr>
+            <tr><td>ScamSniffer 年报</td><td>2023 年 3 月至年底</td><td class="n">8,100 万美元<a class="ref" href="#s6">[6]</a></td><td class="n">13.4 万</td></tr>
+            <tr><td>Infosecurity 转述 Group-IB 所引的 ScamSniffer 数据</td><td>2022 年 11 月至 2023 年 11 月</td><td class="n">近 8,800 万美元<a class="ref" href="#s9">[9]</a></td><td class="n">13.7 万以上</td></tr>
+            <tr><td>Dune 看板，Cointelegraph 2024 年 7 月引</td><td>“2023 年 8 月起”至 2024 年 7 月</td><td class="n">1.8 亿美元以上<a class="ref" href="#s13">[13]</a></td><td class="n">18.9 万以上</td></tr>
+            <tr><td>团伙自称，Check Point 转述</td><td>全部历史，到 2024 年 5 月</td><td class="n">2.5 亿美元以上<a class="ref" href="#s17">[17]</a></td><td class="n">未说</td></tr>
+            <tr><td>Check Point，2025 年 5 月</td><td>此前约半年，只算高流动性资产</td><td class="n">至少 900 万美元<a class="ref" href="#s17">[17]</a></td><td class="n">3 万以上</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">这些数字不能相加，也不宜直接比较</span><p>ScamSniffer 的数字来自它追踪的恶意地址<a class="ref" href="#s1">[1]</a>，它的年报说明按被盗时的美元价值计算，只算能追踪到的 drainer 活动，是下限<a class="ref" href="#s19">[19]</a>。Dune 看板随时更新，不同报道取的时点不同。Group-IB 的博客和新闻稿引 ScamSniffer 写“至少 8,000 万美元”“超过 8,000 万美元”<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>，Infosecurity 转述成近 8,800 万美元、13.7 万多人<a class="ref" href="#s9">[9]</a>，BankInfoSecurity 写的是约 8,100 万美元、13.4 万人<a class="ref" href="#s10">[10]</a>。Check Point 只算 CoinMarketCap 前 100 的代币和几种原生币，按报告时的价格，也没有覆盖所有链，它自己说这是下限<a class="ref" href="#s17">[17]</a>。团伙自称的数字没有办法核实。受害者人数一般按钱包地址算，一个人可能有几个地址。本站按 ScamSniffer 年报记 2023 年的约 8,100 万美元和 13.4 万名受害者。</p></div>
+        <h3>冒充了多少品牌</h3>
+        <p>Group-IB 说 100 多个加密品牌的名字、标志被冒用，钓鱼页面分布在 16,000 多个独立域名上<a class="ref" href="#s7">[7]</a>。ScamSniffer 2023 年 5 月的报告说钓鱼站针对 220 多个品牌，半年后钓鱼站增加到约 9,500 个<a class="ref" href="#s1">[1]</a>。两者统计的方法和时段不同。到 2024 年，Blockaid 数到的用 Inferno 的新恶意 DApp 累计约 4 万个<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>放在整个 drainer 市场里</h3>
+        <p>按 ScamSniffer 的年报，所有 drainer 2023 年盗走约 2.95 亿美元，受害者约 32.4 万人；2024 年约 4.94 亿美元、33.2 万个地址；2025 年降到 8,385 万美元、106,106 名受害者<a class="ref" href="#s6">[6]</a><a class="ref" href="#s16">[16]</a><a class="ref" href="#s19">[19]</a>。按这两个数字算，2023 年 Inferno 约占全年的四分之一多。2024 年 ScamSniffer 按各家 drainer 的钓鱼站数量算份额，Inferno 上半年约 22%，Pink 退出后升到四成多<a class="ref" href="#s16">[16]</a>。ScamSniffer 2025 年的年报只说这一年有新的 drainer 出现，没有给 Inferno 单列数字<a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>到 2026 年 11 月，本站没有查到针对 Inferno Drainer 开发者或客户的起诉、逮捕、制裁的公开报道，也没有执法机构公开说过在查这个团伙。开发者和客户的真实身份都没有公开。Group-IB 的报告列出了团伙用过的 Telegram 账号、GitHub 账号和域名<a class="ref" href="#s7">[7]</a>，Cointelegraph Magazine 报道过私家调查员认为和 Inferno 有关的大客户<a class="ref" href="#s15">[15]</a>，这些都没有经过法院认定，本站不写人名和账号。</p>
+        <h3>做了什么</h3>
+        <ul>
+          <li>通知品牌：Group-IB 的应急响应团队给名字和标志被冒用的加密品牌发了通知，并呼吁受害者向当地执法机构报案<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</li>
+          <li>官方警示：新加坡警方和网络安全局 2024 年 1 月 31 日联合发布 drainer 警示，建议用硬件钱包，没有点名 Inferno<a class="ref" href="#s12">[12]</a>。</li>
+          <li>冻结：2024 年 10 月 16 日 Tether 冻结三个和 drainer 有关的钱包，据一名协助执法的调查员说是应执法机构要求<a class="ref" href="#s15">[15]</a>。三天后 Inferno 宣布由 Angel 接管<a class="ref" href="#s15">[15]</a>。</li>
+          <li>拒收：Railgun 2024 年 7 月拒收 174 枚 ETH<a class="ref" href="#s13">[13]</a>。</li>
+          <li>拉黑：ScamSniffer、MistTrack 和白帽组织 SEAL 911 持续把恶意地址加入黑名单，钱包越来越多地接入 Blockaid 这类交易安全服务<a class="ref" href="#s15">[15]</a>。ScamSniffer 说，2023 年它扫描了近 1,200 万个网址，发现近 14.5 万个恶意网址，开源黑名单收录近 10 万个恶意域名<a class="ref" href="#s6">[6]</a>。</li>
+        </ul>
+        <p>这些措施都是给骗子加成本，没有一项能把被盗的钱还给受害者。MistTrack 的创始人 Cos 对 Cointelegraph 说，drainer 纷纷关门是因为“赚得太多了，继续干下去，执法机构找到他们或他们的同伙只是时间问题”<a class="ref" href="#s15">[15]</a>。ScamSniffer 的 Fun 说，为了自身安全，关门是“迟早的事”<a class="ref" href="#s15">[15]</a>。到 2026 年 11 月，这两种说法都还没有被执法行动印证。</p>
+        <h3>其他 drainer 的下场</h3>
+        <p>Inferno 不是唯一宣布退出的。Monkey Drainer 2023 年 3 月退出，Pink Drainer 2024 年 5 月退出，据 Cointelegraph Magazine，Pink 退出前从 2.1 万多名受害者手里盗走约 8,500 万美元<a class="ref" href="#s15">[15]</a>。接手 Inferno 的 Angel Drainer 2024 年 7 月也停过一次：区块链调查公司 Match Systems 7 月 16 日宣布查到了它的开发者身份，两小时后 Angel 的 Telegram 频道就说暂停服务<a class="ref" href="#s24">[24]</a>，三个月后它又成了 Inferno 宣布的“接班人”<a class="ref" href="#s15">[15]</a>。Match Systems 没有公开它查到的身份。这些退出都是团伙自己宣布的，本站没有查到其中任何一家的开发者被起诉。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">看到这些说法要停一下</span>
+          <ul>
+            <li>“独家空投”“首次空投”“最后一次空投”“史上最大空投”，“铸 NFT 领奖励”，“项目被黑，现在发补偿”“资产已解冻，请领取”。这些都是 Group-IB 在 Inferno 钓鱼页上看到的原话<a class="ref" href="#s7">[7]</a>。</li>
+            <li>域名里带 whitelist、wl、register、claim，或者把字母换掉一个。BNB Chain 被盗的 X 账号发出的钓鱼域名，就是把 i 换成了 l<a class="ref" href="#s18">[18]</a>。官方账号被盗后发的链接一样不可信，<a href="2020-twitter-scam.html">2020 年 Twitter 名人账号被盗发送币信息</a>也是这个道理。</li>
+            <li>Discord 服务器进去只有一个 verify-here 之类的频道，让你先连钱包“验证”。Check Point 说，冒充 Collab.Land 的机器人旁边没有“已验证应用”的勾<a class="ref" href="#s17">[17]</a>。</li>
+            <li>网站禁用右键、不让看源码。Group-IB 建议在地址栏前加 view-source: 查看，看到 seaport.js、wallet-connect.js、coinbase.js 这类脚本就离开<a class="ref" href="#s7">[7]</a>。这只能识别它见过的版本，Check Point 看到的新版本已是 5 到 10 MB 的混淆脚本<a class="ref" href="#s17">[17]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">签名之前</span>
+          <ul>
+            <li>分清签的是什么。看到 Permit、spender、deadline、setApprovalForAll、increaseAllowance 这些字样，签下的就是授权，不是“验证”或“登录”<a class="ref" href="#s6">[6]</a><a class="ref" href="#s20">[20]</a>。正牌的 Collab.Land 会说明签名不触发任何交易、不收手续费<a class="ref" href="#s17">[17]</a>。</li>
+            <li>“不花手续费”不等于安全。Permit 和 Permit2 签名不上链，一旦被别人提交，额度立刻生效<a class="ref" href="#s20">[20]</a><a class="ref" href="#s23">[23]</a>。</li>
+            <li>被授权的地址没有任何记录，不代表它干净。drainer 会用刚算出来、还没部署的地址，躲开钱包的黑名单<a class="ref" href="#s4">[4]</a>。</li>
+            <li>不要“先用小钱包试，没问题再换大钱包”。Group-IB 说，Inferno 遇到资产不足 100 美元的钱包会不动手，等的就是受害者换上大钱包<a class="ref" href="#s7">[7]</a>。Check Point 的建议是，领空投、试新项目、上不完全信任的网站，都用一个专门的“一次性钱包”，里面不放大额<a class="ref" href="#s17">[17]</a>；存钱的钱包不去连这些网站。</li>
+            <li>任何网站要你输入助记词，都不要输。Check Point 解出的 Inferno 日志里就有“提示输入助记词”这一项<a class="ref" href="#s17">[17]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">已经签了</span>
+          <ul>
+            <li>马上撤销授权，包括给 Permit2 合约的授权。ScamSniffer 记录的那名受害者被盗 400 万美元后没撤销，又被转走 95 枚 ETH，后来再损失 158 枚<a class="ref" href="#s11">[11]</a>。</li>
+            <li>把剩下的资产转到新钱包，保存钓鱼网址、截图、浏览记录和交易记录，向当地执法机构报案<a class="ref" href="#s7">[7]</a>。新加坡警方也要求受害者向警方和相关加密服务商报告<a class="ref" href="#s12">[12]</a>。</li>
+            <li>不要相信事后主动找来、说能帮你追回的人。2023 年 5 月那名损失 40 万美元的受害者提出只要退一半就不追究，骗子没有理会<a class="ref" href="#s1">[1]</a>；本站没有查到 Inferno 受害者拿回钱的报道。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">ScamSniffer，《$5.9 Million Stolen By Scam as a Service Provider Called Inferno Drainer》，2023-05-19（含半年后的更新）。<a href="https://drops.scamsniffer.io/5-9-million-stolen-by-scam-as-a-service-provider-called-inferno-drainer/">drops.scamsniffer.io</a></li>
+          <li id="s2">BleepingComputer（Bill Toulas），《Crypto phishing service Inferno Drainer defrauds thousands of victims》，2023-05-22。<a href="https://www.bleepingcomputer.com/news/security/crypto-phishing-service-inferno-drainer-defrauds-thousands-of-victims/">bleepingcomputer.com</a></li>
+          <li id="s3">Cointelegraph（Jesse Coghlan），《Pink, Pussy, Venom, Inferno — Drainers coming for a crypto wallet near you》，2023-07-11。<a href="https://cointelegraph.com/news/cypto-drainers-pink-pussy-venom-and-inferno-steal-millions">cointelegraph.com</a></li>
+          <li id="s4">ScamSniffer，《Wallet Drainers Starts Using Create2 Bypass Wallet Security Alert》，2023-11-12。<a href="https://drops.scamsniffer.io/wallet-drainers-starts-using-create2-bypass-wallet-security-alert/">drops.scamsniffer.io</a></li>
+          <li id="s5">Cointelegraph（Jesse Coghlan），《Inferno Drainer says it’s shutting down after helping steal $70M in crypto》，2023-11-26。<a href="https://cointelegraph.com/news/inferno-drainer-shut-down-after-stealing-millions-crypto-wallet-scam-kit">cointelegraph.com</a></li>
+          <li id="s6">ScamSniffer，《Scam Sniffer 2023: Crypto Phishing Scams Drain $300 Million from 320,000 Users》，2024-01-01。<a href="https://drops.scamsniffer.io/scam-sniffer-2023-crypto-phishing-scams-drain-300-million-from-320000-users/">drops.scamsniffer.io</a></li>
+          <li id="s7">Group-IB（Viacheslav Shevchenko），《Inferno Drainer: A Deep Dive into Crypto Wallet-Draining Malware》，2024-01-16。<a href="https://www.group-ib.com/blog/inferno-drainer/">group-ib.com</a></li>
+          <li id="s8">Group-IB，《Divine tragedy: Group-IB uncovers 16,000+ malicious domains created during Inferno Drainer crypto scam spree》，2024-01-16。<a href="https://www.group-ib.com/media-center/press-releases/inferno-drainer/">group-ib.com</a></li>
+          <li id="s9">Infosecurity Magazine（Phil Muncaster），《Inferno Drainer Spoofs Over 100 Crypto Brands to Steal $80m+》，2024-01-16。<a href="https://www.infosecurity-magazine.com/news/inferno-drainer-spoofs-100-crypto/">infosecurity-magazine.com</a></li>
+          <li id="s10">BankInfoSecurity，《Crypto-Seeking Drainer Scam-as-a-Service Operations Thrive》，2024-01-16。<a href="https://www.bankinfosecurity.com/crypto-seeking-drainer-scam-as-a-service-operations-thrive-a-24107">bankinfosecurity.com</a></li>
+          <li id="s11">ScamSniffer，《Why Revoking Approvals Is Crucial After Falling Victim To Phishing?》，2024-01-22。<a href="https://drops.scamsniffer.io/why-revoking-approvals-is-crucial-after-falling-victim-to-phishing/">drops.scamsniffer.io</a></li>
+          <li id="s12">Cointelegraph（Arijit Sarkar），《Singapore police recommend hardware wallets against crypto drainers》，2024-02-01。<a href="https://cointelegraph.com/news/singapore-police-commercial-crypto-drainers-warning">cointelegraph.com</a></li>
+          <li id="s13">Cointelegraph（Tom Mitchelhill），《Inferno Drainer fails attempt to launder ETH — ‘not welcome’ in Railgun》，2024-07-11。<a href="https://cointelegraph.com/news/inferno-drainer-fails-attempt-launder-eth-railgun">cointelegraph.com</a></li>
+          <li id="s14">Cointelegraph（Ezra Reguerra），《Inferno Drainer usage triples as crypto scams soar in 2024》，2024-08-29。<a href="https://cointelegraph.com/news/inferno-drainer-dapp-surge-crypto-scam-trends">cointelegraph.com</a></li>
+          <li id="s15">Cointelegraph Magazine（Yohan Yun），《Crypto drainers are retiring as investigators start to close in》，2024-11-19。<a href="https://cointelegraph.com/magazine/crypto-drainers-investigators-hacks-defi">cointelegraph.com</a></li>
+          <li id="s16">ScamSniffer，《Scam Sniffer 2024: Web3 Phishing Attacks – Wallet Drainers Drain $494 Million》，2025-01-03。<a href="https://drops.scamsniffer.io/scam-sniffer-2024-web3-phishing-attacks-wallet-drainers-drain-494-million/">drops.scamsniffer.io</a></li>
+          <li id="s17">Check Point Research，《Inferno Drainer Reloaded: Deep Dive into the Return of the Most Sophisticated Crypto Drainer》，2025-05-07。<a href="https://research.checkpoint.com/2025/inferno-drainer-reloaded-deep-dive-into-the-return-of-the-most-sophisticated-crypto-drainer/">research.checkpoint.com</a></li>
+          <li id="s18">Cointelegraph（Ezra Reguerra），《BNB Chain’s official X account hacked, CZ warns of phishing links》，2025-10-01。<a href="https://cointelegraph.com/news/bnb-chain-x-account-hacked-inferno-links">cointelegraph.com</a></li>
+          <li id="s19">ScamSniffer，《Scam Sniffer 2025: Crypto Phishing Losses Fall 83% to $84 Million》，2026-01-03。<a href="https://drops.scamsniffer.io/scam-sniffer-2025-crypto-phishing-losses-fall-83-to-84-million/">drops.scamsniffer.io</a></li>
+          <li id="s20">Martin Lundfall，《ERC-2612: Permit Extension for EIP-20 Signed Approvals》。<a href="https://eips.ethereum.org/EIPS/eip-2612">eips.ethereum.org</a></li>
+          <li id="s21">OpenZeppelin，openzeppelin-contracts v5.0.0，contracts/token/ERC20/extensions/ERC20Permit.sol。<a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/token/ERC20/extensions/ERC20Permit.sol">github.com</a></li>
+          <li id="s22">OpenZeppelin，openzeppelin-contracts v5.0.0，contracts/token/ERC721/ERC721.sol。<a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/token/ERC721/ERC721.sol">github.com</a></li>
+          <li id="s23">Uniswap，permit2，标签 0x000000000022D473030F116dDEE9F6B43aC78BA3，README.md 与 src/AllowanceTransfer.sol。<a href="https://github.com/Uniswap/permit2/blob/0x000000000022D473030F116dDEE9F6B43aC78BA3/src/AllowanceTransfer.sol">github.com</a></li>
+          <li id="s24">Cointelegraph（Allen Scott），《Angel Drainer reportedly shuts down after devs potentially identified》，2024-07-16。<a href="https://cointelegraph.com/news/angel-drainer-reportedly-shuts-down-after-devs-identified">cointelegraph.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EthGateway｜区块链基础知识</title>
+<meta name="description" content="托管桥以太坊侧的网关合约：热余额上限、同笔转冷、放款限额、先取消再退款、不可升级">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="gateway">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 11 章</p>
+    <h1>EthGateway</h1>
+    <p class="lede">一座 ETH ↔ Qtum 托管桥在以太坊这一侧的合约：用户的 USDC 存进来，用户提现时从这里付出去。它里面装着哪些规则、为什么这样设计、和冷钱包、签名服务、Qtum 侧的 MintGateway 是什么关系，以及审计时要盯住哪些地方。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">EthGateway = 一个不可升级的合约，收用户存入的 USDC，只在热余额上限内留钱，超出的同笔转进冷钱包；放款只认运营地址，并受单笔和 24 小时上限约束</p>
+  <p class="lead">它是一份托管桥设计里的合约，用来讲清楚一个托管合约该有哪些规则，不是已经部署的合约。“EthGateway”只是这份设计里的名字，不是某个现成产品或行业标准。下文的函数名和字段都是示意。</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>基础事实</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>在哪条链</td><td>以太坊主网。Qtum 那一侧对应的合约叫 MintGateway</td></tr>
+      <tr><td>管什么币</td><td>只管 Circle 发行的原生 USDC（以太坊上的 FiatToken 合约）。它自己不发币</td></tr>
+      <tr><td>钱放在哪</td><td>一小部分（热余额，有上限）在 EthGateway 里；大部分在冷钱包 Safe（3/5 硬件钱包多签）里</td></tr>
+      <tr><td>谁能让它付钱</td><td>正常放款：运营地址（钥匙在云端 HSM，由签名服务调用）。大额：冷钱包多签。退款：冷钱包多签</td></tr>
+      <tr><td>谁能停它</td><td>守护者（看门狗和值班人员）能暂停；只有冷钱包多签能恢复</td></tr>
+      <tr><td>能不能升级</td><td>不能。要改代码就部署新合约，再把业务迁过去</td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见理解里，对的部分</h3>
+      <ul>
+        <li>它是桥在以太坊这一侧的入口和出口：存入、提现到账都经过它</li>
+        <li>它的规则写在合约里，任何人都能在链上查：热余额多少、今天放了多少、某个 ID 有没有执行过</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>不是现成的东西</b>。Axelar 的 <code>AxelarGateway</code>、Arbitrum 的 Gateway 合约名字像，但和它没有关系（Axelar 的见<a href="atlas.html">图鉴</a>）</li>
+        <li><b>它不保管全部储备</b>。热余额有上限，超过的部分在存入那一刻就进了冷钱包</li>
+        <li><b>它不知道 Qtum 上发生了什么</b>。合约只检查“调用者是不是运营地址”，用户在 Qtum 上有没有真的销毁，是签名服务在链下核对的。这和 Hyperlane、CCIP 那种“合约里验证另一条链的证明”不一样</li>
+        <li><b>不可升级不等于参数不能改</b>。上限、运营地址这些由冷钱包多签直接改</li>
+        <li><b>不可升级也不等于更安全</b>。它去掉了“升级换成恶意代码”这条路，代价是发现 bug 不能打补丁，只能暂停、部署新合约、迁移</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="where">
+  <h2 class="eyebrow">在哪</h2>
+  <p class="lead">加粗边框的就是 EthGateway。实线是交易（钱或指令），虚线是“读事件”，橙色虚线是暂停。注意 EthGateway 和 MintGateway 之间<b>没有直接连线</b>：两个合约互相看不见，靠中间的链下服务把两边对上。</p>
+  <div class="mapbox"><div class="svgscroll">
+  <svg id="arch" viewBox="0 0 900 372" role="img" aria-label="托管桥架构：以太坊侧用户、EthGateway、冷钱包；链下后端、签名服务、看门狗；Qtum 侧 MintGateway、USDC.e">
+    <defs>
+      <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L8,4 L0,8z"/></marker>
+      <marker id="ahw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path class="ah w" d="M0,0 L8,4 L0,8z"/></marker>
+    </defs>
+    <text class="zl" x="14" y="16">以太坊</text><text class="zl" x="319" y="16">链下（运营方）</text><text class="zl" x="624" y="16">QTUM</text>
+    <rect class="zone" x="10" y="24" width="270" height="340" rx="8"/>
+    <rect class="zone" x="315" y="24" width="270" height="340" rx="8"/>
+    <rect class="zone" x="620" y="24" width="270" height="340" rx="8"/>
+    <!-- 以太坊 -->
+    <rect class="nd" x="30" y="48" width="110" height="42" rx="6"/><text x="85" y="74" text-anchor="middle">用户</text>
+    <rect class="nd me" x="30" y="150" width="230" height="64" rx="6"/><text class="fw7" x="145" y="176" text-anchor="middle">EthGateway</text><text class="sm" x="145" y="198" text-anchor="middle">热余额 ≤ 上限 · 放款有限额</text>
+    <rect class="nd" x="30" y="290" width="230" height="56" rx="6"/><text x="145" y="313" text-anchor="middle">冷钱包 Safe（3/5）</text><text class="sm" x="145" y="333" text-anchor="middle">Guard：只能转进网关</text>
+    <!-- 链下 -->
+    <rect class="nd" x="335" y="40" width="230" height="56" rx="6"/><text x="450" y="63" text-anchor="middle">后端</text><text class="sm" x="450" y="83" text-anchor="middle">监听 · 风控 · 审批 · 执行</text>
+    <rect class="nd" x="335" y="150" width="230" height="64" rx="6"/><text x="450" y="176" text-anchor="middle">签名服务</text><text class="sm" x="450" y="198" text-anchor="middle">自己核对源链 · 两条链分账号</text>
+    <rect class="nd" x="335" y="290" width="230" height="56" rx="6"/><text x="450" y="313" text-anchor="middle">看门狗</text><text class="sm" x="450" y="333" text-anchor="middle">独立账号和节点 · 只能暂停</text>
+    <!-- Qtum -->
+    <rect class="nd" x="760" y="48" width="110" height="42" rx="6"/><text x="815" y="74" text-anchor="middle">用户</text>
+    <rect class="nd" x="640" y="150" width="230" height="64" rx="6"/><text x="755" y="176" text-anchor="middle">MintGateway</text><text class="sm" x="755" y="198" text-anchor="middle">额度内铸币 · 销毁时登记</text>
+    <rect class="nd" x="640" y="290" width="230" height="56" rx="6"/><text x="755" y="313" text-anchor="middle">USDC.e</text><text class="sm" x="755" y="333" text-anchor="middle">Qtum 管理多签批铸币额度</text>
+    <!-- 连线 -->
+    <path class="ln" d="M85,92 L85,148" marker-start="url(#ah)" marker-end="url(#ah)"/><text class="sm" x="93" y="125">存入 · 到账</text>
+    <path class="ln" d="M80,216 L80,288" marker-end="url(#ah)"/><text class="sm" x="88" y="256">超出上限</text>
+    <path class="ln" d="M230,288 L230,216" marker-end="url(#ah)"/><text class="sm" x="222" y="256" text-anchor="end">只能转进网关</text>
+    <path class="ln" d="M262,158 L333,92" stroke-dasharray="4 3" marker-end="url(#ah)"/><text class="sm" x="270" y="110" text-anchor="end">存入事件</text>
+    <path class="ln" d="M450,98 L450,148" marker-end="url(#ah)"/><text class="sm" x="458" y="128">待签交易</text>
+    <path class="ln" d="M333,188 L262,188" marker-end="url(#ah)"/><text class="sm" x="298" y="181" text-anchor="middle">放款</text>
+    <path class="ln" d="M567,188 L638,188" marker-end="url(#ah)"/><text class="sm" x="602" y="181" text-anchor="middle">铸币</text>
+    <path class="ln" d="M638,158 L567,92" stroke-dasharray="4 3" marker-end="url(#ah)"/><text class="sm" x="630" y="110">销毁事件</text>
+    <path class="ln w" d="M333,312 L262,210" marker-end="url(#ahw)"/><text class="sm" x="286" y="276" text-anchor="middle">暂停</text>
+    <path class="ln w" d="M567,312 L638,210" marker-end="url(#ahw)"/><text class="sm" x="614" y="276" text-anchor="middle">暂停</text>
+    <path class="ln" d="M755,216 L755,288" marker-end="url(#ah)"/><text class="sm" x="763" y="256">铸 / 销</text>
+    <path class="ln" d="M815,92 L815,148" marker-end="url(#ah)"/><text class="sm" x="807" y="125" text-anchor="end">销毁 USDC.e</text>
+  </svg>
+  </div></div>
+  <p>两条线要分开看：<b>钱</b>只在以太坊内部流动（用户 ↔ EthGateway ↔ 冷钱包），从不跨链；<b>信息</b>靠链下服务读一边的事件、到另一边发交易。所以“跨链”这件事的安全，几乎全压在签名服务和看门狗上，EthGateway 的任务是在它们出错时<b>把损失框住</b>。</p>
+</section>
+
+<section id="inside">
+  <h2 class="eyebrow">拆开看</h2>
+  <p class="sub">合约里存了什么、有哪些函数、谁能调用</p>
+  <p class="lead">下面三张表是按职责写出的一种接口，名字是示意。看的时候重点看“谁能调”和“要检查什么”两列：一个托管合约的安全，基本就是这两列。</p>
+  <h3>存的状态</h3>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>状态</th><th>是什么</th><th>谁能改</th></tr></thead>
+    <tbody>
+      <tr><td><code>hotCap</code></td><td>热余额上限。存入后热余额超过它，多出来的当场转冷</td><td>冷钱包多签</td></tr>
+      <tr><td><code>perTxCap</code>、<code>dailyCap</code></td><td>运营地址的单笔放款上限、24 小时放款上限</td><td>冷钱包多签</td></tr>
+      <tr><td><code>cold</code></td><td>冷钱包地址，转冷只能转到这里</td><td>部署时写入；要不要允许改，见文末“审计要盯的地方”</td></tr>
+      <tr><td><code>operator</code>、<code>guardians</code></td><td>运营地址（只能放款和取消）、守护者（只能暂停）</td><td>冷钱包多签</td></tr>
+      <tr><td><code>deposits[seq]</code></td><td>每笔存入一条：发起人、金额、Qtum 收款地址、是否已退款。<code>seq</code> 是网关内的递增序号</td><td>存入时写入，退款时标记</td></tr>
+      <tr><td><code>executed[id]</code>、<code>cancelled[id]</code></td><td>Qtum → 以太坊方向，每个转账 ID 是否已付款、是否已取消</td><td>放款、取消时写入，<b>写入后不能撤销</b></td></tr>
+      <tr><td><code>booked</code></td><td>账面余额：经过正常函数进出的钱。实际余额减去它，就是误转进来的钱</td><td>每个进出钱的函数都要更新</td></tr>
+      <tr><td><code>paused</code>、<code>depositOpen</code></td><td>是否暂停；存入入口是否开放（迁移时关闭）</td><td>暂停：守护者；恢复和入口：冷钱包多签</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">转账 ID 的格式是：<b>源链 + 源网关地址 + 网关内序号</b>。以太坊这一侧的存入 ID 由 EthGateway 自己的地址和 <code>seq</code> 组成；从 Qtum 过来的 ID 由 MintGateway 的地址和它的序号组成。换了网关也不会撞号。</p>
+
+  <h3>函数</h3>
+  <div class="tbl"><table class="mw-900">
+    <thead><tr><th>函数（示意）</th><th>谁能调</th><th>做什么</th><th>合约要检查</th></tr></thead>
+    <tbody>
+      <tr><td><code>deposit(amount, qtumTo)</code></td><td>任何用户</td><td>从用户那里拉入 USDC，登记一条存入；热余额补到上限，多出的同一笔交易转冷；发出存入事件</td><td>未暂停、入口开放、金额 &gt; 0、Qtum 地址长度对（20 字节）</td></tr>
+      <tr><td><code>release(id, to, amount)</code></td><td>运营地址</td><td>Qtum → 以太坊的正常放款，从热余额付出</td><td>未暂停；这个 ID 没执行过、没取消过；金额 ≤ 单笔上限；24 小时累计 ≤ 上限；热余额够</td></tr>
+      <tr><td><code>cancel(id)</code></td><td>运营地址</td><td>取消一笔 Qtum → 以太坊的转账（被拒的提现），之后 Qtum 侧才能重新铸币退给用户</td><td>这个 ID 没执行过。取消只会挡住付款，动不了钱，所以运营地址就能做</td></tr>
+      <tr><td><code>releaseByCold(id, to, amount)</code></td><td>冷钱包多签</td><td>超过单笔上限的大额放款：一种做法是多签在一笔批量交易里先把钱转进来、再付出（另一种写法见文末）</td><td>和 <code>release</code> 共用 <code>executed</code> / <code>cancelled</code>，同一个 ID 不能两条路都走</td></tr>
+      <tr><td><code>refund(seq)</code></td><td>冷钱包多签</td><td>被拒绝的以太坊 → Qtum 存入，退回原发起人</td><td>这笔存入存在、没退过；金额和收款人<b>从存入记录里取</b>，不接受调用者传入</td></tr>
+      <tr><td><code>topUp(amount)</code></td><td>冷钱包多签</td><td>冷转热补款</td><td>更新账面余额，让补进来的钱不会被当成误转</td></tr>
+      <tr><td><code>sweepToCold(amount)</code></td><td>冷钱包多签</td><td>把热余额收回冷钱包</td><td>目的地只能是 <code>cold</code></td></tr>
+      <tr><td><code>returnStray(to, amount)</code></td><td>冷钱包多签</td><td>把误转进来的钱人工核实后退回</td><td>金额 ≤ 实际余额 − 账面余额，不能动正常储备</td></tr>
+      <tr><td><code>pause()</code> / <code>unpause()</code></td><td>守护者 / 冷钱包多签</td><td>暂停 / 恢复</td><td>暂停要快，恢复要严</td></tr>
+      <tr><td><code>set…()</code>、<code>closeDeposits()</code></td><td>冷钱包多签</td><td>改上限、换运营地址和守护者；迁移时关闭存入入口</td><td>每改一次都发事件，看门狗要能看到</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>角色：每把钥匙能做什么、不能做什么</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>角色</th><th>能做</th><th>不能做</th><th>钥匙泄露，最多损失</th></tr></thead>
+    <tbody>
+      <tr><td>用户</td><td>存入</td><td>其他一切</td><td>—</td></tr>
+      <tr><td>运营地址（以太坊）</td><td>放款、取消</td><td>改参数、恢复、碰冷钱包</td><td>24 小时上限和热余额，两者取小（下面有计算器）</td></tr>
+      <tr><td>守护者</td><td>暂停</td><td>恢复、付款</td><td>恶意暂停，不损失资金</td></tr>
+      <tr><td>冷钱包多签（3/5）</td><td>大额放款、退款、补款、收回、改参数、恢复</td><td>—（它是最终的信任根）</td><td>单把泄露凑不够门限</td></tr>
+      <tr><td>审核员</td><td>链上什么都不能做</td><td>—</td><td>只是给大额签批准，由签名服务在链下校验</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">冷钱包多签是最终的信任根：它能付大额、能换运营地址。所以“冷钱包只能转进网关”这条限制的作用，<b>不是让多签动不了钱</b>，而是让多签每一笔付款都经过网关、都带 ID、都留下事件，看门狗能逐笔对账。</p>
+</section>
+
+<section id="flows">
+  <h2 class="eyebrow">分步看</h2>
+  <p class="lead">数字是示意值（热余额上限 20 万、单笔上限 2 万、24 小时上限 5 万），真实金额要按业务量来定。</p>
+  <div class="bgrid">
+    <div class="bit wide"><div class="bh"><span class="term">deposit</span><h4>① 存入：热余额补到上限，多出的同一笔转冷</h4></div>
+      <div class="anim" data-anim="dep"></div></div>
+    <div class="bit wide"><div class="bh"><span class="term">release</span><h4>② 放款：合约只认运营地址和上限，真假由签名服务判断</h4></div>
+      <div class="anim" data-anim="rel"></div></div>
+    <div class="bit wide"><div class="bh"><span class="term">key leak</span><h4>③ 运营密钥泄露：上限框住损失，看门狗暂停，多签换钥匙</h4></div>
+      <div class="anim" data-anim="leak"></div></div>
+    <div class="bit wide"><div class="bh"><span class="term">refund</span><h4>④ 退款：先在对面取消，确认后再退</h4></div>
+      <div class="anim" data-anim="ref"></div></div>
+  </div>
+</section>
+
+<section id="caps">
+  <h2 class="eyebrow">算一算</h2>
+  <p class="lead">三个数防的是不同的事，不能只看一个。热余额上限决定“现在网关里最多躺着多少钱”；单笔上限决定“多大的提现必须走多签”；24 小时上限决定“运营密钥被盗后，一天最多被放走多少”。</p>
+  <div class="tool">
+    <div class="row">
+      <label for="cHot">热余额上限<input id="cHot" type="number" min="0" step="10000" value="200000"></label>
+      <label for="cBal">当前热余额<input id="cBal" type="number" min="0" step="10000" value="199800"></label>
+      <label for="cDep">这笔存入<input id="cDep" type="number" min="0" step="100" value="500"></label>
+    </div>
+    <div class="row">
+      <label for="cTx">单笔放款上限<input id="cTx" type="number" min="0" step="1000" value="20000"></label>
+      <label for="cDay">24 小时放款上限<input id="cDay" type="number" min="0" step="1000" value="50000"></label>
+      <label for="cIn">24 小时内预计新存入<input id="cIn" type="number" min="0" step="1000" value="30000"></label>
+    </div>
+    <div class="out" id="cOut" aria-live="polite"></div>
+  </div>
+  <p class="note">“最多损失”这里只算运营密钥泄露这一种情况、暂停之前的 24 小时。更完整的估算是：暂停前最坏损失 ≈ 这段时间的放款上限 + 剩余铸币额度。后一项在 Qtum 侧，不在 EthGateway 里。如果 24 小时上限按“滚动窗口”算，它和第 04 章 CCIP 的<a href="cctp-ccip.html#ccip-tokens">限速桶</a>是同一类东西。</p>
+</section>
+
+<section id="compare">
+  <h2 class="eyebrow">对比</h2>
+  <p class="lead">Qtum 桥按 commit <code>a351a067</code> 的 <code>Bridge.sol</code>；Quantum 也设了热余额上限，按 <code>quantum-app</code> 仓库 main 分支的 <code>BridgeV1.sol</code>（2026-10-30 读取）。</p>
+  <div class="tbl"><table class="mw-900">
+    <thead><tr><th>问题</th><th>Qtum 桥</th><th>Quantum BridgeV1</th><th>EthGateway（设计）</th></tr></thead>
+    <tbody>
+      <tr><td>谁授权付款</td><td>5 个 Validator 签名，凑够门槛 4 个，任何人都能提交</td><td>1 个 relayer 的 EIP-712 签名，用户自己提交 <code>claimFund</code></td><td>运营地址直接调用（钥匙在云端 HSM）；大额由冷钱包多签</td></tr>
+      <tr><td>怎么防重复付款</td><td>源交易哈希 + 事件序号，用过就记下</td><td>每个收款地址一个递增 nonce</td><td>全局转账 ID，执行或取消后都不能再用</td></tr>
+      <tr><td>授权绑不绑合约地址</td><td>领取签名不含目标桥地址</td><td>绑：EIP-712 的签名域里有链 ID 和合约地址</td><td>链上不验签名，按调用者地址判断；审核员批准签名绑定 ID 和目标网关，由签名服务校验</td></tr>
+      <tr><td>热余额</td><td>全部储备都在桥合约里</td><td>每个代币有 <code>tokenCap</code>；超出部分要另外调用 <code>flushFundPerToken</code>（任何人都能调）转到固定地址，所以两次 flush 之间余额可以超过上限</td><td>存入时同一笔交易转冷，热余额不会因为存入超过上限</td></tr>
+      <tr><td>链上放款限额</td><td>没有</td><td>没有</td><td>单笔上限 + 24 小时上限</td></tr>
+      <tr><td>退款</td><td>合约里没有退款函数</td><td>排队满 72 小时后人工申请</td><td>先在目标链取消，确认后多签退款</td></tr>
+      <tr><td>升级</td><td>UUPS 代理，可升级（owner 模式）</td><td>UUPS 代理，可升级；管理权在 Timelock 后面</td><td>不可升级，不设 Timelock</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">EthGateway 的大部分做法都能在参考项目里找到出处，但“存入时同笔转冷”和“链上放款限额”这两项在这两个合约里都没有，是这份设计根据事故教训加的，写代码和审计时要格外留意。</p>
+</section>
+
+<section id="relations">
+  <h2 class="eyebrow">关系</h2>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>组件</th><th>关系</th><th>要注意</th></tr></thead>
+    <tbody>
+      <tr><td>MintGateway（Qtum）</td><td>镜像：一边收存入、一边铸币；一边销毁、一边放款。两边用同一种 ID 格式</td><td>两个合约互相看不见。“取消后才能退款”这种跨链的先后顺序，合约自己保证不了，要靠流程和看门狗</td></tr>
+      <tr><td>冷钱包 Safe + Guard</td><td>EthGateway 的管理员；储备的大头。Guard 限定 Safe 只能调 USDC 的 <code>transfer</code> / <code>approve</code> 把钱给网关，以及调网关自己的管理函数</td><td>Safe 官方源码的警告原话：Guard “has full power to block Safe transaction execution, a broken guard can cause a denial of service for the Safe”。Guard 必须允许多签换掉或移除 Guard 本身，否则写错一处，冷钱包就锁死了</td></tr>
+      <tr><td>签名服务</td><td>唯一拿着运营密钥的程序。EthGateway 只检查“是不是运营地址”，所以这笔放款该不该付，<b>完全由签名服务判断</b></td><td>签名服务的核对逻辑，本质上就是 EthGateway 的“验签”，要和合约一起审（第 10 章）</td></tr>
+      <tr><td>看门狗</td><td>持有守护者钥匙；读 EthGateway 的存入、放款、取消、退款、改参数事件，和 Qtum 侧对账</td><td>事件里必须带齐对账要用的字段（ID、金额、收款人），否则看门狗只能去问后端，就不独立了</td></tr>
+      <tr><td>USDC（Circle 的 FiatToken）</td><td>EthGateway 里装的币</td><td>FiatToken 的 <code>transfer</code> 和 <code>transferFrom</code> 会检查发送方、接收方都不在黑名单。Circle 如果把网关或冷钱包拉黑，钱就动不了；用户的以太坊收款地址被拉黑，放款会失败，订单只能停在“待放款”。USDC 自己也能被 Circle 暂停和升级，这些都在托管桥控制之外</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="audit">
+  <h2 class="eyebrow">审计要点</h2>
+  <p class="lead"><a href="audit.html">第 10 章</a>讲了跨链桥的审计要覆盖哪些层。下面只列 EthGateway 这一块里最容易出错的点。标“建议”的是一种可行的做法，不是唯一答案。</p>
+  <div class="tbl"><table class="mw-860">
+    <thead><tr><th>地方</th><th>可能出的问题</th><th>建议的做法</th></tr></thead>
+    <tbody>
+      <tr><td>24 小时上限怎么算</td><td>如果按自然日清零，攻击者可以在 23:59 放满一次、00:01 再放满一次，一小时内拿走两倍</td><td>建议：用滚动窗口或限速桶（容量 + 每秒补充）</td></tr>
+      <tr><td>大额放款的“一笔批量交易”</td><td>Safe 的批量交易是 <code>delegatecall</code> 到 MultiSend 合约来执行的。Guard 如果一律禁止 <code>delegatecall</code>，大额放款发不出去；如果放开，就要能检查批量里的每一条调用，Guard 会复杂很多</td><td>建议：让 <code>releaseByCold</code> 自己用 <code>transferFrom</code> 从冷钱包拉钱再付出，多签只需调用一次，Guard 可以禁止 <code>delegatecall</code></td></tr>
+      <tr><td>冷转热怎么进来</td><td>多签直接转账给网关，不经过函数，账面余额不会增加，这笔补款会被当成误转</td><td>建议：补款只能走 <code>topUp</code>；Guard 只放行这条路径</td></tr>
+      <tr><td>账面余额</td><td>某个进出钱的函数漏了更新，误转识别就会算错，严重时 <code>returnStray</code> 能动正常储备</td><td>把“账面余额 ≤ 实际余额”写成不变量，用模糊测试覆盖所有函数</td></tr>
+      <tr><td>退款的金额和收款人</td><td>如果由调用者传入，多签操作失误或被骗就可能退错人、退多了</td><td>从存入记录里取，每笔只能退一次</td></tr>
+      <tr><td>取消和执行</td><td>两者用不同的记录，或检查顺序写错，同一个 ID 可能既取消又执行</td><td>同一个 ID 的状态只有三种：未处理、已执行、已取消，只能从“未处理”变出去</td></tr>
+      <tr><td>暂停时哪些还能用</td><td>全停，出事时多签也没法收回热余额；全不停，暂停就没意义</td><td>待定：存入、放款、取消一定停；收回冷钱包、退款是否允许要明确写进规格</td></tr>
+      <tr><td>冷钱包地址能不能改</td><td>能改，多签被攻破时可以把转冷目的地改成攻击者地址；不能改，冷钱包要换就得换网关</td><td>建议：部署时写死；要换冷钱包按迁移流程换网关</td></tr>
+      <tr><td>Qtum 收款地址</td><td>Qtum 地址在链上是 20 字节，前端要把用户填的地址转换过来。转换错了，铸到一个没人控制的地址</td><td>合约只能检查长度；前端和签名服务都要校验，测试网逐种地址类型测试</td></tr>
+      <tr><td>构造参数和多签可改的参数</td><td>代码审过了，部署时参数填错，等于白审</td><td>列一张全部参数的表，部署后从链上读出来逐项核对（第 10 章“证明链上跑的就是审过的代码”）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><p><b>设计这类网关时要先定下来的事：</b>各项上限的金额；充值方式选 A（用户直接调合约）还是 B（每人一个专属地址、服务端归集）。选 B 时存入记录里的“发起人”是归集合约，不是用户，“退回原发起人”要重新定义：用户往往是从交易所提币进来的，交易所的提币地址通常不能直接退回。另外还有：手续费在不在网关里收；暂停期间能不能退款。</p></div>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li>GitHub <a href="https://github.com/BirthdayResearch/quantum-app/blob/main/packages/smartcontracts/src/contracts/BridgeV1.sol" rel="noopener">BirthdayResearch/quantum-app：BridgeV1.sol</a>（<code>tokenCap</code>、<code>flushFundPerToken</code>、<code>claimFund</code> 的 EIP-712 签名和 nonce、UUPS 升级），2026-10-30 读取</li>
+    <li>GitHub <a href="https://github.com/qtumproject/bridge-evm-contracts/blob/a351a067f6ba06640c6ec000701fa86b1dd954d8/contracts/bridge/Bridge.sol" rel="noopener">qtumproject/bridge-evm-contracts：Bridge.sol @ a351a067</a>（<code>withdrawERC20</code> 的哈希去重和签名门槛，无限额、无退款函数）</li>
+    <li>GitHub <a href="https://github.com/safe-global/safe-smart-account/blob/main/contracts/interfaces/IGuardManager.sol" rel="noopener">safe-global/safe-smart-account：IGuardManager.sol</a>（Guard 可阻止 Safe 执行的警告原文）</li>
+    <li>GitHub <a href="https://github.com/circlefin/stablecoin-evm/blob/master/contracts/v1/FiatTokenV1.sol" rel="noopener">circlefin/stablecoin-evm：FiatTokenV1.sol</a>（<code>transfer</code> / <code>transferFrom</code> 的 <code>notBlacklisted</code> 检查）</li>
+  </ol>
+  <p>核查日期 2026-10-30。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const lbl = (t, c = '') => `<div class="lbl ${c}">${t}</div>`;
+  const A = {};
+  // ① 存入：热余额补到上限，多出的同笔转冷
+  A.dep = {h:260,
+    b:[['u',2,8,22,84,'用户'],['g',30,8,36,84,'EthGateway'],['c',72,8,26,84,'冷钱包 Safe']],
+    it:[
+      {id:'coin', h:chip('500 USDC','--usdc'), x:13, y:45},
+      {id:'hot', h:lbl('热余额 199,800 / 上限 200,000','m'), x:48, y:28},
+      {id:'rec', h:lbl('存入 #42：发起人、500、Qtum 地址'), x:48, y:50, hide:1},
+      {id:'h2', h:chip('200','--usdc'), x:48, y:45, hide:1},
+      {id:'c2', h:chip('300','--usdc'), x:48, y:45, hide:1},
+      {id:'ev', h:chip('存入事件','--accent','out'), x:48, y:78, hide:1},
+      {id:'cold', h:lbl('冷钱包余额 +300','m'), x:85, y:28, hide:1}],
+    s:[
+      {c:'用户先 approve，再调用 deposit(500, Qtum 收款地址)。网关里现在有 199,800，离上限 200,000 只差 200。', lit:['u']},
+      {c:'合约用 transferFrom 把 500 USDC 从用户那里拉进来。', set:{coin:{x:48, y:45}}, lit:['g']},
+      {c:'登记一条存入记录 #42：谁存的、存了多少、要发到哪个 Qtum 地址。以后退款就只认这条记录。', set:{coin:{hide:1}, h2:{hide:0}, c2:{hide:0}, rec:{hide:0}}, lit:['g']},
+      {c:'热余额只差 200 到上限，所以留下 200，剩下 300 在同一笔交易里转进冷钱包。热余额不会因为存入超过上限，不用等谁来“清扫”。', set:{c2:{x:85, y:45}, h2:{x:40, y:68}, hot:{h:lbl('热余额 200,000 / 上限 200,000','g')}, cold:{hide:0}}, lit:['g','c']},
+      {c:'合约发出存入事件。到这里 EthGateway 的工作就完了：它不铸币，也不知道 Qtum 上之后会发生什么。', set:{ev:{hide:0}, h2:{hide:1}}, lit:['g']},
+      {c:'之后是链下和 Qtum 的事：后端等确认、做风控；签名服务用自己的节点核对这个事件，再到 Qtum 的 MintGateway 铸出 500 USDC.e。', set:{ev:{x:85, y:78}}, lit:['c']},
+    ]};
+  // ② 放款：合约只认运营地址和上限
+  A.rel = {h:270,
+    b:[['q',2,8,28,84,'Qtum · MintGateway'],['s',36,8,28,84,'签名服务（链下）'],['g',70,8,28,84,'EthGateway']],
+    it:[
+      {id:'burn', h:chip('销毁 200 USDC.e','--qtum'), x:16, y:40, hide:1},
+      {id:'id', h:lbl('ID = Qtum + MintGateway 地址 + #17','m'), x:16, y:62, hide:1},
+      {id:'chk', h:lbl('核对：销毁事件、确认数<br>对账等式','m'), x:50, y:40, hide:1},
+      {id:'tx', h:chip('release(#17, 收款人, 200)','--eth','out'), x:50, y:70, hide:1},
+      {id:'g1', h:lbl('运营地址？未暂停？<br>ID 未执行、未取消？','m'), x:84, y:30, hide:1},
+      {id:'g2', h:lbl('≤ 单笔 20,000？<br>24 小时已用 31,000 + 200 ≤ 50,000？','m'), x:84, y:56, hide:1},
+      {id:'pay', h:chip('付出 200 USDC','--usdc'), x:84, y:80, hide:1}],
+    s:[
+      {c:'用户在 Qtum 上把 200 USDC.e 交给 MintGateway 销毁，填上以太坊收款地址。MintGateway 给这笔分配 ID：源链 + MintGateway 地址 + 序号 17。', set:{burn:{hide:0}, id:{hide:0}}, lit:['q']},
+      {c:'EthGateway 看不见 Qtum。这笔该不该付，由签名服务判断：用自己的 Qtum 节点确认销毁事件存在、金额和收款人一致、确认数够；再按对账等式核一次储备。任何一项不对就拒签。', set:{chk:{hide:0}}, lit:['s']},
+      {c:'核对通过，签名服务用以太坊运营密钥（在云端 HSM 里）签一笔 release 交易并发出。', set:{tx:{hide:0}}, lit:['s']},
+      {c:'EthGateway 只做它在链上能做的检查：调用者是不是运营地址、有没有暂停、这个 ID 有没有执行过或取消过、有没有超过单笔和 24 小时上限、热余额够不够。', set:{tx:{x:84, y:80}, g1:{hide:0}, g2:{hide:0}}, lit:['g']},
+      {c:'全部通过：记下 #17 已执行，24 小时已用变成 31,200，从热余额付出 200 USDC。', set:{tx:{hide:1}, pay:{hide:0}, g1:{h:lbl('#17 已执行','g')}, g2:{h:lbl('24 小时已用 31,200 / 50,000','g')}}, lit:['g']},
+      {c:'如果这笔是 5 万：超过单笔上限，release 直接回滚。大额要由冷钱包多签调用 releaseByCold 付出。它和 release 共用同一套 ID 记录，同一笔不会两条路都付。', set:{pay:{hide:1}, g2:{h:lbl('50,000 > 单笔 20,000 → 回滚<br>改走冷钱包多签','w')}}, bad:['g']},
+    ]};
+  // ③ 运营密钥泄露
+  A.leak = {h:270,
+    b:[['a',2,8,26,84,'攻击者（拿到运营密钥）'],['g',34,8,32,84,'EthGateway'],['w',72,8,26,84,'看门狗 / 冷钱包多签']],
+    it:[
+      {id:'k', h:`<span class="keyi same">钥</span>`, x:15, y:36},
+      {id:'t1', h:chip('release(假 ID, 攻击者, 20,000)','--warn','out'), x:15, y:62, hide:1},
+      {id:'used', h:lbl('24 小时已用 0 / 50,000','m'), x:50, y:30},
+      {id:'out', h:lbl('已被放走 0','m'), x:50, y:52},
+      {id:'st', h:lbl('运行中','g'), x:50, y:76},
+      {id:'wd', h:lbl('核对两条链…','m'), x:85, y:40},
+      {id:'fix', h:lbl('换运营地址 → 对账 → 恢复','m'), x:85, y:66, hide:1}],
+    s:[
+      {c:'假设攻击者拿到了以太坊运营密钥，比如云账号的权限被攻破。它可以用随便编的 ID 调用 release，把钱发给自己。', lit:['a']},
+      {c:'第一笔 2 万：在单笔上限内，合约照付。合约分不出真假，因为它本来就只认运营地址。', set:{t1:{hide:0, x:50, y:62}, used:{h:lbl('24 小时已用 20,000 / 50,000','w')}, out:{h:lbl('已被放走 20,000','w')}}, bad:['g']},
+      {c:'再来两笔，2 万、1 万，累计到 5 万。第四笔回滚：24 小时上限用完了。这是第一道框：不管攻击者手多快，一天最多 5 万，而且还不能超过热余额。', set:{t1:{x:50, y:62}, used:{h:lbl('24 小时已用 50,000 / 50,000','w')}, out:{h:lbl('已被放走 50,000','w')}, st:{h:lbl('下一笔：超过 24 小时上限 → 回滚','w')}}, bad:['g']},
+      {c:'第二道框：看门狗用自己的节点核对，发现以太坊上有放款、Qtum 上却没有对应的销毁，立即用守护者钥匙暂停网关。之后运营地址什么都做不了。实际上看门狗多半在上限用完之前就会发现。', set:{t1:{hide:1}, wd:{h:lbl('放款没有对应销毁 → 暂停','w')}, st:{h:lbl('已暂停','w')}}, lit:['w']},
+      {c:'恢复只能由冷钱包多签做：先换掉泄露的运营地址，对清账，再解除暂停。守护者只能停、不能开，所以守护者钥匙被盗，最坏也只是桥停下来。', set:{fix:{hide:0}, wd:{h:lbl('多签换钥匙','g')}}, lit:['w']},
+      {c:'整个过程冷钱包里的钱没动过。这就是热余额上限和 24 小时上限的意义：钥匙总有可能泄露，设计要让泄露的损失是一个事先算好的数。', set:{st:{h:lbl('已恢复，新运营地址','g')}}, lit:['g','w']},
+    ]};
+  // ④ 退款：先在对面取消，确认后再退
+  A.ref = {h:260,
+    b:[['g',2,8,30,84,'EthGateway'],['m',36,8,28,84,'多签持有人 / 看门狗'],['q',68,8,30,84,'Qtum · MintGateway']],
+    it:[
+      {id:'d', h:lbl('存入 #42：500 USDC<br>审核被拒（Qtum 地址不合法）','w'), x:17, y:36},
+      {id:'cx', h:chip('cancel(#42)','--qtum','out'), x:83, y:40, hide:1},
+      {id:'qs', h:lbl('#42 已取消，永远不能铸币','g'), x:83, y:66, hide:1},
+      {id:'cf', h:lbl('确认取消已上链、不会回滚','m'), x:50, y:44, hide:1},
+      {id:'rf', h:chip('refund(#42)','--eth','out'), x:50, y:70, hide:1},
+      {id:'back', h:chip('500 USDC 退回发起人','--usdc'), x:17, y:72, hide:1}],
+    s:[
+      {c:'用户在以太坊存了 500 USDC，但审核没通过，比如填的 Qtum 地址不合法。钱已经在 EthGateway（或冷钱包）里，Qtum 上还没铸币。', lit:['g']},
+      {c:'第一步不是退款，而是到 Qtum 的 MintGateway 上取消 #42。取消用运营密钥就能做，因为它只会挡住铸币，动不了钱。取消不可撤销：之后这个 ID 永远不能铸币。', set:{cx:{hide:0}, qs:{hide:0}}, lit:['q']},
+      {c:'EthGateway 看不见 Qtum，所以“取消已经生效、不会被回滚”这件事，要多签持有人和看门狗在链下确认。', set:{cx:{hide:1}, cf:{hide:0}}, lit:['m']},
+      {c:'确认后，冷钱包多签调用 refund(#42)。合约从存入记录里取金额和发起人，不接受外面传进来的数字；每条记录只能退一次。', set:{rf:{hide:0}}, lit:['m','g']},
+      {c:'500 USDC 退回原发起人。看门狗会核对：每笔退款在对面都有对应的取消。', set:{rf:{hide:1}, back:{hide:0}, d:{h:lbl('存入 #42：已退款','g')}}, lit:['g']},
+      {c:'为什么不能反过来？先退款的话，签名服务可能在同一时间已经按 #42 在 Qtum 上铸了币，用户就两边都拿到了。先在对面把铸币的路堵死，再退款，两件事就不会同时发生。', lit:['g','q']},
+    ]};
+  Guide.mount(A);
+
+  // 三个上限计算器
+  const $ = id => document.getElementById(id), n = id => Math.max(0, +$(id).value || 0);
+  const f = x => Math.round(x).toLocaleString('en-US');
+  function calc(){
+    const hot = n('cHot'), bal = n('cBal'), dep = n('cDep'), tx = n('cTx'), day = n('cDay'), inflow = n('cIn');
+    const keep = Math.min(dep, Math.max(0, hot - bal)), toCold = dep - keep, after = bal + keep;
+    // 24 小时内：攻击者最多放走 24 小时上限；网关里能被拿走的上界是存入后的热余额加上期间的新存入（被放走后腾出空间，新存入会留在热余额）
+    const reachable = after + inflow, loss = Math.min(day, reachable);
+    const warn = [];
+    if (tx > day) warn.push('单笔上限大于 24 小时上限：单笔上限实际不起作用');
+    if (hot < tx) warn.push('热余额上限小于单笔上限：热余额不够时，单笔上限内的提现也会失败');
+    if (bal > hot) warn.push('当前热余额已经超过上限：存入不会造成这种情况，要查是补款补多了、还是有误转');
+    $('cOut').innerHTML = [
+      `<span>这笔存入：留在热余额 <b>${f(keep)}</b>，同笔转冷 <b>${f(toCold)}</b>；存入后热余额 ${f(after)}</span>`,
+      `<span>超过 <b>${f(tx)}</b> 的提现走冷钱包多签（releaseByCold）</span>`,
+      `<span>运营密钥泄露、24 小时内没暂停：最多被放走 <b>${f(loss)}</b> <span class="m">= min(24 小时上限 ${f(day)}，热余额 + 期间新存入 ${f(reachable)})</span></span>`,
+      ...warn.map(w => `<span style="color:var(--warn)">⚠ ${w}</span>`),
+      `<span class="m">这些数只是 EthGateway 链上的最后一道框。后端和签名服务的上限应该更低：后端上限 &lt; 签名服务上限 ≤ 链上上限。</span>`,
+    ].join('');
+  }
+  ['cHot','cBal','cDep','cTx','cDay','cIn'].forEach(id => $(id).addEventListener('input', calc));
+  calc();
+})();
+</script>
+</body>
+</html>

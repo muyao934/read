@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mixin Network 云数据库被入侵｜区块链被盗事件编年史</title>
+<meta name="description" content="2023 年 9 月 Mixin Network 所用云服务商的数据库被入侵、约 2 亿美元外链资产被转走的经过：共识层与托管层的区别、官方披露了什么和没有披露什么、按币种赔付与 MDT 债务代币的兑付进展。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-mixin-network">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Mixin Network 云数据库被入侵</h1>
+    <p class="lede">2023 年 9 月 23 日，Mixin Network 所用云服务商的数据库被黑客入侵，随后主网上的 BTC、ETH 等资产被转走，初步估计约 2 亿美元。官方至今只确认了“云服务商数据库被攻击”这一句，没有公布技术复盘。这起事件说明，一个以 BFT 共识自称去中心化的网络，用户资产的安全可能取决于一个普通的云数据库。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Mixin Network 是一个以 BFT-DAG 共识运行的跨链转账网络，用户存入的 BTC、ETH 等资产放在 Mixin 管理的外链地址上。2023 年 9 月 23 日凌晨（香港时间），Mixin 所用云服务商的数据库被黑客入侵，主网资产被转走，初步估计约 2 亿美元<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。Mixin 暂停了充值和提现，站内转账照常。</p>
+        <p>官方的技术说明只有“云服务商的数据库被黑客攻击”一句。数据库里存了什么、攻击者怎样拿到转走外链资产的签名能力，至今没有公开。可以确定的是，出问题的不是 Kernel 的共识，而是托管外链资产的那一层。2018 年的白皮书要求节点运行在 Intel SGX 可信执行环境里，开源代码的 README 则写着这部分“尚未集成”<a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>。</p>
+        <p>创始人冯晓东先表示最多先赔付 50%，两天后公布按币种的比例：BTC 90%、ETH 30%、ERC20-USDT 10%<a class="ref" href="#s3">[3]</a><a class="ref" href="#s7">[7]</a>。缺口记成债务代币 MDT，用公司未来的利润回购。2026 年 9 月，Mixin 完成了 USDT 部分 2,300 万美元的兑付，BTC 和 ETH 部分没有公布时间表<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。攻击者身份不明。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Mixin Network 2017 年在香港成立，主打用手机号互相发送数字资产，早期天使投资人包括李笑来<a class="ref" href="#s3">[3]</a>。用户在 Mixin Messenger 等应用里看到的余额记在 Mixin 自己的账本上，背后对应的 BTC、ETH 等资产则存放在各条公链上由 Mixin 管理的地址里。</p>
+        <p>事发前，DefiLlama 统计的 Mixin 锁仓价值接近 4 亿美元，覆盖 48 条链；Mixin 7 月的月报披露协议中持有 9,544 枚 BTC，约合 2.53 亿美元<a class="ref" href="#s3">[3]</a>。它的开发者文档首页写着“所有资产都存放在 PoS-BFT-DAG 分布式网络中”<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与项目方行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2018-07-01</time><div class="ev">Mixin 技术白皮书草稿发布，要求 Kernel 节点运行在 Intel SGX 可信执行环境中，外链资产由 Mixin Domain 管理<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2023-07</time><div class="ev">Mixin 月报披露协议中持有 9,544 枚 BTC，约 2.53 亿美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>2023-09-23 凌晨（香港时间）</time><div class="ev">Mixin 所用云服务商的数据库被黑客入侵，主网资产被转走<a class="ref" href="#s1">[1]</a>。2026 年的一篇报道写作当晚发现<a class="ref" href="#s10">[10]</a>，两种说法并存。</div></li>
+          <li class="def"><time>2023-09-24 至 25</time><div class="ev">Mixin 在 X 上发布声明，暂停充值和提现，站内转账不受影响，已联系 Google 和 SlowMist 协助调查<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2023-09-25 13:00（香港时间）</time><div class="ev">冯晓东中文直播，称“只能保证至少一半资产是安全的”，先赔付最多 50%，其余以代币化的债权形式发放，由公司用未来的利润回购<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2023-09-25</time><div class="ev">PeckShield 统计可追踪的被盗资产约 1.41 亿美元：ETH 9,448 万、DAI 2,355 万、BTC 2,330 万。攻击者把 USDT 换成了 DAI，以免被冻结<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2023-09 下旬</time><div class="ev">Mixin 通过 Etherscan 链上消息向攻击者提出：保留 2,000 万美元作为“漏洞赏金”，其余归还。Mixin 随后表示损失“没有预估的那么严重”<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-09-27</time><div class="ev">冯晓东公布按币种的赔付比例：BTC 90%、ETH 30%、ERC20-USDT 10%，其他链上的 USDT 未受影响，其他币种计划 100% 赔付<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2024-01-31</time><div class="ev">Mixin 正式推出债务代币 MDTb、MDTe、MDTu，分别对应 BTC、ETH、ERC20-USDT 债务，每枚价值 1 美元<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2026-02-12 前后</time><div class="ev">被 Arkham 标记为“Mixin Hacker”的钱包在沉寂近两年后，分 20 笔把约 385 万美元的 ETH 转入 Tornado Cash<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def key"><time>2026-09-23</time><div class="ev">事件三周年当天，Mixin 宣布用经营利润完成 MDTu 对应的 2,300 万美元全额兑付<a class="ref" href="#s10">[10]</a>。截至 2026 年 10 月，本站没有查到 MDTb、MDTe 的兑付时间表。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起事件没有公开的代码漏洞，官方也没有发布事故报告。下面先列出能确定的和不能确定的，再从 Mixin 公开的设计文档出发，解释一个云数据库为什么能影响链上资产。推断的部分会单独标明。</p>
+        <div class="compare">
+          <div>
+            <h4>能确定的</h4>
+            <ul>
+              <li>被攻击的是 Mixin 所用云服务商的数据库<a class="ref" href="#s1">[1]</a>。</li>
+              <li>被转走的是公链上的 BTC、ETH 和 ERC20-USDT 等资产<a class="ref" href="#s1">[1]</a>。</li>
+              <li>Mixin 账本内部的转账照常进行，只暂停了充值和提现<a class="ref" href="#s2">[2]</a>。</li>
+              <li>赔付比例按币种不同，说明各链受损程度不同<a class="ref" href="#s7">[7]</a>。</li>
+            </ul>
+          </div>
+          <div>
+            <h4>没有公开的</h4>
+            <ul>
+              <li>是哪家云服务商，入侵是怎样发生的。</li>
+              <li>数据库里存的是私钥、加密后的私钥、密钥分片，还是能调用签名服务的凭据。</li>
+              <li>白皮书设计的 SGX 保护在 2023 年是否部署。</li>
+              <li>最终确认的损失金额。</li>
+            </ul>
+          </div>
+        </div>
+        <h3>共识保护的是账本，不是链上的私钥</h3>
+        <p>Mixin Kernel 是一个 BFT-DAG 账本，节点之间靠集体签名对账本快照达成共识，需要超过三分之二的节点签名<a class="ref" href="#s12">[12]</a>。这套共识能防止有人伪造 Mixin 账本上的余额，但它管不到比特币和以太坊。要把 BTC 从比特币网络上的一个地址转走，需要的是这个地址对应的私钥或密钥分片签名，这是 Kernel 共识之外的另一种能力。</p>
+        <p>2018 年的白皮书把这部分交给 Mixin Domain：Domain 为每种外链资产生成对应的地址，用户充值后由 Kernel 和 Domain 共同锁定，提现需要两者共同签名<a class="ref" href="#s11">[11]</a>。白皮书写道：</p>
+        <blockquote>
+          <p>This works because the Mixin Kernel and the Mixin Domain is also a Proof of Stake network. Besides the XIN collateral, there are also additional Intel SGX enforcement for all related functions.</p>
+          <cite>Mixin 技术白皮书草稿，2018-07-01，第 18 页<a class="ref" href="#s11">[11]</a></cite>
+        </blockquote>
+        <p>意思是 Kernel 和 Domain 是靠 XIN 质押维持的权益证明网络，相关功能还额外由 Intel SGX 强制保护。但 Mixin Kernel 开源仓库 v0.1.0 和 v0.17.0 两个版本的 README，第一句都写着：“the Trusted Execution Environment is not integrated into this repository yet”<a class="ref" href="#s12">[12]</a>。现在的 README 则写明，充值需要托管方（custodian）授权，检查外链储备和执行外链提现“依赖单独的托管服务”<a class="ref" href="#s12">[12]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 340" role="img" aria-labelledby="mixin-arch-t mixin-arch-d">
+            <title id="mixin-arch-t">Mixin 的共识层与托管层</title>
+            <desc id="mixin-arch-d">左边是 Mixin Kernel，用 BFT 共识记录 Mixin 账本，事发时没有被攻破，站内转账照常。中间是托管外链资产的一层，掌握在比特币和以太坊上签名转账的能力。右边是公链上的充值地址和钱包。攻击者入侵了云数据库，数据库与托管层之间是什么关系官方没有公开，结果是外链资产被签名转到攻击者地址。</desc>
+            <defs>
+              <marker id="mixin-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="mixin-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t s" x="20" y="22">Mixin 账本</text>
+            <text class="d-t s" x="290" y="22">外链资产托管</text>
+            <text class="d-t s" x="530" y="22">公链</text>
+            <rect class="d-box def" x="20" y="32" width="220" height="92" rx="4"/>
+            <text class="d-t b" x="130" y="58" text-anchor="middle">Mixin Kernel</text>
+            <text class="d-t s" x="130" y="80" text-anchor="middle">BFT-DAG 共识</text>
+            <text class="d-t s" x="130" y="98" text-anchor="middle">快照需三分之二以上节点签名</text>
+            <text class="d-t s" x="130" y="116" text-anchor="middle">事发时未被攻破</text>
+            <rect class="d-box" x="290" y="32" width="200" height="92" rx="4"/>
+            <text class="d-t b" x="390" y="58" text-anchor="middle">托管层</text>
+            <text class="d-t s" x="390" y="80" text-anchor="middle">白皮书：Mixin Domain</text>
+            <text class="d-t s" x="390" y="98" text-anchor="middle">掌握在公链上签名的能力</text>
+            <text class="d-t s" x="390" y="116" text-anchor="middle">SGX 保护是否部署不明</text>
+            <rect class="d-box" x="530" y="32" width="220" height="92" rx="4"/>
+            <text class="d-t b" x="640" y="58" text-anchor="middle">比特币、以太坊等</text>
+            <text class="d-t s" x="640" y="80" text-anchor="middle">Mixin 管理的充值地址</text>
+            <text class="d-t s" x="640" y="98" text-anchor="middle">和出金钱包</text>
+            <line class="d-line" x1="240" y1="64" x2="288" y2="64" marker-end="url(#mixin-ah)"/>
+            <line class="d-line" x1="290" y1="98" x2="242" y2="98" marker-end="url(#mixin-ah)"/>
+            <text class="d-t s halo" x="265" y="58" text-anchor="middle">提现</text>
+            <text class="d-t s halo" x="265" y="114" text-anchor="middle">入账</text>
+            <line class="d-line atk" x1="490" y1="78" x2="528" y2="78" marker-end="url(#mixin-ah-atk)"/>
+            <text class="d-t s atk halo" x="510" y="70" text-anchor="middle">签名</text>
+            <rect class="d-box atk" x="290" y="186" width="200" height="64" rx="4"/>
+            <text class="d-t b" x="390" y="212" text-anchor="middle">云服务商的数据库</text>
+            <text class="d-t s" x="390" y="234" text-anchor="middle">2023-09-23 被入侵</text>
+            <line class="d-line dash" x1="390" y1="186" x2="390" y2="126"/>
+            <text class="d-t s halo" x="400" y="160">数据库与签名能力的关系：未公开</text>
+            <rect class="d-box atk" x="20" y="186" width="220" height="64" rx="4"/>
+            <text class="d-t b" x="130" y="212" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="130" y="234" text-anchor="middle">身份不明</text>
+            <line class="d-line atk" x1="240" y1="218" x2="288" y2="218" marker-end="url(#mixin-ah-atk)"/>
+            <text class="d-t s atk halo" x="264" y="210" text-anchor="middle">入侵</text>
+            <rect class="d-box atk" x="530" y="186" width="220" height="64" rx="4"/>
+            <text class="d-t b" x="640" y="212" text-anchor="middle">攻击者地址</text>
+            <text class="d-t s" x="640" y="234" text-anchor="middle">可追踪部分约 1.41 亿美元</text>
+            <line class="d-line atk" x1="640" y1="124" x2="640" y2="184" marker-end="url(#mixin-ah-atk)"/>
+            <rect class="d-box soft" x="20" y="272" width="730" height="56" rx="4"/>
+            <text class="d-t s" x="36" y="295">Kernel 的共识只能保证 Mixin 账本上的余额不被伪造。公链上的资产能不能转走，取决于托管层的签名能力在谁手里。</text>
+            <text class="d-t s" x="36" y="316">这次失守的是托管层，所以账本内转账照常，外链资产却被转走。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：Mixin 的共识层与托管层。蓝色是没有被攻破的部分，红色是攻击路径，虚线是官方没有公开的环节。依据 Mixin 白皮书、README 和事发后的官方声明整理。</figcaption>
+        </figure>
+        <div class="note doubt">
+          <span class="h">推断，不是官方结论</span>
+          <p>账本内转账照常、公链上的资产却被转走，这个结果说明攻击者拿到的不是篡改 Mixin 账本的能力，而是在公链上签名的能力，或者是让托管层替他签名的能力。按白皮书的设计，这部分本应由 SGX 和 Domain 节点保护；一个云数据库被入侵就能导致外链资产被转走，说明至少在 2023 年，签名所需的材料或调用签名的凭据可以通过这个数据库被拿到或被利用。具体是哪一种，Mixin 没有说明。</p>
+        </div>
+        <p>赔付比例也透露了一些信息。BTC 用户先拿回 90%，ETH 用户 30%，ERC20-USDT 用户只有 10%，其他链上的 USDT 不受影响<a class="ref" href="#s7">[7]</a>，这说明以太坊上的资产损失最重，与 PeckShield 统计的 ETH 约 9,448 万美元、由 USDT 换成的 DAI 约 2,355 万美元相吻合<a class="ref" href="#s1">[1]</a>。BTC.TOP 的江卓尔当时质疑，BTC 通常放在冷钱包里，本不该被一次云服务器入侵波及<a class="ref" href="#s3">[3]</a>。实际被转走的 BTC 约 2,330 万美元，说明至少有一部分 BTC 放在能在线签名的地址里。</p>
+        <h3>事后的设计：用户自己持有一把钥匙</h3>
+        <p>事件之后，Mixin 把安全宣传的重点转向 Mixin Safe。2026 年的报道把它描述为针对单一密钥风险的改进<a class="ref" href="#s10">[10]</a>。它的比特币账户是一个原生多签脚本，项目 README 给出的策略如下<a class="ref" href="#s13">[13]</a>：</p>
+<pre class="code"><code><span class="c">// Mixin Safe 比特币账户的 miniscript 策略：3 把钥匙里任意 2 把签名即可花费</span>
+thresh(2,pk(OWNER),s:pk(MEMBERS),sj:and_v(v:pk(RECOVERY),n:older(52560)))
+<span class="c">// OWNER    用户自己保管的钥匙</span>
+<span class="c">// MEMBERS  由 Mixin Safe 节点用 MPC 生成、共同控制的钥匙</span>
+<span class="c">// RECOVERY 恢复钥匙，要等 52,560 个区块（约一年）的时间锁到期后才能参与签名</span></code></pre>
+        <p class="code-cap">来源：MixinNetwork/safe 仓库 README。中文注释为本站所加。</p>
+        <p>按这个脚本，在时间锁到期前，只有 OWNER 和 MEMBERS 同时签名才能动用资金。即使服务端全部失守，没有用户手里的那把钥匙，也转不走 BTC。时间锁到期后，MEMBERS 加 RECOVERY 也能花费，这是为用户丢失钥匙准备的退路。2023 年的托管方式缺的正是这种“服务端单独签不了”的约束。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>Mixin 没有公布入侵经过，公开资料里能还原的只有链上可见的部分：</p>
+        <ol class="steps">
+          <li><b>入侵云数据库</b>2023 年 9 月 23 日凌晨（香港时间），Mixin 所用云服务商的数据库被入侵<a class="ref" href="#s1">[1]</a>。云服务商的名字和入侵方式都没有公开。</li>
+          <li><b>转出外链资产</b>攻击者把 Mixin 主网在以太坊、比特币等公链上的资产转到自己的地址。PeckShield 识别出约 1.41 亿美元<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>规避冻结</b>攻击者把 USDT 换成 DAI。USDT 的发行方 Tether 可以冻结地址，DAI 没有中心化的冻结功能<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>长期静置</b>资金此后在攻击者地址里停留了约两年。2026 年 2 月，被标记为“Mixin Hacker”的钱包开始把 ETH 转入 Tornado Cash<a class="ref" href="#s9">[9]</a>。</li>
+        </ol>
+        <p>链上分析平台 0xScope 当时指出，一个与攻击者有关的地址在 2022 年曾从 Mixin 收到 5 枚 ETH，之后向 Binance 存入 5.9 枚 ETH<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。这条线索后来是否帮助确认了攻击者身份，公开资料里没有下文。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>Mixin 外链地址</b>以太坊、比特币等公链上的资产</li>
+          <li class="atk"><b>攻击者地址</b>可追踪部分约 1.41 亿美元</li>
+          <li class="atk"><b>USDT 换成 DAI</b>避开发行方冻结</li>
+          <li class="doubt"><b>静置约两年</b>2026 年 2 月起部分 ETH 进入 Tornado Cash</li>
+        </ol>
+        <p>被盗金额有几种说法：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">金额</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>Mixin 首次声明</td><td class="n">约 2 亿美元</td><td>事发后的初步估计<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>PeckShield</td><td class="n">约 1.41 亿美元</td><td>ETH 9,448 万、DAI 2,355 万、BTC 2,330 万，只计已识别的攻击者地址<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>2026 年兑付报道</td><td class="n">约 1.5 亿美元</td><td>按当时价格计算的主要损失<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>MDTu 兑付</td><td class="n">2,300 万美元</td><td>ERC20-USDT 部分的债务，2026 年 9 月兑付完毕<a class="ref" href="#s10">[10]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Mixin 在事发几天后说损失“没有预估的那么严重”<a class="ref" href="#s6">[6]</a>，但没有公布确认后的数字。本站沿用最初的 <span class="dispute">约 2 亿美元</span>，同时列出其他口径。公开资料里没有被盗资产被冻结或追回的记录。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <p>SecurityWeek 当时称这是 2023 年已披露的最大一起盗币事件<a class="ref" href="#s5">[5]</a>。消息传出后，XIN 下跌约 8%，跌到 195 美元左右<a class="ref" href="#s2">[2]</a>。</p>
+        <p>争议的焦点是“去中心化”。Mixin 对外说资产存放在 PoS-BFT-DAG 分布式网络中<a class="ref" href="#s14">[14]</a>，出事的却是一个云服务商的数据库。共识层的去中心化和托管层的去中心化是两回事：前者决定账本会不会被篡改，后者决定公链上的钱会不会被转走。用户看到的“分布式网络”说的是前者，真正决定资金安全的是后者。</p>
+        <p>事发后有人猜测是朝鲜 Lazarus 所为。BleepingComputer 写道，没有证据指向 Lazarus，这起事件也没有被归因于它<a class="ref" href="#s4">[4]</a>。本站查到的资料里，没有执法机构或安全公司把它正式归因于某个团伙。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>赔付方案</h3>
+        <p>赔付方案前后有两个说法。9 月 25 日的直播里，冯晓东说先赔付最多 50%，其余部分发放代币化的债权，由公司用未来利润回购<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。两天后他公布了按币种区分的比例，并说正式公告还需要时间，但比例的浮动不会超过 1%<a class="ref" href="#s7">[7]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>资产</th><th class="n">先行赔付</th><th>缺口</th></tr></thead>
+            <tbody>
+              <tr><td>BTC</td><td class="n">90%</td><td>记为 MDTb</td></tr>
+              <tr><td>ETH</td><td class="n">30%</td><td>记为 MDTe</td></tr>
+              <tr><td>ERC20-USDT</td><td class="n">10%</td><td>记为 MDTu</td></tr>
+              <tr><td>其他链上的 USDT</td><td class="n">不受影响</td><td>无</td></tr>
+              <tr><td>其他币种</td><td class="n">计划 100%</td><td>无</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">赔付比例来自 TechFlow 2023-09-27 的报道<a class="ref" href="#s7">[7]</a>，债务代币的对应关系来自 Mixin 2024-01-31 的公告<a class="ref" href="#s8">[8]</a>。赔付按被盗时的价格折算成美元，资金来自 Mixin 已有的资金和借款<a class="ref" href="#s7">[7]</a>。</p>
+        <p>两个说法之间的关系，官方没有专门解释。可以看到的是，BTC 的比例高于 50%，ETH 和 ERC20-USDT 低于 50%。</p>
+        <h3>债务代币与兑付进展</h3>
+        <p>2024 年 1 月 31 日，Mixin 正式推出 MDT 债务代币，每枚价值 1 美元，用户通过迁移机器人领取<a class="ref" href="#s8">[8]</a>。Mixin 还承诺，如果在兑付完成前攻击者归还了被盗资产，持有 MDT 的用户可以换回原来损失的资产<a class="ref" href="#s10">[10]</a>。</p>
+        <p>2026 年 9 月 23 日，Mixin 宣布用经营利润完成了 MDTu 对应的 2,300 万美元全额兑付<a class="ref" href="#s10">[10]</a>。同年 2 月的报道写道，MDTb 和 MDTe 没有兑付时间表<a class="ref" href="#s9">[9]</a>；10 月的报道只提到 MDTu 已经完成<a class="ref" href="#s10">[10]</a>。Mixin 仍在运营，2026 年自称资产规模超过 10 亿美元<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <div class="note doubt">
+          <span class="h">至今没有公开的内容</span>
+          <ul>
+            <li>事故报告：云服务商是谁、入侵路径、数据库里有什么、签名能力是怎样被拿到的。</li>
+            <li>调查结论：Mixin 说已请 Google 和 SlowMist 协助调查<a class="ref" href="#s1">[1]</a>，结论没有发布。</li>
+            <li>确认后的最终损失，以及 MDTb、MDTe 的发行规模和兑付计划。</li>
+            <li>是否报警、是否有执法机构立案。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给钱包和托管服务</span>
+          <ul>
+            <li>签名材料不进通用数据库。私钥、加密后的私钥和解密它的密钥，不能放在一个能被整体拖走的地方。签名应在 HSM、MPC 节点或可信执行环境里完成，数据库被拖走也拿不到能签名的东西。</li>
+            <li>设计文档里的安全措施要真的部署，并公开说明部署到了哪一步。写在 README 里的“尚未集成”，大多数用户不会去读。</li>
+            <li>把云服务商当作信任链的一环。它的员工权限、日志保留和入侵检测，都属于你的威胁模型。</li>
+            <li>外链资产的大部分放在需要多方签名的冷存储里，在线钱包设额度上限和异常出金告警。</li>
+            <li>出事后发布技术复盘。不公开原因，别人就无法判断同样的问题是否已经修好。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>判断一个钱包是否安全，要问签名能力在谁手里、放在哪里，而不只是它用了什么共识算法。</li>
+            <li>“去中心化网络”可能只说明账本是分布式的，不代表托管也是。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Cointelegraph，《Mixin Network hack drains $200M from mainnet assets》，2023-09-25。<a href="https://cointelegraph.com/news/mixin-network-hack-200-m-crypto-assets">cointelegraph.com</a></li>
+          <li id="s2">The Block，《Mixin Network suspends services after hack involving $200 million in funds》，2023-09-24。<a href="https://www.theblock.co/news/regulation/2023-09-24-mixin-network-suspends-services-after-hack-involving-200-million-in-funds-252698">theblock.co</a></li>
+          <li id="s3">Cointelegraph，《$200M Mixin Network hack draws controversy》，2023-09-25。<a href="https://cointelegraph.com/news/200-million-mixin-network-hack-draws-controversy">cointelegraph.com</a></li>
+          <li id="s4">BleepingComputer，《Mixin Network suspends operations following $200 million hack》，2023-09-25。<a href="https://www.bleepingcomputer.com/news/security/mixin-network-suspends-operations-following-200-million-hack/">bleepingcomputer.com</a></li>
+          <li id="s5">Ionut Arghire，《$200 Million in Cryptocurrency Stolen in Mixin Network Hack》，SecurityWeek，2023-09-26。<a href="https://www.securityweek.com/200-million-in-cryptocurrency-stolen-in-mixin-network-hack/">securityweek.com</a></li>
+          <li id="s6">CryptoPotato，《Mixin Network Offers Bug Bounty Reward to Hacker Behind Recent $200 Million Exploit》，2023-09-27。<a href="https://cryptopotato.com/mixin-network-offers-bug-bounty-reward-to-hacker-behind-recent-200-million-exploit/">cryptopotato.com</a></li>
+          <li id="s7">TechFlow 深潮，《Mixin: Compensation ratios for BTC, ETH, and ERC20 USDT are 90%, 30%, and 10% respectively》，2023-09-27。<a href="https://www.techflowpost.com/en-US/newsletter/31625">techflowpost.com</a></li>
+          <li id="s8">Odaily 星球日报，《Mixin 推出债务代币 MDT，包括 MDTb、MDTe 和 MDTu 三种债务》，2024-02-01（引用 Mixin Kernel 在 X 上的公告）。<a href="https://www.odaily.news/zh-CN/newsflash/352766">odaily.news</a></li>
+          <li id="s9">Stacy Elliott，《$3.85 Million in Ethereum From Mixin Network Hack Sent to Tornado Cash》，Decrypt（Yahoo Finance 转载），2026-02。<a href="https://finance.yahoo.com/news/3-85-million-ethereum-mixin-175053959.html">finance.yahoo.com</a></li>
+          <li id="s10">深潮 TechFlow，《Mixin 完成 2300 万美元兑付：一场持续三年的履约》，2026-10-13。<a href="https://www.techflowpost.com/article/34517">techflowpost.com</a></li>
+          <li id="s11">Mixin Network，《Mixin Network: A free and lightning fast peer-to-peer transactional network for digital assets》技术白皮书草稿，2018-07-01。<a href="https://mixin.one/assets/Mixin-Draft-2018-07-01.pdf">mixin.one</a></li>
+          <li id="s12">MixinNetwork/mixin 仓库：README（v0.1.0、v0.17.0 标签与当前版本）及 doc/mixin-kernel-technical-paper.md。<a href="https://github.com/MixinNetwork/mixin">github.com</a></li>
+          <li id="s13">MixinNetwork/safe 仓库 README。<a href="https://github.com/MixinNetwork/safe">github.com</a></li>
+          <li id="s14">Mixin Developers，《Introduction》。<a href="https://developers.mixin.one/docs/introduction">developers.mixin.one</a></li>
+          <li id="s15">SlowMist Hacked 事件库，Mixin Network 条目（2023-09-23）。<a href="https://hacked.slowmist.io/">hacked.slowmist.io</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

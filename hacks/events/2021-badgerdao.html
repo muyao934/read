@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BadgerDAO 前端注入｜区块链被盗事件编年史</title>
+<meta name="description" content="2021 年 BadgerDAO 用户约 1.2 亿美元被转走的经过：Cloudflare 注册流程缺陷如何让攻击者拿到 API 密钥，前端被注入脚本后用户如何多签了一笔授权，以及冻结、补偿与 Celsius 诉 Cloudflare 案。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-badgerdao">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>BadgerDAO 前端注入</h1>
+    <p class="lede">2021 年 12 月 2 日凌晨（UTC），BadgerDAO 用户约 1.2 亿美元的资产被转走，其中一个地址就损失了约 900 枚 BTC 等值的代币。攻击者借 Cloudflare 注册流程的缺陷拿到 Badger 账户的 API 密钥，在官网前端注入脚本，让用户在正常操作时多签了一笔把代币授权给攻击者的交易。整个过程中 Badger 的合约都按设计运行，出问题的是合约审计覆盖不到的两处：用户实际加载的网页，和托管网页的云服务账户。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">BadgerDAO 是一个把比特币带进 DeFi 的协议，用户通过官网 app.badger.com 把 BTC 相关代币存进 Sett 金库，官网流量经过 Cloudflare 代理。Cloudflare 当时的注册流程允许账户在邮箱验证完成前就创建和查看 API 密钥。攻击者在 2021 年 8 月底到 9 月初抢先为三个 Badger 账户生成了密钥；9 月中旬，Badger 在不知情的情况下完成了其中一个账户的注册，那把密钥随之生效<a class="ref" href="#s1">[1]</a>。</p>
+        <p>从 11 月 10 日起，攻击者用这把密钥通过 Cloudflare Workers 向官网页面注入脚本。用户在官网上发起交易时，钱包会多弹出一笔把代币授权给攻击者地址的请求。11 月 20 日出现第一笔这样的授权；12 月 2 日，攻击者集中调用 <code>transferFrom</code>，把已获授权的代币和金库份额转走<a class="ref" href="#s1">[1]</a>。PeckShield 估计损失约 1.203 亿美元<a class="ref" href="#s19">[19]</a>；CoinDesk 报道 Badger 事后报告时写的是 <span class="dispute">约 1.3 亿美元</span>，其中约 900 万美元的金库份额因合约被暂停而没能取出<a class="ref" href="#s22">[22]</a>。</p>
+        <p>社区报警后 30 分钟内，Badger 暂停了大部分金库。卡住的约 900 万美元份额随后经治理投票追回并原样退还，被盗的 BADGER 由国库补回，其余损失由国库出资，以 wBTC 和分两年发放的 BADGER 补偿<a class="ref" href="#s10">[10]</a>。损失最大的地址属于借贷平台 Celsius<a class="ref" href="#s12">[12]</a>。Celsius 破产后，其诉讼管理人在 2024 年起诉 Cloudflare 和 BadgerDAO 创始人之一 Christopher Spadafora，两名被告的驳回动议都被法院驳回，案件截至 2026 年 10 月仍在审理<a class="ref" href="#s14">[14]</a><a class="ref" href="#s17">[17]</a>。攻击者身份至今没有公开。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>BadgerDAO 以“让比特币在 DeFi 里可用”为目标，产品包括 Sett 金库、ibBTC、DIGG 和连接比特币与以太坊的 Badger Bridge，治理代币是 BADGER<a class="ref" href="#s1">[1]</a><a class="ref" href="#s13">[13]</a>。用户把 BTC 相关的流动性代币（如 Curve 的 renBTC/WBTC 池代币）或 BADGER、CVX 等存进 Sett 金库，换到一种可转让的 ERC-20 份额代币（bToken，如 bcrvRenWBTC），金库再把资产投入收益策略<a class="ref" href="#s4">[4]</a>。</p>
+        <p>协议的紧急刹车由 guardian 合约掌握。登记在 guardian 上的地址可以暂停合约，暂停后金库的存入、取出和转账，策略的提款，以及 ibBTC 的铸造和赎回都会被拦下；解除暂停只能由开发多签执行，并且要经过治理批准<a class="ref" href="#s1">[1]</a>。</p>
+        <p>普通用户通过 app.badger.com 与这些合约交互。网站流量经过 Cloudflare 代理，Badger 团队用 Cloudflare 账户管理它。Cloudflare Workers 是 Cloudflare 的边缘脚本功能，可以在流量经过代理时运行脚本、修改网页内容。账户的 API 密钥是用程序管理这些功能的凭证，开发者登录账户后可以查看<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a>。</p>
+        <p>使用官网的不只是散户。按 Celsius 诉讼管理人的起诉书，Celsius 陆续把数百枚比特币通过一个 MetaMask 钱包存进 Sett 金库赚取收益<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2021-08-20</time><div class="ev">Badger 事后在 Cloudflare 审计日志里找到的最早一次接管账户尝试。8 月底到 9 月初，三个 Badger 账户被他人抢先创建并生成了 API 密钥<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="key"><time>2021-09 中旬</time><div class="ev">Badger 在不知情的情况下完成了其中一个账户的注册，并把它用于日常的 Cloudflare 管理。界面没有提示账户早已存在、密钥早已生成<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2021-09-27</time><div class="ev">Cloudflare 社区论坛有用户发帖，说有人用他的企业邮箱注册了 Cloudflare 账户并创建了 API 令牌。其他用户在帖中指出，这种手法要等邮箱主人点击验证链接，预先生成的密钥才能用<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2021-09-29</time><div class="ev">同一帖子里，有用户转述 Cloudflare 客服的回复：工程团队会根据近期增多的陌生注册报告修改注册流程。Badger 后来据此判断，这个缺陷在 9 月 29 日前后被修复<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk key"><time>2021-11-10</time><div class="ev">攻击者开始用这把密钥，通过 Cloudflare Workers 向 app.badger.com 的页面注入脚本<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2021-11-20</time><div class="ev">链上出现第一笔把用户代币授权给攻击者地址的交易<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2021-11-27</time><div class="ev">据后来的一份治理提案引述，有用户在 Badger 的 Discord 里问：领取奖励时 Badger 为什么要“增加授权额度”<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk key"><time>2021-12-02 凌晨</time><div class="ev">攻击者集中调用 <code>transferFrom</code>，转走已获授权的代币和金库份额。The Block 报道，一名用户约 900 枚 BTC 相关代币在一笔交易中被转走<a class="ref" href="#s1">[1]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2021-12-02</time><div class="ev">社区在 Discord 报告一笔可疑的大额交易，Badger 在 30 分钟内暂停了大部分金库，几份 guardian 无法操作的旧合约约 15 小时后才被暂停。Badger 公告收到未经授权提款的报告，已暂停全部合约，并通知了美国和加拿大的执法部门<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2021-12-03</time><div class="ev">Cointelegraph 报道，链上分析者认为损失 896 枚 WBTC 的最大受害地址属于 Celsius，Celsius 没有回应<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2021-12-04 至 05</time><div class="ev">Badger 发布用户须知，请用户检查并撤销陌生的代币授权；随后通过链上消息联系攻击者地址，表示愿意给予补偿以和平解决<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2021-12-07</time><div class="ev">Badger 公布恢复计划：升级合约、拉黑攻击者地址、把未取出的金库份额转进新多签，并按区块 13724085 时的持仓恢复治理权重。Chainalysis 负责链上调查，Mandiant 负责 Web2 部分<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def key"><time>2021-12-09</time><div class="ev">Badger 发布在 Mandiant 协助下写成的技术事后报告，认为入口是一把未经授权创建的 Cloudflare API 密钥<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2021-12-11 至 31</time><div class="ev">治理提案 BIP 76 至 81 陆续提出：升级合约、追回并退还份额、补回 BADGER、用国库稳定币买入 wBTC，以及设立 remBADGER 补偿金库<a class="ref" href="#s3">[3]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2022-03-18</time><div class="ev">按起诉书，Celsius 一名员工误把约 901 枚 remBADGER 换回 BADGER，因此放弃了后续分配。4 月，要求恢复 901.35 枚 remBADGER 仓位的提案 BIP 91 在论坛投票中以 9 比 24 未通过<a class="ref" href="#s9">[9]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2022-07-13</time><div class="ev">Celsius 申请破产保护<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2024-02</time><div class="ev">remBADGER 计划结束。BADGER 价格低，坚持到最后的用户仍没拿回原有价值。2 月 18 日通过的 BIP 103 再拨 100 万枚 BADGER 继续补偿<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="key"><time>2024-07-12</time><div class="ev">Celsius 诉讼管理人 Mohsin Meghji 在纽约南区破产法院起诉 Cloudflare 和 Christopher Spadafora<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2025-04 至 05</time><div class="ev">法院先后驳回 Spadafora（4 月 28 日）和 Cloudflare（5 月 6 日）的驳回起诉动议<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2025-08-04</time><div class="ev">Cloudflare 依据其自助订阅协议，把 BadgerDAO 列为第三方被告<a class="ref" href="#s15">[15]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2026-03-31</time><div class="ev">联邦地区法院驳回 Cloudflare 的上诉许可申请<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2026-07 至 10</time><div class="ev">BadgerDAO 申请强制仲裁并中止对它的程序；9 月法院发出案件改派通知。截至 10 月，案件仍在审前阶段，尚无实体裁决<a class="ref" href="#s17">[17]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>Badger 的合约始终按设计运行。失守的地方都在合约之外，依次是托管官网的 Cloudflare 账户、用户实际加载的网页，以及用户在钱包里签下的授权。</p>
+        <h3>注册流程漏出了 API 密钥</h3>
+        <p>2021 年 9 月，Cloudflare 社区论坛上有用户报告：新账户在邮箱验证完成之前，就能创建和查看 API 密钥。攻击者可以用别人的邮箱注册，生成密钥，然后等邮箱主人点击验证链接；账户一旦激活，预先生成的密钥就有了 API 权限。论坛上的建议是，收到不是自己发起的注册验证邮件并点了链接的人，要立即重置密码、更换 API 密钥<a class="ref" href="#s11">[11]</a>。</p>
+        <p>Badger 的事后报告补充了两点。一是这个缺陷涉及的是 Global API Key，报告称这类密钥不能删除或停用。二是 Badger 在 9 月中旬完成注册时，界面没有明显提示这个账户早已建好、密钥早已生成<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="note warn">
+          <span class="h">修好注册流程，不等于收回了已经发出去的密钥</span>
+          <p>Cloudflare 在 9 月 29 日前后改了注册流程，此后新账户在邮箱验证前看不到 API 密钥<a class="ref" href="#s1">[1]</a>。攻击者在 8 月和 9 月初生成的密钥不受影响。Badger 激活的那个账户上的密钥一直有效，攻击者在 11 月 10 日照样用它部署了脚本。Celsius 的起诉书称 Cloudflare 没有主动提醒用户账户可能已被抢注<a class="ref" href="#s12">[12]</a>；Cloudflare 在诉讼中则称，问题在论坛公开讨论后两天内就修好了，并主张它对 Celsius 不负注意义务<a class="ref" href="#s14">[14]</a>。本站没有找到 Cloudflare 就此事发布的公开事故报告。</p>
+        </div>
+        <h3>Workers 让持钥人改写用户看到的页面</h3>
+        <p>Cloudflare Workers 让账户持有人在流量经过 Cloudflare 代理时运行脚本，修改返回给用户的网页<a class="ref" href="#s1">[1]</a>。能部署 Worker 的人，不需要碰源站服务器或代码仓库，就能改变用户实际收到的页面。只审查代码仓库和构建产物，发现不了这种改动。</p>
+        <p>按 Badger 的报告，攻击者从 11 月 10 日起用 API 权限，通过 Workers 向 app.badger.com 的 HTML 注入脚本。脚本在用户发起 web3 交易时介入，提示用户允许一个外部地址动用钱包里的 ERC-20 代币<a class="ref" href="#s1">[1]</a>。用户访问的仍然是官方域名，地址栏和证书都没有异常。</p>
+        <h3>授权比转账更难察觉</h3>
+        <p>ERC-20 代币有两种转移方式。一是持有人自己调用 <code>transfer</code>；二是持有人先用 <code>approve</code>（或 OpenZeppelin 等库提供的 <code>increaseAllowance</code>）给另一个地址一笔额度，对方以后可以随时调用 <code>transferFrom</code> 代为转账，不需要持有人再签名。用户被诱导签下的正是这类授权，被授权方是攻击者控制的外部账户<a class="ref" href="#s1">[1]</a>。</p>
+<pre class="code"><code><span class="c">// 示意：按 EIP-20 接口语义简化，并非 Badger 或任何代币的真实源码</span>
+<span class="c">// 第 1 步：用户在被篡改的页面上签名，只是写下一笔额度，代币没有动</span>
+<span class="bad">token.approve(attacker, amount);</span>
+
+<span class="c">// 第 2 步：之后任何时候，被授权方都可以自己发起转账</span>
+function transferFrom(address from, address to, uint256 value) external returns (bool) {
+    require(allowance[from][msg.sender] &gt;= value);   <span class="c">// 只检查额度，不需要 from 再签名</span>
+    allowance[from][msg.sender] -= value;
+    balanceOf[from] -= value;
+    balanceOf[to] += value;
+    return true;
+}
+
+<span class="c">// 撤销：把额度改回 0，之后攻击者的 transferFrom 会失败</span>
+<span class="good">token.approve(attacker, 0);</span></code></pre>
+        <p class="code-cap">示意代码，按 EIP-20 标准的 <code>approve</code>/<code>transferFrom</code> 语义简化，省略了事件和其他检查。</p>
+        <p>授权本身不转移资产，所以第一笔授权在 11 月 20 日上链，到 12 月 2 日攻击者集中调用 <code>transferFrom</code>，中间隔了 12 天，受害者的余额在这段时间里看不出变化<a class="ref" href="#s1">[1]</a>。金库份额 bToken 也是 ERC-20，同样可以被授权转走，但它的转账和取出都受 Badger 的暂停开关控制。WBTC、BADGER、CVX 这类普通代币不受 Badger 的暂停约束，这也是暂停之后攻击者仍能卖掉一部分资产的原因<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 520" role="img" aria-labelledby="bdg-chain-t bdg-chain-d">
+            <title id="bdg-chain-t">BadgerDAO 事件的失守链条与本可以拦住的位置</title>
+            <desc id="bdg-chain-d">左列按时间顺序列出五个失守环节：Cloudflare 注册流程在邮箱验证前发放密钥；Badger 激活了被抢注的账户；Workers 脚本改写官网页面；用户在钱包里签下额外授权；攻击者凭授权集中转走资产。右列是每个环节本可以拦住攻击的一步：验证前不发凭证并清点旧密钥；最小权限与定期核对；前端完整性监控；钱包清楚展示授权；按需授权、定期撤销并备好全局暂停。</desc>
+            <defs>
+              <marker id="bdg-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bdg-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="bdg-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t b atk" x="192" y="26" text-anchor="middle">失守的环节（按发生顺序）</text>
+            <text class="d-t b def" x="566" y="26" text-anchor="middle">本可以拦住的一步</text>
+            <rect class="d-box atk" x="20" y="44" width="344" height="76" rx="4"/>
+            <text class="d-t b atk" x="36" y="68">① 注册流程先发密钥</text>
+            <text class="d-t s" x="36" y="90">Cloudflare 允许邮箱验证前创建并查看 API 密钥</text>
+            <text class="d-t s" x="36" y="110">攻击者 8 至 9 月为 3 个 Badger 账户抢先生成密钥</text>
+            <line class="d-line dash" x1="364" y1="82" x2="390" y2="82" marker-end="url(#bdg-ah-def)"/>
+            <rect class="d-box def" x="392" y="44" width="348" height="76" rx="4"/>
+            <text class="d-t b def" x="408" y="68">验证完成前不发任何凭证</text>
+            <text class="d-t s" x="408" y="90">修补缺陷后，清点缺陷期间生成的旧密钥</text>
+            <text class="d-t s" x="408" y="110">主动通知或吊销；只改流程，旧密钥依然有效</text>
+            <line class="d-line atk" x1="192" y1="120" x2="192" y2="139" marker-end="url(#bdg-ah-atk)"/>
+            <rect class="d-box atk" x="20" y="140" width="344" height="76" rx="4"/>
+            <text class="d-t b atk" x="36" y="164">② 被抢注的账户被“激活”</text>
+            <text class="d-t s" x="36" y="186">9 月中旬 Badger 完成注册，攻击者的密钥随之生效</text>
+            <text class="d-t s" x="36" y="206">界面没有提示账户早已存在、密钥早已生成</text>
+            <line class="d-line dash" x1="364" y1="178" x2="390" y2="178" marker-end="url(#bdg-ah-def)"/>
+            <rect class="d-box def" x="392" y="140" width="348" height="76" rx="4"/>
+            <text class="d-t b def" x="408" y="164">最小权限，定期核对</text>
+            <text class="d-t s" x="408" y="186">用限定范围、可撤销的 API Token 代替全局密钥</text>
+            <text class="d-t s" x="408" y="206">开启 MFA，定期轮换密钥并核对审计日志</text>
+            <line class="d-line atk" x1="192" y1="216" x2="192" y2="235" marker-end="url(#bdg-ah-atk)"/>
+            <rect class="d-box atk" x="20" y="236" width="344" height="76" rx="4"/>
+            <text class="d-t b atk" x="36" y="260">③ Workers 脚本改写官网页面</text>
+            <text class="d-t s" x="36" y="282">11 月 10 日起，app.badger.com 的页面被注入脚本</text>
+            <text class="d-t s" x="36" y="302">改动发生在代理层，代码仓库里看不到</text>
+            <line class="d-line dash" x1="364" y1="274" x2="390" y2="274" marker-end="url(#bdg-ah-def)"/>
+            <rect class="d-box def" x="392" y="236" width="348" height="76" rx="4"/>
+            <text class="d-t b def" x="408" y="260">前端完整性监控</text>
+            <text class="d-t s" x="408" y="282">持续比对线上各路由返回的页面与本地构建产物</text>
+            <text class="d-t s" x="408" y="302">提供 IPFS 部署、可从源码构建的版本</text>
+            <line class="d-line atk" x1="192" y1="312" x2="192" y2="331" marker-end="url(#bdg-ah-atk)"/>
+            <rect class="d-box atk" x="20" y="332" width="344" height="76" rx="4"/>
+            <text class="d-t b atk" x="36" y="356">④ 钱包弹出一笔额外授权</text>
+            <text class="d-t s" x="36" y="378">用户签下 <tspan class="m">approve / increaseAllowance</tspan></text>
+            <text class="d-t s" x="36" y="398">被授权方是攻击者控制的外部账户</text>
+            <line class="d-line dash" x1="364" y1="370" x2="390" y2="370" marker-end="url(#bdg-ah-def)"/>
+            <rect class="d-box def" x="392" y="332" width="348" height="76" rx="4"/>
+            <text class="d-t b def" x="408" y="356">钱包把授权讲清楚</text>
+            <text class="d-t s" x="408" y="378">醒目显示被授权地址、额度和代币，陌生地址要警告</text>
+            <text class="d-t s" x="408" y="398">11 月 27 日已有用户在 Discord 问过这笔请求</text>
+            <line class="d-line atk" x1="192" y1="408" x2="192" y2="427" marker-end="url(#bdg-ah-atk)"/>
+            <rect class="d-box atk" x="20" y="428" width="344" height="76" rx="4"/>
+            <text class="d-t b atk" x="36" y="452">⑤ 凭授权集中转走资产</text>
+            <text class="d-t s" x="36" y="474">最早的授权在链上放了 12 天，12 月 2 日才兑现</text>
+            <text class="d-t s" x="36" y="494">暂停后，WBTC、BADGER 等普通代币仍被卖出</text>
+            <line class="d-line dash" x1="364" y1="466" x2="390" y2="466" marker-end="url(#bdg-ah-def)"/>
+            <rect class="d-box def" x="392" y="428" width="348" height="76" rx="4"/>
+            <text class="d-t b def" x="408" y="452">按需授权，定期撤销</text>
+            <text class="d-t s" x="408" y="474">每次只授权所需额度，闲置的授权改回 0</text>
+            <text class="d-t s" x="408" y="494">协议备好一键全局暂停，并定期演练</text>
+          </svg>
+          </div>
+          <figcaption>图 1：从 Cloudflare 账户到用户钱包的失守链条。左列是按时间顺序被突破的环节，右列是每个环节上本可以拦住攻击的一步。任何一环守住，攻击都会中断或损失缩小。</figcaption>
+        </figure>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面的经过按 Badger 与 Mandiant 合作完成的事后报告整理<a class="ref" href="#s1">[1]</a>。</p>
+        <ol class="steps">
+          <li><b>抢注账户，预生成密钥</b>2021 年 8 月底到 9 月初，攻击者利用 Cloudflare 注册流程的缺陷，抢先为三个 Badger 账户创建账户并生成 API 密钥。</li>
+          <li><b>等 Badger 自己激活</b>9 月中旬，Badger 完成了其中一个账户的注册，并开始用它做正常的 Cloudflare 管理。攻击者的密钥由此获得这个账户的 API 权限。</li>
+          <li><b>注入前端脚本</b>11 月 10 日起，攻击者通过 Workers 向 app.badger.com 注入脚本。用户在官网上发起交易时，会被提示额外批准一笔以攻击者地址为被授权方的代币授权。</li>
+          <li><b>积攒授权</b>11 月 20 日起，这些授权陆续上链。授权不改变余额，用户钱包里的资产照旧。</li>
+          <li><b>集中兑现</b>一个资金账户向攻击者主地址转入 8 ETH 作 gas，攻击者随后对已获授权的代币和金库份额批量调用 <code>transferFrom</code>，把资产转到其他账户变现，再经 Badger Bridge 换成 BTC 离开以太坊。</li>
+          <li><b>被暂停截住一部分</b>12 月 2 日社区报警后，Badger 暂停金库，攻击者对金库份额的 <code>transferFrom</code> 开始失败，已经转到攻击者手里但还没取出的份额也被卡住。WBTC、BADGER、CVX、cvxCRV 等普通代币不受暂停影响，暂停之后仍被卖出。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">转账发生在几点</span>
+          <p>事后报告称大部分合约在 12 月 2 日 03:30（UTC）前已暂停，未暂停金库的最后一笔恶意取出发生在 04:57<a class="ref" href="#s1">[1]</a>；Badger 12 月 4 日的用户须知却写着“许多未经授权的交易从 12 月 2 日 05:00（UTC）开始”<a class="ref" href="#s2">[2]</a>。两份官方文件对不上，本页统一写作“12 月 2 日凌晨（UTC）”，准确时间以链上记录为准。</p>
+        </div>
+        <p>按后来的一份治理提案，资金被转走之前，就有用户在 Discord 上对多出来的授权请求提出过疑问。提案据此提议向这名用户支付 10 万美元白帽赏金，本站没有查到赏金最终是否发放<a class="ref" href="#s8">[8]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>Badger 公布的攻击者主地址是 <span class="addr">0x1fcdb04d0c5364fbd92c73ca8af9baa72c269107</span>，用户签下的授权都指向它<a class="ref" href="#s1">[1]</a>。被转走的资产此后分成了两种结局。</p>
+        <h3>已经变现的部分</h3>
+        <ol class="flow">
+          <li class="atk"><b>凭授权转走</b>对用户的代币和金库份额调用 <code>transferFrom</code></li>
+          <li class="atk"><b>取出、变现</b>从还没暂停的金库取出底层资产，卖掉普通代币</li>
+          <li class="atk"><b>换成 BTC 离场</b>经 Badger 自己的跨链桥换成比特币，离开以太坊</li>
+          <li class="doubt"><b>下落不明</b>没有查到这部分资金的公开追回或执法进展</li>
+        </ol>
+        <h3>被暂停卡住的部分</h3>
+        <ol class="flow">
+          <li class="def"><b>暂停金库</b>已转给攻击者、尚未取出的份额无法再转出或赎回</li>
+          <li class="def"><b>BIP 76 升级合约</b>加入全局暂停、黑名单和一次性救援函数 <code>patchBalances</code></li>
+          <li class="def"><b>BIP 77 救回份额</b>把份额从攻击者地址转进多签 recovered.badgerdao.eth</li>
+          <li class="ok"><b>BIP 78 原样退还</b>按被盗前的持有人逐一退回，约 900 万美元</li>
+        </ol>
+        <p>BIP 76 把 11 个攻击者地址列入黑名单<a class="ref" href="#s3">[3]</a>。BIP 78 能做到“原样退还”，是因为每个钱包被盗的 bToken 要么全部被取出，要么完全没动，没有部分取出的情况，追回的份额可以准确对应到原持有人；论坛投票以 50 比 6 通过<a class="ref" href="#s4">[4]</a>。约 900 万美元这个数字来自 CoinDesk 对事后报告的报道，起诉书写作 920 万美元<a class="ref" href="#s12">[12]</a><a class="ref" href="#s22">[22]</a>。12 月 5 日，Badger 通过链上消息联系攻击者，表示愿意为其“发现系统漏洞”给予补偿<a class="ref" href="#s2">[2]</a>，本站没有查到攻击者回应或归还资金的公开记录。</p>
+        <h3>损失金额的不同口径</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">金额</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>PeckShield（The Block 引述）、The Record</td><td class="n">约 1.203 亿美元</td><td>事发当天的估计<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><td>Vice</td><td class="n">约 1.19 亿美元</td><td>约 2,100 BTC（1.185 亿美元）加 151 ETH<a class="ref" href="#s20">[20]</a></td></tr>
+              <tr><td>CoinDesk 报道的 Badger 事后报告</td><td class="n">约 1.3 亿美元</td><td>其中约 900 万美元的金库份额可以追回<a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td>Celsius 起诉书</td><td class="n">约 1.3 亿美元</td><td>分三部分：可追回 920 万美元，被盗 BADGER 约 280 万美元，无法追回 1.21 亿美元<a class="ref" href="#s12">[12]</a></td></tr>
+              <tr><td>BIP 79</td><td class="n">约 518 万美元</td><td>被盗治理资产，折合 192,713 枚 BADGER，按 12 月 2 日价格，涉及 12 名受害者<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>BIP 81</td><td class="n">2,019 BTC</td><td>无法追回的非治理资产，不含 DIGG<a class="ref" href="#s7">[7]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>1.2 亿和 1.3 亿两种口径相差约 1,000 万美元，接近可追回的金库份额，但各来源都没有说明统计范围，本站无法确认差额从何而来。起诉书三部分相加约 1.33 亿美元，和它自己写的总数也不完全一致。被盗 BADGER 的价值，起诉书写约 280 万美元，BIP 79 按 12 月 2 日价格算约 518 万美元，起诉书没有写明定价时点。Badger 事后报告的损失明细是图片，本站没能逐项核对。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>损失集中在少数大户</h3>
+        <p>Badger 的公开材料没有给出受害地址总数。已知的是损失高度集中：The Record 和 The Block 都报道一名用户损失约 900 枚 BTC 等值的代币，价值约 5,050 万至 5,080 万美元，The Block 称这些代币是在一笔交易里被转走的<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。Cointelegraph 报道链上分析者认为这个地址属于 Celsius<a class="ref" href="#s21">[21]</a>。2024 年的起诉书写明，Celsius 在这次事件中损失约 900 枚比特币，价值超过 5,000 万美元，占全部损失的 40% 以上<a class="ref" href="#s12">[12]</a>。</p>
+        <p>起诉书还给出了补偿的覆盖面：约 37% 的受害者通过追回的金库份额按原代币得到退还，约 17% 通过补发 BADGER 恢复了被盗代币；金额上的大头约 1.21 亿美元无法追回，只能靠后来的补偿方案<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>保险没有覆盖前端</h3>
+        <p>FX Empire 报道，Badger 合作的保险方 Nexus Mutual 以保单不覆盖前端攻击为由，拒绝向 Badger 和 Celsius 的用户赔付<a class="ref" href="#s23">[23]</a>。本站没有找到 Nexus Mutual 的原始声明。如果报道属实，只覆盖合约代码的保险就管不到前端和云账户这一层。</p>
+        <h3>攻击面从合约移到网页</h3>
+        <p>这次合约没有出错，被攻破的是用户对官网的信任。同类问题此前此后都出现过：2018 年 <a href="2018-myetherwallet.html">MyEtherWallet</a> 的域名解析被劫持，用户被引到钓鱼站；2025 年 <a href="2025-bybit.html">Bybit</a> 的签名人在被篡改的 Safe{Wallet} 前端上签下了和界面显示不符的交易。这几起都是真网站被攻破；骗子自建假网站骗人签授权的，见诈骗站的 <a href="../../scams/events/2023-inferno-drainer.html">Inferno Drainer</a>。合约审计之外，用户实际加载的网页、托管网页的云账户和 DNS，都成了需要单独设防的环节。</p>
+        <h3>法律上的新问题</h3>
+        <p>Celsius 诉 Cloudflare 案把一个问题带上了法庭：为网站提供安全服务的云服务商，对网站的用户负不负责。2025 年 5 月，法官驳回 Cloudflare 的驳回起诉动议，认为起诉书合理地主张了注意义务、违反义务和因果关系<a class="ref" href="#s14">[14]</a>。这只是诉答阶段的裁定，法院按起诉书的说法假定事实成立，没有认定 Cloudflare 有过错。</p>
+        <p>另一个争点是 BadgerDAO 算不算合伙。Cloudflare 起初在驳回起诉动议中称 Celsius 没有主张合伙的基本要件，后来又以“Celsius 自称是 BadgerDAO 的治理成员、即普通合伙人”为前提，主张 Celsius 受 Cloudflare 订阅协议约束。诉讼管理人在 2026 年 2 月改称 BadgerDAO 并非合伙，BadgerDAO 附议，并主张如果它不是合伙或其他法律实体，可能根本不具备被诉资格<a class="ref" href="#s16">[16]</a>。BadgerDAO 还在信中指出，Cloudflare 援引的 Samuels v. Lido DAO 和 Sarcuni v. bZx DAO 两案，法院只是认为原告的主张足以撑过驳回起诉动议，并没有在实体上认定 DAO 是普通合伙<a class="ref" href="#s16">[16]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>暂停与调查</h3>
+        <p>报警后约 30 分钟，大部分金库被暂停，多数合约在 03:30（UTC）前完成暂停。几个旧金库的合约本身没有暂停功能，只能暂停它们的策略来阻止取出；其中三个策略的 guardian 账户当时无法使用，后来发现参与设计这些合约的策略师账户也有暂停权限，才用它把策略停下，这时已是约 15 小时后<a class="ref" href="#s1">[1]</a>。暂停期间用户无法存取和领取奖励，直到 BIP 77 通过后合约重新启用<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>Badger 请 Chainalysis 做链上调查，Mandiant 做 Web2 部分的调查，并向美国和加拿大的执法部门报案<a class="ref" href="#s2">[2]</a>。Cloudflare 账户改了密码、换了 MFA，能处理的 API 密钥都删除或更新了，Badger 也确认 Cloudflare 已修补注册缺陷<a class="ref" href="#s1">[1]</a>。按起诉书引用的一封 12 月 15 日的邮件，Spadafora 告诉 Celsius，Mandiant 审查了前端的改动，Halborn 已开始做全面审计和重构，所有合约已升级以拉黑攻击者地址<a class="ref" href="#s12">[12]</a>。</p>
+        <p>事后报告还列了几项准备做的改进：把各合约的紧急暂停统一成“一键全停”，目标是把暂停所需时间从 15 分钟压到 2 至 3 分钟（报告没有说明这里的 15 分钟和前文的“30 分钟内”是否同一口径）；重新上线前对全部 Web2 和 Web3 基础设施做第三方审计；提供部署在 IPFS 上、可以从公开源码构建的前端；开发监控工具，持续比对 app.badger.com 各路由返回的页面和本地构建的版本，以发现代码注入<a class="ref" href="#s1">[1]</a>。这些是计划，本站没有找到逐项落实情况的公开说明。</p>
+        <h3>追回与补偿</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>提案</th><th>内容</th><th>资金来源</th></tr></thead>
+            <tbody>
+              <tr><td>BIP 76 / 77</td><td>升级金库，加入全局暂停、黑名单和一次性救援函数；重新启用合约，把卡住的份额转进追回多签<a class="ref" href="#s3">[3]</a></td><td>追回的金库份额</td></tr>
+              <tr><td>BIP 78</td><td>把追回的份额按原地址退还<a class="ref" href="#s4">[4]</a></td><td>同上</td></tr>
+              <tr><td>BIP 79</td><td>补回 12 名受害者被盗的 BADGER 类治理资产，共约 19.3 万枚，让他们能参加后续投票<a class="ref" href="#s5">[5]</a></td><td>国库 BADGER</td></tr>
+              <tr><td>BIP 81</td><td>用国库 1,700 万美元稳定币中的 1,000 万美元分批买入 wBTC，备作补偿<a class="ref" href="#s7">[7]</a></td><td>国库稳定币</td></tr>
+              <tr><td>BIP 80</td><td>把 BIP 81 买到的 wBTC 按损失比例分给无法追回资产的受害者（以金库份额形式发放）；另设 remBADGER 金库，两年内发放 200 万枚 BADGER<a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s12">[12]</a></td><td>国库 wBTC 与 BADGER</td></tr>
+              <tr><td>BIP 103</td><td>remBADGER 结束后再拨 100 万枚 BADGER，分两部分在第 7 至 18 个月内线性发给锁仓的 remBADGER 持有人<a class="ref" href="#s10">[10]</a></td><td>国库 BADGER</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>remBADGER 金库只能取出不能存入。持有人一旦把它换回 BADGER，就放弃后续的分配，这部分归其余持有人<a class="ref" href="#s9">[9]</a><a class="ref" href="#s12">[12]</a>。补偿最终值多少，取决于 BADGER 的价格。2024 年 2 月原计划结束时价格偏低，坚持到最后的用户也没拿回原有价值，社区因此通过 BIP 103 继续补偿；按 BIP 103，如果 BADGER 涨到足额补偿所需的价格，计划提前结束<a class="ref" href="#s10">[10]</a>。本站没有找到这一轮结束后的结算数据。</p>
+        <h3>Celsius 的 remBADGER</h3>
+        <p>按起诉书，Celsius 在 2022 年 1 月 13 日收到 89.89 枚 BTC 的补偿，3 月 17 日分到约 901 枚 remBADGER，起诉书称其价值约 210 万美元。3 月 18 日，Celsius 一名员工误把这些 remBADGER 取出换成 BADGER，按规则失去了后续分配；起诉书称 Celsius 通知 Badger 团队后，社区拒绝让它重新存入<a class="ref" href="#s12">[12]</a>。4 月的 BIP 91 提议让“一名误操作的受害者”重新存入 901.35 枚 remBADGER，没有点名，但数字与起诉书一致，论坛投票以 9 比 24 未通过<a class="ref" href="#s9">[9]</a>。起诉书称，即使没有这次误操作，按 remBADGER 的条款 Celsius 在最好的情况下也会损失惨重<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>Celsius 诉 Cloudflare 与 Spadafora</h3>
+        <p>2024 年 7 月 12 日，Celsius 的诉讼管理人 Mohsin Meghji 在纽约南区破产法院提起对抗程序（Adv. Pro. 24-03981）。对 Cloudflare 的诉由是过失和重大过失：在账户验证完成前就发放 API 密钥，发现漏洞后又没有通知用户。对 BadgerDAO 创始人之一、住在多伦多的 Christopher Spadafora，诉由是违反信义义务：起诉书称他明知 BadgerDAO 的安全措施达不到行业标准，仍向 Celsius 招揽了数百万美元的投资<a class="ref" href="#s12">[12]</a>。BadgerDAO 本身不在被告之列，BadgerDAO 后来在法庭文件中称 Celsius 考虑过、但决定不起诉它<a class="ref" href="#s15">[15]</a>。</p>
+        <p>2025 年 4 月 28 日，法院认定对 Spadafora 有特定属人管辖权，驳回他的驳回起诉动议，并指出事实虽有争议，但不应在这个阶段解决<a class="ref" href="#s13">[13]</a>。5 月 6 日，法院驳回 Cloudflare 的动议。Cloudflare 的理由是：它和 Celsius 没有直接关系，不负注意义务；BadgerDAO 自身缺乏基本安全措施、依赖免费服务，这些介入因素切断了因果关系；问题在论坛公开讨论后两天内就修好，谈不上轻率漠视。法院认为，提供网络安全相关服务、又处在能防止可预见损害位置上的一方，在纽约法下可能负有注意义务；可以预见的介入行为也不切断因果链<a class="ref" href="#s14">[14]</a>。Cloudflare 就此申请上诉许可，2026 年 3 月 31 日被联邦地区法院法官 Lewis A. Kaplan 驳回<a class="ref" href="#s17">[17]</a>。</p>
+        <p>此后 Cloudflare 提出反诉和交叉请求，并在 2025 年 8 月依据其自助订阅协议中的赔偿条款，把 BadgerDAO 列为第三方被告，要求赔偿或分担责任。BadgerDAO 以缺乏管辖权为由申请驳回，2026 年 7 月又申请强制仲裁并中止对它的程序<a class="ref" href="#s15">[15]</a><a class="ref" href="#s17">[17]</a>。截至 2026 年 10 月，案件仍处于证据开示等审前阶段，公开案卷里没有看到对这几项驳回动议的裁定，也没有任何一方被认定承担责任<a class="ref" href="#s17">[17]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给协议的前端与运维团队</span>
+          <ul>
+            <li>把托管前端的云账户、DNS 和 CDN 配置当成和合约同等级的资产管理：开启 MFA，用限定范围、可撤销的 API Token，不用账户级的全局密钥。</li>
+            <li>定期核对账户成员、密钥清单和审计日志。收到不是自己发起的注册或验证邮件，先查清再点；攻击者的密钥正是在 Badger 一次看似正常的“完成注册”中生效的。</li>
+            <li>持续比对线上页面和构建产物。边缘脚本、代理层改写这类改动不会出现在代码仓库里，只看仓库发现不了。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给钱包开发者和用户</span>
+          <ul>
+            <li>钱包要醒目显示被授权地址、额度和代币；被授权方是外部账户而不是合约时，应额外提醒。领取奖励这类操作，本不需要给陌生地址授权。</li>
+            <li>只授权当次所需的额度，定期检查并撤销闲置授权。授权不会立刻转走资产，因此最容易被忽视。</li>
+            <li>签名请求和预期操作不符时，先拒绝，再去官方渠道核实。这次有用户产生过疑问，但疑问没有变成警报。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议设计者和基础设施服务商</span>
+          <ul>
+            <li>紧急暂停要覆盖全部合约，并定期演练。Badger 大部分金库在 30 分钟内暂停，几份 guardian 无法操作的旧合约却拖了约 15 小时。</li>
+            <li>暂停只保护协议自己的合约。用户已经授出的普通代币，暂停后照样能被转走，所以社区渠道里的异常报告需要有人值守、有处理流程。</li>
+            <li>买保险前确认保单范围。只覆盖合约代码的保险，管不到前端和云账户被攻破的情况。</li>
+            <li>服务商的注册流程在验证完成前不应发放任何凭证。修复这类缺陷时，要清点缺陷期间已经生成的凭证，主动通知或吊销；只改流程，旧凭证依然有效。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">BadgerDAO，《BadgerDAO Exploit Technical Post Mortem》，在 Mandiant 协助下撰写，2021-12-09。原页面已下线，引用 Internet Archive 2021-12-10 存档。<a href="https://web.archive.org/web/20211210023720/https://badger.com/technical-post-mortem">web.archive.org</a></li>
+          <li id="s2">BadgerDAO，《Exploit Status Updates》，2021-12-02 至 12-09 的历次公告，Internet Archive 2021-12-30 存档。<a href="https://web.archive.org/web/20211230004917/https://badger.com/exploit/updates">web.archive.org</a></li>
+          <li id="s3">BadgerDAO 治理论坛，《BIP 76. Upgrade Smart Contracts》，2021-12-11；《BIP 77: Reactivate Smart Contracts and Recover Funds》，2021-12-13。<a href="https://forum.badger.finance/t/bip-76-upgrade-smart-contracts/5173">BIP 76</a>　<a href="https://forum.badger.finance/t/bip-77-reactivate-smart-contracts-and-recover-funds/5178">BIP 77</a></li>
+          <li id="s4">BadgerDAO 治理论坛，《BIP 78: Return Recoverable Tokens》，2021-12-15。<a href="https://forum.badger.finance/t/bip-78-return-recoverable-tokens/5202">forum.badger.finance</a></li>
+          <li id="s5">BadgerDAO 治理论坛，《BIP 79: Restore Governance Tokens》，2021-12-15。<a href="https://forum.badger.finance/t/bip-79-restore-governance-tokens/5216">forum.badger.finance</a></li>
+          <li id="s6">BadgerDAO 治理论坛，《BIP 80 Restitution of non-recoverable assets via remBadger Sett》，2021-12-31。<a href="https://forum.badger.finance/t/bip-80-restitution-of-non-recoverable-assets-via-rembadger-sett/5362">forum.badger.finance</a></li>
+          <li id="s7">BadgerDAO 治理论坛，《BIP 81: Buy The Dip》，2021-12-18。<a href="https://forum.badger.finance/t/bip-81-buy-the-dip/5245">forum.badger.finance</a></li>
+          <li id="s8">BadgerDAO 治理论坛，《BIP-80. Pay a white hat bounty to discord user who flagged up the frontend exploit》，2021-12-17。<a href="https://forum.badger.finance/t/bip-80-pay-a-white-hat-bounty-to-discord-user-who-flagged-up-the-frontend-exploit/5240">forum.badger.finance</a></li>
+          <li id="s9">BadgerDAO 治理论坛，《BIP 91: Reinstate rembadger Position》（论坛投票未通过），2022-04-13。<a href="https://forum.badger.finance/t/bip-91-reinstate-rembadger-position-closed-did-not-pass-forum-vote/5549">forum.badger.finance</a></li>
+          <li id="s10">BadgerDAO 治理论坛，《Restitution 2.0》，2024-05-16，汇总 BIP 78 至 81 与 BIP 103 的补偿安排；另见《BIP 103 - Continue Restitution》，2024-02-10。<a href="https://forum.badger.finance/t/restitution-2-0/6256">Restitution 2.0</a>　<a href="https://forum.badger.finance/t/bip-103-continue-restitution/6141">BIP 103</a></li>
+          <li id="s11">Cloudflare Community，《Someone else can create an account and API token on your email address》，2021-09-27 至 10-02，含用户转述的 Cloudflare 客服回复，Internet Archive 2021-12-02 存档。<a href="https://web.archive.org/web/20211202160431/https://community.cloudflare.com/t/someone-else-can-create-an-account-and-api-token-on-your-email-address/309492/5">web.archive.org</a></li>
+          <li id="s12">Meghji v. Spadafora and Cloudflare, Inc.，起诉书（Complaint），Adv. Pro. No. 24-03981 (MG)，美国纽约南区破产法院，2024-07-12。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysb.324724/gov.uscourts.nysb.324724.1.0.pdf">courtlistener.com</a></li>
+          <li id="s13">同案，Martin Glenn 法官，《Memorandum Opinion and Order Denying Spadafora Motion to Dismiss》，2025-04-28。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysb.324724/gov.uscourts.nysb.324724.24.0.pdf">courtlistener.com</a></li>
+          <li id="s14">同案，Martin Glenn 法官，《Memorandum Opinion and Order Denying Cloudflare Motion to Dismiss》，2025-05-06。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysb.324724/gov.uscourts.nysb.324724.26.0.pdf">courtlistener.com</a></li>
+          <li id="s15">同案，BadgerDAO 驳回第三方起诉的动议所附法律备忘录（ECF No. 71-1），2025-10-10。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysb.324724/gov.uscourts.nysb.324724.71.1.pdf">courtlistener.com</a></li>
+          <li id="s16">同案，Cloudflare 致法官函（ECF No. 87，2026-02-20；ECF No. 89，2026-03-09）与 BadgerDAO 致法官函（ECF No. 88，2026-03-04）。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysb.324724/gov.uscourts.nysb.324724.87.0.pdf">ECF 87</a>　<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysb.324724/gov.uscourts.nysb.324724.88.0.pdf">ECF 88</a>　<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysb.324724/gov.uscourts.nysb.324724.89.0.pdf">ECF 89</a></li>
+          <li id="s17">CourtListener，Meghji v. Spadafora 案卷（Bankr. S.D.N.Y. 24-03981），查阅时最新条目为 2026-10-19。<a href="https://www.courtlistener.com/docket/68941092/meghji-v-spadafora/">courtlistener.com</a></li>
+          <li id="s18">Catalin Cimpanu，《Hackers steal $120 million from Badger DeFi platform》，The Record，2021-12-02。<a href="https://therecord.media/hackers-steal-120-million-from-badger-defi-platform">therecord.media</a></li>
+          <li id="s19">Tim Copeland，《DeFi protocol BadgerDAO exploited for $120 million in front-end attack》，The Block，2021-12-02。<a href="https://www.theblock.co/post/126072/defi-protocol-badgerdao-exploited-for-10-million-in-front-end-attack">theblock.co</a></li>
+          <li id="s20">Lorenzo Franceschi-Bicchierai，《Hackers Steal $119M From ‘Web3’ Crypto Project With Old School Attack》，Vice，2021-12-02。<a href="https://www.vice.com/en/article/hackers-steal-dollar119m-from-web3-crypto-project-with-old-school-attack/">vice.com</a></li>
+          <li id="s21">Helen Partz，《Crypto lending firm Celsius reportedly affected in BadgerDAO exploit》，Cointelegraph，2021-12-03。<a href="https://cointelegraph.com/news/crypto-lending-firm-celsius-reportedly-affected-in-badgerdao-exploit">cointelegraph.com</a></li>
+          <li id="s22">Nelson Wang，《BadgerDAO Reveals Details of How It Was Hacked for $120M》，CoinDesk，2021-12-10，经 Yahoo Finance 转载阅读。<a href="https://finance.yahoo.com/news/badgerdao-reveals-details-hacked-120m-232549099.html">finance.yahoo.com</a></li>
+          <li id="s23">Oluwapelumi Adejumo，《Celsius Network Lost $54 Million in BadgerDao》，FX Empire，2021-12-08，经 Yahoo Finance 转载阅读。<a href="https://finance.yahoo.com/news/celsius-network-lost-54-million-092530269.html">finance.yahoo.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

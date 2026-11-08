@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cetus 溢出检查错误｜区块链被盗事件编年史</title>
+<meta name="description" content="2025 年 Sui 上的 DEX Cetus 因 integer-mate 库中 checked_shlw 的溢出判断写错，被取走约 2.23 亿美元：漏洞代码与复算、攻击步骤、验证者冻结与链上投票取回、资金去向和去中心化之争。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2025-cetus">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2025 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Cetus 溢出检查错误</h1>
+    <p class="lede">2025 年 5 月 22 日，攻击者利用 Cetus 所依赖的数学库里一个写错的溢出判断，只存入 1 个最小单位的代币，就给自己记上了天量流动性，在 15 分钟内从 Cetus 的池子里取走约 2.23 亿美元。其中约 1.62 亿美元还没离开 Sui 就被验证者拦下，一周后又经链上投票和协议升级从攻击者地址转了回来。资金大部分追回了，Sui 能冻结并转走一个地址的资产这件事，也让它的去中心化程度成了争论焦点。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Cetus 是 Sui 上的集中流动性 DEX。用户添加流动性时，合约用 <code>get_delta_a</code> 算出应存入多少 token A，其中一步要把一个 256 位整数左移 64 位。负责判断这一步会不会溢出的，是开源数学库 integer-mate 里的 <code>checked_shlw</code>。它本该在数值达到 2¹⁹² 时报溢出，却把门槛写成了 2²⁵⁶ − 2¹⁹²，夹在两者之间的数被当成“没溢出”，左移时高位被直接截掉。</p>
+        <p>攻击者选了一个只有 200 个 tick 宽的价格区间，填入约 1.04×10³⁴ 的流动性，让乘积刚好落进这个漏判区间。截断后，合约算出他只需存入 1 个最小单位的 token A，却照单给他的头寸记上了全部流动性。随后他按正常规则分批撤出这些流动性，拿走的是池子里其他用户存入的真实资产<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。每一轮都在一笔闪电兑换里完成，攻击地址在 10:30 到 10:45（UTC）之间发出了 287 笔这样的交易<a class="ref" href="#s31">[31]</a>。</p>
+        <p>Cetus 估算损失约 2.23 亿美元。约 6,000 万美元被攻击者跨链到以太坊换成 ETH，其余约 1.62 亿美元留在 Sui 上，被超过三分之一质押量的验证者拒绝处理，等于被冻结<a class="ref" href="#s1">[1]</a>。5 月 29 日，代表 90.9% 质押的验证者投票通过一次协议升级，允许一个指定地址替攻击者签署两笔事先公开的交易，把冻结资产转入托管多签<a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a>。Cetus 用取回的资产、自有现金和 Sui 基金会 3,000 万 USDC 的贷款补回池子，缺口用 CETUS 代币补偿，6 月 8 日重新上线<a class="ref" href="#s2">[2]</a>。截至 2026 年 10 月，攻击者身份仍未公开，转到以太坊的 ETH 大部分还在攻击者地址里<a class="ref" href="#s30">[30]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Cetus 在 Sui 和 Aptos 上都有部署，在 Sui 主网上线当天就已运行，自称 Sui 上领先的 DEX 和流动性基础设施<a class="ref" href="#s4">[4]</a><a class="ref" href="#s17">[17]</a>。这次只有 Sui 上的池子出事，Aptos 一侧未受影响<a class="ref" href="#s21">[21]</a>。它的核心是集中流动性做市（CLMM），设计思路和 Uniswap V3 类似：流动性提供者（LP）只在自己选定的价格区间里提供流动性，交易发生在哪个区间，就用哪个区间的流动性报价。很多 Sui 代币的链上交易都要经过 Cetus 的池子，所以池子被抽干后，这些代币在 DEX 上的价格随之暴跌<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>CLMM 的记账方式</h3>
+        <p>CLMM 用价格的平方根 √P 记账。Cetus 把 √P 存成 Q64.64 定点数（真实值乘以 2⁶⁴ 后取整，类型为 <code>u128</code>），流动性 L 也是 <code>u128</code>。当池子当前价格低于某个头寸的区间时，这个头寸全部由 token A 组成，数量为：</p>
+<pre class="code"><code><span class="c">// 示意：价格低于区间时，头寸需要的 token A（√P 为 Q64.64 定点数，L 为 u128）</span>
+Δa = L × (√P_upper − √P_lower) × 2⁶⁴ ÷ (√P_lower × √P_upper)</code></pre>
+        <p class="code-cap">示意公式。√P 的 2⁶⁴ 缩放在分母里出现两次、分子里只有一次，所以分子要再乘一次 2⁶⁴，也就是左移 64 位。</p>
+        <p>L 和 Δ√P 都是 128 位，乘积用 256 位存放。再左移 64 位时，只要乘积的最高 64 位里有任何一位是 1，结果就放不进 256 位。换句话说，乘积必须小于 2¹⁹²，左移才安全。<code>checked_shlw</code> 守的就是这条边界。</p>
+        <h3>integer-mate 与审计</h3>
+        <p>integer-mate 是 Cetus 维护的开源 Move 库，提供有符号整数和若干整数运算函数，采用 MIT 许可，最初同时有 Aptos 和 Sui 两个版本<a class="ref" href="#s7">[7]</a>。在仓库 2023 年 2 月 23 日的提交里，<code>checked_shlw</code> 就已经是出事时的写法，之后直到 2025 年 5 月 22 日都没有改过<a class="ref" href="#s7">[7]</a>。</p>
+        <p>Cetus 的 Sui 版 CLMM 经过多轮审计：2023 年春有 MoveBit 和 OtterSec，2024 年 11 月有 OtterSec，2025 年 3 月至 4 月有 Zellic<a class="ref" href="#s9">[9]</a>。Zellic 这一轮的范围是 <code>cetus_clmm</code> 和 <code>integrate</code> 两个包的源码，不含 integer-mate，报告只有 3 条信息级发现<a class="ref" href="#s9">[9]</a><a class="ref" href="#s26">[26]</a>。Dedaub 事后指出，OtterSec 2023 年初审计 Aptos 版代码时曾发现分子在调用 <code>u256::shlw</code> 前没有校验，建议改用 <code>checked_shlw</code>。问题在于 Sui 版用上的 <code>checked_shlw</code> 本身就写错了，此后几轮审计都没有发现<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <p>以下时间均为 UTC。5 月 22 日当天的时刻来自 Cetus 事故报告和链上记录<a class="ref" href="#s1">[1]</a><a class="ref" href="#s30">[30]</a><a class="ref" href="#s31">[31]</a>。</p>
+        <ol class="timeline">
+          <li><time>2023-02-23</time><div class="ev">integer-mate 仓库中已经是有缺陷的 <code>checked_shlw</code> 写法<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2025-03 至 04</time><div class="ev">Zellic 审计 Cetus CLMM，范围不含 integer-mate，4 月 11 日出具报告<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2025-05-20 前后</time><div class="ev">据 SlowMist 分析，攻击者提前两天给钱包充好 gas，还试过一个失败的早期版本<a class="ref" href="#s21">[21]</a>。攻击地址在 5 月 22 日 07:26 有一笔失败交易<a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="atk key"><time>05-22 10:30</time><div class="ev">第一笔攻击交易在 haSUI/SUI 池执行，攻击地址净得约 1,002 万枚 haSUI 和 577 万枚 SUI<a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="atk"><time>10:30–10:45</time><div class="ev">攻击地址约每 3 秒发出一笔攻击交易，共 287 笔，其中 265 笔成功<a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="def"><time>10:40</time><div class="ev">Cetus 的监控发现池子异常<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>10:47 起</time><div class="ev">攻击者把 USDC 等资产经 CCTP、Mayan、Sui Bridge 和 Wormhole 跨到以太坊，换成 ETH<a class="ref" href="#s30">[30]</a><a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="def"><time>10:53</time><div class="ev">Cetus 确认攻击来源，通报 Sui 生态各方<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>10:57</time><div class="ev">Cetus 关停核心 CLMM 池子；11:20 关停全部相关合约<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>12:31</time><div class="ev">攻击者在以太坊上把 20,000 ETH 转进第二个地址<a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="def key"><time>12:50</time><div class="ev">验证者开始投票拒绝处理攻击者地址的交易，赞成拒绝的质押超过 33% 后，两个地址实际被冻结<a class="ref" href="#s1">[1]</a>。攻击地址最后一笔自己发出的交易在 12:38<a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="def"><time>14:19、15:51</time><div class="ev">integer-mate 先后合入两次修复，第二次才把比较符改对<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>18:04</time><div class="ev">Cetus 和 Inca Digital 在链上给攻击者留言：归还资金可留下 2,324 ETH 作为赏金，不再追究<a class="ref" href="#s1">[1]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>18:15</time><div class="ev">漏洞合约完成修补和升级，暂不重启<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2025-05-23</time><div class="ev">Verichains 扫描 Sui 全链，发现 Kriya、FlowX 和 Turbos 也部署了同一个有缺陷的函数<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2025-05-23 前后</time><div class="ev">攻击者未回应和解提议，Cetus 悬赏 500 万美元征集能导致其被识别和逮捕的线索<a class="ref" href="#s19">[19]</a><a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2025-05-26</time><div class="ev">Cetus 发布事故报告，公开时间线、根因和攻击者地址<a class="ref" href="#s1">[1]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def key"><time>2025-05-27</time><div class="ev">Sui 基金会发起链上投票，决定是否用协议升级取回冻结资金；Mysten Labs 同日提交实现代码<a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2025-05-29</time><div class="ev">代表 90.9% 质押的验证者投赞成票，投票提前结束<a class="ref" href="#s6">[6]</a><a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="def"><time>2025-05-30</time><div class="ev">18:42 和 20:46 两笔恢复交易执行，冻结资产转入托管多签<a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="atk"><time>2025-06-04</time><div class="ev">攻击者的以太坊地址第一次向 Tornado Cash 存入 100 ETH<a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="def"><time>2025-06-07</time><div class="ev">Cetus 公布恢复方案：Sui 基金会 3,000 万 USDC 贷款、约 700 万美元自有现金、拿出 CETUS 总量的 15% 做补偿<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def key"><time>2025-06-08</time><div class="ev">03:00 Cetus 重新上线，受影响池子的流动性补回到原来的 85% 至 99%<a class="ref" href="#s2">[2]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>2025-06-16</time><div class="ev">攻击者地址再向 Tornado Cash 存入 300 ETH<a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="def"><time>2025-07-17</time><div class="ev">Cetus 季报称追查仍在进行，OtterSec 和 MoveBit 的事后审计已经完成<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2025-09</time><div class="ev">Cetus 在 GitHub 公开 CLMM 合约源码；Asymptotic 完成对 integer-mate 的形式化验证<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2026-02-09、06-16</time><div class="ev">攻击者地址又两次各向 Tornado Cash 存入 300 ETH，累计达到 1,000 ETH<a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="atk"><time>2026-10-16</time><div class="ev">一个第三方地址在以太坊上领取了攻击者当年从 Sui 发出、一直没被领取的几笔 Sui Bridge 转账，约 86 ETH、9.3 万 USDT 和 0.9 WBTC 进入攻击者地址<a class="ref" href="#s30">[30]</a><a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="key"><time>2026-10-31</time><div class="ev">攻击者身份仍未公开，没有逮捕或起诉的公开消息。以太坊上两个攻击者地址合计约 22,330 ETH<a class="ref" href="#s30">[30]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <h3>从 add_liquidity 到 checked_shlw</h3>
+        <p>用户按“指定流动性”的方式添加流动性时，<code>pool::add_liquidity_internal</code> 会调用 <code>clmm_math::get_amount_by_liquidity</code>，按头寸的 tick 区间和池子当前价格算出应存入多少 token A 和 token B，取整方向是向上<a class="ref" href="#s8">[8]</a>。如果当前价格低于区间下沿，只走 <code>get_delta_a</code> 一个分支：</p>
+<pre class="code"><code><span class="c">// clmm_math.move，get_amount_by_liquidity（节选）</span>
+let (amount_a, amount_b) = if (i32::lt(current_tick_index, tick_lower)) {
+    <span class="c">// 当前价格低于区间：头寸全是 token A，只算 Δa</span>
+    (get_delta_a(lower_price, upper_price, liquidity, round_up), 0)
+} else if (i32::lt(current_tick_index, tick_upper)) {
+    (
+        get_delta_a(current_sqrt_price, upper_price, liquidity, round_up),
+        get_delta_b(lower_price, current_sqrt_price, liquidity, round_up),
+    )
+} else {
+    (0, get_delta_b(lower_price, upper_price, liquidity, round_up))
+};</code></pre>
+        <p class="code-cap">来源：CetusProtocol/cetus-contracts，提交 a477627，packages/cetus_clmm/sources/math/clmm_math.move 第 400–409 行。</p>
+<pre class="code"><code><span class="c">// clmm_math.move，get_delta_a</span>
+public fun get_delta_a(
+    sqrt_price_0: u128,
+    sqrt_price_1: u128,
+    liquidity: u128,
+    round_up: bool,
+): u64 {
+    let sqrt_price_diff = if (sqrt_price_0 &gt; sqrt_price_1) {
+        sqrt_price_0 - sqrt_price_1
+    } else {
+        sqrt_price_1 - sqrt_price_0
+    };
+    if (sqrt_price_diff == 0 || liquidity == 0) {
+        return 0
+    };
+    <span class="c">// 分子 = L × Δ√P，再由 checked_shlw 左移 64 位</span>
+<span class="bad">    let (numberator, overflowing) = math_u256::checked_shlw(</span>
+<span class="bad">        full_math_u128::full_mul(liquidity, sqrt_price_diff),</span>
+<span class="bad">    );</span>
+    if (overflowing) {
+        abort EMULTIPLICATION_OVERFLOW
+    };
+    let denominator = full_math_u128::full_mul(sqrt_price_0, sqrt_price_1);
+    let quotient = math_u256::div_round(numberator, denominator, round_up);
+    assert!(quotient &lt;= std::u64::max_value!() as u256, EAMOUNT_CAST_TO_U64_OVERFLOW);
+    (quotient as u64)
+}</code></pre>
+        <p class="code-cap">来源：同上，第 88–113 行（<code>numberator</code> 的拼写是原文）。事发时 CLMM 源码没有公开，这是 2025 年 9 月开源的版本；Dedaub 在 5 月 23 日引用的 <code>get_delta_a</code> 结构与此相同<a class="ref" href="#s12">[12]</a>。</p>
+        <p>这段代码的安全性完全押在 <code>checked_shlw</code> 上。只要它如实报告溢出，分子过大的请求就会在 <code>abort EMULTIPLICATION_OVERFLOW</code> 处失败；即使分子没溢出，算出的 token A 超过 <code>u64</code> 上限，最后一行的 <code>assert!</code> 也会拒绝。</p>
+        <h3>Move 的左移不检查溢出</h3>
+        <p>Move 的加、减、乘都是受检运算，溢出会直接 abort。移位不一样：只有移位的位数大于或等于类型位宽时才会 abort<a class="ref" href="#s29">[29]</a>，被移出去的高位直接丢掉，交易照常执行。Dedaub 在分析中专门指出，左移是 Move 里唯一不会因溢出而 abort 的运算<a class="ref" href="#s12">[12]</a>。所以 <code>checked_shlw</code> 必须自己判断 n 的最高 64 位是否全为 0。下面是修复前的源码：</p>
+<pre class="code"><code><span class="c">// integer-mate，sui/sources/math_u256.move（修复前，Move.toml 版本 1.1.0）</span>
+public fun checked_shlw(n: u256): (u256, bool) {
+<span class="bad">    let mask = 0xffffffffffffffff &lt;&lt; 192;   <span class="c">// 等于 2²⁵⁶ − 2¹⁹²</span></span>
+<span class="bad">    if (n &gt; mask) {                         <span class="c">// 只有 n 比它还大才报溢出</span></span>
+        (0, true)
+    } else {
+<span class="bad">        ((n &lt;&lt; 64), false)                  <span class="c">// n ≥ 2¹⁹² 时，高位在这里被悄悄截掉</span></span>
+    }
+}</code></pre>
+        <p class="code-cap">来源：CetusProtocol/integer-mate，提交 4d09c8b，sui/sources/math_u256.move 第 18–25 行。中文注释为本站所加。</p>
+        <p>Cetus 的事故报告给出了两种正确写法：一种是用这个掩码做按位与，检查最高 64 位是否全为 0（<code>mask &amp; n != 0</code> 即溢出）；另一种是直接和第一个会溢出的数比较（<code>n &gt;= 1 &lt;&lt; 192</code> 即溢出）。出错的代码用了第一种的掩码，却套上了第二种的比较方式，报告称之为“两种正确方法的错误组合”<a class="ref" href="#s1">[1]</a>。结果是，只有 n 大于 2²⁵⁶ − 2¹⁹² 时才报溢出。从 2¹⁹² 到 2²⁵⁶ − 2¹⁹² 这一整段，几乎覆盖了所有本该报溢出的数，全部被判成“没溢出”。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 592" role="img" aria-labelledby="cetus-ovf-t cetus-ovf-d">
+            <title id="cetus-ovf-t">checked_shlw 的漏判区间与 get_delta_a 的两条路径</title>
+            <desc id="cetus-ovf-d">上半部分是一条 u256 数轴示意：0 到 2 的 192 次方之间左移安全；2 的 192 次方到 2 的 256 次方减 2 的 192 次方之间本该报溢出，旧代码却判定为没溢出；只有最后一小段才报溢出。攻击值略大于 2 的 192 次方，落在漏判区间里。下半部分对比两条路径：旧代码放行后左移截断，分子只剩 143 位，算出应付 1 个最小单位的 token A；修复后的代码报溢出，交易回滚。</desc>
+            <defs>
+              <marker id="cetus-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="cetus-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="cetus-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t b" x="40" y="26">checked_shlw(n) 对 u256 的判断（示意，不按比例）</text>
+            <text class="d-t atk" x="158" y="58">攻击值 ≈ 2¹⁹² + 4.9×10²³</text>
+            <line class="d-line atk" x1="160" y1="64" x2="160" y2="84" marker-end="url(#cetus-ah-atk)"/>
+            <rect class="d-box ok" x="40" y="86" width="110" height="20"/>
+            <rect class="d-box atk" x="150" y="86" width="410" height="20"/>
+            <rect class="d-box atk" x="578" y="86" width="62" height="20"/>
+            <rect class="d-box doubt" x="640" y="86" width="100" height="20"/>
+            <line class="d-line" x1="562" y1="110" x2="570" y2="82"/>
+            <line class="d-line" x1="570" y1="110" x2="578" y2="82"/>
+            <text class="d-t s m" x="40" y="124" text-anchor="middle">0</text>
+            <text class="d-t s m" x="150" y="124" text-anchor="middle">2¹⁹²</text>
+            <text class="d-t s m" x="638" y="124" text-anchor="end">2²⁵⁶ − 2¹⁹²</text>
+            <text class="d-t s m" x="740" y="124" text-anchor="end">2²⁵⁶</text>
+            <text class="d-t s" x="44" y="144">左移安全</text>
+            <text class="d-t atk" x="360" y="144" text-anchor="middle">漏判区间：已经溢出，却返回 false</text>
+            <text class="d-t s" x="644" y="144">只这段报溢出</text>
+            <text class="d-t s" x="40" y="168">修复后的条件是 n ≥ 2¹⁹²，红色和琥珀色两段都会报溢出。</text>
+            <text class="d-t s" x="40" y="186">数轴不按比例：绿色一段实际只占整个 u256 范围的 2⁻⁶⁴。</text>
+            <line class="d-line dash" x1="40" y1="200" x2="740" y2="200"/>
+            <text class="d-t b atk" x="205" y="226" text-anchor="middle">修复前（integer-mate 1.1.0）</text>
+            <text class="d-t b def" x="575" y="226" text-anchor="middle">修复后（integer-mate 1.1.2）</text>
+            <rect class="d-box" x="40" y="238" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="205" y="258" text-anchor="middle"><tspan class="m">full_mul(L, Δ√P)</tspan> 得到 n</text>
+            <text class="d-t s" x="205" y="276" text-anchor="middle">略大于 2¹⁹²，共 193 位</text>
+            <rect class="d-box" x="410" y="238" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="575" y="258" text-anchor="middle"><tspan class="m">full_mul(L, Δ√P)</tspan> 得到 n</text>
+            <text class="d-t s" x="575" y="276" text-anchor="middle">同一个输入</text>
+            <line class="d-line atk" x1="205" y1="284" x2="205" y2="310" marker-end="url(#cetus-ah-atk)"/>
+            <line class="d-line def" x1="575" y1="284" x2="575" y2="310" marker-end="url(#cetus-ah-def)"/>
+            <rect class="d-box atk" x="40" y="312" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="205" y="332" text-anchor="middle">检查 <tspan class="m">n &gt; 2²⁵⁶ − 2¹⁹²</tspan>？</text>
+            <text class="d-t s atk" x="205" y="350" text-anchor="middle">不成立，判为“没溢出”</text>
+            <rect class="d-box def" x="410" y="312" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="575" y="332" text-anchor="middle">检查 <tspan class="m">n ≥ 2¹⁹²</tspan>？</text>
+            <text class="d-t s def" x="575" y="350" text-anchor="middle">成立，返回 overflow = true</text>
+            <line class="d-line atk" x1="205" y1="358" x2="205" y2="384" marker-end="url(#cetus-ah-atk)"/>
+            <line class="d-line def" x1="575" y1="358" x2="575" y2="384" marker-end="url(#cetus-ah-def)"/>
+            <rect class="d-box atk" x="40" y="386" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="205" y="406" text-anchor="middle"><tspan class="m">n &lt;&lt; 64</tspan>，高位被截掉</text>
+            <text class="d-t s" x="205" y="424" text-anchor="middle">分子只剩 143 位，约 9.1×10⁴²</text>
+            <rect class="d-box ok" x="410" y="386" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="575" y="406" text-anchor="middle"><tspan class="m">abort EMULTIPLICATION_OVERFLOW</tspan></text>
+            <text class="d-t s" x="575" y="424" text-anchor="middle">整笔交易回滚，流动性加不进去</text>
+            <line class="d-line atk" x1="205" y1="432" x2="205" y2="458" marker-end="url(#cetus-ah-atk)"/>
+            <rect class="d-box atk" x="40" y="460" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="205" y="480" text-anchor="middle">÷ (√P₀ × √P₁)，向上取整</text>
+            <text class="d-t s" x="205" y="498" text-anchor="middle">算出应付 token A：1 个最小单位</text>
+            <rect class="d-box doubt" x="410" y="460" width="330" height="46" rx="4"/>
+            <text class="d-t b" x="575" y="480" text-anchor="middle">对照：如果不截断</text>
+            <text class="d-t s" x="575" y="498" text-anchor="middle">应付约 3.2×10²⁵，超过 u64 上限，同样被拒</text>
+            <line class="d-line atk" x1="205" y1="506" x2="205" y2="532" marker-end="url(#cetus-ah-atk)"/>
+            <rect class="d-box atk" x="40" y="534" width="330" height="46" rx="4"/>
+            <text class="d-t b atk" x="205" y="554" text-anchor="middle">头寸记上约 1.04×10³⁴ 流动性</text>
+            <text class="d-t s" x="205" y="572" text-anchor="middle">攻击者实际只付了 1 个最小单位</text>
+          </svg>
+          </div>
+          <figcaption>图 1：上半部分是 <code>checked_shlw</code> 的判断范围，下半部分用攻击者的真实参数走一遍 <code>get_delta_a</code>。红色是被利用的路径，蓝色是修复后的路径。数值依据 Dedaub 公布的参数由本站复算。</figcaption>
+        </figure>
+        <h3>用攻击参数复算</h3>
+        <p>Dedaub 公布了第一笔攻击交易（摘要 <span class="addr">DVMG3B2kocLEnVMDuQzTYRgjwuuFSfciawPvXXheB3x</span>）的关键参数：头寸区间为 tick 300000 到 300200，流动性 L 约 1.04×10³⁴<a class="ref" href="#s12">[12]</a>。Halborn 和 rekt.news 给出的区间与此相同<a class="ref" href="#s15">[15]</a><a class="ref" href="#s26">[26]</a>。本站用这些参数复算：</p>
+<pre class="code"><code><span class="c"># 示意：用 Dedaub 公布的攻击参数复算（Python 整数运算，可直接运行）</span>
+L  = 10365647984364446732462244378333008     <span class="c"># 攻击者填入的流动性，约 2^113</span>
+p0 = 60257519765924248467716150              <span class="c"># tick 300000 的 √P（Q64.64）</span>
+p1 = 60863087478126617965993239              <span class="c"># tick 300200 的 √P（Q64.64）</span>
+n  = L * (p1 - p0)                           <span class="c"># full_mul(liquidity, sqrt_price_diff)</span>
+print(n &gt; 2**256 - 2**192)                   <span class="c"># False：旧检查放行</span>
+print(n &gt;= 2**192)                           <span class="c"># True：正确的检查会报溢出</span>
+num = (n &lt;&lt; 64) % 2**256                     <span class="c"># 模拟 u256 左移，高位被截掉</span>
+print(-(-num // (p0 * p1)))                  <span class="c"># 1：向上取整后的应付 token A</span>
+print((n &lt;&lt; 64) // (p0 * p1))                <span class="c"># 约 3.16×10^25：不截断时的值</span></code></pre>
+        <p class="code-cap">示意代码，本站据 Dedaub 公布的参数编写并运行，结果与 Dedaub、Verichains 的结论一致。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>中间量</th><th class="n">数值</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>流动性 L</td><td class="n">约 1.04×10³⁴</td><td>攻击者自己填入，约 2¹¹³</td></tr>
+              <tr><td>Δ√P</td><td class="n">约 6.06×10²³</td><td>tick 300000 到 300200，约 2⁷⁹</td></tr>
+              <tr><td>n = L × Δ√P</td><td class="n">2¹⁹² + 约 4.9×10²³</td><td>刚刚越过 2¹⁹²，落在漏判区间</td></tr>
+              <tr><td>截断后的分子</td><td class="n">约 9.1×10⁴²</td><td>256 位里只剩 143 位</td></tr>
+              <tr><td>合约算出的 token A</td><td class="n">1</td><td>向上取整的结果</td></tr>
+              <tr><td>不截断时的 token A</td><td class="n">约 3.16×10²⁵</td><td>超过 u64 上限（约 1.8×10¹⁹），本应被拒</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>攻击者没有猜。L 和区间宽度是配好的：区间越窄，Δ√P 越小，L 就要越大才能让乘积越过 2¹⁹²，而头寸记上的正是这个 L。乘积只要稍稍越过 2¹⁹²，截断后剩下的分子就很小，应付金额被压到 1。</p>
+        <h3>修复：两次提交</h3>
+        <p>5 月 22 日，integer-mate 先后合入两次修复<a class="ref" href="#s7">[7]</a>：</p>
+<pre class="code"><code><span class="c">// 提交 ffb2292（14:19 UTC）：阈值改对了，比较符没改</span>
+let mask = 1 &lt;&lt; 192;
+<span class="bad">if (n &gt; mask) {           <span class="c">// n 恰好等于 2¹⁹² 时仍会放行，左移后变成 0</span></span>
+
+<span class="c">// 提交 970667a（15:51 UTC）：比较符改为 &gt;=</span>
+let mask = 1 &lt;&lt; 192;
+<span class="good">if (n &gt;= mask) {          <span class="c">// 最高 64 位只要有一位是 1，就报溢出</span></span></code></pre>
+        <p class="code-cap">来源：CetusProtocol/integer-mate 提交 ffb2292 与 970667a 的 diff，sui/sources/math_u256.move。</p>
+        <p>第一次修复把阈值改成了 2¹⁹²，比较符却还是 <code>&gt;</code>。n 恰好等于 2¹⁹² 时仍会被放行，而 2¹⁹² 左移 64 位等于 2²⁵⁶，截断后是 0。约 92 分钟后的第二次提交才改成 <code>&gt;=</code>。修复期间 Move.toml 的版本号从 1.1.0 升到 1.1.1、1.1.2，每次都发布了新的包地址<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>为什么测试和审计都没拦住</h3>
+        <p>正常添加流动性时，L × Δ√P 远小于 2¹⁹²，左移不会溢出，旧检查和正确检查的结果完全一样，功能测试看不出差别。要进入漏判区间，需要同时满足 L 极大和区间极窄，只有刻意构造的输入才做得到。修复前的 <code>math_u256</code> 模块只有两个测试，一个调用 <code>div_round</code>，一个做 u256 加法，没有一个碰到 <code>checked_shlw</code><a class="ref" href="#s7">[7]</a>。</p>
+        <p>审计范围也有空档。Zellic 2025 年的审计只覆盖 CLMM 和 integrate 两个包<a class="ref" href="#s9">[9]</a>。rekt.news 评论说，审计查了每一扇窗，却没看“所有人都在用的那个共享数学库”<a class="ref" href="#s26">[26]</a>。事后 Asymptotic 用 Sui Prover 对 integer-mate 做了形式化验证，证明所覆盖函数的数值结果和 abort 条件<a class="ref" href="#s9">[9]</a>。</p>
+        <div class="note doubt">
+          <span class="h">和 MAX_U64 那条审计发现无关</span>
+          <p>攻击发生后，社交媒体上有人把漏洞归到此前审计报告里一条关于 MAX_U64 检查的发现上。Cetus 在事故报告中否认了这种说法：那条发现只是信息级的优化建议，极端情况下最多导致交易回滚，而且早已在之前的版本中修复<a class="ref" href="#s1">[1]</a><a class="ref" href="#s17">[17]</a>。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下步骤综合了 Cetus 事故报告、Verichains 和 Cyfrin 对单笔攻击交易的还原，以及本站对攻击地址链上记录的核对<a class="ref" href="#s1">[1]</a><a class="ref" href="#s13">[13]</a><a class="ref" href="#s16">[16]</a><a class="ref" href="#s31">[31]</a>。攻击者对不同池子用的是同一套流程，具体数量和撤出轮数因池子而异。</p>
+        <ol class="steps">
+          <li><b>准备</b>据 SlowMist 分析，攻击者提前两天给钱包充好 gas，还试过一个失败的早期版本<a class="ref" href="#s21">[21]</a>。5 月 22 日 07:26，攻击地址有一笔失败交易；正式攻击从 10:30:50 开始<a class="ref" href="#s31">[31]</a>。</li>
+          <li><b>闪电兑换，把价格压到底</b>攻击者调用池子的 <code>flash_swap</code>，先从池子借出一种代币，暂时欠着另一种。Verichains 还原的那笔交易里，价格上限参数是 4,295,048,016，正是 Cetus 允许的最低价格 <code>MIN_SQRT_PRICE_X64</code><a class="ref" href="#s13">[13]</a><a class="ref" href="#s8">[8]</a>。价格被压到底以后，攻击者接下来要开的头寸就整个处在当前价格之上。</li>
+          <li><b>开一个极窄的高价头寸</b>攻击者在 tick 300000 到 300200 开仓。这个区间远在当前价格之上，计算存入数量时只走 <code>get_delta_a</code> 一个分支，头寸被视为全部由 token A 组成<a class="ref" href="#s12">[12]</a>。</li>
+          <li><b>用 1 个单位记上天量流动性</b>攻击者调用 <code>add_liquidity</code>，填入约 1.04×10³⁴ 的流动性。乘积越过 2¹⁹² 而没被拦下，合约算出只需存入 1 个最小单位的 token A，却给头寸记上了全部流动性<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>分批撤出</b>攻击者用 <code>get_liquidity_from_a</code> 反算出“取回闪电兑换所欠数量的 token A 需要多少流动性”，再调用 <code>remove_liquidity</code> 撤出这一份<a class="ref" href="#s13">[13]</a><a class="ref" href="#s16">[16]</a>。这一份远小于 2¹⁹² 的门槛，运算不会溢出，拿到的是货真价实的代币。<code>remove_liquidity</code> 直接从池子的共享余额 <code>pool.coin_a</code>、<code>pool.coin_b</code> 里拆出代币<a class="ref" href="#s8">[8]</a>，这些余额属于所有 LP，不只属于攻击者这个头寸。Cetus 的报告称，攻击者会计算池子里还剩多少可撤的流动性，再重复撤出<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>还款，留下利润</b>用撤出的代币还清闪电兑换，借出的那一侧就成了净利润。第一笔交易结束时，攻击地址在 haSUI/SUI 池净得约 1,002 万枚 haSUI 和 577 万枚 SUI<a class="ref" href="#s31">[31]</a>，与 Dedaub 估算的约 570 万枚 SUI 利润相符<a class="ref" href="#s12">[12]</a>。</li>
+          <li><b>脚本化重复</b>同样的流程在 15 分钟里执行了 287 次，约每 3 秒一笔，其中 22 笔失败<a class="ref" href="#s31">[31]</a>。Cetus 事后公布的受影响池子共 265 个<a class="ref" href="#s3">[3]</a>。</li>
+        </ol>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <h3>损失怎么算</h3>
+        <p>各方给出的总额不一样。差别主要出在估值时点：攻击者在几十分钟内大量换币，Sui 上很多代币的价格同时暴跌。没有一家来源说明了自己的估值方法。本站采用 Cetus 自己的数字。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">被盗总额</th><th class="n">冻结在 Sui 上</th><th class="n">转到以太坊</th></tr></thead>
+            <tbody>
+              <tr><td>Cetus 事故报告与公告<a class="ref" href="#s1">[1]</a><a class="ref" href="#s18">[18]</a></td><td class="n"><span class="dispute">约 2.23 亿美元</span></td><td class="n">约 1.62 亿美元</td><td class="n">约 6,000 万美元</td></tr>
+              <tr><td>Lookonchain（经 The Block 转述）<a class="ref" href="#s17">[17]</a></td><td class="n">超过 2.6 亿美元</td><td class="n">—</td><td class="n">约 6,000 万美元 USDC</td></tr>
+              <tr><td>PeckShield（经 The Block 转述）<a class="ref" href="#s17">[17]</a></td><td class="n">超过 2 亿美元</td><td class="n">—</td><td class="n">约 6,000 万美元 USDC</td></tr>
+              <tr><td>Verichains<a class="ref" href="#s13">[13]</a></td><td class="n">超过 2.6 亿美元</td><td class="n">—</td><td class="n">6,150 万美元 USDC，约 2.3 万 ETH</td></tr>
+              <tr><td>Cointelegraph<a class="ref" href="#s22">[22]</a></td><td class="n">超过 2.2 亿美元</td><td class="n">1.62 亿美元</td><td class="n">6,300 万美元</td></tr>
+              <tr><td>本站链上核对<a class="ref" href="#s30">[30]</a></td><td class="n">—</td><td class="n">—</td><td class="n">5 月 22 日到账 23,243.9 ETH</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>以太坊一侧的数字可以对上。Cetus 的和解提议要求攻击者归还 20,920 ETH、自留 2,324 ETH，两者合计 23,244 ETH<a class="ref" href="#s18">[18]</a>，和攻击者地址当天收到的 ETH 一致<a class="ref" href="#s30">[30]</a>。</p>
+        <h3>在 Sui 上</h3>
+        <ol class="flow">
+          <li class="atk"><b>攻击地址 0xe28b…ff06</b>15 分钟里从多个池子取走资产，集中在两个地址；另一个地址 0xcd89…9562 自己从未发出过交易</li>
+          <li class="atk"><b>10:47 至 12:38 跨链转出</b>经 CCTP、Mayan、Sui Bridge、Wormhole 转出约 6,000 万美元</li>
+          <li class="def"><b>12:50 起被冻结</b>超过 1/3 质押的验证者拒绝处理这两个地址的交易，约 1.62 亿美元留在原地</li>
+          <li class="ok"><b>5 月 30 日取回</b>两笔恢复交易把资产转入 4/6 多签，再用于补池</li>
+        </ol>
+        <p>以上地址来自 Cetus 事故报告，时刻和交易数来自本站对 Sui 链上记录的核对<a class="ref" href="#s1">[1]</a><a class="ref" href="#s31">[31]</a>。</p>
+        <h3>在以太坊上</h3>
+        <ol class="flow">
+          <li class="atk"><b>0x8901…919b 收款</b>5 月 22 日共收到 23,243.9 ETH</li>
+          <li class="atk"><b>12:31 分出 20,000 ETH</b>转入 0x0251…af16，截至 2026-10-31 没有转出过</li>
+          <li class="atk"><b>分批进 Tornado Cash</b>2025-06 至 2026-06 共 10 次，每次 100 ETH，合计 1,000 ETH</li>
+          <li class="doubt"><b>其余仍在原地址</b>约 2,330 ETH、10.9 万 USDT 和 0.9 WBTC，含 2026-10 到账的部分</li>
+        </ol>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>5 月 22 日 ETH 的来源</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>CoW Protocol（GPv2Settlement）</td><td class="n">约 13,613 ETH</td><td>把跨过来的 USDC 换成 ETH</td></tr>
+              <tr><td>Mayan（MayanCircle）</td><td class="n">约 7,696 ETH</td><td>跨链兑换后直接以 ETH 交付</td></tr>
+              <tr><td>ParaSwap（AugustusV6）</td><td class="n">约 1,879 ETH</td><td>USDC、USDT 兑换</td></tr>
+              <tr><td>Wormhole（TokenBridgeRelayer）</td><td class="n">约 56 ETH</td><td>经 Wormhole 中继到账</td></tr>
+              <tr><td>合计</td><td class="n">约 23,244 ETH</td><td>与 Cetus 和解提议中的 20,920 + 2,324 ETH 一致</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>以上地址来自 Cetus 事故报告，数量由本站在 Blockscout 上逐笔汇总，查询截至 2026 年 10 月 31 日（以太坊区块 26,311,608）<a class="ref" href="#s1">[1]</a><a class="ref" href="#s30">[30]</a>。The Block 在 6 月 8 日报道攻击者已开始把资金转入 Tornado Cash<a class="ref" href="#s21">[21]</a>，与链上记录一致。</p>
+        <div class="note doubt">
+          <span class="h">“经 Wormhole 转出”的说法不准确</span>
+          <p>rekt.news 等报道称攻击者经 Wormhole 把资金转到以太坊<a class="ref" href="#s26">[26]</a>。链上记录显示，主要通道是 Circle 的 CCTP，要么直接走，要么经 Mayan：攻击者地址收到的约 4,089 万 USDC 中，约 3,400 万来自 Mayan 的 CCTP 合约，约 689 万由 USDC 合约直接铸给它，随后全部换成 ETH。经 Wormhole 和 Sui Bridge 到账的只是少量 ETH、WSOL 和 USDT<a class="ref" href="#s30">[30]</a>。本站只核对了以太坊收款地址，Sui 一侧各通道的金额没有逐笔汇总。</p>
+        </div>
+        <h3>17 个月后才被领取的跨链转账</h3>
+        <p>2026 年 10 月 16 日，以太坊地址 0x7f2e…6671 用 Multicall3 批量处理了一批跨链领取和提款，同一批里还有其他用户的 Sui Bridge 转账以及 Lido、Optimism、Scroll 的提款。其中 6 笔 Sui Bridge 转账的发送方是攻击地址 0xe28b…ff06，收款方是 0x8901…919b，合计 86 ETH、9.3 万 USDT 和 0.9 WBTC<a class="ref" href="#s30">[30]</a>。领取交易由谁发起、和攻击者有没有关系，链上看不出来。这几笔的桥序号（7021 至 7031）都小于 5 月 22 日 11:12 已被领取的那一笔（7034），而攻击地址在 5 月 22 日 12:38 之后再没发出过交易<a class="ref" href="#s31">[31]</a>。由此看，这些转账是冻结前发起、在以太坊一侧搁置了约 17 个月才被领取的。为什么当时没有被领取，公开资料里没有解释。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>Sui 代币连锁下跌</h3>
+        <p>Cetus 的池子被抽干后，LOFI、HIPPO 等代币在 DEX 上一小时内跌去一半以上，有的跌幅超过 90%。CETUS 在 DEX 上跌了约 50%，整体跌了约 30%<a class="ref" href="#s17">[17]</a>。事发当天，部分 Sui 社区成员坚称 Cetus 没有被黑，问题出在预言机，直到事故报告公布根因才平息<a class="ref" href="#s17">[17]</a><a class="ref" href="#s19">[19]</a>。6 月 8 日重新上线时，CETUS 仍比 5 月 21 日低约 44%<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>同一段代码被别人复制</h3>
+        <p>integer-mate 是开源的，别的项目也在用。Verichains 用 Move 反编译工具扫描了 Sui 上已部署的包，5 月 23 日公布：Kriya（锁仓约 1,000 万美元）和 FlowX（约 460 万美元）用了同一个有缺陷的 <code>checked_shlw</code>，已经修补并升级；Turbos（约 1,030 万美元）的合约里仍有这个函数，只是没有被调用。Verichains 的结论是“dead code is not safe code”<a class="ref" href="#s14">[14]</a>。Cyfrin 列出的同类项目是 Kriya、Momentum 和 Bluefin<a class="ref" href="#s16">[16]</a>，和 Verichains 的名单不完全一致，两家都没有说明差别从何而来。</p>
+        <h3>“去中心化”之争</h3>
+        <div class="compare">
+          <div>
+            <h4>批评</h4>
+            <p>Cyber Capital 创始人 Justin Bons 写道，Sui 的验证者正在合谋审查黑客的交易，这说明 Sui 是中心化的，“创始人”持有大部分供应量，而验证者只有 114 个<a class="ref" href="#s18">[18]</a>。Bitcoin.com 转述他的看法：冻结本身也许没错，问题在于这种协调冻结竟然做得到<a class="ref" href="#s25">[25]</a>。Gabriel Shapiro 的说法更直接：“除了以太坊，每条智能合约链都只是企业链。”<a class="ref" href="#s25">[25]</a></p>
+          </div>
+          <div>
+            <h4>辩护</h4>
+            <p>Sui 基金会称 Sui 是通过委托权益证明治理的去中心化系统，验证者代表自己、SUI 持有人和质押者投票，基金会自己的质押不计入<a class="ref" href="#s6">[6]</a>。Cetus 表示“没有人能单方面做这个决定”，会尊重社区的结果<a class="ref" href="#s19">[19]</a>。Cointelegraph 提到，也有业内观察者认为快速响应有助于遏制攻击<a class="ref" href="#s23">[23]</a>。</p>
+          </div>
+        </div>
+        <p>rekt.news 的评论是：“代码即法律”从此带了一个星号，除非我们真的需要把钱拿回来<a class="ref" href="#s26">[26]</a>。</p>
+        <p>这次其实是两件事。冻结只需要足够多的验证者在自己的节点上拒绝处理某些地址的交易，不改协议，攻击开始约 2 小时 20 分钟后就做到了。取回则要求全网升级到同一个协议版本，在共识规则里写进一个“允许替攻击者签名”的例外，从投票到编码再到升级用了一周<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a>。前者是验证者集体拒绝服务，后者是协议层面改写了谁能动这笔资产，后者引发的争议更大。截至 2026 年 10 月，Sui 主干代码里出现了一套经共识同步拒绝规则的机制（<code>PeerDenySyncConfig</code>），提议达到一定质押门槛后生效；代码注释没有提到它和 Cetus 事件的关系<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>当天：停池、冻结、修补</h3>
+        <p>Cetus 的监控在攻击开始约 9 分钟后发现异常，27 分钟后关停核心池子，50 分钟后关停全部相关合约<a class="ref" href="#s1">[1]</a>。链上记录显示，最后一笔攻击交易在 10:45，早于核心池子关停的时间<a class="ref" href="#s31">[31]</a>，也就是说，关停时损失已经造成。当天下午 integer-mate 合入两次修复，18:15 合约完成升级，但池子没有立刻重启<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <h3>冻结是怎么做到的</h3>
+        <p>Sui 的交易要得到投票权合计超过 2/3 的验证者认可才能生效<a class="ref" href="#s28">[28]</a>。反过来，只要投票权超过 1/3 的验证者拒绝处理，一笔交易就永远凑不够。在 mainnet-v1.48.2 版本里，每个验证者节点的配置中都有这样一张名单<a class="ref" href="#s11">[11]</a>：</p>
+<pre class="code"><code><span class="c">// crates/sui-config/src/transaction_deny_config.rs（mainnet-v1.48.2）</span>
+/// A list of sui addresses that are not allowed to be used as the sender or sponsor.
+#[serde(default, skip_serializing_if = "Vec::is_empty")]
+address_deny_list: Vec&lt;SuiAddress&gt;,</code></pre>
+        <p class="code-cap">来源：MystenLabs/sui 仓库 mainnet-v1.48.2 标签，transaction_deny_config.rs 第 36–38 行。</p>
+        <p>这是节点本地的配置，不需要改协议。5 月 22 日 12:50 起，验证者陆续把攻击者的两个地址加进去，投票权超过 33% 后，这两个地址就无法再发出有效交易<a class="ref" href="#s1">[1]</a>。Sui 官方当时的说法是：“大量验证者识别出了持有被盗资金的地址，在另行通知前忽略这些地址的交易。”<a class="ref" href="#s17">[17]</a></p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 300" role="img" aria-labelledby="cetus-gov-t cetus-gov-d">
+            <title id="cetus-gov-t">冻结与取回的机制</title>
+            <desc id="cetus-gov-d">上半部分是一条按投票权划分的横条：超过三分之一投票权的验证者拒绝处理攻击者地址的交易，剩下的不足三分之二，凑不够交易生效所需的门槛，地址因此被冻结。下半部分是取回流程：链上投票 90.9% 赞成，协议版本 83 加入只对两笔指定交易生效的地址别名，两笔恢复交易先校验投票结果再把资产转入 4/6 多签，最后用于补回池子。</desc>
+            <defs>
+              <marker id="cetus-ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t b" x="40" y="28">冻结：交易要超过 2/3 投票权认可才能生效</text>
+            <rect class="d-box def" x="40" y="44" width="270" height="40"/>
+            <text class="d-t b" x="175" y="69" text-anchor="middle">拒绝处理：超过 1/3</text>
+            <rect class="d-box soft" x="310" y="44" width="430" height="40"/>
+            <text class="d-t" x="625" y="69" text-anchor="middle">其余验证者：不到 2/3</text>
+            <line class="d-line dash" x1="507" y1="36" x2="507" y2="94"/>
+            <text class="d-t s" x="507" y="112" text-anchor="middle">生效门槛 2/3</text>
+            <text class="d-t s" x="40" y="136">愿意处理的投票权永远到不了门槛，攻击者地址发出的交易无法生效，等于被冻结。</text>
+            <line class="d-line dash" x1="40" y1="152" x2="740" y2="152"/>
+            <text class="d-t b" x="40" y="178">取回：投票授权一次协议升级，只放行两笔指定交易</text>
+            <rect class="d-box def" x="40" y="194" width="160" height="58" rx="4"/>
+            <text class="d-t b" x="120" y="218" text-anchor="middle">链上投票</text>
+            <text class="d-t s" x="120" y="238" text-anchor="middle">90.9% 质押赞成</text>
+            <rect class="d-box def" x="220" y="194" width="160" height="58" rx="4"/>
+            <text class="d-t b" x="300" y="218" text-anchor="middle">协议版本 83</text>
+            <text class="d-t s" x="300" y="238" text-anchor="middle">地址别名，限 2 笔</text>
+            <rect class="d-box def" x="400" y="194" width="160" height="58" rx="4"/>
+            <text class="d-t b" x="480" y="218" text-anchor="middle">两笔恢复交易</text>
+            <text class="d-t s" x="480" y="238" text-anchor="middle">先校验投票结果</text>
+            <rect class="d-box ok" x="580" y="194" width="160" height="58" rx="4"/>
+            <text class="d-t b" x="660" y="218" text-anchor="middle">4/6 多签托管</text>
+            <text class="d-t s" x="660" y="238" text-anchor="middle">再用于补池</text>
+            <line class="d-line def" x1="200" y1="223" x2="218" y2="223" marker-end="url(#cetus-ah2)"/>
+            <line class="d-line def" x1="380" y1="223" x2="398" y2="223" marker-end="url(#cetus-ah2)"/>
+            <line class="d-line def" x1="560" y1="223" x2="578" y2="223" marker-end="url(#cetus-ah2)"/>
+            <text class="d-t s" x="40" y="280">攻击者没有签名。别名只对两个指定的交易摘要生效，这两个地址的其他交易照样被拒绝。</text>
+          </svg>
+          </div>
+          <figcaption>图 2：冻结靠的是验证者集体拒绝处理，取回靠的是一次写进协议的例外。蓝色是防守方的动作。</figcaption>
+        </figure>
+        <h3>和解提议与悬赏</h3>
+        <p>5 月 22 日 18:04，Cetus 和数据分析公司 Inca Digital 在链上给攻击者留言：归还 20,920 ETH 和 Sui 上的全部冻结资金，就可以留下 2,324 ETH（约 600 万美元）作为赏金，此后不再采取法律、情报或公开行动；如果资产被转去出金或混币，就启动法律程序<a class="ref" href="#s1">[1]</a><a class="ref" href="#s18">[18]</a>。攻击者没有回应。Cetus 随后悬赏 500 万美元，征集能导致攻击者被识别和逮捕的线索，是否发放由 Sui 基金会决定<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>链上投票与协议升级</h3>
+        <p>5 月 27 日，Sui 基金会公布投票规则：验证者按质押权重投票；赞成票加反对票要超过总质押的一半（弃权不计），且赞成多于反对，才算通过；基金会自己的质押不计入，以保持中立。投票从太平洋时间 5 月 27 日下午 1 点开始，最长 7 天，满 2 天后结果已定即可提前结束。投票的对象是一次协议升级：在不需要攻击者签名的情况下，把两个冻结地址里的资金转入一个 4/6 多签，Cetus、Sui 基金会和 OtterSec 各持 2 把钥匙。Cetus 按恢复方案提出交易，OtterSec 核对交易与公开方案一致后才签，基金会只在其他签名方无法签署时才签<a class="ref" href="#s6">[6]</a>。代表 90.9% 质押的验证者投了赞成票，投票提前结束<a class="ref" href="#s6">[6]</a><a class="ref" href="#s23">[23]</a>。</p>
+        <p>同一天，Mysten Labs 提交了实现代码（PR #22237）。PR 说明写道：协议配置可以指定地址别名，让地址 B 的签名充当发送方 A，但只限于一组指定的交易摘要，这些交易也会绕过地址拒绝名单<a class="ref" href="#s10">[10]</a>。核心改动在签名校验里：</p>
+<pre class="code"><code><span class="c">// crates/sui-types/src/signature_verification.rs（PR #22237 新增部分）</span>
+// Replace signers with their aliased addresses if they exist.
+let mut signers: NonEmpty&lt;_&gt; = txn.intent_message().value.signers();
+if let Some(aliased_addresses) = aliased_addresses {
+    for signer in signers.iter_mut() {
+        if let Some((aliased, allowed_digests)) = aliased_addresses.get(signer) {
+            let digest = intent_message.value.digest();
+            <span class="c">// 只有交易摘要在白名单里，才用别名地址的签名代替原地址</span>
+            if allowed_digests.contains(&amp;digest) {
+                *signer = *aliased;
+            }
+        }
+    }
+}</code></pre>
+        <p class="code-cap">来源：MystenLabs/sui PR #22237 的 diff。</p>
+        <p>主网的配置写在协议版本 83 里：两个冻结地址各配一笔允许的交易，签名方是同一个新地址。为了把这次升级作为 1.48 版的补丁尽快发出，原定在版本 83 开启的其他几项功能被推迟到版本 84<a class="ref" href="#s10">[10]</a>。</p>
+        <p>5 月 30 日 18:42 和 20:46，两笔恢复交易先后执行。两笔都先调用投票合约 <code>0x4eb9c090…::governance_voting::assert_can_be_executed</code> 确认投票已经通过，这个包地址与基金会公布的投票包一致<a class="ref" href="#s6">[6]</a><a class="ref" href="#s31">[31]</a>。第一笔从 0xcd89…9562 转出约 2,402 万枚 SUI 和少量其他代币，第二笔从 0xe28b…ff06 转出数十种代币，都转入 <span class="addr">0xa165cf7f150f34375b3943ccc66edd52de8561191ec7d663ec32fb836f078544</span>。这个地址此后的交易都用 MultiSig 签名，其中几笔正是 Cetus 公布的资产换仓交易<a class="ref" href="#s3">[3]</a><a class="ref" href="#s31">[31]</a>。</p>
+        <h3>补池、借款与 CETUS 补偿</h3>
+        <p>6 月 7 日 Cetus 公布恢复方案，6 月 8 日 03:00（UTC）重新上线<a class="ref" href="#s2">[2]</a><a class="ref" href="#s24">[24]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>补池来源</th><th class="n">规模</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>从攻击者处取回的资产</td><td class="n">约 1.62 亿美元</td><td>金额据 The Block<a class="ref" href="#s21">[21]</a>；攻击者换过大量币，Cetus 用链上兑换、OTC 和中心化交易所重新配平<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>Cetus 自有现金</td><td class="n">约 700 万美元</td><td>全部可用现金，用于买入 SUI、WAL、DEEP、NS、USDY 等缺口最大的币<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>Sui 基金会专项贷款</td><td class="n">3,000 万 USDC</td><td>今后追回的资金用于还款<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>CETUS 补偿</td><td class="n">总供应量的 15%</td><td>含团队全部未解锁的 10%；5% 上线即可领，10% 自 6 月 10 日起按月线性解锁 12 个月，总供应量不变<a class="ref" href="#s2">[2]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>受影响的 265 个池子，流动性补回比例在 85.7% 到 99.7% 之间，中位数约 89.3%<a class="ref" href="#s3">[3]</a>。受影响头寸的 NFT 作为领取补偿的凭证，即使流动性全部撤出也不会被销毁。如果今后追回更多资金，补偿期内用户可以选择用剩余的 CETUS 换 USDC，并偿还基金会贷款；补偿期结束后则用于回购 CETUS<a class="ref" href="#s2">[2]</a>。5 月 27 日 Cetus 曾表示，投票通过再加上基金会贷款，可以让用户“100% 恢复”<a class="ref" href="#s20">[20]</a>；实际方案是 85% 到 99% 的资产加代币补偿。</p>
+        <h3>安全整改</h3>
+        <p>重新上线前后，MoveBit、OtterSec 和 CertiK 先后审计了修复后的 CLMM 合约。Cetus 把各合约模块的测试覆盖率提到 90% 以上，接入 Blockaid 做实时监控，升级了紧急暂停机制，并在 HackenProof 上开设漏洞赏金<a class="ref" href="#s4">[4]</a><a class="ref" href="#s9">[9]</a>。2025 年 9 月，CLMM 合约源码在 GitHub 公开，Asymptotic 出具了审计报告和形式化验证报告<a class="ref" href="#s5">[5]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。同月，Sui 基金会宣布扩大生态安全计划，在此前 1,000 万美元承诺的基础上增加漏洞监控与告警、攻击模拟和 Move Prover 形式化验证等服务，公告没有提到 Cetus<a class="ref" href="#s27">[27]</a>。</p>
+        <h3>追查攻击者</h3>
+        <p>Cetus 称已在多个司法辖区启动法律程序，有执法机构参与，7 月的季报说调查仍在进行<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。截至 2026 年 10 月，本站没有检索到攻击者身份被公开、被捕或被起诉的报道。以太坊上的 20,000 ETH 自 2025 年 5 月 22 日起没有动过，另一个地址已把 1,000 ETH 分批转入 Tornado Cash<a class="ref" href="#s30">[30]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给写数学库的人</span>
+          <ul>
+            <li>移位不是受检运算。Move 的加减乘溢出会 abort，左移不会<a class="ref" href="#s29">[29]</a>。左移 k 位之前，先确认 n &lt; 2^(256−k)；或者改用乘以 2^k，让语言自带的溢出检查兜底。</li>
+            <li>溢出检查要用边界值测试。给 <code>checked_shlw</code> 测 2¹⁹² − 1、2¹⁹²、2¹⁹² + 1 和 2²⁵⁶ − 2¹⁹² 这四个数，原版本和第一次修复的错误都会暴露。</li>
+            <li>规格明确的数学函数适合做形式化验证。integer-mate 在事后就是这样补上的<a class="ref" href="#s9">[9]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议方和审计方</span>
+          <ul>
+            <li>依赖库也是攻击面。Zellic 那一轮审计覆盖了业务合约，没有覆盖 CLMM 每一步计算都要用的数学库<a class="ref" href="#s9">[9]</a>。审计范围要写清楚依赖有没有被审。</li>
+            <li>审计建议落地后要复核。2023 年的审计建议改用 <code>checked_shlw</code>，而 <code>checked_shlw</code> 本身就是错的<a class="ref" href="#s12">[12]</a>。</li>
+            <li>开源代码出事，要做全链排查。Verichains 一天之内就在另外三个项目里找到了同一个函数，其中一个是没被调用的死代码<a class="ref" href="#s14">[14]</a>。</li>
+            <li>给资金流出设上限。这次攻击 15 分钟就打完了，核心池子在第 27 分钟才关停<a class="ref" href="#s1">[1]</a><a class="ref" href="#s31">[31]</a>。按池子限制流出速度，比事后暂停更能控制损失，Cetus 事后也加上了资产流速限制<a class="ref" href="#s1">[1]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给公链和验证者</span>
+          <ul>
+            <li>冻结和转走一旦用过，就成了先例。这次 Sui 把例外写得很窄，只放行两笔事先公开的交易，并在交易里校验投票结果<a class="ref" href="#s10">[10]</a><a class="ref" href="#s31">[31]</a>。但冻结所需的质押门槛和取回所需的投票规则，都是出事之后才定下来的。</li>
+            <li>如果要保留这种手段，门槛、投票规则和适用范围最好事先写成公开的规则，让用户在存钱之前就知道，什么情况下自己的资产可能被冻结或转走。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Cetus Protocol，《Cetus Incident Report: May 22, 2025 Attack Disclosure》，Notion，2025-05-26 发布、05-30 最后修改。<a href="https://cetusprotocol.notion.site/Cetus-Incident-Report-May-22-2025-Attack-Disclosure-1ff1dbf3ac8680d7a98de6158597d416">cetusprotocol.notion.site</a></li>
+          <li id="s2">Cetus Protocol，《Cetus Relaunch Incoming: Recovery Plan and the Road Ahead》，Medium，2025-06-07。<a href="https://medium.com/@CetusProtocol/cetus-relaunch-incoming-recovery-plan-and-the-road-ahead-9fc0f8bd5c41">medium.com</a></li>
+          <li id="s3">Cetus Protocol，受影响池子及补回比例表、资产换仓交易表（恢复方案中的链接），Google Sheets，2025-06。<a href="https://docs.google.com/spreadsheets/d/1C2yKhqha0N_KwDVSBY97RiC_rgWExHZX_JxPmxXNXkI/edit">受影响池子</a>、<a href="https://docs.google.com/spreadsheets/d/12ePXE8V53kttaqFnCMM6ObLzeb1iUGOvlV7lkTDc1Sc/edit">换仓交易</a></li>
+          <li id="s4">Cetus Protocol，《Cetus Report | 2025 Q2》，Medium，2025-07-17。<a href="https://medium.com/@CetusProtocol/cetus-report-2025-q2-9d4f25a3eed9">medium.com</a></li>
+          <li id="s5">Cetus Protocol，《Cetus Recap: Strengthening the Foundation, Setting the Stage Ahead》，Medium，2026-01-10。<a href="https://medium.com/@CetusProtocol/cetus-recap-strengthening-the-foundation-setting-the-stage-ahead-32785c0ec0b1">medium.com</a></li>
+          <li id="s6">Sui Foundation，《Cetus Incident Response: Onchain Community Vote》，2025-05-27（含投票结果更新）。<a href="https://www.sui.io/blog/cetus-incident-response-onchain-community-vote">sui.io</a></li>
+          <li id="s7">CetusProtocol/integer-mate 仓库：修复前的 sui/sources/math_u256.move（提交 4d09c8b），修复提交 ffb2292 与 970667a（2025-05-22）。<a href="https://github.com/CetusProtocol/integer-mate/blob/4d09c8ba0527/sui/sources/math_u256.move">修复前源码</a>、<a href="https://github.com/CetusProtocol/integer-mate/commit/ffb2292d47e9">ffb2292</a>、<a href="https://github.com/CetusProtocol/integer-mate/commit/970667ab282d">970667a</a></li>
+          <li id="s8">CetusProtocol/cetus-contracts 仓库，提交 a477627（2025-09-12 首次公开 CLMM 源码）：clmm_math.move、pool.move、tick_math.move。<a href="https://github.com/CetusProtocol/cetus-contracts/tree/a477627b92c0/packages/cetus_clmm">github.com</a></li>
+          <li id="s9">CetusProtocol/Audit 仓库，CLMM 与 Libraries 审计索引（审计方、时间、范围）。<a href="https://github.com/CetusProtocol/Audit">github.com</a></li>
+          <li id="s10">Mysten Labs，《Protocol update to allow recovery of stolen funds》，MystenLabs/sui PR #22237，2025-05-27。<a href="https://github.com/MystenLabs/sui/pull/22237">github.com</a></li>
+          <li id="s11">MystenLabs/sui 仓库，crates/sui-config/src/transaction_deny_config.rs（mainnet-v1.48.2 标签与 2026 年 10 月的主干）。<a href="https://github.com/MystenLabs/sui/blob/mainnet-v1.48.2/crates/sui-config/src/transaction_deny_config.rs">mainnet-v1.48.2</a>、<a href="https://github.com/MystenLabs/sui/blob/main/crates/sui-config/src/transaction_deny_config.rs">main</a></li>
+          <li id="s12">Dedaub，《The Cetus AMM $200M Hack: How a Flawed “Overflow” Check Led to Catastrophic Loss》，2025-05-23。<a href="https://dedaub.com/blog/the-cetus-amm-200m-hack-how-a-flawed-overflow-check-led-to-catastrophic-loss/">dedaub.com</a></li>
+          <li id="s13">Verichains（vanhoa、Thanh Nguyen），《Cetus Protocol $260M Exploit: Root Cause Analysis and Technical Breakdown》，2025-05-22。<a href="https://blog.verichains.io/p/cetus-protocol-hacked-analysis">blog.verichains.io</a></li>
+          <li id="s14">Verichains（th13vn），《Multiple Sui Projects Previously Exposed to Critical Math Bug Found in Cetus Hack》，2025-05-23。<a href="https://blog.verichains.io/p/multiple-sui-projects-previously">blog.verichains.io</a></li>
+          <li id="s15">Rob Behnke，《Explained: The Cetus Hack (May 2025)》，Halborn，2025-05-27。<a href="https://www.halborn.com/blog/post/explained-the-cetus-hack-may-2025">halborn.com</a></li>
+          <li id="s16">MoveJay，《Inside the $223M Cetus Exploit: Root Cause and Impact Analysis》，Cyfrin，2025-12-15。<a href="https://www.cyfrin.io/blog/inside-the-223m-cetus-exploit-root-cause-and-impact-analysis">cyfrin.io</a></li>
+          <li id="s17">James Hunt，《Sui-based token prices plunge amid $223 million Cetus Protocol exploit》，The Block，2025-05-22。<a href="https://www.theblock.co/post/355372/sui-based-token-prices-cetus-protocol">theblock.co</a></li>
+          <li id="s18">Danny Park，《Cetus offers $6 million white hat deal to recover stolen ETH after hacker’s activity is blocked on Sui》，The Block，2025-05-23。<a href="https://www.theblock.co/post/355511/cetus-protocol-sui-bounty">theblock.co</a></li>
+          <li id="s19">James Hunt，《Sui DEX Cetus says overlooked flaw in open-source library used by smart contract led to $223 million exploit》，The Block，2025-05-27。<a href="https://www.theblock.co/post/355795/sui-dex-cetus-open-source-library-flaw-smart-contract-223-million-usd-exploit">theblock.co</a></li>
+          <li id="s20">MK Manoylov，《Cetus poses community vote to possibly return 100% of funds to users affected by $223 million exploit》，The Block，2025-05-27。<a href="https://www.theblock.co/post/355906/cetus-poses-community-vote-to-possibly-return-100-of-funds-to-users-affected-by-223-million-exploit">theblock.co</a></li>
+          <li id="s21">Zack Abrams，《Sui DEX Cetus Protocol restarts platform after recovering from $223 million exploit》，The Block，2025-06-08。<a href="https://www.theblock.co/post/357386/sui-dex-cetus-protocol-restarts-platform-after-recovering-from-223-million-exploit">theblock.co</a></li>
+          <li id="s22">Vince Quill，《Sui validators freeze majority of stolen funds in $220M Cetus hack》，Cointelegraph，2025-05-22。<a href="https://cointelegraph.com/news/sui-validators-freeze-majority-stolen-funds-220m-cetus-hack">cointelegraph.com</a></li>
+          <li id="s23">Zoltan Vardai，《Sui community passes vote to repay $162M to Cetus exploit victims》，Cointelegraph，2025-05-30。<a href="https://cointelegraph.com/news/sui-passes-governance-vote-to-recover-162m-cetus-funds">cointelegraph.com</a></li>
+          <li id="s24">Stephen Katte，《Sui DEX restarts, plots open-source move after massive exploit》，Cointelegraph，2025-06-09。<a href="https://cointelegraph.com/news/sui-dex-restarts-plots-open-source-move-after-massive-exploit">cointelegraph.com</a></li>
+          <li id="s25">Sergio Goschenko，《Cetus Protocol’s $223 Million Hack Puts Sui’s Decentralization in the Spotlight》，Bitcoin.com News，2025-05-25。<a href="https://news.bitcoin.com/cetus-protocols-223-million-hack-puts-suis-decentralization-in-the-spotlight/">news.bitcoin.com</a></li>
+          <li id="s26">rekt.news，《Cetus - Rekt》，2025-05-23。<a href="https://rekt.news/cetus-rekt">rekt.news</a></li>
+          <li id="s27">Sui Foundation，《Sui Ecosystem Security Expansion Initiatives》，2025-09-29。<a href="https://www.sui.io/blog/ecosystem-security-expansion-initiative">sui.io</a></li>
+          <li id="s28">Sui 文档，《Consensus》（Quorums 一节）。<a href="https://docs.sui.io/concepts/sui-architecture/consensus">docs.sui.io</a></li>
+          <li id="s29">The Move Book，《Integers》。<a href="https://move-book.com/reference/primitive-types/integers">move-book.com</a></li>
+          <li id="s30">Blockscout（以太坊），攻击者地址 0x8901…919b、0x0251…af16 的交易、内部交易、代币转账与事件日志，本站查询于 2026-10-31。<a href="https://eth.blockscout.com/address/0x89012a55cd6b88e407c9d4ae9b3425f55924919b">0x8901…919b</a>、<a href="https://eth.blockscout.com/address/0x0251536bfcf144b88e1afa8fe60184ffdb4caf16">0x0251…af16</a></li>
+          <li id="s31">Sui 主网 GraphQL 查询结果：攻击地址 0xe28b…ff06 与 0xcd89…9562 的全部交易，交易 DVMG3B2k…、B2eGLFoM…、J4QqSAgp… 的执行时间、余额变化、调用与签名类型，本站查询于 2026-10-31。<a href="https://graphql.mainnet.sui.io/graphql">graphql.mainnet.sui.io</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

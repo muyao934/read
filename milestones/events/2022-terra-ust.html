@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terra/UST 崩盘｜区块链大事记</title>
+<meta name="description" content="2022 年 5 月算法稳定币 UST 脱锚、LUNA 增发到 5.89 万亿枚的完整经过：兑换机制的代码、挤兑时间线、向三箭资本等机构的传染，以及 Do Kwon 被判 15 年的后续。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-terra-ust">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　<a href="../index.html#cat-crash">崩盘与暴雷</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Terra/UST 崩盘</h1>
+    <p class="lede">2022 年 5 月 7 日起，大户从 Anchor 撤出 UST，这个没有美元储备的“算法稳定币”跌破 1 美元。用来维持锚定的兑换机制把抛压变成了 LUNA 的增发，5 月 11 日至 13 日 LUNA 从不到 10 亿枚增加到 5.89 万亿枚，两种代币几乎归零。SEC 估计约 400 亿美元的市值几乎一夜蒸发，美国司法部称投资者损失超过 400 亿美元。几周后借贷平台接连冻结提款，2022 年的连环暴雷由此开始。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">UST 是 Terraform Labs（TFL）发行的美元稳定币，背后没有美元或国债储备。它的锚定只靠一条规则：1 UST 随时能在链上换成价值 1 美元的 LUNA，反过来也一样。UST 的需求主要来自 Anchor 协议约 19.5% 的存款利率，崩盘前 185 亿枚 UST 里约有 120 亿枚存在 Anchor<a class="ref" href="#s3">[3]</a>。</p>
+        <p>2022 年 5 月 7 日，两个大地址从 Anchor 取出约 4 亿枚 UST 送往交易所，UST 价格开始下滑<a class="ref" href="#s3">[3]</a>。按设计，套利者会买入折价的 UST 换成 LUNA，把价格拉回 1 美元。但 LUNA 的价格本身依赖人们对整个系统的信心：换出的 LUNA 越多，LUNA 跌得越快，同样 1 枚 UST 就要换出更多 LUNA。5 月 7 日至 13 日，用户在链上换掉了价值 46.5 亿美元的 UST<a class="ref" href="#s3">[3]</a>。TFL 和 Luna Foundation Guard（LFG）花了约 25 亿美元护盘，没能止住。13 日 UST 跌破 0.2 美元，Terra 链暂停<a class="ref" href="#s3">[3]</a><a class="ref" href="#s17">[17]</a>。</p>
+        <p>之后的诉讼揭出一件更早的事：2021 年 5 月 UST 第一次脱锚时，把价格拉回来的是一家交易公司按与 TFL 的约定买入 UST，TFL 却对外说是算法自己恢复了锚定<a class="ref" href="#s2">[2]</a>。2024 年陪审团认定 TFL 和创始人 Do Kwon（权道亨）证券欺诈，TFL 与 SEC 和解并清盘<a class="ref" href="#s4">[4]</a>。Do Kwon 2025 年在美国认罪，被判 15 年<a class="ref" href="#s7">[7]</a><a class="ref" href="#s18">[18]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>TFL 和 Terra 链</h3>
+        <p>Do Kwon 和 Daniel Shin 于 2018 年 1 月创办 Terraform Labs，公司设在新加坡<a class="ref" href="#s18">[18]</a><a class="ref" href="#s1">[1]</a>。2019 年 1 月，TFL 以每枚 0.8 美元出售 LUNA，募得 6,200 万美元，LUNA 初始供应量为 10 亿枚<a class="ref" href="#s3">[3]</a>。Terra 链上可以发行多种锚定法币的稳定币，锚定美元的 UST 于 2020 年 9 月前后推出<a class="ref" href="#s7">[7]</a>。</p>
+        <p>TFL 宣传的卖点是“真实用途”。它称韩国支付应用 Chai 从 2019 年 6 月前后开始用 Terra 链处理交易，金额达数十亿美元。司法部后来认定，Chai 的交易走的是传统支付网络，不经过 Terra 链<a class="ref" href="#s7">[7]</a>。TFL 之后又推出了合成股票平台 Mirror（2020 年 12 月）和借贷协议 Anchor（2021 年 3 月）<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>锚定靠什么</h3>
+        <p>UST 不持有美元。TFL 的说法是，Terra 协议保证 1 UST 总能换到价值 1 美元的 LUNA，价值 1 美元的 LUNA 也总能换到 1 UST<a class="ref" href="#s7">[7]</a>。UST 低于 1 美元时，套利者买入 UST，在链上换成价值 1 美元的 LUNA 卖掉，赚取差价，换掉的 UST 被销毁，流通量减少；高于 1 美元时反向操作。兑换在 Terra 链的 market 模块里完成，LUNA 的价格由预言机根据链下中心化交易所的行情提供，约每 30 秒更新一次<a class="ref" href="#s3">[3]</a>。</p>
+        <p>NBER 的论文把 UST 比作“面值 1 美元、没有到期日、以 LUNA 为支撑的可转换债”<a class="ref" href="#s3">[3]</a>。这个承诺只有在 LUNA 的总市值远大于 UST 流通量时才可信。一旦很多人同时要把 UST 换成 LUNA，LUNA 会被大量增发、价格下跌，LUNA 持有人提前卖出更划算，UST 的挤兑就会变成 LUNA 的挤兑<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>Anchor 的 20%</h3>
+        <p>UST 的需求主要来自 Anchor。存进 Anchor 的 UST 能拿到稳定的 19.5% 年化利率，远高于其他主要稳定币。NBER 的测算显示，Anchor 的存款利率和借款利率都靠补贴维持<a class="ref" href="#s3">[3]</a>。SEC 的起诉书称，TFL 把 UST 当作“能生息的稳定币”推销，宣传通过 Anchor 最高可得约 20% 的利息<a class="ref" href="#s1">[1]</a>。</p>
+        <p>UST 流通量在崩盘前涨到约 185 亿枚，新增的大部分进了 Anchor：崩盘前夕 Anchor 存有约 120 亿枚，社区账户另有约 30 亿枚<a class="ref" href="#s3">[3]</a>。进入 2022 年 5 月时，UST 是全球第三大稳定币，市值超过 180 亿美元<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>LFG 的比特币储备</h3>
+        <p>2022 年 1 月，Do Kwon 宣布成立非营利组织 LFG，目的是“为 UST 锚定建立储备，应对市场波动”<a class="ref" href="#s3">[3]</a>。FSOC 的报告引述报道称，LFG 买入了价值约 35 亿美元的比特币<a class="ref" href="#s8">[8]</a>。崩盘后 JS Held 的审计报告显示，截至 2022 年 5 月 6 日，LFG 持有约 80,300 枚 BTC，另有约 2,600 万 USDT 和 2,400 万 USDC<a class="ref" href="#s3">[3]</a>。即使按 35 亿美元算，这笔储备也不到 UST 流通量的五分之一。</p>
+        <p>司法部称，Do Kwon 对外说 LFG 由独立的治理机构管理，实际上 LFG 和 TFL 都由他控制，他还挪用了 LFG 价值数亿美元的资产<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <h3>2021 年 5 月：第一次脱锚</h3>
+        <p>2021 年 5 月 19 日 UST 开始脱锚，23 日跌到接近 0.90 美元。SEC 的修订起诉书称，Do Kwon 当天反复联系一家“美国交易公司”，商量怎样恢复锚定。这家公司在 5 月 23 日至 27 日净买入超过 6,200 万枚 UST，价格随之回到接近 1 美元<a class="ref" href="#s2">[2]</a>。</p>
+        <p>作为交换，Do Kwon 取消了双方 2020 年贷款协议中的业绩条件。按原协议，该公司要达到 UST 交易指标才能拿到 LUNA；修改后，它可以按约定日期无条件分批拿到剩余的 61,458,334 枚，价格仍是每枚 0.40 美元，而 LUNA 在二级市场上一度超过 90 美元。SEC 称这家公司靠这些 LUNA 获利约 10 亿美元<a class="ref" href="#s2">[2]</a>。</p>
+        <p>起诉书没有点名这家公司。2024 年 12 月，SEC 与 Jump Crypto Holdings 的全资子公司 Tai Mo Shan 和解，和解令描述的正是这一安排：2021 年 5 月 UST 脱锚时，双方约定 Tai Mo Shan 买入 UST，TFL 则让它手里以折价购买 LUNA 的期权提前生效。Tai Mo Shan 支付约 1.23 亿美元，不承认也不否认 SEC 的认定<a class="ref" href="#s5">[5]</a>。</p>
+        <p>TFL 和 Do Kwon 对外则把这次恢复说成算法经受住了考验，称其为“实盘条件下所能预期的最激烈的压力测试”。SEC 称，锚定恢复之后，投资者又向 Terra 生态投入了数十亿美元，主要是买入 LUNA 和 UST<a class="ref" href="#s2">[2]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">崩盘与损失</span><span class="def">护盘、处置与执法</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2018-01</time><div class="ev">Do Kwon 和 Daniel Shin 创办 Terraform Labs<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2019-01</time><div class="ev">TFL 以每枚 0.8 美元出售 LUNA，募得 6,200 万美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2019-11</time><div class="ev">TFL 借给一家“美国交易公司”3,000 万枚 LUNA，用于做市<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2020-09</time><div class="ev">UST 推出<a class="ref" href="#s7">[7]</a>。9 月 8 日的贷款协议约定，这家交易公司达到 UST 交易指标后，可再按每枚 0.40 美元拿到最多 6,500 万枚 LUNA<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2021-03</time><div class="ev">Anchor 上线，UST 存款年化约 20%<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="atk"><time>2021-05-19</time><div class="ev">UST 第一次脱锚，23 日跌到接近 0.90 美元<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="key"><time>2021-05-23 至 27</time><div class="ev">交易公司净买入超过 6,200 万枚 UST，价格回到接近 1 美元。TFL 对外称算法恢复了锚定<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2021-07-21</time><div class="ev">双方书面修改协议，取消业绩条件，剩余 61,458,334 枚 LUNA 按日期无条件交付<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2022-01</time><div class="ev">LFG 成立<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2022-05-06</time><div class="ev">LFG 持有约 80,300 枚 BTC，以及约 2,600 万 USDT 和 2,400 万 USDC<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>2022-05-07</time><div class="ev">两个大地址从 Anchor 取出约 4 亿枚 UST，分批送往 Curve 和 Binance。UST 价格开始下滑，Anchor 提款增多<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2022-05-07 至 09</time><div class="ev">TFL 和 LFG 花约 25 亿美元买入 UST 和 LUNA，其中包括 80,071 枚 BTC<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>2022-05-09 晚</time><div class="ev">Anchor 提款加速，UST 跌到 0.75 美元<a class="ref" href="#s3">[3]</a>。之后几天多个平台暂停 UST 交易<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2022-05-11</time><div class="ev">挤兑波及 USDT，其二级市场价格最低到 0.94 美元，一天内回到接近 1 美元<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2022-05-11 至 13</time><div class="ev">LUNA 供应量从不到 10 亿枚增加到 5.89 万亿枚，价格从 50 美元跌到约 0.000001 美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2022-05-12</time><div class="ev">classic-core 发布 v0.5.19，说明为“禁止质押权重变化”<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk key"><time>2022-05-13</time><div class="ev">Anchor 只剩不到 20 亿枚 UST，UST 低于 0.2 美元<a class="ref" href="#s3">[3]</a>。TFL 暂停 Terra 链<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2022-05-13</time><div class="ev">classic-core 发布 v0.5.20：把最低价差设为 100%，停用链上兑换；关闭通往 Osmosis、Crescent 和 Juno 的三条 IBC 通道<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2022-05-18</time><div class="ev">USDT 市值从事发前的约 830 亿美元降到约 740 亿美元<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2022-05-25</time><div class="ev">复活提案通过：发行新的 LUNA，放弃 UST。原链改称 Terra Classic，原 LUNA 改称 LUNC<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2022-05-28</time><div class="ev">新 LUNA 在交易所上线，当天最高 19.53 美元，几小时后低至 4.39 美元<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2022-06</time><div class="ev">韩国检方限制多名 TFL 员工出境<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2022-06 中旬</time><div class="ev">借贷平台 Celsius 冻结全部提款，超过 100 万名客户拿不到钱<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2022-07-01</time><div class="ev">三箭资本在美国申请 Chapter 15 破产保护，此前几天英属维尔京群岛法院已下令清算<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2022-09-14</time><div class="ev">韩国法院签发 Do Kwon 的逮捕令<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2023-02-16</time><div class="ev">SEC 在纽约南区联邦法院起诉 TFL 和 Do Kwon<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2023-03-23</time><div class="ev">Do Kwon 在黑山准备登机时被捕，随身带着伪造的护照。纽约随即公开了对他的起诉书<a class="ref" href="#s7">[7]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2023-06-19</time><div class="ev">黑山法院以使用伪造护照，判 Do Kwon 和 TFL 前财务主管 Han Chang-joon 各 4 个月<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2023-07-31</time><div class="ev">SEC 诉 Terraform 案里，Rakoff 法官驳回 TFL 和 Do Kwon 的撤案动议，拒绝按销售方式区分<a class="ref" href="#s19">[19]</a>，见<a href="2023-ripple-ruling.html">SEC 诉 Ripple 案</a>。</div></li>
+          <li class="def"><time>2023-12-28</time><div class="ev">法院认定 TFL 和 Do Kwon 未经注册出售加密资产证券<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2024-01-21</time><div class="ev">TFL 在特拉华州破产法院申请 Chapter 11<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>2024-04-05</time><div class="ev">九天的庭审后，陪审团用不到两小时一致认定 TFL 和 Do Kwon 证券欺诈<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2024-06-13</time><div class="ev">TFL 和 Do Kwon 与 SEC 和解，合计支付超过 45 亿美元，TFL 清盘<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2024-12-20</time><div class="ev">Tai Mo Shan 与 SEC 和解，支付约 1.23 亿美元<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2024-12-31</time><div class="ev">Do Kwon 从黑山被引渡到美国，2025 年 1 月 2 日在曼哈顿联邦法院出庭<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2025-03-12</time><div class="ev">破产法院批准加密资产损失索赔的截止日和程序<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2025-08-12</time><div class="ev">Do Kwon 认罪<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def key"><time>2025-12-11</time><div class="ev">Do Kwon 被判 15 年<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2026-01</time><div class="ev">TFL 破产管理人起诉 Jane Street，称其利用 TFL 内部人提供的信息抢先交易<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。4 月 Jane Street 申请驳回<a class="ref" href="#s14">[14]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>崩盘机制</h2>
+        <p>Terra 的代码没有被攻破，崩盘时兑换模块按设计运行。问题出在设计本身：平时把 UST 拉回 1 美元的兑换规则，在挤兑时把 UST 的抛压直接变成了 LUNA 的增发。下面的代码引自 Terra Classic 的 classic-core 仓库 v0.5.17 标签（2022 年 2 月 22 日发布），属于 Columbus-5 时期的代码。崩盘前最后发布的 v0.5.18（4 月 14 日）没有改动 x/market 和 x/oracle/keeper 的非测试代码<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>兑换按预言机价格结算，没有总量上限</h3>
+        <p>market 模块把每笔兑换先折算成记账单位 SDR，再按预言机汇率换成目标币种。汇率都以“1 LUNA 能换多少该币”表示，LUNA 自己的汇率固定为 1：</p>
+<pre class="code"><code><span class="c">// x/oracle/keeper/keeper.go</span>
+<span class="c">// 汇率都以“1 LUNA 能换多少该币”表示，LUNA 自己的汇率固定为 1</span>
+func (k Keeper) GetLunaExchangeRate(ctx sdk.Context, denom string) (sdk.Dec, error) {
+    if denom == core.MicroLunaDenom {
+        return sdk.OneDec(), nil
+    }
+    <span class="c">// ……其余币种读取验证者通过预言机投票写入的汇率……</span>
+
+<span class="c">// x/market/keeper/swap.go，ComputeInternalSwap</span>
+retAmount := offerCoin.Amount.Mul(askRate).Quo(offerRate)</code></pre>
+        <p class="code-cap">出处：terra-money/classic-core v0.5.17，节选。英文注释为原文，中文注释为本站所加。</p>
+        <p>用 UST 换 LUNA 时，<code>offerRate</code> 是“1 LUNA 值多少 UST”，也就是 LUNA 的价格，<code>askRate</code> 是 1。换出的 LUNA 数量等于 UST 数量除以 LUNA 价格。协议在这里始终把 1 UST 当作 1 美元，不管 UST 在市场上卖多少钱，这正是套利的来源。不计价差，LUNA 从 80 美元跌到 1 美元，同样 1 万枚 UST 换出的 LUNA 就从 125 枚变成 1 万枚。</p>
+        <p>处理兑换消息的函数先算价差，再销毁换进来的币、铸造换出去的币：</p>
+<pre class="code"><code><span class="c">// x/market/keeper/msg_server.go，handleSwapRequest（节选）</span>
+swapDecCoin, spread, err := k.ComputeSwap(ctx, offerCoin, askDenom)
+<span class="c">// ……价差按比例从换出的币里扣除……</span>
+swapDecCoin.Amount = swapDecCoin.Amount.Sub(feeDecCoin.Amount)
+err = k.ApplySwapToPool(ctx, offerCoin, swapDecCoin)
+<span class="c">// ……</span>
+<span class="c">// 销毁用户换进来的 UST</span>
+err = k.BankKeeper.BurnCoins(ctx, types.ModuleName, offerCoins)
+<span class="c">// ……</span>
+<span class="c">// 铸造换出的 LUNA 和价差部分，价差那份随后转入预言机模块账户</span>
+err = k.BankKeeper.MintCoins(ctx, types.ModuleName, mintCoins)</code></pre>
+        <p class="code-cap">出处：terra-money/classic-core v0.5.17，x/market/keeper/msg_server.go，节选。</p>
+        <p>整个流程里没有检查 LUNA 总供应量的步骤。消息校验 <code>ValidateBasic</code> 只要求地址合法、单笔数量为正且不超过 2¹⁰⁰ 个最小单位、换进和换出不是同一种币<a class="ref" href="#s9">[9]</a>。兑换请求只要能算出价格，LUNA 就按需铸造。唯一会随兑换量变化的，是价差。</p>
+        <h3>唯一的刹车：随累计兑换量上升的价差</h3>
+        <p>链上兑换的价差会随兑换量上升，目的是防止有人先在交易所压低 LUNA 的价格，再到链上按低价大量换入<a class="ref" href="#s3">[3]</a>。实现方式是一个虚拟的恒定乘积池，思路和 Uniswap 的 x·y=k 相同。池里没有真实的资金，它只用来算价差：</p>
+<pre class="code"><code><span class="c">// x/market/keeper/swap.go，ComputeSwap 中 UST 与 LUNA 互换的部分（节选）</span>
+// constant-product, which by construction is square of base(equilibrium) pool
+cp := basePool.Mul(basePool)
+terraPoolDelta := k.GetTerraPoolDelta(ctx)
+terraPool := basePool.Add(terraPoolDelta)
+lunaPool := cp.Quo(terraPool)
+<span class="c">// ……按兑换方向选出 offerPool 和 askPool……</span>
+askBaseAmount := askPool.Sub(cp.Quo(offerPool.Add(baseOfferDecCoin.Amount)))
+baseOfferAmount := baseOfferDecCoin.Amount
+spread = baseOfferAmount.Sub(askBaseAmount).Quo(baseOfferAmount)
+if spread.LT(minSpread) {
+    spread = minSpread
+}
+
+<span class="c">// x/market/keeper/keeper.go，ReplenishPools，每个区块结束时调用</span>
+poolRegressionAmt := poolDelta.QuoInt64(poolRecoveryPeriod)
+// Replenish pools towards each base pool
+// regressionAmt cannot make delta zero
+poolDelta = poolDelta.Sub(poolRegressionAmt)</code></pre>
+        <p class="code-cap">出处：terra-money/classic-core v0.5.17，节选。英文注释为原文，中文注释为本站所加。</p>
+        <p>用 UST 换 LUNA 会让 <code>terraPoolDelta</code> 变大（由上面兑换函数里的 <code>ApplySwapToPool</code> 更新）。虚拟的 UST 池变大、LUNA 池变小，下一笔同方向兑换的价差随之上升。<code>ReplenishPools</code> 在每个区块结束时把这个差额拉回一部分，恢复速度由治理参数 <code>PoolRecoveryPeriod</code> 决定。</p>
+        <p>记基础池为 B、尚未恢复的累计净兑换量为 δ。按上面的公式推算，一小笔 UST 换 LUNA 的价差约为 1 − (B/(B+δ))²，价差按比例从换出的 LUNA 里扣掉。下表按预言机价格计算 1 UST 换到的价值：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>δ ÷ B</th><th class="n">价差</th><th class="n">1 UST 换到的价值</th></tr></thead>
+          <tbody>
+            <tr><td>接近 0</td><td class="n">最低价差</td><td class="n">接近 1 美元</td></tr>
+            <tr><td>0.1</td><td class="n">约 17%</td><td class="n">约 0.83 美元</td></tr>
+            <tr><td>0.25</td><td class="n">约 36%</td><td class="n">约 0.64 美元</td></tr>
+            <tr><td>0.5</td><td class="n">约 56%</td><td class="n">约 0.44 美元</td></tr>
+            <tr><td>1</td><td class="n">75%</td><td class="n">0.25 美元</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">表中数字按公式推算</span><p>表中只是公式的形状，没有实测数据支撑。代码里的默认参数是 BasePool 100 万 SDR、PoolRecoveryPeriod 14,400 个区块（约一天）、MinStabilitySpread 2%<a class="ref" href="#s9">[9]</a>。主网实际使用的数值由治理投票设定，本页没有找到崩盘期间实际参数的可靠来源，所以算不出当时每天能在链上换掉多少 UST。</p></div>
+        <p>这个设计挡住了预言机操纵，代价是链上兑换的容量有限、恢复缓慢。挤兑开始后，链上兑换很快变得不划算，大多数 UST 持有人转去 Curve 和交易所卖出。NBER 发现，兑换费和在交易所卖出 LUNA 时成交价的不确定性，让大多数 Anchor 存款人没有用链上兑换退出。链上换得最多的 Anchor 存款人是与 FTX 关系密切的 Alameda Research，它能方便地在 FTX 上卖出换来的 LUNA<a class="ref" href="#s3">[3]</a>。</p>
+        <p>5 月 13 日发布的 v0.5.20 的说明写明“把最低价差设为 100% 以停用兑换”。价差为 100% 时，扣掉价差后换出的数量为零；同一版本在 <code>handleSwapRequest</code> 里加了一项检查，到达指定的区块高度后，换出数量为零的兑换直接失败<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>死亡螺旋</h3>
+        <p>价差只能让兑换变慢，挡不住兑换。只要 UST 的折价足够大，就有人继续换出 LUNA 卖掉，循环就会自己加速：</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 420" role="img" aria-labelledby="terra-spiral-t terra-spiral-d">
+            <title id="terra-spiral-t">UST 与 LUNA 的死亡螺旋</title>
+            <desc id="terra-spiral-d">大户抛售让 UST 跌破 1 美元。套利者在链上用 UST 按预言机价格换出新铸造的 LUNA 并卖出，LUNA 供应量增加、价格下跌，同样 1 UST 换出的 LUNA 更多。LUNA 持有人抢先卖出，对 UST 的信心继续下降，循环加速。链上兑换的价差随累计兑换量上升，剩下的抛压转到 Curve 和交易所。</desc>
+            <defs>
+              <marker id="terra-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="260" y="14" width="240" height="64" rx="4"/>
+            <text class="d-t b" x="380" y="40" text-anchor="middle">UST 跌破 1 美元</text>
+            <text class="d-t s" x="380" y="62" text-anchor="middle">大户抛售，Anchor 提款加速</text>
+            <rect class="d-box" x="506" y="118" width="240" height="64" rx="4"/>
+            <text class="d-t b" x="626" y="144" text-anchor="middle">套利者链上兑换</text>
+            <text class="d-t s" x="626" y="166" text-anchor="middle">1 UST 换价值 1 美元的 LUNA</text>
+            <rect class="d-box" x="506" y="250" width="240" height="64" rx="4"/>
+            <text class="d-t b" x="626" y="276" text-anchor="middle">按预言机价格铸造 LUNA</text>
+            <text class="d-t s" x="626" y="298" text-anchor="middle">LUNA 越便宜，铸得越多</text>
+            <rect class="d-box" x="14" y="250" width="240" height="64" rx="4"/>
+            <text class="d-t b" x="134" y="276" text-anchor="middle">新 LUNA 被卖出</text>
+            <text class="d-t s" x="134" y="298" text-anchor="middle">供应量猛增，价格下跌</text>
+            <rect class="d-box" x="14" y="118" width="240" height="64" rx="4"/>
+            <text class="d-t b" x="134" y="144" text-anchor="middle">LUNA 持有人抢先卖出</text>
+            <text class="d-t s" x="134" y="166" text-anchor="middle">对 UST 的信心继续下降</text>
+            <line class="d-line atk" x1="500" y1="46" x2="626" y2="46"/>
+            <line class="d-line atk" x1="626" y1="46" x2="626" y2="116" marker-end="url(#terra-ah)"/>
+            <line class="d-line atk" x1="626" y1="182" x2="626" y2="248" marker-end="url(#terra-ah)"/>
+            <line class="d-line atk" x1="506" y1="282" x2="256" y2="282" marker-end="url(#terra-ah)"/>
+            <line class="d-line atk" x1="134" y1="250" x2="134" y2="184" marker-end="url(#terra-ah)"/>
+            <line class="d-line atk" x1="134" y1="118" x2="134" y2="46"/>
+            <line class="d-line atk" x1="134" y1="46" x2="258" y2="46" marker-end="url(#terra-ah)"/>
+            <text class="d-t b" x="380" y="160" text-anchor="middle">每转一圈</text>
+            <text class="d-t s" x="380" y="184" text-anchor="middle">同样 1 UST 换出更多 LUNA</text>
+            <text class="d-t s" x="380" y="206" text-anchor="middle">LUNA 跌得更快，UST 离锚更远</text>
+            <rect class="d-box soft" x="14" y="346" width="732" height="60" rx="4"/>
+            <text class="d-t b" x="380" y="370" text-anchor="middle">唯一的刹车是价差</text>
+            <text class="d-t s" x="380" y="392" text-anchor="middle">累计兑换量越大价差越高，剩下的抛压转到 Curve 和交易所，直接压低 UST 的市价</text>
+          </svg>
+          </div>
+          <figcaption>图 1　死亡螺旋。平时这套兑换把 UST 拉回 1 美元；挤兑时，同一条规则把 UST 的抛压变成 LUNA 的增发，每转一圈都让下一圈更快。</figcaption>
+        </figure>
+        <p>NBER 的数据显示了螺旋转得多快。LUNA 的总市值跌到与 UST 流通量相等时，UST 跌到 0.75 美元。5 月 11 日至 13 日，LUNA 供应量从不到 10 亿枚增加到 5.89 万亿枚，价格从 50 美元跌到约 0.000001 美元<a class="ref" href="#s3">[3]</a>。到这时，协议仍按报价给出“价值 1 美元”的 LUNA，可这些 LUNA 已经很难按报价卖掉。</p>
+        <h3>储备为什么没用上</h3>
+        <p>LFG 的储备没有给 UST 持有人任何兑换权。协议只承诺把 UST 换成 LUNA，持有人不能拿 UST 向 LFG 换比特币，储备什么时候用、用多少由 LFG 决定。即使按 FSOC 引述的 35 亿美元算，储备也不到 UST 流通量的五分之一<a class="ref" href="#s8">[8]</a>。</p>
+        <p>NBER 引述的审计报告称，从 5 月 7 日到 9 日晚、UST 大致守在 1 美元附近的这段时间里，TFL 和 LFG 共花了约 25 亿美元买入 UST 和 LUNA，其中包括 80,071 枚 BTC、约 2,628 万 USDT 和 2,356 万 USDC<a class="ref" href="#s3">[3]</a>。审计报告所列的约 80,300 枚 BTC 几乎全部用掉，9 日晚 Anchor 提款加速时，已经没有多少储备可用。</p>
+        <div class="note doubt"><span class="h">储备数字的来源</span><p>这些数字出自 NBER 论文引用的 JS Held 报告（2022 年 11 月）<a class="ref" href="#s3">[3]</a>。司法部称，Do Kwon 在崩盘后安排散发了一份误导性的“第三方审计”报告来掩盖罪行，认罪新闻稿没有说明是哪一份<a class="ref" href="#s7">[7]</a>。本页无法判断两者是否为同一份报告。在相关法庭文件公开之前，这些数字只能作为参考。</p></div>
+        <h3>借来的信心</h3>
+        <p>2021 年 5 月的恢复被当作 UST 经得起压力的证据。SEC 和司法部后来认定，把价格拉回来的是交易公司的买盘，算法没有做到<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a>。投资者因此高估了这套机制的稳健程度。两次脱锚放在一起看：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>对比项</th><th>2021 年 5 月</th><th>2022 年 5 月</th></tr></thead>
+          <tbody>
+            <tr><td>UST 最低价</td><td>接近 0.90 美元<a class="ref" href="#s2">[2]</a></td><td>低于 0.2 美元<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>UST 流通量</td><td>“超过 20 亿”（Do Kwon 当时的推文）<a class="ref" href="#s2">[2]</a></td><td>约 185 亿枚<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>出手的买盘</td><td>交易公司净买入超过 6,200 万枚 UST<a class="ref" href="#s2">[2]</a></td><td>TFL 和 LFG 花约 25 亿美元<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>结果</td><td>回到接近 1 美元</td><td>UST 和 LUNA 接近归零</td></tr>
+          </tbody>
+        </table></div>
+        <p>第二次脱锚时投入的买盘约是第一次的 40 倍，仍然没能托住。</p>
+      </section>
+
+      <section id="unfold">
+        <h2>崩盘过程</h2>
+        <p>NBER 的论文用 Terra 链上的交易记录、以太坊上 Curve 的成交和交易所的行情数据，还原了挤兑的经过<a class="ref" href="#s3">[3]</a>。</p>
+        <ol class="steps">
+          <li><b>5 月 7 日：大户先走</b>钱包 A 约 5:00（UTC）从 Anchor 取出 4,500 万枚 UST 送往 Binance。钱包 B 约中午取出 1.75 亿枚，经 Wormhole 跨链桥送到以太坊，当时没有交易。钱包 A 约 17:00 又取出 3,500 万枚，20:30 和 21:30 前后又取出约 2,000 万枚，都送往 Binance，21:48 取出最后 8,500 万枚。之后 UST 价格开始下滑，其他存款人跟着提款<a class="ref" href="#s3">[3]</a>。论文第 4.1 节写这两个地址当天共取出 4 亿枚，另一处写 3.75 亿枚。</li>
+          <li><b>5 月 7 日至 9 日：护盘</b>TFL 和 LFG 买入 UST 和 LUNA，UST 价格到 9 日晚之前大致守在 1 美元附近<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>5 月 9 日晚：锚定断裂</b>Anchor 的提款加速，UST 跌到 0.75 美元，之后几天在 0.2 美元到 0.9 美元之间波动，然后彻底崩溃<a class="ref" href="#s3">[3]</a>。多个平台暂停了 UST 交易<a class="ref" href="#s8">[8]</a>。</li>
+          <li><b>5 月 10 日至 13 日：螺旋</b>UST 的折价和链上兑换量几乎同步放大。5 月 7 日至 13 日，用户在链上换掉了价值 46.5 亿美元的 UST；11 日至 13 日，LUNA 供应量从不到 10 亿枚增加到 5.89 万亿枚<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>5 月 11 日：波及 USDT</b>USDT 在二级市场上一度跌到 0.94 美元，按小时价格算约 0.97 至 0.98 美元，一天内回到略低于 1 美元。同期 USDC 的价格和供应量上升<a class="ref" href="#s8">[8]</a>。</li>
+          <li><b>5 月 13 日：停链</b>Anchor 里只剩不到 20 亿枚 UST，UST 跌破 0.2 美元<a class="ref" href="#s3">[3]</a>。TFL 暂停了 Terra 链<a class="ref" href="#s17">[17]</a>。</li>
+        </ol>
+        <div class="note doubt"><span class="h">钱包 A、B 是谁</span><p>论文的脚注引述推特上的研究者，称钱包 A、B 分别属于 Jane Street 和 Celsius，论文本身没有核实<a class="ref" href="#s3">[3]</a>。2026 年，TFL 破产管理人起诉 Jane Street，称 TFL 在 5 月 7 日撤出 1.5 亿枚 UST 之后几分钟，一个与 Jane Street 有关的钱包撤出了 8,500 万枚，并指 Jane Street 利用了 TFL 内部人提供的非公开信息<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。Jane Street 否认，称自己没有参与 TFL 的欺诈<a class="ref" href="#s14">[14]</a>。这些都是诉讼中的指控，法院还没有认定。</p></div>
+        <h3>谁先跑，谁亏得少</h3>
+        <p>链上每一笔大额提款都公开可见，大户可以互相盯着对方，NBER 认为这让挤兑来得更快。论文按钱包规模和交易行为给投资者分类，发现更富有、更老练的投资者跑得更早、更彻底，损失小得多；更穷、经验更少的投资者跑得晚，损失更大<a class="ref" href="#s3">[3]</a>。</p>
+        <p>论文还认为，这次挤兑不太像第三方集中操纵的结果。人们对系统可持续性的担心积累到一定程度，几个大户先调整了仓位，其他大户随即跟上。系统的复杂程度让风险的积累连内部人都难以看清<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+      <section id="contagion">
+        <h2>传染</h2>
+        <p>FSOC 2022 年 10 月的报告用 TerraUSD 和三箭资本两个专栏，说明加密市场里挤兑和机构之间相互关联的风险<a class="ref" href="#s8">[8]</a>。损失沿着下面这条链往外传：</p>
+        <ol class="flow">
+          <li class="atk"><b>Terra 本身</b>UST 和 LUNA 接近归零，损失约 400 亿美元<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a></li>
+          <li class="atk"><b>直接持有者</b>三箭资本等机构在 UST、LUNA 和相关项目上损失巨大<a class="ref" href="#s8">[8]</a></li>
+          <li class="atk"><b>三箭资本的债主</b>Voyager、BlockFi、Genesis、Blockchain.com、Deribit 的贷款收不回<a class="ref" href="#s8">[8]</a></li>
+          <li class="atk"><b>零售客户</b>Voyager 暂停提款后破产，超过 100 万名客户拿不到钱<a class="ref" href="#s8">[8]</a></li>
+        </ol>
+        <h3>三箭资本</h3>
+        <p>FSOC 引述报道称，三箭资本是在 TerraUSD、LUNA 或相关项目上损失巨大的关联机构之一。三箭的困境从 2022 年 6 月起波及整个市场，7 月 1 日它在美国申请 Chapter 15 破产保护，几天前英属维尔京群岛的法院已下令清算<a class="ref" href="#s8">[8]</a>。</p>
+        <p>Voyager 借给三箭的贷款约占其 2021 年末贷款总额的 60%。三箭出事后，Voyager 先限制客户提款，后来申请破产。Blockchain.com、BlockFi、Deribit 和 Genesis 也因借给三箭的贷款受损。三箭为筹钱大量卖出 stETH，给本来流动性就差的 stETH 市场又加了压力<a class="ref" href="#s8">[8]</a>。这一段的经过见<a href="2022-three-arrows.html">三箭资本破产（含 Voyager）</a>。</p>
+        <h3>其他稳定币和借贷平台</h3>
+        <p>USDT 在 5 月 11 日短暂脱锚，市值从事发前的约 830 亿美元降到 5 月 18 日的约 740 亿美元，同期 USDC 的供应量上升。不在 Terra 链上的 DeFi 协议，<a href="2020-defi-summer.html">锁仓总值</a>也在 TerraUSD 崩盘后下降<a class="ref" href="#s8">[8]</a>。6 月中旬，借贷平台 Celsius 冻结全部提款，超过 100 万名客户拿不到钱<a class="ref" href="#s8">[8]</a>。FSOC 把它作为平台失败的例子列出，冻结的原因见<a href="2022-celsius.html">Celsius 冻结提款与破产</a>。</p>
+        <h3>Alameda Research</h3>
+        <p>NBER 发现，在 Anchor 存款人里，链上把 UST 换成 LUNA 最多的是 Alameda Research。它和 FTX 关系密切，能方便地在 FTX 上卖出换来的 LUNA<a class="ref" href="#s3">[3]</a>。半年后 FTX 倒闭，经过见<a href="2022-ftx.html">FTX 挪用客户资产与破产</a>。FTX 破产当晚被外部盗走的资产，见被盗事件编年史的<a href="../../hacks/events/2022-ftx-drain.html">FTX 破产当夜被盗</a>。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>规模：几种估计</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>说法</th><th class="n">金额</th></tr></thead>
+          <tbody>
+            <tr><td>SEC（2024 年和解公告）<a class="ref" href="#s4">[4]</a></td><td>“几乎一夜之间”蒸发的市值</td><td class="n">400 亿美元</td></tr>
+            <tr><td>美国司法部（2025 年引渡公告）<a class="ref" href="#s6">[6]</a></td><td>投资者资产损失</td><td class="n">超过 400 亿美元</td></tr>
+            <tr><td>维基百科<a class="ref" href="#s17">[17]</a></td><td>一周内蒸发的市值</td><td class="n">近 450 亿美元</td></tr>
+            <tr><td>NBER 论文<a class="ref" href="#s3">[3]</a></td><td>三天内蒸发的估值</td><td class="n">500 亿美元</td></tr>
+            <tr><td>CNBC（2022 年 9 月）<a class="ref" href="#s11">[11]</a></td><td>UST 与 LUNA 合计损失</td><td class="n">约 600 亿美元</td></tr>
+          </tbody>
+        </table></div>
+        <p>这些来源都没有写明计算方法。差别可能来自起止时间不同（从 LUNA 的高点还是从 5 月初算起），以及是否计入 Terra 生态的其他代币，本页无法核实。本站采用 SEC 和司法部的口径。</p>
+        <h3>市场</h3>
+        <p>全球加密资产总市值在 2021 年 11 月达到近 3 万亿美元的峰值<a class="ref" href="#s8">[8]</a>。CNBC 2022 年 9 月写道，UST 脱锚引发了更大范围的加密资产抛售，行业到那时仍未恢复<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>谁承担了损失</h3>
+        <p>SEC 称受害者中有大量散户，有人把毕生积蓄投进了 Terra 生态<a class="ref" href="#s4">[4]</a>。NBER 的数据说明损失分布不均，跑得晚的小额投资者承担了更大的比例<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>监管</h3>
+        <p>FSOC 2022 年的报告把 TerraUSD 当作稳定币挤兑和机构关联风险的案例<a class="ref" href="#s8">[8]</a>。2025 年 7 月 18 日签署的 <a href="2025-genius-act.html">GENIUS Act</a> 要求获得许可的支付稳定币发行人按至少 1:1 持有可识别的储备，储备可以是现金、银行存款、剩余期限不超过 93 天的美国国债和回购协议等资产<a class="ref" href="#s16">[16]</a>。UST 这种没有外部储备的设计达不到这个要求。</p>
+        <p>法案还专门定义了“内生抵押的支付稳定币”：发行方承诺按固定金额兑换，却只靠同一发行方创造或维护的另一种数字资产维持价格。UST 和 LUNA 正是这种关系。法案要求财政部研究非支付型稳定币，其中包括这类代币，并在法案签署后 365 天内提交报告<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>法律上的先例</h3>
+        <p>2023 年 12 月 28 日，纽约南区联邦法院认定 TFL 和 Do Kwon 未经注册出售加密资产证券<a class="ref" href="#s4">[4]</a>。2024 年 12 月的和解令认定 Tai Mo Shan 至少从 2021 年 1 月到 2022 年 5 月是 LUNA 的法定承销商<a class="ref" href="#s5">[5]</a>。SEC 执法部门负责人 Gurbir Grewal 称这是美国历史上最大的证券欺诈案之一<a class="ref" href="#s4">[4]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Terra 2.0 与 Terra Classic</h3>
+        <p>5 月 25 日，复活提案获得通过：发行新的 LUNA，放弃 UST。原链改称 Terra Classic，原 LUNA 改称 LUNA Classic（LUNC）<a class="ref" href="#s17">[17]</a>。新 LUNA 先在 Bybit、KuCoin 和 Huobi 上线，Binance 称随后上线。5 月 28 日它最高到 19.53 美元，几小时后跌到 4.39 美元<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>出逃、被捕与引渡</h3>
+        <p>2022 年 6 月，韩国检方限制多名 TFL 员工出境；9 月 14 日，韩国法院签发 Do Kwon 的逮捕令<a class="ref" href="#s11">[11]</a>。2023 年 3 月下旬，Do Kwon 和 TFL 前财务主管 Han Chang-joon 在黑山首都波德戈里察的机场准备登机去迪拜时被捕，警方在行李里发现伪造的哥斯达黎加护照、另一套比利时护照和笔记本电脑等设备<a class="ref" href="#s12">[12]</a>。纽约南区随即公开了对 Do Kwon 的起诉书，共 8 项罪名，包括证券欺诈、电信欺诈、商品欺诈和合谋<a class="ref" href="#s12">[12]</a>。美国于 3 月 25 日正式请求逮捕和引渡<a class="ref" href="#s7">[7]</a>。6 月 19 日，黑山法院以使用伪造护照判两人各 4 个月<a class="ref" href="#s12">[12]</a>。</p>
+        <p>韩国和美国都要求黑山引渡 Do Kwon<a class="ref" href="#s12">[12]</a>。2024 年 12 月 31 日，他被引渡到美国<a class="ref" href="#s7">[7]</a>，2025 年 1 月 2 日在曼哈顿联邦法院出庭，检方同时公开了替代起诉书<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>SEC 民事案与清盘</h3>
+        <p>SEC 于 2023 年 2 月 16 日起诉 TFL 和 Do Kwon。2024 年 4 月，经过九天庭审，陪审团用不到两小时一致认定两者证券欺诈。6 月 13 日双方与 SEC 和解<a class="ref" href="#s4">[4]</a>：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>项目</th><th class="n">TFL</th><th class="n">Do Kwon</th></tr></thead>
+          <tbody>
+            <tr><td>没收违法所得</td><td class="n">3,586,875,883 美元</td><td class="n">110,000,000 美元</td></tr>
+            <tr><td>判决前利息</td><td class="n">466,952,423 美元</td><td class="n">14,320,196 美元</td></tr>
+            <tr><td>民事罚款</td><td class="n">420,000,000 美元</td><td class="n">80,000,000 美元</td></tr>
+            <tr><td>合计</td><td class="n">约 44.7 亿美元</td><td class="n">约 2.04 亿美元</td></tr>
+          </tbody>
+        </table></div>
+        <p>Do Kwon 的没收所得和利息与 TFL 承担连带责任。和解还要求 TFL 停止出售加密资产证券、清盘、更换两名董事，并通过破产清算计划把剩余资产分配给受害投资者和债权人。TFL 已于 2024 年 1 月 21 日在特拉华州申请 Chapter 11<a class="ref" href="#s4">[4]</a>。</p>
+        <p>清盘后设立的 Wind Down Trust 负责处理投资者的“加密资产损失索赔”，案号 24-10070。2025 年 3 月 12 日，破产法院批准了索赔的截止日和程序。能获赔的只限于锁在 Terra 生态里、或者因“第二次脱锚”变得一文不值的币<a class="ref" href="#s13">[13]</a>。按时间推断，“第二次脱锚”指 2022 年 5 月这一次，第一次是 2021 年 5 月。本页没有找到截至 2026 年 11 月分配进度的可靠数据。</p>
+        <h3>刑事案：认罪与量刑</h3>
+        <p>2025 年 8 月 12 日，Do Kwon 承认一项合谋商品欺诈、证券欺诈和电信欺诈罪，以及一项电信欺诈罪，两项合计最高可判 25 年。他同意没收超过 1,900 万美元的犯罪所得，以及他在 TFL 和其加密资产中的权益。认罪新闻稿依据替代起诉书和庭审中的陈述，列出了四类失实陈述<a class="ref" href="#s7">[7]</a>：</p>
+        <ul>
+          <li>稳定币：2021 年 5 月 Terra 协议没能恢复锚定，他安排交易公司买入 UST 托住价格，对外却说是算法起了作用。</li>
+          <li>LFG：他称 LFG 由独立的治理机构管理，实际上 LFG 和 TFL 都由他控制，他还挪用了 LFG 价值数亿美元的资产。</li>
+          <li>Mirror：他称 Mirror 去中心化运行，实际上他和 TFL 暗中控制它，用自动交易程序操纵合成资产的价格，还虚增了用户数据。</li>
+          <li>Chai：他称 Terra 链为 Chai 处理了数十亿美元的交易，实际上 Chai 的交易走的是传统支付网络。</li>
+        </ul>
+        <p>2025 年 12 月 11 日，Do Kwon 被判 15 年，比政府按认罪协议主张的“不超过 12 年”更重。报道称，他如果被引渡到韩国，可能还要再受审；外界普遍预计，他在美国服刑过半后会申请国际囚犯移交，回韩国服刑<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>做市商被追责：Jump 与 Jane Street</h3>
+        <p>Jump Crypto 旗下的 Tai Mo Shan 在 2024 年 12 月与 SEC 和解，支付没收所得 73,452,756 美元、判决前利息 12,916,153 美元和民事罚款 36,726,378 美元，合计约 1.23 亿美元<a class="ref" href="#s5">[5]</a>。</p>
+        <p>2026 年初，TFL 破产管理人 Todd Snyder 起诉 Jane Street、其联合创始人 Robert Granieri 和几名交易员，称他们利用 TFL 内部人提供的非公开信息抢先交易，在崩盘中非法获利 1.34 亿美元<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。起诉时间，CoinDesk 写 1 月，维基百科写 2 月<a class="ref" href="#s14">[14]</a><a class="ref" href="#s17">[17]</a>。Jane Street 否认，称这起诉讼是“TFL 的破产财产想从 Jane Street 身上榨取现金”，4 月请求法院以不可再诉的方式驳回<a class="ref" href="#s14">[14]</a>。截至 2026 年 11 月，本页没有找到法院对驳回申请作出裁决的报道。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给稳定币的设计者</span>
+          <ul>
+            <li>抵押物不能是发行方自己的代币。UST 靠 LUNA 维持价格，LUNA 的价值又靠人们对 UST 的信心，挤兑时两者一起下跌。</li>
+            <li>赎回权要写清楚。“1 UST 能换 1 美元的 LUNA”在兑换量大时并不成立，持有人也无权动用 LFG 的储备。</li>
+            <li>限流挡得住操纵，挡不住挤兑。链上价差随兑换量上升后，大部分抛压转到了 Curve 和交易所。</li>
+            <li>储备的规模要和负债相称，并且能被独立核实。LFG 的储备不到 UST 流通量的五分之一，司法部还称 Do Kwon 在崩盘后散发了误导性的审计报告。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给存款人和投资者</span>
+          <ul>
+            <li>高收益要问清楚是谁在补贴。Anchor 的 19.5% 靠补贴维持，UST 的需求大部分来自这笔补贴。</li>
+            <li>留意集中度。崩盘前 185 亿枚 UST 里约有 120 亿枚存在 Anchor 一个协议里。</li>
+            <li>链上透明对大户更有利。NBER 的数据显示，先跑的大户损失远小于后跑的小户。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给监管者和项目方</span>
+          <ul>
+            <li>做市和托盘的安排需要披露。2021 年 5 月的恢复靠的是交易公司的买盘，如果当时公开，投资者就会知道算法并没有经受住考验。</li>
+            <li>“去中心化”“独立治理”的说法要能核实。LFG 称独立、Mirror 称去中心化，司法部认定两者实际上都由 Do Kwon 和 TFL 控制。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国 SEC，《SEC Charges Terraform and CEO Do Kwon with Defrauding Investors in Crypto Schemes》，新闻稿 2023-32，2023-02-16。<a href="https://www.sec.gov/news/press-release/2023-32">sec.gov</a></li>
+          <li id="s2">美国 SEC，SEC v. Terraform Labs PTE Ltd. and Do Hyeong Kwon 修订起诉书（Case 1:23-cv-01346-JSR，Doc. 25），2023-04-03。<a href="https://www.sec.gov/files/terraform-labs-pte-ltd-amended-complaint.pdf">sec.gov</a></li>
+          <li id="s3">Jiageng Liu、Igor Makarov、Antoinette Schoar，《Anatomy of a Run: The Terra Luna Crash》，NBER Working Paper 31160，2023（2026 年刊于 Journal of Financial Economics 第 184 卷）。<a href="https://www.nber.org/papers/w31160">nber.org</a></li>
+          <li id="s4">美国 SEC，《Terraform and Kwon to Pay $4.5 Billion Following Fraud Verdict》，新闻稿 2024-73，2024-06-13。<a href="https://www.sec.gov/newsroom/press-releases/2024-73">sec.gov</a></li>
+          <li id="s5">美国 SEC，《Tai Mo Shan to Pay $123 Million for Negligently Misleading Investors About Stability of Terra USD》，新闻稿 2024-212，2024-12-20。<a href="https://www.sec.gov/newsroom/press-releases/2024-212">sec.gov</a></li>
+          <li id="s6">美国司法部纽约南区检察官办公室，《Do Kwon Extradited To The United States From Montenegro To Face Charges Relating To Fraud Resulting In $40 Billion In Losses》，2025-01-02。<a href="https://www.justice.gov/usao-sdny/pr/do-kwon-extradited-united-states-montenegro-face-charges-relating-fraud-resulting-40">justice.gov</a></li>
+          <li id="s7">美国司法部纽约南区检察官办公室，《Do Kwon Pleads Guilty To Fraud》，2025-08-12。<a href="https://www.justice.gov/usao-sdny/pr/do-kwon-pleads-guilty-fraud">justice.gov</a></li>
+          <li id="s8">美国金融稳定监督委员会（FSOC），《Report on Digital Asset Financial Stability Risks and Regulation》，2022-10（Box B 三箭资本、Box C TerraUSD）。<a href="https://home.treasury.gov/system/files/261/FSOC-Digital-Assets-Report-2022.pdf">treasury.gov</a></li>
+          <li id="s9">Terra Classic 源码与发布记录，terra-money/classic-core 仓库：v0.5.17 标签的 x/market 和 x/oracle，以及 v0.5.18 至 v0.5.20 的发布说明和版本对比。<a href="https://github.com/terra-money/classic-core/tree/v0.5.17">github.com</a>；<a href="https://github.com/terra-money/classic-core/releases">发布记录</a></li>
+          <li id="s10">CNBC，《The luna cryptocurrency has been resurrected after its $40 billion collapse. It's already crashing》，2022-05-30。<a href="https://www.cnbc.com/2022/05/30/terra-2point0-new-luna-cryptocurrency-is-already-crashing.html">cnbc.com</a></li>
+          <li id="s11">CNBC，《South Korea court reportedly issues arrest warrant for Terraform founder Do Kwon》，2022-09-14。<a href="https://www.cnbc.com/2022/09/14/south-korea-court-issues-arrest-warrant-for-terraform-founder-do-kwon.html">cnbc.com</a></li>
+          <li id="s12">Reuters，《Montenegro court jails 'cryptocurrency king' Do Kwon for four months -media》，2023-06-19（Internet Archive 存档）。<a href="https://web.archive.org/web/20230619144824/https://www.reuters.com/world/europe/montenegro-court-jails-cryptocurrency-king-do-kwon-four-months-media-2023-06-19/">web.archive.org</a></li>
+          <li id="s13">Terraform Labs Pte. Ltd. Wind Down Trust，Crypto Loss Claims 网站（Kroll 运营，Case No. 24-10070）。<a href="https://restructuring.ra.kroll.com/terraform/">restructuring.ra.kroll.com</a></li>
+          <li id="s14">CoinDesk，《Jane Street asks court to reject Terraform claims tied to UST-LUNA crash》，2026-04-24。<a href="https://www.coindesk.com/policy/2026/04/24/jane-street-asks-court-to-reject-terraform-claims-tied-to-ust-luna-crash">coindesk.com</a></li>
+          <li id="s15">Yahoo Finance，《Jane Street Sued Over Alleged Insider Trading During Terra Collapse》，2026-05-20。<a href="https://finance.yahoo.com/markets/crypto/articles/jane-street-sued-over-alleged-135800507.html">finance.yahoo.com</a></li>
+          <li id="s16">美国国会，Public Law 119-27（GENIUS Act），2025-07-18。<a href="https://www.govinfo.gov/link/plaw/119/public/27">govinfo.gov</a></li>
+          <li id="s17">维基百科，《Terra (blockchain)》。<a href="https://en.wikipedia.org/wiki/Terra_(blockchain)">en.wikipedia.org</a></li>
+          <li id="s18">维基百科，《Do Kwon》。<a href="https://en.wikipedia.org/wiki/Do_Kwon">en.wikipedia.org</a></li>
+          <li id="s19">纽约南区联邦地区法院，SEC v. Terraform Labs Pte. Ltd. and Do Hyeong Kwon（No. 23-cv-1346），Doc. 51，Rakoff 法官的 Opinion and Order，2023-07-31。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.594150/gov.uscourts.nysd.594150.51.0.pdf">courtlistener.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

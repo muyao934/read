@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mango Markets 价格操纵｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 10 月 Avraham Eisenberg 用两个账户对倒 MNGO 永续合约、在外部交易所拉高 MNGO 现货，以浮盈作抵押借空 Mango Markets 约 1.1 亿美元：健康度代码、治理提案换取不追责、2024 年定罪与 2025 年撤销的理由、截至 2026 年的状态。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-mango-markets">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Mango Markets 价格操纵</h1>
+    <p class="lede">2022 年 10 月 11 日，Avraham Eisenberg 用两个账户在 Mango Markets 上互为对手方建立 MNGO 永续合约仓位，同时在外部交易所买入 MNGO，把预言机价格推高了十几倍，再以虚高的浮盈作抵押借走约 1.1 亿美元。他公开承认这是自己做的，称之为“高利润的交易策略”（highly profitable trading strategy），并通过一份治理提案归还约 6,700 万美元，换取 Mango DAO 不追究。2024 年陪审团认定他三项罪名成立，2025 年法官全部撤销，这起案子因此成了“操纵 DeFi 是否构成欺诈”的标志性判例。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Mango Markets 是 Solana 上的交易和借贷平台。它把一个账户的现货、永续合约和借贷合在一起算“健康度”，永续合约的浮盈直接算作可以借款的抵押品；而永续合约的价值按预言机价格计算，预言机的价格来自外部交易所的 MNGO 现货<a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a>。MNGO 本身交易清淡。</p>
+        <p>按法院判决的概述，Eisenberg 往两个账户各存入 500 万美元的 USDC，在两个账户之间建立方向相反的 MNGO 永续合约仓位，然后在给 Mango 预言机供价的 FTX、AscendEX 和 Serum 上大量买入 MNGO<a class="ref" href="#s5">[5]</a>。CFTC 称，预言机报出的 MNGO 价格在 30 分钟内涨了 13 倍多<a class="ref" href="#s3">[3]</a>。他以多头仓位的虚高浮盈作抵押，借走了平台上其他用户存入的大部分资产，DOJ 和 CFTC 的口径是约 1.1 亿美元，SEC 的口径是约 1.16 亿美元<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <p>事后他把约 6,700 万美元还给 Mango DAO，条件是平台不追究刑事责任、不冻结资金，自己留下约 4,700 万美元<a class="ref" href="#s3">[3]</a>。2022 年 12 月他在波多黎各被捕；2024 年 4 月，纽约南区联邦法院的陪审团认定他商品欺诈、商品操纵和电汇欺诈三项罪名成立<a class="ref" href="#s2">[2]</a>。2025 年 5 月，法官 Arun Subramanian 改判电汇欺诈罪名无罪，以审判地不当为由撤销了另两项定罪<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。检方提出上诉，据 Men’s Journal 2026 年 8 月的报道仍在进行；他当时在服刑，原因是另一起与本案无关的案件<a class="ref" href="#s7">[7]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Mango Markets 由 Mango DAO 运营，持有治理代币 MNGO 的人可以对平台的改动和 DAO 事务投票<a class="ref" href="#s1">[1]</a>。SEC 后来认定，Mango DAO 和巴拿马实体 Blockworks Foundation 从 2021 年 8 月起通过出售 MNGO 募集了 7,000 多万美元，Mango Labs LLC 等实体为平台提供开发和运营<a class="ref" href="#s8">[8]</a>。</p>
+        <p>事发时运行的是 Mango v3。它的特点是“跨保证金”：一个账户里的现货余额、借款、永续合约仓位被放在一起，用一个健康度数字决定还能借多少、会不会被清算。永续合约的浮盈不需要先结算成 USDC，就可以直接支撑新的借款<a class="ref" href="#s9">[9]</a>。这个设计提高了资金效率，也意味着只要能把某个永续合约的价格推上去，浮盈就会立刻变成借款额度。</p>
+        <p>MNGO 是一个市值不大、成交清淡的代币。SEC 在起诉书中称，Eisenberg 买入的是“交易清淡的 MNGO 代币”<a class="ref" href="#s4">[4]</a>。用它当永续合约的标的，等于把整个平台的偿付能力押在一个很容易被推动的价格上。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方、执法与司法</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-08</time><div class="ev">Mango DAO 和 Blockworks Foundation 开始出售 MNGO<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk key"><time>2022-10-11</time><div class="ev">Eisenberg 向两个账户各存入 500 万美元 USDC，建立对冲的 MNGO 永续合约仓位，在三家交易所买入 MNGO，以虚高的浮盈借走约 1.1 亿美元<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>2022-10</time><div class="ev">据 Men’s Journal，事发数小时后 Eisenberg 就公开把这次操作称为“高利润的交易策略”<a class="ref" href="#s7">[7]</a>。随后他提出归还一部分资金，条件是 Mango Markets 不追究刑事责任、不冻结资金，最终归还约 6,700 万美元，保留约 4,700 万美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def key"><time>2022-12-26</time><div class="ev">Eisenberg 在波多黎各圣胡安依刑事起诉书被捕，法院裁定羁押<a class="ref" href="#s1">[1]</a>。次日起诉书解封<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2023-01-09</time><div class="ev">CFTC 提起民事诉讼，称这是它第一起针对“去中心化交易所”的预言机操纵案<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2023-01-20</time><div class="ev">SEC 提起民事诉讼，指控他违反证券法的反欺诈和反操纵条款<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-02-02</time><div class="ev">他在曼哈顿联邦法院首次出庭，面对商品欺诈、商品操纵和电汇欺诈三项指控<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2024-04-18</time><div class="ev">陪审团一致认定三项罪名成立。DOJ 称这是“首例加密货币公开市场操纵案”<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2024-09-27</time><div class="ev">SEC 与 Mango DAO、Blockworks Foundation 和 Mango Labs 和解：合计近 70 万美元罚款，销毁 MNGO，申请将 MNGO 从交易平台下架<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2025-01-13</time><div class="ev">Mango Markets 停止运营<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2025-05-01</time><div class="ev">在一起与本案无关的案件中，Eisenberg 因持有儿童性虐待材料被判 52 个月监禁<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="key"><time>2025-05-23</time><div class="ev">法官 Subramanian 批准 Rule 29 动议：电汇欺诈改判无罪，商品欺诈和商品操纵因审判地不当撤销定罪<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2025-09-29</time><div class="ev">波多黎各联邦地区法院以缺乏起诉资格为由，驳回 Mango Labs 对两名 Mango DAO 成员的诉讼<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2026-08</time><div class="ev">据 Men’s Journal，检方对 2025 年裁决的上诉仍在进行<a class="ref" href="#s7">[7]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次没有被利用的代码漏洞。可以被利用的是 Mango v3 计算健康度的方式：永续合约仓位的价值按预言机价格计算，浮盈和其他资产一起计入健康度，健康度决定还能借多少。下面是攻击前最后一个版本的相关代码<a class="ref" href="#s9">[9]</a>：</p>
+<pre class="code"><code><span class="c">// state.rs（mango-v3 提交 b09137e，2022-10-04），HealthCache 读取永续合约仓位的价值</span>
+if self.active_assets.perps[i] {
+    self.perp[i] = mango_account.perp_accounts[i].get_val(
+        &amp;mango_group.perp_markets[i],
+        &amp;mango_cache.perp_market_cache[i],
+<span class="bad">        mango_cache.price_cache[i].price,   <span class="c">// 预言机价格</span></span>
+    )?;
+}
+
+<span class="c">// PerpAccount::get_val：仓位价值 = 持仓数量 × 价格</span>
+let base = I80F48::from_num(bids_base_net.checked_mul(pmi.base_lot_size).unwrap())
+<span class="bad">    .checked_mul(price)</span>
+    .unwrap();
+
+<span class="c">// get_health：把每个永续合约仓位的价值按权重加进健康度</span>
+if self.active_assets.perps[i] {
+    let (base, quote) = self.perp[i];
+    if base.is_negative() {
+        health += base * perp_liab_weight + quote;
+    } else {
+<span class="bad">        health += base * perp_asset_weight + quote   <span class="c">// 浮盈直接变成借款额度</span></span>
+    }
+}</code></pre>
+        <p class="code-cap">来源：blockworks-foundation/mango-v3 仓库提交 b09137e，program/src/state.rs 第 901–907 行、第 2049–2051 行、第 978–985 行，去掉了缩进<a class="ref" href="#s9">[9]</a>。</p>
+        <p>预言机价格本身也没有限速。v3 支持 Pyth 和 Switchboard 两种预言机：对 Pyth，程序只在置信区间超过价格的 10% 时拒绝报价；对 Switchboard，程序直接读取最新一轮的结果<a class="ref" href="#s9">[9]</a>。两者都没有“短时间涨幅上限”或时间加权平均。只要给预言机供价的交易所上 MNGO 的成交价被推高，Mango 就会按新价格给仓位估值。</p>
+<pre class="code"><code><span class="c">// processor.rs（同一提交），read_oracle 中 Switchboard 分支</span>
+OracleType::Switchboard =&gt; {
+    let result =
+        FastRoundResultAccountData::deserialize(&amp;oracle_ai.try_borrow_data()?).unwrap();
+<span class="bad">    let value = I80F48::from_num(result.result.result);   <span class="c">// 最新一轮结果，直接采用</span></span>
+    ...   <span class="c">// 之后只做小数位换算</span>
+}
+
+<span class="c">// state.rs：对 Pyth 价格唯一的过滤条件</span>
+// filter out pyth prices with conf &gt; 10% of price
+pub const PYTH_CONF_FILTER: I80F48 = I80F48!(0.10);</code></pre>
+        <p class="code-cap">来源：同一提交的 program/src/processor.rs 第 8183–8186 行、program/src/state.rs 第 52 行；第 52 行的行尾注释移到了上一行<a class="ref" href="#s9">[9]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 470" role="img" aria-labelledby="mango-path-t mango-path-d">
+            <title id="mango-path-t">Mango Markets 价格操纵路径</title>
+            <desc id="mango-path-d">攻击者在 Mango 上开两个账户，账户 A 做多、账户 B 做空 MNGO 永续合约，互为对手方。攻击者在给预言机供价的交易所买入 MNGO 现货，预言机价格在 30 分钟内涨了 13 倍多。Mango 按新价格计算健康度，账户 A 的浮盈变成借款额度，攻击者借走平台上其他用户的存款，约 1.1 亿美元。</desc>
+            <defs>
+              <marker id="mango-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="mango-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="200" height="56" rx="4"/>
+            <text class="d-t b" x="120" y="44" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="120" y="64" text-anchor="middle">两个账户各存 500 万 USDC</text>
+            <rect class="d-box soft" x="440" y="20" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="590" y="44" text-anchor="middle">FTX、AscendEX、Serum</text>
+            <text class="d-t s" x="590" y="64" text-anchor="middle">MNGO 现货，成交清淡</text>
+            <line class="d-line atk" x1="220" y1="48" x2="438" y2="48" marker-end="url(#mango-ah-atk)"/>
+            <text class="d-t atk halo" x="329" y="40" text-anchor="middle">② 大量买入 MNGO</text>
+            <rect class="d-box" x="20" y="130" width="200" height="72" rx="4"/>
+            <text class="d-t b" x="120" y="156" text-anchor="middle">账户 A：多头</text>
+            <text class="d-t b" x="120" y="182" text-anchor="middle">账户 B：空头</text>
+            <line class="d-line" x1="120" y1="76" x2="120" y2="128" marker-end="url(#mango-ah)"/>
+            <text class="d-t s halo" x="130" y="108">① 互为对手方建仓</text>
+            <rect class="d-box atk" x="440" y="130" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="590" y="154" text-anchor="middle">预言机</text>
+            <text class="d-t s atk" x="590" y="174" text-anchor="middle">30 分钟内涨了 13 倍多</text>
+            <line class="d-line atk" x1="590" y1="76" x2="590" y2="128" marker-end="url(#mango-ah-atk)"/>
+            <text class="d-t atk halo" x="600" y="108">③ 按成交价喂价</text>
+            <rect class="d-box atk" x="440" y="240" width="300" height="64" rx="4"/>
+            <text class="d-t b" x="590" y="264" text-anchor="middle">Mango 健康度</text>
+            <text class="d-t s" x="590" y="286" text-anchor="middle">仓位价值 = 数量 × 预言机价格</text>
+            <line class="d-line atk" x1="590" y1="186" x2="590" y2="238" marker-end="url(#mango-ah-atk)"/>
+            <text class="d-t atk halo" x="600" y="218">④ 按新价格估值</text>
+            <rect class="d-box atk" x="20" y="240" width="280" height="64" rx="4"/>
+            <text class="d-t b" x="160" y="264" text-anchor="middle">账户 A 的浮盈</text>
+            <text class="d-t s" x="160" y="286" text-anchor="middle">直接算作借款额度</text>
+            <line class="d-line" x1="120" y1="202" x2="120" y2="238" marker-end="url(#mango-ah)"/>
+            <line class="d-line atk" x1="440" y1="272" x2="302" y2="272" marker-end="url(#mango-ah-atk)"/>
+            <text class="d-t atk halo" x="371" y="264" text-anchor="middle">⑤ 计入额度</text>
+            <rect class="d-box atk" x="20" y="350" width="720" height="56" rx="4"/>
+            <text class="d-t b" x="380" y="374" text-anchor="middle">借走平台上其他用户的存款，约 1.1 亿美元</text>
+            <text class="d-t s" x="380" y="394" text-anchor="middle">MNGO 价格回落后，这些借款没有足值的抵押品，平台出现亏空</text>
+            <line class="d-line atk" x1="160" y1="304" x2="160" y2="348" marker-end="url(#mango-ah-atk)"/>
+            <text class="d-t atk halo" x="170" y="332">⑥ 借款、提走</text>
+            <text class="d-t s" x="380" y="440" text-anchor="middle">按法院判决的概述，他之后还卖出 MNGO 让价格回落，再以空头仓位的浮盈借了一次</text>
+          </svg>
+          </div>
+          <figcaption>图 1：操纵路径。红色是被利用的环节。两个账户互为对手方，所以无论 MNGO 涨跌，攻击者自己在合约上的盈亏都相互抵消；被拿走的是平台上其他用户借出的资产。数字来自 CFTC 和法院判决的概述<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</figcaption>
+        </figure>
+        <h3>后来怎么改</h3>
+        <p>Mango 团队在后来的 v4 版本里正面处理了这两个问题。一是给每个资产维护一个“稳定价格”：它跟随预言机价格，但变化速率受限，还会参考一个约 24 小时前的延迟价格；计算开新仓所需的健康度时，资产按预言机价格和稳定价格中较低的一个计价<a class="ref" href="#s10">[10]</a>。二是对“不受信任”的永续合约市场，浮盈的整体权重可以设为 0，用户必须先和对手方结算，才能把收益当作抵押品<a class="ref" href="#s10">[10]</a>：</p>
+<pre class="code"><code><span class="c">// health/cache.rs（mango-v4，dev 分支），开仓健康度用较保守的价格</span>
+pub fn asset(&amp;self, health_type: HealthType) -&gt; I80F48 {
+    match health_type {
+        HealthType::Maint | HealthType::LiquidationEnd =&gt; self.oracle,
+<span class="good">        HealthType::Init =&gt; self.oracle.min(self.stable),   <span class="c">// 取预言机价与稳定价中较低者</span></span>
+    }
+}
+
+<span class="c">// 同一文件，health_unsettled_pnl 的注释（节选）</span>
+<span class="good">/// For fully isolated perp markets, users may never borrow against unsettled</span>
+<span class="good">/// positive perp pnl, there overall_asset_weight == 0 ...</span>
+/// This is because we don't trust the perp's base price to not suddenly jump to
+/// zero (if users could borrow against their perp balances they might now
+/// be bankrupt) or suddenly increase a lot (if users could borrow against perp
+/// balances they could now borrow other assets).</code></pre>
+        <p class="code-cap">来源：blockworks-foundation/mango-v4 仓库 dev 分支，programs/mango-v4/src/health/cache.rs 第 61–66 行与第 494–505 行（该文件最近一次修改为提交 0a55f46，2024-07-22），去掉了缩进<a class="ref" href="#s10">[10]</a>。稳定价格的定义见同一仓库的 state/stable_price.rs。</p>
+        <div class="note doubt">
+          <span class="h">“交易策略”还是操纵</span>
+          <p>Eisenberg 的辩护立场是：Mango 是无许可、自动运行的平台，没有任何规则禁止他的操作，也没有要求他偿还借款<a class="ref" href="#s7">[7]</a>。2025 年的判决对两个问题给出了不同的回答。关于操纵，法院认为 MNGO 永续合约的估值同时取决于 MNGO 和与 USDC 挂钩的资金费率，属于受《商品交易法》管辖的“混合互换”，并且有足够证据证明他使用了“操纵手段”<a class="ref" href="#s5">[5]</a>。关于欺诈，法院认为 Mango 没有服务条款、没有禁止操纵、也没有要求借款人偿还，他在借款时没有作出虚假陈述。TRM 引述法官的话：那个按钮“也可以叫‘取用抵押品’‘使用资产’，或者别的什么名字”<a class="ref" href="#s5">[5]</a>。WilmerHale 的评论是，平台的代码功能可以界定参与者在平台上的预期，但不能用来证明在其他交易所推动价格的行为是合法的<a class="ref" href="#s6">[6]</a>。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面按法院判决的概述（经 TRM 和 WilmerHale 转述）以及 CFTC、SEC 的指控转述<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。这些是执法机关和法院认定或指控的事实，不是本站对交易的还原。</p>
+        <ol class="steps">
+          <li><b>两个账户互为对手方</b>Eisenberg 往两个 Mango 账户各存入 500 万美元的 USDC，一个账户卖出 MNGO 永续合约，另一个账户买入，建立方向相反的大额仓位<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>在外部交易所推高现货</b>他在给 Mango 预言机供价的三家交易所大量买入 MNGO，预言机报价在 30 分钟内涨了 13 倍多，多头账户的仓位价值随之暴涨<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>以浮盈作抵押借款</b>他用多头仓位的虚高价值作抵押，从 Mango 借出并提走各种加密资产<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>砸盘后再借一次</b>按法院的概述，他随后卖出 MNGO，价格回落，空头仓位的价值上升，他又以空头仓位为抵押借了一次。合计借出 1 亿多美元<a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>留下亏空</b>SEC 称，他借走的资产基本掏空了平台上可借的全部资产；MNGO 价格回到操纵前的水平后，平台出现亏空<a class="ref" href="#s4">[4]</a>。</li>
+        </ol>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">金额</th><th>出处</th></tr></thead>
+            <tbody>
+              <tr><td>借走的资产</td><td class="n"><span class="dispute">约 1.1 亿美元</span></td><td>DOJ、CFTC<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>；SEC 记为约 1.16 亿美元<a class="ref" href="#s4">[4]</a>，DefiLlama 记为 1.15 亿美元<a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>按治理提案归还 Mango DAO</td><td class="n">约 6,700 万美元</td><td>CFTC、TRM<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>Eisenberg 保留</td><td class="n">约 4,700 万美元</td><td>CFTC<a class="ref" href="#s3">[3]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ol class="flow">
+          <li class="atk"><b>借空 Mango</b>约 1.1 亿美元的多种资产</li>
+          <li class="doubt"><b>治理提案谈判</b>以不追究、不冻结为条件</li>
+          <li class="ok"><b>归还约 6,700 万美元</b>回到 Mango DAO</li>
+          <li class="atk"><b>保留约 4,700 万美元</b>未见公开的追回记录</li>
+        </ol>
+        <p>CFTC 的原话是，他同意归还一部分，条件是 Mango Markets“不进行任何刑事调查，也不冻结资金”<a class="ref" href="#s3">[3]</a>。这个承诺对执法机关没有约束力，约两个半月后他就被捕了。被保留的约 4,700 万美元，截至 2026 年 10 月本站没有查到追回的记录；SEC 和 CFTC 的民事诉讼都要求返还非法所得，TRM 在 2025 年 5 月称这两起民事诉讼仍在进行<a class="ref" href="#s5">[5]</a>，此后的进展本站没有查到。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>执法上的“第一次”</h3>
+        <p>DOJ 称这是“首例加密货币公开市场操纵案”<a class="ref" href="#s2">[2]</a>，CFTC 称这是它第一起针对“去中心化交易所”的预言机操纵案<a class="ref" href="#s3">[3]</a>。TRM 则把 2025 年的撤销判决称为第一个明确否定高知名度 DeFi 欺诈定罪的判决<a class="ref" href="#s5">[5]</a>。WilmerHale 把它和外汇交易员 Mark Johnson 的定罪被推翻放在一起，认为在平台没有明确规则的情况下，检方很难证明存在重大的虚假陈述<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>对 DeFi 的意义</h3>
+        <p>判决同时确认了两件事：操纵确实发生，也受商品法管辖；但在一个没有任何规则的无许可平台上借款，本身不构成欺诈<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。“代码允许的就是合法的”这一说法没有被法院接受，但用欺诈罪追究这类行为的路也变窄了。</p>
+        <h3>同一手法反复出现</h3>
+        <p>此后的同类攻击常被直接称为“Mango 式”：拉高一个清淡代币的价格，再以它作抵押借走流动性更好的资产。2026 年 8 月 <a href="2026-tectonic.html">Tectonic</a> 被攻击后，RedStone 的联合创始人直接拿 Mango 作对比<a class="ref" href="#s15">[15]</a>。TRM 把 Mango 列为有记录以来第二大的价格操纵事件，仅次于 2025 年的 <a href="2025-cetus.html">Cetus</a><a class="ref" href="#s14">[14]</a>。更早的 <a href="2020-bzx-flash-loan.html">bZx</a> 和 <a href="2021-cream-finance.html">Cream Finance</a> 是同一类问题在借贷协议上的前例；同年 4 月的 <a href="2022-beanstalk.html">Beanstalk</a> 则是另一种“借来权力”的攻击。</p>
+        <h3>Mango 自身</h3>
+        <p>2024 年 9 月，SEC 指控 Mango DAO 和 Blockworks Foundation 未经注册出售 MNGO，指控 Blockworks Foundation 和 Mango Labs 充当未注册经纪商。三方在不承认也不否认指控的情况下和解：合计近 70 万美元民事罚款，销毁所持 MNGO，申请将 MNGO 从交易平台下架，不再招揽平台交易 MNGO<a class="ref" href="#s8">[8]</a>。2025 年 1 月 13 日，Mango Markets 停止运营<a class="ref" href="#s12">[12]</a>。</p>
+        <p>DAO 内部的纠纷也进了法院。Mango Labs 起诉两名 Mango DAO 成员，指控他们在 Eisenberg 受审期间、部分 DAO 成员担任检方证人时，低价买入约 3.33 亿枚 MNGO，再推动 DAO 以更高价格回购；2025 年 9 月，波多黎各联邦地区法院以原告缺乏起诉资格为由驳回了诉讼，没有对指控本身作出认定<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>刑事案件</h3>
+        <p>Eisenberg 2022 年 12 月 26 日在波多黎各圣胡安被捕，此后一直被羁押<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。2024 年 4 月 18 日，陪审团在法官 Arun Subramanian 主持的审判后一致认定三项罪名成立<a class="ref" href="#s2">[2]</a>。审判时长的说法不一：DOJ 称 10 天<a class="ref" href="#s2">[2]</a>，TRM 和 WilmerHale 称 9 天<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。DOJ 当时公布的量刑日期是 2024 年 7 月 29 日<a class="ref" href="#s2">[2]</a>，本站没有查到 Mango 案此后进入量刑的记录。2025 年 5 月 23 日，法官在 35 页的意见书中批准了被告的 Rule 29 动议<a class="ref" href="#s5">[5]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>罪名</th><th>2024 年陪审团</th><th>2025 年法官</th><th>理由</th></tr></thead>
+            <tbody>
+              <tr><td>商品欺诈</td><td>成立</td><td>撤销定罪</td><td>审判地不当：交易都在波多黎各完成，检方提出的纽约联系（AscendEX 的外包监控、波基普西一名用户的提款尝试）不构成犯罪的“核心行为要素”</td></tr>
+              <tr><td>商品操纵</td><td>成立</td><td>撤销定罪</td><td>同上；法院认为有足够证据证明存在操纵手段</td></tr>
+              <tr><td>电汇欺诈</td><td>成立</td><td>改判无罪</td><td>审判地不当，且没有证据证明存在重大的虚假陈述</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>表格依据 TRM 和 WilmerHale 对判决的转述<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>，本站没能读到判决原文。WilmerHale 指出，法院认定的操纵行为“有可能在另一个司法辖区起诉”<a class="ref" href="#s6">[6]</a>。据 Men’s Journal 报道，检方对裁决提出上诉，认为法院对欺诈的解释过窄，上诉在 2026 年仍在进行<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>另一起案件</h3>
+        <p>调查人员在扣押的设备中发现了儿童性虐待材料。Eisenberg 对持有这些材料认罪，2025 年 5 月 1 日被判 52 个月监禁和 5 年监管释放<a class="ref" href="#s7">[7]</a>。这起案件与 Mango 无关，但它是他目前仍在服刑的原因。</p>
+        <h3>民事诉讼</h3>
+        <p>CFTC 要求民事罚款、返还非法所得、赔偿和永久交易禁令<a class="ref" href="#s3">[3]</a>，SEC 要求禁令、返还非法所得和民事罚款<a class="ref" href="#s4">[4]</a>。截至 2025 年 5 月两起诉讼仍在进行<a class="ref" href="#s5">[5]</a>，此后的进展本站没有查到。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易和借贷协议</span>
+          <ul>
+            <li>不要让未结算的浮盈直接变成借款额度。对标的流动性差的合约，浮盈应当先和对手方结算，或者计入时大幅打折，这正是 Mango v4 的做法<a class="ref" href="#s10">[10]</a>。</li>
+            <li>估值不能只看现价。给价格加变化速率限制，开新仓时按现价和限速价格中较保守的一个计算<a class="ref" href="#s10">[10]</a>。</li>
+            <li>限制单一标的的持仓规模和单个账户的敞口。两个账户对倒就能造出任意大的仓位，没有上限的话，平台的全部存款都在风险之中。</li>
+            <li>预言机的价格源有多深，推动它就要花多少钱。三个价格源都很浅时，“多源聚合”保护不了什么。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给 DAO 和事件响应</span>
+          <ul>
+            <li>在资金被挟持时用治理投票换取“不追究”，换不来法律上的豁免。这次 DAO 的承诺没有约束执法机关<a class="ref" href="#s3">[3]</a>。</li>
+            <li>平台规则在法律上会被引用。法院判电汇欺诈不成立的理由之一，就是 Mango 没有服务条款，也没有禁止操纵的规定<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国司法部，《Man Charged in $110 Million Cryptocurrency Scheme》，2023-02-02。<a href="https://www.justice.gov/archives/opa/pr/man-charged-110-million-cryptocurrency-scheme">justice.gov</a></li>
+          <li id="s2">美国纽约南区检察官办公室，《Man Convicted For $110 Million Cryptocurrency Scheme》，2024-04-18。<a href="https://www.justice.gov/usao-sdny/pr/man-convicted-110-million-cryptocurrency-scheme">justice.gov</a></li>
+          <li id="s3">美国商品期货交易委员会（CFTC），新闻稿 8647-23，关于对 Avraham Eisenberg 提起诉讼，2023-01-09。<a href="https://www.cftc.gov/PressRoom/PressReleases/8647-23">cftc.gov</a></li>
+          <li id="s4">美国证券交易委员会（SEC），新闻稿 2023-13，关于起诉 Avraham Eisenberg，2023-01-20。<a href="https://www.sec.gov/newsroom/press-releases/2023-13">sec.gov</a></li>
+          <li id="s5">TRM Labs，《BREAKING: Federal Judge Overturns All Criminal Convictions in Mango Markets Case Against Avraham Eisenberg》，2025-05-23。<a href="https://www.trmlabs.com/resources/blog/breaking-federal-judge-overturns-all-criminal-convictions-in-mango-markets-case-against-avraham-eisenberg">trmlabs.com</a></li>
+          <li id="s6">WilmerHale，《Reversals of Fraud Charges Highlight Difficulties in Bringing Market Manipulation Cases》，2025-08-04。<a href="https://www.wilmerhale.com/en/insights/client-alerts/20250804-reversals-of-fraud-charges-highlight-difficulties-in-bringing-market-manipulation-cases">wilmerhale.com</a></li>
+          <li id="s7">Men’s Journal，《Avi Eisenberg’s $110 million crypto case collapsed, but he still went to prison》，2026-08-27，经 MSN 转载。<a href="https://www.msn.com/en-us/news/other/avi-eisenberg-s-110-million-crypto-case-collapsed-but-he-still-went-to-prison/ar-AA2b4amB">msn.com</a></li>
+          <li id="s8">美国证券交易委员会（SEC），新闻稿 2024-154，关于 Mango DAO、Blockworks Foundation 和 Mango Labs 的和解，2024-09-27。<a href="https://www.sec.gov/newsroom/press-releases/2024-154">sec.gov</a></li>
+          <li id="s9">blockworks-foundation/mango-v3 仓库，攻击前最后一次提交 b09137e（2022-10-04）的 program/src/state.rs、oracle.rs 与 processor.rs。<a href="https://github.com/blockworks-foundation/mango-v3/blob/b09137e134693f8c7e0732eee5c8e9920f4f5caa/program/src/state.rs">state.rs</a>　<a href="https://github.com/blockworks-foundation/mango-v3/blob/b09137e134693f8c7e0732eee5c8e9920f4f5caa/program/src/processor.rs">processor.rs</a></li>
+          <li id="s10">blockworks-foundation/mango-v4 仓库 dev 分支，programs/mango-v4/src/health/cache.rs 与 state/stable_price.rs。<a href="https://github.com/blockworks-foundation/mango-v4/blob/dev/programs/mango-v4/src/health/cache.rs">cache.rs</a>　<a href="https://github.com/blockworks-foundation/mango-v4/blob/dev/programs/mango-v4/src/state/stable_price.rs">stable_price.rs</a></li>
+          <li id="s11">美国波多黎各联邦地区法院，Mango Labs, LLC v. Kramer et al.，Civil No. 24-01469，Opinion and Order，2025-09-29（GovInfo）。<a href="https://www.govinfo.gov/app/details/USCOURTS-prd-3_24-cv-01469">govinfo.gov</a></li>
+          <li id="s12">Joel Lim，《Mango Markets to Shut Down After SEC Settlement》，The Defiant，2025-01。<a href="https://thedefiant.io/news/defi/mango-markets-to-shut-down-after-sec-settlement">thedefiant.io</a> <span class="src-note">本站只读到标题和导语。</span></li>
+          <li id="s13">DefiLlama，Hacks 数据库中的 Mango Markets V3 条目（Oracle Manipulation / Spot Price Manipulation）。<a href="https://defillama.com/hacks">defillama.com</a></li>
+          <li id="s14">TRM Labs，《Number of Price-Manipulation Attacks Hits All-Time High as USD 75 Million Is Stolen From Tectonic》，2026-08-31。<a href="https://www.trmlabs.com/resources/blog/number-of-price-manipulation-attacks-hits-all-time-high-as-usd-75-million-is-stolen-from-tectonic">trmlabs.com</a></li>
+          <li id="s15">crypto.news，《Tectonic’s $75M exploit was not an oracle failure, RedStone co-founder says》，2026-09-01。<a href="https://crypto.news/tectonics-75m-dollars-exploit-not-an-oracle-failure/">crypto.news</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

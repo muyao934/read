@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parity 多签钱包两次事故｜区块链被盗事件编年史</title>
+<meta name="description" content="2017 年 Parity 多签钱包的两次事故：7 月初始化函数无人看守，153,037 枚 ETH 被盗；11 月共用库合约被初始化后自毁，513,774 枚 ETH 冻结。漏洞代码、攻击步骤、资金去向与 EIP-999 恢复提案之争。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2017-parity-multisig">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2017 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Parity 多签钱包两次事故</h1>
+    <p class="lede">2017 年，Parity 多签钱包在四个月里出了两次事故，原因都是初始化函数谁都能调用。7 月 19 日，攻击者把三个 ICO 项目的钱包改成自己名下，转走 153,037 枚 ETH；11 月 6 日，所有钱包共用的库合约被人初始化后自毁，587 个钱包里的 513,774 枚 ETH 从此无法动用。2018 年的恢复提案没有通过，这些 ETH 至今仍锁在原地，同类的“未初始化合约被接管”问题此后在可升级合约里反复出现。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Parity 多签钱包分成两层：每个用户部署一个很小的钱包合约，只保存所有者名单、确认数和余额；转账、确认、换所有者这些逻辑都放在一个全网共用的库合约 WalletLibrary 里，钱包用 <code>delegatecall</code> 借用库合约的代码。这样部署一个钱包便宜得多，代价是库合约里的每个公开函数，任何人都能通过任何一个钱包调用，其中包括本该只在创建时执行一次的初始化函数 <code>initWallet</code>。</p>
+        <p>2017 年 7 月 19 日，有人对三个钱包调用 <code>initWallet</code>，把所有者改成自己，随后转走了 æternity、Swarm City 和 Edgeless 三个 ICO 项目共 153,037 枚 ETH<a class="ref" href="#s11">[11]</a><a class="ref" href="#s13">[13]</a>。Parity 统计当时共有 596 个钱包存在这个漏洞，其余钱包被自称 White Hat Group（WHG）的白帽团队用同样的方法抢先转空，约 37.7 万枚 ETH 和大量代币随后归还原主<a class="ref" href="#s2">[2]</a><a class="ref" href="#s13">[13]</a><a class="ref" href="#s31">[31]</a>。攻击者的身份至今没有公开。</p>
+        <p>当晚的修复给 <code>initWallet</code> 加了“已经初始化就拒绝”的检查，但这个检查读的是当前执行环境的存储。7 月 20 日重新部署的库合约本身从没被初始化过。11 月 6 日，GitHub 用户 devops199 直接对库合约调用 <code>initWallet</code>，成了库合约的所有者，接着调用 <code>kill</code> 让它自毁<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。所有钱包的逻辑都在这份代码里，代码没了，587 个钱包里的 513,774.16 枚 ETH 就再也转不出来，其中约 30.6 万枚属于 Web3 Foundation 为 Polkadot 募集的资金<a class="ref" href="#s4">[4]</a><a class="ref" href="#s29">[29]</a>。devops199 自称是无意触发。</p>
+        <p>要让这些 ETH 重新可用，只能硬分叉改写链上状态。2018 年提出的 EIP-999 主张把修补过的库合约代码放回原地址，但在代币投票中以 55% 对 39.4% 落败，核心开发者会议也没有推进，2020 年被作者撤回<a class="ref" href="#s24">[24]</a><a class="ref" href="#s27">[27]</a>。截至 2025 年 7 月的统计，Web3 Foundation 的约 30.6 万枚 ETH 仍锁在 Parity 多签合约里<a class="ref" href="#s32">[32]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Parity Technologies 由以太坊前 CTO Gavin Wood 创立<a class="ref" href="#s17">[17]</a><a class="ref" href="#s29">[29]</a>，开发的 Parity 客户端自带一个钱包界面，可以一键部署多签合约。多签合约的规则是：转账要有足够多的所有者确认才能执行；低于每日限额的小额转账，单个所有者就能直接发出<a class="ref" href="#s8">[8]</a>。2017 年的 ICO 项目普遍把募来的 ETH 放在这类钱包里<a class="ref" href="#s11">[11]</a><a class="ref" href="#s30">[30]</a>。那一年的 ICO 热潮见大事记的<a href="../../milestones/events/2017-ico-boom.html">ICO 狂潮（2017–2018）</a>。</p>
+        <p>这份多签合约并不是 Parity 从零写的。它改编自以太坊基金会 DEV 团队、Parity 和社区共同编写并审计过的“Foundation”多签钱包<a class="ref" href="#s2">[2]</a>。原版每建一个钱包都要把全部代码部署一遍。2016 年 12 月合并的 PR #3773 把它拆成两部分：一个只负责转发的小合约（下文称桩合约），加上一个全网只部署一次的 WalletLibrary。按 PR 说明，部署一个钱包的 gas 从约 180–200 万降到约 50 万<a class="ref" href="#s9">[9]</a>。这个版本随 2017 年 1 月 19 日发布的 Parity 1.5 上线<a class="ref" href="#s15">[15]</a><a class="ref" href="#s18">[18]</a>。</p>
+        <p>漏洞在拆分时就已经存在。Hacking, Distributed 的作者查看提交历史后指出，合约第一次加入仓库时就带着问题代码，3 月 7 日大改过一次，之后直到被攻击都没再动过<a class="ref" href="#s13">[13]</a>。Parity 的事后报告解释了它为什么没被发现：库合约的改造夹在一次约 4,000 行、几乎全是 JavaScript、CSS 和 HTML 的钱包界面改动里，被误标成纯界面修改，只经过一人审查就合并了；后来一位 Solidity 专家做的审计也没有发现问题<a class="ref" href="#s2">[2]</a>。</p>
+        <p>两次事故的受害者主要是 ICO 项目方。7 月被盗的三个项目都把募资放在这种钱包里；11 月被冻结的资金中，最大的一笔属于 Web3 Foundation，它在 2017 年 10 月为 Gavin Wood 主导的 Polkadot 募集了约 1.44 亿美元<a class="ref" href="#s38">[38]</a>。ETH 价格在 7 月事发时约 200 至 235 美元，11 月约 300 美元<a class="ref" href="#s17">[17]</a><a class="ref" href="#s20">[20]</a><a class="ref" href="#s22">[22]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <h3>第一次：7 月被盗</h3>
+        <ol class="timeline">
+          <li><time>2016-12-09</time><div class="ev">PR #3773 合并，引入“桩合约 + WalletLibrary”的多签钱包，初始化函数此时就没有访问限制<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2017-01-19</time><div class="ev">Parity 1.5 发布，新版多签钱包上线<a class="ref" href="#s15">[15]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2017-03-07</time><div class="ev">多签合约随新钱包界面一起大改，此后直到被攻击都没有改动<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk key"><time>2017-07-19</time><div class="ev">攻击者接管 æternity、Swarm City、Edgeless 三个项目的多签钱包，转走共 153,037 枚 ETH。Swarm City 团队在美东时间 12:30（UTC 16:30）前后发现钱包已被清空<a class="ref" href="#s11">[11]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def key"><time>2017-07-19</time><div class="ev">WHG 用同一漏洞把其余易受攻击钱包里的资金转到自己控制的地址保管，共约 37.7 万枚 ETH 和价值约 7,800 万美元的代币<a class="ref" href="#s14">[14]</a><a class="ref" href="#s13">[13]</a>。Gavin Wood 在 Gitter 上说基金会正在设法保护其他钱包里的资金<a class="ref" href="#s16">[16]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2017-07-19</time><div class="ev">UTC 20:13 至 20:29，gavofyork 提交并合并 PR #6102“Fix initialisation bug”，给 <code>initWallet</code> 加上 <code>only_uninitialized</code><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2017-07-19</time><div class="ev">Parity 发布“严重”级安全警报，要求多签钱包用户立即转移资产<a class="ref" href="#s1">[1]</a><a class="ref" href="#s16">[16]</a>。警报后来补充：UTC 21:14:56 之后新建的钱包不受影响，修复后的代码已在链上注册表登记<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2017-07-19</time><div class="ev">UTC 22:02 至 23:12，PR #6103 补齐另外两个初始化函数的修饰符，并由 PR #6104、#6105 回移到 stable 和 beta 分支<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2017-07-20</time><div class="ev">Parity 发布事后报告<a class="ref" href="#s2">[2]</a>。按 Parity 11 月的说法，修复后的库合约在这一天重新部署<a class="ref" href="#s5">[5]</a>；PR #6108 记录的地址是 <span class="addr">0x863df6bfa4469f3ead0be8f9f2aae51c91a907b4</span><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2017-07-22</time><div class="ev">WHG 部署好参数与原钱包一致的替换钱包，请各项目方先用小额测试，再接收被保管的资金<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2017-08</time><div class="ev">GitHub 贡献者 3esmit 建议库合约在部署时就调用 <code>initWallet</code>。Parity 把它当作便利性改进提交进代码，但没有重新部署<a class="ref" href="#s5">[5]</a>。</div></li>
+        </ol>
+        <h3>第二次：11 月冻结</h3>
+        <ol class="timeline">
+          <li class="atk key"><time>2017-11-06</time><div class="ev">devops199 直接对库合约调用 <code>initWallet</code>，成为库合约的所有者，随后调用 <code>kill</code> 使其自毁。Parity 的警报把触发时间记为 UTC 14:33:47<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2017-11-06</time><div class="ev">UTC 15:54，GitHub 上出现 issue #6995“anyone can kill your contract”，正文只有一句“I accidentally killed it.”和库合约的地址<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2017-11-07</time><div class="ev">Parity 发布安全警报（存档页面标注的日期是 11 月 8 日）：7 月 20 日之后部署的多签钱包都无法再转出资金。当天各方对冻结金额的估计从 1.5 亿到 2.8 亿美元不等<a class="ref" href="#s3">[3]</a><a class="ref" href="#s12">[12]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def"><time>2017-11-09</time><div class="ev">库合约从注册表中移除，Parity Wallet 新建多签钱包改为默认使用 WHG 的多签合约<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2017-11-13</time><div class="ev">Parity 公布统计：587 个钱包、共 513,774.16 枚 ETH 被冻结，按当时价格约 1.62 亿美元<a class="ref" href="#s4">[4]</a><a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="def"><time>2017-11-15</time><div class="ev">Parity 发布事后报告，宣布暂停在钱包界面部署多签钱包<a class="ref" href="#s5">[5]</a>。</div></li>
+        </ol>
+        <h3>恢复之争与后续</h3>
+        <ol class="timeline">
+          <li><time>2017-12-11</time><div class="ev">Parity 发文梳理“卡住的 ETH”的几种类型，列出三条恢复思路，其中包括允许复活已自毁的合约<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2018-04-15</time><div class="ev">Parity 开发者 Afri Schoedon 提交 EIP-999，主张在硬分叉中把修补过的库合约代码放回原地址；次日以草案状态合并进 EIP 仓库<a class="ref" href="#s24">[24]</a><a class="ref" href="#s25">[25]</a><a class="ref" href="#s29">[29]</a>。</div></li>
+          <li><time>2018-04-17</time><div class="ev">etherchain 代币投票开始，24 日结束。按投票地址的 ETH 余额加权，反对 55.0%、赞成 39.4%、无所谓 5.6%，共约 399 万枚 ETH 参与<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li><time>2018-04-20</time><div class="ev">第 37 次以太坊核心开发者会议讨论 EIP-999，没有结论，决定继续在论坛和 EIP 讨论中进行<a class="ref" href="#s28">[28]</a>。</div></li>
+          <li class="def"><time>2018-04-26</time><div class="ev">Parity 发表声明：无意分裂以太坊链<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2020-01-27</time><div class="ev">EIP-999 的撤回请求被合并，作者写道“不再有意恢复”该地址的合约代码<a class="ref" href="#s24">[24]</a><a class="ref" href="#s25">[25]</a>。</div></li>
+          <li class="atk"><time>2021-06</time><div class="ev">据受害方说法，7 月的攻击者开始把部分 ETH 转入交易所<a class="ref" href="#s30">[30]</a><a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="def"><time>2021-10-20</time><div class="ev">æternity、Swarm City、Edgeless 联合发文，要求 8 家交易所冻结并归还收到的赃款，并向攻击者提出：归还 135,000 枚 ETH（被盗总额的约 90%）就不再追究<a class="ref" href="#s31">[31]</a><a class="ref" href="#s30">[30]</a>。</div></li>
+          <li><time>2024-03-13</time><div class="ev">Dencun 升级激活。按 EIP-6780，对已存在的合约执行 <code>SELFDESTRUCT</code> 不再删除代码<a class="ref" href="#s33">[33]</a>。</div></li>
+          <li><time>2025-07</time><div class="ev">Coinbase 的 Conor Grogan 统计永久无法取用的 ETH，Web3 Foundation 用过的 Parity 多签合约里仍有约 30.6 万枚<a class="ref" href="#s32">[32]</a>。</div></li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">时间记录的分歧</span>
+          <p>7 月攻击的确切时刻，各方说法不一：OpenZeppelin 当天写的是“截至 UTC 12:19”已转走 153,037 枚 ETH<a class="ref" href="#s11">[11]</a>，BleepingComputer 写的是 UTC 19:00 至 20:00<a class="ref" href="#s18">[18]</a>，受害方 Swarm City 的发现时间是 UTC 16:30 前后<a class="ref" href="#s15">[15]</a>。11 月的事后报告开头沿用了警报的 UTC 14:33:47，后文又说 devops199 是在 UTC 15:25:21 发现并初始化库合约的<a class="ref" href="#s5">[5]</a>。本页没有做链上核对，只列出来源的说法。</p>
+        </div>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <h3>两层结构：存储在钱包，代码在库</h3>
+        <p>每个 Parity 多签钱包是一个很小的合约，只存所有者名单、所需确认数、每日限额和余额。它的构造函数用 <code>delegatecall</code> 让库合约完成初始化；此后钱包不认识的调用，都由 fallback 原样转给库合约。下面引用的是修复前的 v1.6.9 版本<a class="ref" href="#s8">[8]</a>，英文注释是原有的，中文注释是本站加的：</p>
+<pre class="code"><code><span class="c">// enhanced-wallet.sol（v1.6.9），Wallet 桩合约的 fallback，第 423–430 行</span>
+// gets called when no other function matches
+function() payable {
+  // just being sent some cash?
+  if (msg.value &gt; 0)
+    Deposit(msg.sender, msg.value);
+<span class="bad">  else if (msg.data.length &gt; 0)</span>
+<span class="bad">    _walletLibrary.delegatecall(msg.data);  <span class="c">// 不认识的调用，一律原样转给库合约</span></span>
+}
+
+<span class="c">// 第 448 行：编译期占位地址，部署时换成库合约的真实地址，写死在每个钱包的字节码里</span>
+address constant _walletLibrary = 0xcafecafecafecafecafecafecafecafecafecafe;</code></pre>
+        <p class="code-cap">来源：openethereum/parity-ethereum 仓库 v1.6.9 标签，js/src/contracts/snippets/enhanced-wallet.sol（去掉了一层缩进）。占位地址的替换方式见 PR #3773 的说明。</p>
+        <p><code>delegatecall</code> 执行的是库合约的代码，读写的却是钱包自己的存储，<code>msg.sender</code> 也还是最初的调用者，效果相当于把库合约的代码临时贴进钱包里运行<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。这是省 gas 的关键，也意味着库合约里任何一个外部可见的函数，任何人都能通过任何一个钱包调用。</p>
+
+        <h3>7 月：初始化函数没有看守</h3>
+        <p>库合约里有三个初始化函数：<code>initWallet</code>、<code>initMultiowned</code>、<code>initDaylimit</code>。它们都没写可见性，也没有任何修饰符。在当时的 Solidity 里，不写可见性就默认是 <code>public</code><a class="ref" href="#s13">[13]</a><a class="ref" href="#s2">[2]</a>。</p>
+<pre class="code"><code><span class="c">// enhanced-wallet.sol（v1.6.9），WalletLibrary 的初始化函数</span>
+<span class="c">// 第 107–117 行：没有可见性，也没有修饰符，默认 public</span>
+<span class="bad">function initMultiowned(address[] _owners, uint _required) {</span>
+  m_numOwners = _owners.length + 1;
+  m_owners[1] = uint(msg.sender);          <span class="c">// 调用者自己成为 1 号所有者</span>
+  m_ownerIndex[uint(msg.sender)] = 1;
+  for (uint i = 0; i &lt; _owners.length; ++i)
+  {
+    m_owners[2 + i] = uint(_owners[i]);
+    m_ownerIndex[uint(_owners[i])] = 2 + i;
+  }
+  m_required = _required;                  <span class="c">// 需要几个确认，由调用者决定</span>
+}
+
+<span class="c">// 第 201–204 行：每日限额，同样由调用者决定</span>
+<span class="bad">function initDaylimit(uint _limit) {</span>
+  m_dailyLimit = _limit;
+  m_lastDay = today();
+}
+
+<span class="c">// 第 216–219 行：本该只在钱包创建时执行一次</span>
+<span class="bad">function initWallet(address[] _owners, uint _required, uint _daylimit) {</span>
+  initDaylimit(_daylimit);
+  initMultiowned(_owners, _required);
+}</code></pre>
+        <p class="code-cap">来源：同上，v1.6.9 标签（去掉了一层缩进）。</p>
+        <p>钱包合约自己没有叫 <code>initWallet</code> 的函数。有人对一个已经在用的钱包调用它，调用就落进 fallback，经 <code>delegatecall</code> 进入库合约执行，改写的正是这个钱包自己的所有者名单。只要 <code>initWallet</code> 检查一下“是否已经初始化过”，这条路就走不通；两个辅助函数则本该标成 <code>internal</code><a class="ref" href="#s13">[13]</a><a class="ref" href="#s11">[11]</a>。</p>
+        <p>拿到所有权之后，转钱只差一步。<code>execute</code> 只要求调用者是所有者之一；如果是不带数据的普通转账且金额在当天限额以内，或者钱包只要求一个确认，就立即执行，不用等其他所有者：</p>
+<pre class="code"><code><span class="c">// enhanced-wallet.sol（v1.6.9），第 230–233 行</span>
+function execute(address _to, uint _value, bytes _data)
+    external onlyowner returns (bytes32 o_hash) {
+  // first, take the opportunity to check that we're under the daily limit.
+<span class="bad">  if ((_data.length == 0 &amp;&amp; underLimit(_value)) || m_required == 1) {</span>
+    // yes - just execute the call.</code></pre>
+        <p class="code-cap">来源：同上，函数头折成两行显示。<code>onlyowner</code> 只检查调用者在不在所有者名单里。</p>
+        <p>OpenZeppelin 当天解码了攻击者对其中一个钱包发出的两笔调用<a class="ref" href="#s11">[11]</a>。<code>initWallet</code> 的所有者名单里只有攻击者的地址，<code>_required</code> 是 0，<code>_daylimit</code> 是十六进制的 <code>0x116779808c03e4140000</code> wei；紧接着的 <code>execute</code> 向攻击者转出同样的数额，数据为空。这个数换算过来是 82,189 ETH，和 æternity 公布的约 8.2 万枚被盗 ETH 相符<a class="ref" href="#s17">[17]</a>。也就是说，攻击者把“每日限额”设成了钱包的全部余额，整笔提款就成了一笔“限额以内”的普通转账。每个钱包只需要两笔交易。</p>
+
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 475" role="img" aria-labelledby="pms-f1-t pms-f1-d">
+            <title id="pms-f1-t">7 月攻击：经由钱包的 fallback 重新初始化</title>
+            <desc id="pms-f1-d">攻击者向受害钱包调用 initWallet。钱包没有这个函数，fallback 用 delegatecall 把调用转给 WalletLibrary。库合约的代码在钱包自己的存储上执行，把所有者改成攻击者、所需确认数改成 0、每日限额改成钱包余额。攻击者再调用 execute，同样被转发给库合约，所有者检查和每日限额检查都通过，钱包余额全部转给攻击者。</desc>
+            <defs>
+              <marker id="pms-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="pms-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="110" y1="72" x2="110" y2="420"/>
+            <line class="d-line dash" x1="390" y1="72" x2="390" y2="420"/>
+            <line class="d-line dash" x1="670" y1="72" x2="670" y2="420"/>
+            <rect class="d-box atk" x="30" y="12" width="160" height="60" rx="4"/>
+            <text class="d-t b" x="110" y="37" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="110" y="58" text-anchor="middle">外部账户</text>
+            <rect class="d-box" x="295" y="12" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="390" y="37" text-anchor="middle">受害钱包（桩合约）</text>
+            <text class="d-t s" x="390" y="58" text-anchor="middle">存储 + ETH 余额</text>
+            <rect class="d-box" x="575" y="12" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="670" y="37" text-anchor="middle">WalletLibrary</text>
+            <text class="d-t s" x="670" y="58" text-anchor="middle">只提供代码，所有钱包共用</text>
+            <line class="d-line atk" x1="110" y1="110" x2="388" y2="110" marker-end="url(#pms-ah-atk)"/>
+            <text class="d-t atk halo" x="250" y="102" text-anchor="middle">① initWallet([攻击者], 0, 余额)</text>
+            <line class="d-line" x1="390" y1="140" x2="668" y2="140" marker-end="url(#pms-ah)"/>
+            <text class="d-t halo" x="530" y="132" text-anchor="middle">② <tspan class="m">delegatecall(msg.data)</tspan></text>
+            <text class="d-t s" x="530" y="160" text-anchor="middle">钱包没有这个函数，fallback 原样转发</text>
+            <line class="d-line dash" x1="670" y1="200" x2="392" y2="200" marker-end="url(#pms-ah)"/>
+            <text class="d-t halo" x="530" y="192" text-anchor="middle">③ 库代码在钱包的存储上执行</text>
+            <rect class="d-box atk" x="280" y="214" width="220" height="92" rx="4"/>
+            <text class="d-t s" x="390" y="236" text-anchor="middle">钱包自己的存储被改写</text>
+            <text class="d-t m" x="390" y="256" text-anchor="middle">m_owners ← 攻击者</text>
+            <text class="d-t m" x="390" y="275" text-anchor="middle">m_required ← 0</text>
+            <text class="d-t m" x="390" y="294" text-anchor="middle">m_dailyLimit ← 钱包余额</text>
+            <line class="d-line atk" x1="110" y1="335" x2="388" y2="335" marker-end="url(#pms-ah-atk)"/>
+            <text class="d-t atk halo" x="250" y="327" text-anchor="middle">④ execute(攻击者, 余额, "")</text>
+            <line class="d-line" x1="390" y1="368" x2="668" y2="368" marker-end="url(#pms-ah)"/>
+            <text class="d-t halo" x="530" y="360" text-anchor="middle">⑤ 同样转发：两项检查都通过</text>
+            <line class="d-line atk" x1="390" y1="403" x2="112" y2="403" marker-end="url(#pms-ah-atk)"/>
+            <text class="d-t atk halo" x="250" y="395" text-anchor="middle">⑥ 全部余额转给攻击者</text>
+            <rect class="d-box soft" x="60" y="430" width="660" height="34" rx="4"/>
+            <text class="d-t s" x="390" y="452" text-anchor="middle">每个受害钱包只需要这两笔交易。WHG 用同样的两步，抢先转空了其余钱包。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：7 月攻击的调用顺序。存储在钱包里，代码在库合约里；<code>delegatecall</code> 让库合约的代码直接改写钱包自己的状态。红色是攻击者发起的调用和被改写的状态。①④ 的参数取自 OpenZeppelin 解码的那一笔交易。</figcaption>
+        </figure>
+
+        <h3>当晚的修复</h3>
+        <p>PR #6102 加了一个修饰符：所有者数量大于 0 就拒绝初始化；PR #6103 随后让两个辅助函数也使用它<a class="ref" href="#s9">[9]</a>。修复后的版本：</p>
+<pre class="code"><code><span class="c">// enhanced-wallet.sol（v1.7.0，修复后），第 214–222 行</span>
+// throw unless the contract is not yet initialized.
+<span class="good">modifier only_uninitialized { if (m_numOwners &gt; 0) throw; _; }</span>
+
+// constructor - just pass on the owner array to the multiowned and
+// the limit to daylimit
+<span class="good">function initWallet(address[] _owners, uint _required, uint _daylimit) only_uninitialized {</span>
+  initDaylimit(_daylimit);
+  initMultiowned(_owners, _required);
+}
+<span class="c">// initMultiowned（第 107 行）和 initDaylimit（第 201 行）也加上了 only_uninitialized</span></code></pre>
+        <p class="code-cap">来源：openethereum/parity-ethereum 仓库 v1.7.0 标签，同一文件。</p>
+        <p>Parity 同时在链上注册表里注销了旧库合约，新建的钱包不会再用到它<a class="ref" href="#s2">[2]</a>。已经部署的钱包没法这样修：库合约的地址写死在它们的字节码里，只能由 WHG 先把资金转出，再逐个部署替换合约<a class="ref" href="#s14">[14]</a>。</p>
+
+        <h3>11 月：库合约自己从未初始化</h3>
+        <p><code>only_uninitialized</code> 检查的是 <code>m_numOwners</code>，而这个变量从哪份存储里读，取决于代码在哪个合约的上下文里执行。经由钱包调用时，<code>delegatecall</code> 读的是钱包自己的存储，已初始化的钱包会被拒绝，7 月的修复针对的就是这种情况。</p>
+        <p>库合约本身也是一份独立部署的合约，有自己的存储。7 月 20 日部署之后，从来没有人直接对它调用过 <code>initWallet</code>，所以它自己的 <code>m_numOwners</code> 一直是 0。任何人直接调用库合约的 <code>initWallet</code>，都能通过检查<a class="ref" href="#s12">[12]</a><a class="ref" href="#s3">[3]</a>。Parity 的事后报告解释，为了尽量贴近经过审计的原版合约，库合约保留了普通钱包的全部功能，所以它需要初始化，也保留了用来“退役”钱包的自毁函数 <code>kill</code><a class="ref" href="#s5">[5]</a>。</p>
+        <p><code>kill</code> 需要多签确认，但需要几个确认，是初始化时由调用者自己填的。issue #6995 下的分析指出，devops199 初始化库合约时，把所需签名数填成了 0<a class="ref" href="#s10">[10]</a>。确认逻辑把“剩余所需确认数不超过 1”当作已经满足，于是第一次调用 <code>kill</code> 就直接执行了：</p>
+<pre class="code"><code><span class="c">// enhanced-wallet.sol（v1.7.0，即 7 月修复后的版本）</span>
+<span class="c">// 第 225–227 行：库合约保留了原版钱包的自毁函数</span>
+<span class="bad">function kill(address _to) onlymanyowners(sha3(msg.data)) external {</span>
+<span class="bad">  suicide(_to);                      <span class="c">// 直接对库合约调用时，删除的是库合约自己的代码</span></span>
+}
+
+<span class="c">// 第 91–94 行：多签修饰符，先调用 confirmAndCheck</span>
+modifier onlymanyowners(bytes32 _operation) {
+  if (confirmAndCheck(_operation))
+    _;
+}
+
+<span class="c">// confirmAndCheck 第 297 行：新操作的“剩余所需确认数”取自 m_required</span>
+pending.yetNeeded = m_required;      <span class="c">// devops199 初始化时 m_required 填的是 0</span>
+<span class="c">// 第 308–309 行</span>
+// ok - check if count is enough to go ahead.
+<span class="bad">if (pending.yetNeeded &lt;= 1) {        <span class="c">// 0 ≤ 1，第一次确认就放行</span></span></code></pre>
+        <p class="code-cap">来源：openethereum/parity-ethereum 仓库 v1.7.0 标签，js/src/contracts/snippets/enhanced-wallet.sol（节选，去掉了缩进）。这几行在 7 月的修复中没有改动。</p>
+        <p>自毁之后，库合约地址上不再有代码，而 587 个钱包的 fallback 仍然把调用转给这个地址。对没有代码的地址做 <code>delegatecall</code>，什么也不会执行<a class="ref" href="#s12">[12]</a>。Parity 的警报写道，这些钱包现在实际上只剩一个记录收款事件的 fallback<a class="ref" href="#s3">[3]</a>：转账、确认、换所有者都做不了。钱包自己的 <code>kill</code> 同样写在库合约里，所以连“销毁钱包、把余额退给所有者”这条路也断了。issue 里有用户试过让三个所有者一起调用 <code>kill</code>，没有任何效果<a class="ref" href="#s10">[10]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 360" role="img" aria-labelledby="pms-f2-t pms-f2-d">
+            <title id="pms-f2-t">11 月：库合约被初始化后自毁</title>
+            <desc id="pms-f2-d">devops199 直接调用库合约的 initWallet。库合约自己的 m_numOwners 为 0，检查通过，devops199 成为库合约的所有者，所需确认数为 0。随后调用 kill，第一次调用就执行了自毁，库合约地址上的代码被清空。587 个钱包的 fallback 仍把调用 delegatecall 到这个地址，但那里已经没有代码，什么也不会执行，ETH 转不出来。</desc>
+            <defs>
+              <marker id="pms-bh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="pms-bh-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="40" width="150" height="64" rx="4"/>
+            <text class="d-t b" x="95" y="67" text-anchor="middle">devops199</text>
+            <text class="d-t s" x="95" y="88" text-anchor="middle">直接调用库合约</text>
+            <rect class="d-box" x="300" y="20" width="190" height="120" rx="4"/>
+            <text class="d-t b" x="395" y="45" text-anchor="middle">WalletLibrary</text>
+            <text class="d-t m" x="395" y="65" text-anchor="middle">0x863d…07b4</text>
+            <text class="d-t s" x="395" y="90" text-anchor="middle">7 月 20 日部署后无人初始化</text>
+            <text class="d-t s" x="395" y="112" text-anchor="middle">自身存储：<tspan class="m">m_numOwners = 0</tspan></text>
+            <rect class="d-box" x="612" y="32" width="150" height="104" rx="4"/>
+            <rect class="d-box" x="606" y="26" width="150" height="104" rx="4"/>
+            <rect class="d-box" x="600" y="20" width="150" height="104" rx="4"/>
+            <text class="d-t b" x="675" y="46" text-anchor="middle">587 个钱包</text>
+            <text class="d-t s" x="675" y="68" text-anchor="middle">库地址写死在</text>
+            <text class="d-t s" x="675" y="86" text-anchor="middle">各自的字节码里</text>
+            <text class="d-t s" x="675" y="108" text-anchor="middle">合计 513,774 ETH</text>
+            <line class="d-line atk" x1="170" y1="58" x2="298" y2="58" marker-end="url(#pms-bh-atk)"/>
+            <text class="d-t atk halo" x="234" y="50" text-anchor="middle">① initWallet()</text>
+            <line class="d-line atk" x1="170" y1="92" x2="298" y2="92" marker-end="url(#pms-bh-atk)"/>
+            <text class="d-t atk halo" x="234" y="84" text-anchor="middle">② kill()</text>
+            <text class="d-t s" x="95" y="130" text-anchor="middle">① 后成为所有者，</text>
+            <text class="d-t s" x="95" y="148" text-anchor="middle">所需确认数为 0</text>
+            <line class="d-line dash" x1="600" y1="75" x2="492" y2="75" marker-end="url(#pms-bh)"/>
+            <text class="d-t s halo" x="546" y="67" text-anchor="middle">delegatecall</text>
+            <line class="d-line atk" x1="395" y1="140" x2="395" y2="198" marker-end="url(#pms-bh-atk)"/>
+            <text class="d-t atk halo" x="405" y="174">③ suicide：代码被清空</text>
+            <rect class="d-box atk" stroke-dasharray="5 4" x="300" y="200" width="190" height="64" rx="4"/>
+            <text class="d-t m" x="395" y="226" text-anchor="middle">0x863d…07b4</text>
+            <text class="d-t s" x="395" y="248" text-anchor="middle">地址上已经没有代码</text>
+            <path class="d-line dash" d="M675,136 V232 H492" marker-end="url(#pms-bh)"/>
+            <text class="d-t halo" x="580" y="220" text-anchor="middle">④ delegatecall 到空地址</text>
+            <text class="d-t s" x="580" y="254" text-anchor="middle">什么也不执行，ETH 转不出去</text>
+            <rect class="d-box soft" x="40" y="284" width="700" height="62" rx="4"/>
+            <text class="d-t s" x="390" y="308" text-anchor="middle">7 月的修复：<tspan class="m">only_uninitialized</tspan> 只看当前执行环境里的 <tspan class="m">m_numOwners</tspan>。</text>
+            <text class="d-t s" x="390" y="330" text-anchor="middle">经由钱包调用读的是钱包的存储，会被拒绝；直接调用库合约读的是库合约自己的存储，从未初始化，于是放行。</text>
+          </svg>
+          </div>
+          <figcaption>图 2：11 月的两笔调用。红色是 devops199 的操作和直接后果。库合约部署时只要调用一次 <code>initWallet</code>，或者不保留 <code>kill</code>，这两步都走不通。</figcaption>
+        </figure>
+
+        <h3>两次事故的异同</h3>
+        <div class="compare">
+          <div>
+            <h4>7 月 19 日：被盗</h4>
+            <p>对象是已经在用的钱包，调用经 fallback 转给库合约。用到的函数是 <code>initWallet</code> 加 <code>execute</code>。3 个钱包被转空，共 153,037 枚 ETH；其余钱包里的资金被白帽抢先转出，后来归还<a class="ref" href="#s2">[2]</a><a class="ref" href="#s31">[31]</a>。</p>
+          </div>
+          <div>
+            <h4>11 月 6 日：冻结</h4>
+            <p>对象是库合约本身，直接调用。用到的函数是 <code>initWallet</code> 加 <code>kill</code>。库合约的代码被删除，587 个钱包里共 513,774.16 枚 ETH 转不出来，没有人从中获利<a class="ref" href="#s4">[4]</a>。</p>
+          </div>
+        </div>
+        <h3>哪一步本可以拦住</h3>
+        <p>两次事故是同一个问题：初始化函数谁都能调用。7 月的补丁默认“未初始化”只会发生在刚创建的钱包上，没有想到库合约自己也处在这个状态。按时间顺序，至少有四处可以拦住：</p>
+        <ol>
+          <li>拆分合约时，让 <code>initWallet</code> 检查自己是否已经初始化过，或者不让它被外部调用。Hacking, Distributed 指出，做到其中任何一项，7 月的攻击都不会发生<a class="ref" href="#s13">[13]</a>。当晚的 PR #6102 采用了前一种，同时把两个辅助函数改成 <code>internal</code><a class="ref" href="#s9">[9]</a>。</li>
+          <li>7 月部署新库合约后，立刻对它自己调用一次 <code>initWallet</code>，或者去掉库合约里的 <code>kill</code>。Parity 的事后报告承认，这两件事做到任何一件，11 月的事故都能避免<a class="ref" href="#s5">[5]</a>。</li>
+          <li>8 月那条“部署时就初始化”的建议，本该当作安全修复尽快单独部署，而不是等下一次例行更新<a class="ref" href="#s5">[5]</a>。</li>
+          <li>让库合约的每个改状态函数先检查当前地址是不是库合约自己，只允许经由 <code>delegatecall</code> 调用。这是 OpenZeppelin 在 11 月提出的办法<a class="ref" href="#s12">[12]</a>。</li>
+        </ol>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <h3>7 月 19 日：两笔交易接管一个钱包</h3>
+        <ol class="steps">
+          <li><b>选定目标</b>攻击者挑了三个余额很大的多签钱包，分别属于刚完成 ICO 的 æternity、Swarm City 和 Edgeless<a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>改写所有者</b>对每个钱包调用 <code>initWallet</code>，把所有者换成自己。OpenZeppelin 解码的那一笔里，所有者只填了攻击者，确认数填 0，每日限额填成钱包的全部余额<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>转走余额</b>调用 <code>execute</code>，把余额全部转到攻击者地址 <span class="addr">0xb3764761e297d6f121e79c32a65829cd1ddb4d32</span>。三个钱包合计被转走 153,037 枚 ETH<a class="ref" href="#s11">[11]</a><a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>被发现</b>Swarm City 的团队发现钱包被清空，通知了以太坊基金会和多个开发团队，很快确定问题出在 Parity 多签代码上<a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>白帽抢先</b>漏洞利用非常简单，攻击者随时可能继续。WHG 决定用同样的两步把能找到的易受攻击钱包全部抢先转空，资金进入地址 <span class="addr">0x1dba1131000664b884a1ba238464159892252d3a</span>，所需 gas 打算用当年 <a href="2016-the-dao.html">The DAO</a> 救援收到的捐款支付<a class="ref" href="#s14">[14]</a>。另有一名不属于 WHG 的白帽独立转出了将近 150 万美元的资产<a class="ref" href="#s14">[14]</a>。</li>
+        </ol>
+        <h3>11 月 6 日：两笔调用，库合约消失</h3>
+        <ol class="steps">
+          <li><b>成为库合约的所有者</b>devops199 直接对库合约 <span class="addr">0x863df6bfa4469f3ead0be8f9f2aae51c91a907b4</span> 调用 <code>initWallet</code>。库合约自己的所有者数量是 0，检查通过；所需签名数填的是 0<a class="ref" href="#s5">[5]</a><a class="ref" href="#s10">[10]</a>。</li>
+          <li><b>自毁</b>调用 <code>kill</code>。确认数为 0，第一次调用就执行了 <code>suicide</code>，库合约的代码被删除<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>公开</b>UTC 15:54，GitHub 上出现 issue #6995，写道“I accidentally killed it.”。Parity 的事后报告说，发帖的 devops199 据称就是触发者<a class="ref" href="#s10">[10]</a><a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>补充说明</b>第二天，devops199 在同一个 issue 里说：自己本来不是库合约的所有者，因为它没有初始化，才能把自己设成所有者；并贴出了依赖这个库合约的钱包清单<a class="ref" href="#s10">[10]</a>。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">意外还是故意，说法不一</span>
+          <p>devops199 自称是意外。Parity 的安全警报也写“据目前了解是意外触发”；一周后的事后报告开头却写这名用户“决定利用这个漏洞”，后文又说 devops199“选择”初始化库合约、“选择”把它杀死<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。《卫报》采信了意外的说法，说此人删掉代码是想挽回局面<a class="ref" href="#s21">[21]</a>。这个 GitHub 账户后来已经注销，现在显示为 ghost<a class="ref" href="#s10">[10]</a>。本页查到的公开资料里，没有执法机构立案或认定其身份的报道。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <h3>7 月：被盗与被保管</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">ETH</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>æternity</td><td class="n">约 82,189</td><td>项目方确认被盗约 8.2 万枚<a class="ref" href="#s17">[17]</a>；精确数来自 OpenZeppelin 解码的那笔交易<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>Swarm City</td><td class="n">44,055</td><td>项目方声明<a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>Edgeless</td><td class="n">约 26,793</td><td>Hacking, Distributed 举例的那笔攻击交易的金额<a class="ref" href="#s13">[13]</a>；受害方后来写的是约 2.6 万枚<a class="ref" href="#s31">[31]</a></td></tr>
+              <tr><td>被盗合计</td><td class="n">153,037</td><td>上面三个数相加正好等于这个总数<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>WHG 保管后归还</td><td class="n">377,105</td><td>另有价值约 7,800 万美元的代币，约一半是 BAT 和 ICONOMI<a class="ref" href="#s13">[13]</a><a class="ref" href="#s31">[31]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>表中三个项目的分项是本页的对照：OpenZeppelin 和 Hacking, Distributed 各自解码的那笔交易金额，分别与 æternity 和 Edgeless 公布的数字相符，三项之和又等于公认的总数。受害方 2021 年的文章给出的分项是 82k、44k、26k<a class="ref" href="#s31">[31]</a>。</p>
+        <p>攻击者拿到的 153,037 枚 ETH 大致经过了这几步：</p>
+        <ol class="flow">
+          <li class="atk"><b>攻击者地址</b>收到全部 153,037 枚 ETH</li>
+          <li class="atk"><b>事发几天内</b>经 Changelly 小额换出约 50 枚<a class="ref" href="#s13">[13]</a></li>
+          <li class="atk"><b>多年不动</b>分散在 7 个地址，2021 年 10 月合计仍有约 13.9 万枚<a class="ref" href="#s30">[30]</a><a class="ref" href="#s31">[31]</a></li>
+          <li class="atk"><b>2021 年起</b>约 1.15 万枚转入 8 家交易所，Changelly 收到最多，4,605 枚<a class="ref" href="#s31">[31]</a></li>
+        </ol>
+        <p>受害方随后提出的悬赏和交易所的反应，见“后续处置”。</p>
+        <p>WHG 一侧，7 月 22 日部署了参数和原钱包相同、去掉了漏洞的替换钱包，公布新旧地址对照表，请各方先用不到一美分的金额测试，再接收价值约 1.8 亿美元的代币和 ETH<a class="ref" href="#s14">[14]</a>。受害方 2021 年的文章写道，白帽最终向被预防性转空的钱包归还了 377,105 枚 ETH<a class="ref" href="#s31">[31]</a>。</p>
+
+        <h3>11 月：没有被转走，只是转不出来</h3>
+        <p>11 月冻结的 ETH 一枚也没有离开原来的钱包，只是这些钱包再也无法执行转账。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>持有方</th><th class="n">冻结的 ETH</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>全部受影响的钱包</td><td class="n">513,774.16</td><td>587 个钱包，另有一些代币；Parity 的统计<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>Web3 Foundation</td><td class="n">约 306,000</td><td>Polkadot 的募资<a class="ref" href="#s12">[12]</a><a class="ref" href="#s29">[29]</a></td></tr>
+              <tr><td>Cappasity</td><td class="n">3,264</td><td>一家创业公司，钱包当时正用于募资<a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>其余钱包</td><td class="n">约 204,500</td><td>由前三行相减得出</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>冻结金额折成美元，各方的数字差别很大。事发当天，OpenZeppelin 和 BBC 的低估计是 1.5 亿美元；CNBC 引用安全研究者 Matt Suiche 的估算，称超过 2.8 亿美元；《卫报》标题写的是 3 亿美元；Ars Technica 一度报道为 100 万枚 ETH<a class="ref" href="#s12">[12]</a><a class="ref" href="#s22">[22]</a><a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a><a class="ref" href="#s19">[19]</a>。Parity 称这些数字是“推测”<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。Parity 公布精确数字后，Business Insider 按当时价格折算为约 <span class="dispute">1.62 亿美元</span><a class="ref" href="#s23">[23]</a>；到 2018 年 4 月 ETH 涨价，CCN 把同一笔钱写成约 3.3 亿美元<a class="ref" href="#s29">[29]</a>。本页按事发时的价格计算损失。</p>
+        <ol class="flow">
+          <li class="atk"><b>2017-11-06</b>库合约自毁，代码被删除</li>
+          <li class="atk"><b>587 个钱包</b>只能收款，不能转出</li>
+          <li class="doubt"><b>EIP-999</b>恢复提案没有通过，2020 年撤回</li>
+          <li class="doubt"><b>截至 2025 年</b>Web3 Foundation 的约 30.6 万枚仍在原处<a class="ref" href="#s32">[32]</a></li>
+        </ol>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>受害的是 ICO 项目的金库</h3>
+        <p>两次事故打在同一类钱包上，也就打在同一类人身上。Swarm City 钱包里的 44,055 枚 ETH 全部被盗<a class="ref" href="#s15">[15]</a>。Edgeless 联合创始人 Tomas Draksas 2021 年说，被盗发生在项目刚上线时，此后一直限制着项目的规模<a class="ref" href="#s30">[30]</a>。11 月的冻结锁住了 Web3 Foundation 为 Polkadot 募集的资金中相当大的一部分<a class="ref" href="#s38">[38]</a>，较小的项目如 Cappasity 也有 3,264 枚 ETH 被锁<a class="ref" href="#s23">[23]</a>。</p>
+        <h3>Parity 的调整</h3>
+        <p>11 月事故后，Parity 停止在钱包界面里部署多签钱包，转而默认使用 WHG 的合约，并委托外部机构审计密钥生成、密码管理、签名和自动更新等敏感代码<a class="ref" href="#s5">[5]</a><a class="ref" href="#s10">[10]</a>。事后报告还建议，像航空和医疗行业那样，每次部署合约都按检查清单走，并持续比对链上合约和仓库里最近一次审查过的版本<a class="ref" href="#s5">[5]</a>。2018 年 4 月，Parity 宣布多签钱包已经“退役”，写合约时改用更严格的测试、部署流程和第三方审计要求，审计合作方是 Trail of Bits<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>Solidity 的默认可见性</h3>
+        <p>两份事后分析都把一部分责任归到 Solidity 的设计上：函数不写可见性就默认 <code>public</code>。Parity 建议改成默认 <code>private</code>，或者干脆禁止既没有访问修饰符也没有看守修饰符的函数；Hacking, Distributed 提出了同样的建议<a class="ref" href="#s2">[2]</a><a class="ref" href="#s13">[13]</a>。Solidity 0.4.17（2017 年 9 月）开始对没写可见性的函数发出警告，0.5.0（2018 年 11 月）起必须显式写明<a class="ref" href="#s34">[34]</a>。</p>
+        <h3>“未初始化的合约被接管”反复出现</h3>
+        <p>Parity 的“桩合约加库合约”，就是后来“代理加实现合约”模式的早期形态：代理保存状态，实现合约提供逻辑，构造函数换成一个可以从外部调用的初始化函数。实现合约自己没被初始化、可以被别人接管，这个问题后来多次重演。OpenZeppelin 的合约库文档专门警告：未初始化的合约可能被攻击者接管，这既适用于代理，也适用于它背后的实现合约，并可能波及代理<a class="ref" href="#s35">[35]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th class="n">时间</th><th>问题</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td>OpenZeppelin <code>UUPSUpgradeable</code></td><td class="n">2021-09</td><td>未初始化的实现合约可被他人初始化，成为升级管理员后让实现合约自毁，所有依赖它的代理随之失效</td><td>披露前 OpenZeppelin 抢先初始化了 150 多个这类合约，4.3.2 版修复<a class="ref" href="#s36">[36]</a></td></tr>
+              <tr><td>Wormhole 以太坊核心合约</td><td class="n">2022-02</td><td>实现合约未初始化，存在被自毁、锁住用户资金的风险</td><td>白帽报告，当天修复，支付 1,000 万美元赏金，无资金损失<a class="ref" href="#s37">[37]</a></td></tr>
+              <tr><td><a href="2022-nomad-bridge.html">Nomad 跨链桥</a></td><td class="n">2022-08</td><td>一次升级把“可信根”初始化成 0x00，未经证明的消息被当作有效</td><td>桥在几小时内被搬空</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Wormhole 这次是 2 月 24 日报告的未初始化问题，和同月早些时候 <a href="2022-wormhole.html">Wormhole 被盗</a>是两个不同的漏洞。Nomad 的方向与 Parity 相反：不是没有初始化，而是初始化写进了一个错误的值。</p>
+        <h3><code>SELFDESTRUCT</code> 被削弱</h3>
+        <p>2024 年 3 月的 Dencun 升级包含 EIP-6780：除非在创建合约的同一笔交易里调用，<code>SELFDESTRUCT</code> 只转走余额，不再删除代码和存储<a class="ref" href="#s33">[33]</a>。按新规则，一个早已部署的库合约已经不可能被删掉。这项改动主要是为 Verkle 树做准备<a class="ref" href="#s33">[33]</a>，并不是针对 Parity 的补丁，也不会让 2017 年被删除的代码回来。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>从 EIP-156 到 EIP-999</h3>
+        <p>11 月 13 日，Parity 说团队在找一个能被广泛接受的解冻方案，并提到 Vitalik Buterin 早先提出的 EIP-156<a class="ref" href="#s4">[4]</a>。12 月的文章承认，EIP-156 只能让私钥持有者取回几类卡住的 ETH，覆盖不了这次的情况：被冻结的钱包合约自己还有代码，没了的只是库合约，而且它取不回 ETH 以外的代币。Parity 另外列了两条路：针对具体地址的 ETH 和代币恢复；修改协议，允许已自毁的合约复活<a class="ref" href="#s6">[6]</a>。后一类改动 EVM 语义的提案，后来被认为副作用太大<a class="ref" href="#s24">[24]</a>。</p>
+        <p>2018 年 4 月，Afri Schoedon 提交 EIP-999。它不改 EVM 的规则，只在某个硬分叉区块做一次性的状态变更：把库合约地址上的代码换成一个修补过的版本，新版本既不能被认领，也不能被杀死；ETH 总量不变，也不转移任何资产<a class="ref" href="#s24">[24]</a><a class="ref" href="#s25">[25]</a>。</p>
+        <h3>为什么没有通过</h3>
+        <div class="compare">
+          <div>
+            <h4>支持的理由</h4>
+            <p>资金归属没有争议：ETH 一直在受害者自己的钱包里，恢复只是把被删掉的代码放回原处，不动任何人的余额。Vitalik 在核心开发者会议上也说，技术上这个提案风险低，能达到目的<a class="ref" href="#s24">[24]</a><a class="ref" href="#s28">[28]</a>。</p>
+          </div>
+          <div>
+            <h4>反对的理由</h4>
+            <p>道德风险和先例：为一家公司的一个合约改写链上状态，等于默许“大到不能倒”，以后每次事故都会有人来要同样的待遇。也有人认为，合约有多不可变，取决于它自己的设计，Parity 的钱包本来就写死了一个后来被删除的库地址。还有分裂的风险：有争议的硬分叉可能像 2016 年那样再分出一条链<a class="ref" href="#s26">[26]</a><a class="ref" href="#s28">[28]</a>。</p>
+          </div>
+        </div>
+        <p>etherchain 的代币投票里，按投票地址的 ETH 余额加权，反对 55.0%，赞成 39.4%<a class="ref" href="#s27">[27]</a>。EIP-999 的作者在讨论帖里说自己不认可这次投票<a class="ref" href="#s26">[26]</a>。投票的公平性也受到质疑。CCN 转述社交媒体上的批评：合约的创建者可以替合约里的资金投票，Polkadot 因此能用被冻结的 30.6 万枚 ETH 投赞成票<a class="ref" href="#s29">[29]</a>；Vitalik 在会上指出，这种签名投票让合约钱包和硬件钱包的持有者很难参与，一次代币投票本身不能算社区共识<a class="ref" href="#s28">[28]</a>。</p>
+        <p>4 月 20 日的核心开发者会议上，Vitalik 认为这更多是社会层面的取舍，应当交给社区讨论；除非有很高的把握最终会被采纳，比如 75% 以上，否则不值得投入开发。Nick Johnson 说，如果导致分裂，代价会远超好处。Péter Szilágyi 认为 Parity 团队自己就握有大量 ETH，会左右投票结果。会议没有结论<a class="ref" href="#s28">[28]</a>。4 月 26 日，Parity 发表声明，向至今无法取用 ETH 的用户道歉，并表示无意分裂以太坊链<a class="ref" href="#s7">[7]</a>。此后 EIP-999 没有进入任何一次硬分叉。2019 年 12 月，作者提交撤回请求，理由只有一句：不再有意恢复这个地址上的代码<a class="ref" href="#s25">[25]</a>。</p>
+        <div class="note">
+          <span class="h">和 The DAO 有什么不同</span>
+          <p><a href="2016-the-dao.html">The DAO</a> 的硬分叉，是在锁定期内把钱从攻击者手里拿回来。这一次没有获利的一方，钱一直在受害者自己的钱包里，“恢复”实际上是为一个项目改写一份特定合约。核心开发者会议上，Piper Merriam 认为不该拿 The DAO 类比，理由是 The DAO 是网络的安全问题；Vitalik 不同意这个定性<a class="ref" href="#s28">[28]</a>。Alex Van de Sande 在同一次会议上说，The DAO 分叉当时的共识比这次清楚，仍然留下了一条至今还在运行的链，所以这次分裂几乎无法避免<a class="ref" href="#s28">[28]</a>。</p>
+        </div>
+        <h3>7 月的攻击者</h3>
+        <p>7 月的攻击者至今没有被公开认定。Hacking, Distributed 在事发三天后就判断，这笔钱大概率追不回：The DAO 的资金有锁定期，社区有时间讨论分叉；这一次攻击者立刻拿到了 ETH，只要找到肯收的交易所，或者换成 ZEC，就能保住所得。文章发出时，攻击者已经通过 Changelly 换出约 50 枚 ETH<a class="ref" href="#s13">[13]</a>。</p>
+        <p>此后资金大多没有动，直到 2021 年 6 月，受害方发现攻击者开始把部分 ETH 转入交易所<a class="ref" href="#s30">[30]</a>。同年 10 月，三个项目联合发文，点名 8 家收到赃款的交易所，要求冻结并归还；同时向攻击者提出，归还 135,000 枚 ETH 就不再追究，剩下的约一成按当时价格约值 5,800 万美元<a class="ref" href="#s31">[31]</a><a class="ref" href="#s30">[30]</a>。The Defiant 报道，有交易所已经初步同意归还，正在做法律和身份核查<a class="ref" href="#s30">[30]</a>。本页没有查到攻击者接受条件、交易所实际归还或执法机构立案的后续公开报道。</p>
+        <h3>冻结资金的现状</h3>
+        <p>EIP-999 撤回后，再没有获得广泛支持的恢复方案。2025 年 7 月，Coinbase 产品负责人 Conor Grogan 统计约 91.2 万枚 ETH 已被证实永久无法取用，报道列出的几笔大额损失中，排在第一位的就是 Web3 Foundation 用过的 Parity 多签合约里的约 30.6 万枚<a class="ref" href="#s32">[32]</a>。本页没有找到这笔钱此后发生变化的报道。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>初始化函数必须只能执行一次，并且和部署放在同一笔交易里完成。部署和初始化之间留出的空档，就是 11 月的事故窗口，前后有三个半月。</li>
+            <li>库合约、代理背后的实现合约也有自己的存储，部署时就要锁住：在构造函数里调用 OpenZeppelin 的 <code>_disableInitializers()</code><a class="ref" href="#s35">[35]</a>，或者让每个改状态的函数检查自己是不是经由 <code>delegatecall</code> 被调用。</li>
+            <li>fallback 不要把任意调用原样转给库合约，只转发明确列出的函数<a class="ref" href="#s11">[11]</a>。</li>
+            <li>不要在被大量合约依赖的代码里留自毁这类全局开关。EIP-6780 之后 <code>SELFDESTRUCT</code> 仍会转走余额，而且已被标为弃用，新合约不该再用<a class="ref" href="#s33">[33]</a>。</li>
+            <li>每个函数都写明可见性。今天的编译器会强制要求写，但 <code>internal</code>、<code>external</code>、<code>public</code> 选错了一样危险。</li>
+          </ul>
+        </div>
+<pre class="code"><code><span class="c">// 示意：用今天的写法，一份给代理共用的逻辑合约至少要做到这几点</span>
+contract WalletLogic is Initializable {
+    address private immutable self = address(this); <span class="c">// 部署时记下自己的地址</span>
+
+<span class="good">    constructor() { _disableInitializers(); }  <span class="c">// 实现合约自己永远不能被初始化</span></span>
+
+    modifier onlyDelegateCall() {
+        <span class="c">// 直接调用实现合约时，address(this) 就是 self，拒绝</span>
+<span class="good">        require(address(this) != self, "direct call");</span>
+        _;
+    }
+
+    function initialize(address[] calldata owners, uint256 required)
+        external initializer onlyDelegateCall   <span class="c">// 只能经由代理调用，且只能一次</span>
+    { /* …… */ }
+
+    <span class="c">// 不提供任何自毁函数</span>
+}</code></pre>
+        <p class="code-cap">示意代码，不是 Parity 的修复。<code>Initializable</code> 和 <code>_disableInitializers()</code> 来自 OpenZeppelin Contracts；<code>onlyDelegateCall</code> 对应 OpenZeppelin 2017 年 11 月提出的“检查当前地址是不是库合约自己”，以及它在 2021 年 UUPS 修复中加的 <code>onlyProxy</code><a class="ref" href="#s12">[12]</a><a class="ref" href="#s36">[36]</a>。</p>
+        <div class="note lesson">
+          <span class="h">给开发团队</span>
+          <ul>
+            <li>审查强度按改动内容定，不按 PR 标题定。任何改动 <code>.sol</code> 文件的提交都要由合约专家审查；Parity 的库合约改造夹在界面改动里，只审了一次<a class="ref" href="#s2">[2]</a>。</li>
+            <li>涉及已部署合约安全的建议，要当作修复处理，不能当作便利性改进。8 月那条“部署时就初始化”的建议被归为后者，三个月后出了事<a class="ref" href="#s5">[5]</a>。</li>
+            <li>部署要有检查清单，部署后要持续核对：链上的代码和关键状态（所有者、是否已初始化）是否和审查过的版本一致。</li>
+            <li>修一个漏洞时，把通往同一个函数的所有调用路径都过一遍。7 月的修复堵住了“经由钱包调用”，没有堵住“直接调用库合约”。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用多签保管资金的项目方</span>
+          <ul>
+            <li>多签只保证“谁能批准转账”，不保证钱包依赖的外部代码没有问题。使用前要弄清钱包会 <code>delegatecall</code> 到哪份合约、那份合约由谁控制、能不能被销毁或升级。</li>
+            <li>不要把大额资金全部放在依赖同一份实现合约的钱包里。11 月的 587 个钱包，是因为共用一个库合约而一起失效的。</li>
+            <li>不要指望出事后靠协议层面救援。EIP-999 的结局说明，为个别项目改写链上状态，很难再得到社区的支持。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Parity Technologies，《Security Alert》（多签钱包漏洞警报，含 2017-07-20 00:26 CEST 的更新），页面日期 2017-07-21。<a href="https://web.archive.org/web/20180525125413/https://paritytech.io/security-alert/">web.archive.org</a></li>
+          <li id="s2">Parity Technologies，《The Multi-sig Hack: A Postmortem》，2017-07-20。<a href="https://web.archive.org/web/20190121155201/https://www.parity.io/the-multi-sig-hack-a-postmortem/">web.archive.org</a></li>
+          <li id="s3">Parity Technologies，《Security Alert》（多签钱包库合约），2017-11-08。<a href="https://web.archive.org/web/20181229221235/https://www.parity.io/security-alert-2/">web.archive.org</a></li>
+          <li id="s4">Parity Technologies，《Parity Technologies Multi-Sig Wallet Issue Update》，2017-11-13。<a href="https://web.archive.org/web/20190121153000/https://www.parity.io/parity-technologies-multi-sig-wallet-issue-update/">web.archive.org</a></li>
+          <li id="s5">Parity Technologies，《A Postmortem on the Parity Multi-Sig Library Self-Destruct》，2017-11-15。<a href="https://web.archive.org/web/20181129070729/https://www.parity.io/a-postmortem-on-the-parity-multi-sig-library-self-destruct/">web.archive.org</a></li>
+          <li id="s6">Parity Technologies，《On Classes of Stuck Ether and Potential Solutions》，2017-12-11。<a href="https://web.archive.org/web/20190121160222/https://www.parity.io/on-classes-of-stuck-ether-and-potential-solutions/">web.archive.org</a></li>
+          <li id="s7">Parity Technologies，《Our commitment to Ethereum and a decentralised future》，2018-04-26。<a href="https://web.archive.org/web/20190121160217/https://www.parity.io/our-commitment-to-ethereum-and-a-decentralised-future/">web.archive.org</a></li>
+          <li id="s8">Parity 源码，openethereum/parity-ethereum 仓库 js/src/contracts/snippets/enhanced-wallet.sol，v1.6.9 标签（修复前）与 v1.7.0 标签（7 月修复后）。<a href="https://github.com/openethereum/parity-ethereum/blob/v1.6.9/js/src/contracts/snippets/enhanced-wallet.sol">v1.6.9</a> · <a href="https://github.com/openethereum/parity-ethereum/blob/v1.7.0/js/src/contracts/snippets/enhanced-wallet.sol">v1.7.0</a></li>
+          <li id="s9">openethereum/parity-ethereum 的 PR：#3773《Lower gas usage for creating a Multisig Wallet》（2016-12-09 合并）；#6102《Fix initialisation bug》、#6103《update wallet library modifiers》、#6104/#6105 回移（2017-07-19 合并）；#6108《Update wallet library binaries》（2017-07-20 合并）。<a href="https://github.com/openethereum/parity-ethereum/pull/3773">#3773</a> · <a href="https://github.com/openethereum/parity-ethereum/pull/6102">#6102</a> · <a href="https://github.com/openethereum/parity-ethereum/pull/6103">#6103</a> · <a href="https://github.com/openethereum/parity-ethereum/pull/6104">#6104</a> · <a href="https://github.com/openethereum/parity-ethereum/pull/6108">#6108</a></li>
+          <li id="s10">openethereum/parity-ethereum issue #6995《anyone can kill your contract》及其评论，2017-11-06 起。<a href="https://github.com/openethereum/parity-ethereum/issues/6995">github.com</a></li>
+          <li id="s11">Santiago Palladino（OpenZeppelin），《The Parity Wallet Hack Explained》，2017-07-19。<a href="https://www.openzeppelin.com/news/on-the-parity-wallet-multisig-hack-405a8c12e8f7">openzeppelin.com</a></li>
+          <li id="s12">Santiago Palladino（OpenZeppelin），《The Parity Wallet Hack Reloaded》，2017-11-07。<a href="https://www.openzeppelin.com/news/parity-wallet-hack-reloaded">openzeppelin.com</a></li>
+          <li id="s13">Lorenz Breidenbach、Phil Daian、Ari Juels、Emin Gün Sirer，《An In-Depth Look at the Parity Multisig Bug》，Hacking, Distributed，2017-07-22。<a href="https://web.archive.org/web/20171229084932/http://hackingdistributed.com/2017/07/22/deep-dive-parity-bug/">web.archive.org</a></li>
+          <li id="s14">White Hat Group（Reddit 用户 jbaylina 发布），《A Modified Version of a Common Multisig Had A Vulnerability - The WHG Took Action &amp; Will Return the Funds》，2017-07-19；《The Replacement Multisig Wallets have been Deployed by the WHG and are Ready for User Verification》，2017-07-22。<a href="https://web.archive.org/web/20170723060415/https://www.reddit.com/r/ethereum/comments/6obofq/a_modified_version_of_a_common_multisig_had_a/">第一篇</a> · <a href="https://web.archive.org/web/20230607080419/https://www.reddit.com/r/ethereum/comments/6owvor/the_replacement_multisig_wallets_have_been/">第二篇</a></li>
+          <li id="s15">Matthew Carano（Swarm City），《Parity Multisig Wallet Exploit Hits Swarm City Funds — Statement By The Swarm City Core Team》，2017-07-19。<a href="https://web.archive.org/web/20230108091504/https://press.swarm.city/parity-multisig-wallet-exploit-hits-swarm-city-funds-statement-by-the-swarm-city-core-team-d1f3929b4e4e">web.archive.org</a></li>
+          <li id="s16">Wolfie Zhao，《$30 Million: Ether Reported Stolen Due to Parity Wallet Breach》，CoinDesk，2017-07-19。<a href="https://web.archive.org/web/20220917014105/https://www.coindesk.com/markets/2017/07/19/30-million-ether-reported-stolen-due-to-parity-wallet-breach/">web.archive.org</a></li>
+          <li id="s17">Luke Graham，《$32 million worth of digital currency ether stolen by hackers》，CNBC，2017-07-20。<a href="https://www.cnbc.com/2017/07/20/32-million-worth-of-digital-currency-ether-stolen-by-hackers.html">cnbc.com</a></li>
+          <li id="s18">Catalin Cimpanu，《Hacker Uses Parity Wallet Vulnerability to Steal $30 Million Worth of Ethereum》，BleepingComputer，2017-07-19。<a href="https://www.bleepingcomputer.com/news/security/hacker-uses-parity-wallet-vulnerability-to-steal-30-million-worth-of-ethereum/">bleepingcomputer.com</a></li>
+          <li id="s19">Sean Gallagher，《With deletion of one wallet, $280M in Ethereum wallets gets frozen》，Ars Technica，2017-11-07。<a href="https://arstechnica.com/information-technology/2017/11/with-deletion-of-one-wallet-280-m-in-ethereum-wallets-gets-frozen/">arstechnica.com</a></li>
+          <li id="s20">Ryan Browne，《'Accidental' bug may have frozen $280 million worth of digital coin ether in a cryptocurrency wallet》，CNBC，2017-11-08。<a href="https://www.cnbc.com/2017/11/08/accidental-bug-may-have-frozen-280-worth-of-ether-on-parity-wallet.html">cnbc.com</a></li>
+          <li id="s21">Alex Hern，《'$300m in cryptocurrency' accidentally lost forever due to bug》，The Guardian，2017-11-08。<a href="https://www.theguardian.com/technology/2017/nov/08/cryptocurrency-300m-dollars-stolen-bug-ether">theguardian.com</a></li>
+          <li id="s22">BBC News，《Code bug freezes $150m of Ethereum crypto-cash》，2017-11-09。<a href="https://www.bbc.com/news/technology-41928147">bbc.com</a></li>
+          <li id="s23">Becky Peterson，《The amount of ether frozen in digital wallets is worth $162 million — which is less than initially feared》，Business Insider，2017-11-13。<a href="https://www.businessinsider.com/ethereum-price-parity-hack-bug-fork-2017-11">businessinsider.com</a></li>
+          <li id="s24">Afri Schoedon，《EIP-999: Restore Contract Code at 0x863DF6BFa4469f3ead0bE8f9F2AAE51c91A907b4》，创建于 2018-04-04，状态 Withdrawn。<a href="https://eips.ethereum.org/EIPS/eip-999">eips.ethereum.org</a></li>
+          <li id="s25">ethereum/EIPs 的 PR：#999（2018-04-15 提交，04-16 合并为草案）；#2441《Withdraw EIP-999》（2019-12-17 提交，2020-01-27 合并）。<a href="https://github.com/ethereum/EIPs/pull/999">#999</a> · <a href="https://github.com/ethereum/EIPs/pull/2441">#2441</a></li>
+          <li id="s26">Ethereum Magicians 论坛，《EIP-999: Restore Contract Code at 0x863DF6BFa4》讨论帖，2018-04-15 起。<a href="https://ethereum-magicians.org/t/eip-999-restore-contract-code-at-0x863df6bfa4/130">ethereum-magicians.org</a></li>
+          <li id="s27">etherchain.org Coinvote，《Do you support EIP 999》投票结果，2018-04-17 至 04-24。<a href="https://web.archive.org/web/20181226162020/https://www.etherchain.org/coinvote/poll/35">web.archive.org</a></li>
+          <li id="s28">ethereum/pm 仓库，《Ethereum Core Devs Meeting 37 Notes》，2018-04-20。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%2037.md">github.com</a></li>
+          <li id="s29">Josiah Wilmoth，《$330 Million: EIP-999 Stokes Debate Over ETH Frozen by Parity's Contract Bug》，CCN（Yahoo Finance 转载），2018-04-24。<a href="https://finance.yahoo.com/news/330-million-eip-999-stokes-194329494.html">finance.yahoo.com</a></li>
+          <li id="s30">Brady Dale，《Victims of $30M Parity Wallet Hack Offer Attacker $60M 'Bounty'》，The Defiant，2021-10-20。<a href="https://web.archive.org/web/20240520220655/https://thedefiant.io/news/hacks/parity-wallet-hack-bug-bounty-stolen-eth">web.archive.org</a></li>
+          <li id="s31">Parity Hack Trace（æternity、Swarm City、Edgeless 联合账号），《Parity multisig hack resulting in 153,037 stolen ETH》，2021-08-28；Matthew Carano，《A Message To The Ethereum Community And Parity Multisig Wallet Hacker》，2021-10-20。<a href="https://web.archive.org/web/20230127192230/https://medium.com/parity-hack-trace/parity-hack-and-153-037-stolen-eth-2a7704f59f3b">第一篇</a> · <a href="https://web.archive.org/web/20220128075528/https://medium.com/parity-hack-trace/a-message-to-the-ethereum-community-and-parity-multisig-wallet-hacker-3596bbc4fd38">第二篇</a></li>
+          <li id="s32">CryptoNews（TradingView 转载），《$3.4B in Ethereum Gone Forever – 912K ETH Lost to Irreversible Errors》，2025-07-21。<a href="https://www.tradingview.com/news/cryptonews:01184f9b2094b:0-3-4b-in-ethereum-gone-forever-912k-eth-lost-to-irreversible-errors/">tradingview.com</a></li>
+          <li id="s33">Guillaume Ballet、Vitalik Buterin、Dankrad Feist，《EIP-6780: SELFDESTRUCT only in same transaction》；《EIP-7569: Hardfork Meta - Dencun》（主网激活时间戳 1710338135，即 2024-03-13 13:55:35 UTC）。<a href="https://eips.ethereum.org/EIPS/eip-6780">EIP-6780</a> · <a href="https://eips.ethereum.org/EIPS/eip-7569">EIP-7569</a></li>
+          <li id="s34">Solidity 文档，《Solidity v0.5.0 Breaking Changes》；Solidity Changelog（0.4.17、0.5.0 条目）。<a href="https://docs.soliditylang.org/en/latest/050-breaking-changes.html">docs.soliditylang.org</a> · <a href="https://github.com/ethereum/solidity/blob/develop/Changelog.md">Changelog</a></li>
+          <li id="s35">OpenZeppelin Contracts v5.0.0，contracts/proxy/utils/Initializable.sol 中关于未初始化合约的说明。<a href="https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v5.0.0/contracts/proxy/utils/Initializable.sol">github.com</a></li>
+          <li id="s36">OpenZeppelin，《UUPSUpgradeable Vulnerability Post-mortem》，2021-09-16；安全公告 GHSA-5vp3-v4hc-gx76。<a href="https://forum.openzeppelin.com/t/uupsupgradeable-vulnerability-post-mortem/15680">forum.openzeppelin.com</a> · <a href="https://github.com/OpenZeppelin/openzeppelin-contracts/security/advisories/GHSA-5vp3-v4hc-gx76">GitHub 公告</a></li>
+          <li id="s37">Immunefi，《Wormhole Uninitialized Proxy Bugfix Review》，2022-05-20。<a href="https://web.archive.org/web/20230206075838/https://medium.com/immunefi/wormhole-uninitialized-proxy-bugfix-review-90250c41a43a">web.archive.org</a></li>
+          <li id="s38">维基百科，《Polkadot (blockchain platform)》中 2017 年 ICO 与钱包冻结的段落。<a href="https://en.wikipedia.org/wiki/Polkadot_(blockchain_platform)">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

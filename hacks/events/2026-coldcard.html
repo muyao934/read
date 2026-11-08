@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coldcard 随机数缺陷｜区块链被盗事件编年史</title>
+<meta name="description" content="2026 年 7 月 Coldcard 硬件钱包因 2021 年的一次固件构建错误，种子熵从 128 位降到约 40 位或 72 位，约 1,790 枚 BTC 从 8,000 多个地址被分波次扫走：漏洞代码、为什么所有检查都没拦住、损失口径与修复。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2026-coldcard">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2026 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Coldcard 随机数缺陷</h1>
+    <p class="lede">2026 年 7 月 30 日（UTC）起，用 Coldcard 硬件钱包生成的数千个比特币地址被分几波扫空，到 8 月下旬统计约 1,790 枚 BTC，事发时价值约 1.15 亿美元。设备从来没有被入侵：2021 年 3 月的一次固件改动让种子生成用上了一个只靠芯片编号和计时器初始化的软件伪随机数生成器，攻击者在离线状态下就能把种子算出来。编译、链接和代码审查都没有发现这个问题，它在开源代码里存在了五年多。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Coldcard 的设计是只用主控芯片 STM32 的硬件真随机数发生器（TRNG）生成种子。2021 年 3 月，固件把加密运算迁移到新库 libNgU，种子生成随之改走 libNgU 的随机数接口；由于一个构建配置错误，这个接口实际链接到的是 MicroPython 自带的软件回退生成器 Yasmarang，而它的初始状态只来自芯片编号和时钟寄存器<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a>。编译和链接都没有报错。</p>
+        <p>Coinkite 估计，Mk2、Mk3 上受影响固件生成的种子，有效搜索空间约 40 位；Mk4、Q、Mk5 额外混入了一点安全芯片的随机数，约 72 位，而设计目标是 128 位<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。2026 年 7 月 30 日 01:10 至 01:51（UTC），第一波攻击在 41 分钟里从 1,196 个地址扫走 1,082.65 枚 BTC<a class="ref" href="#s10">[10]</a>。Coinkite 当天发布安全通告和技术说明<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>，次日发布修复固件<a class="ref" href="#s12">[12]</a>；但固件更新改变不了已经生成的种子，此后又有多波次、多个攻击者继续清扫<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</p>
+        <p>Galaxy Research 8 月下旬的统计是：8,865 个地址被盗 1,789.28 枚 BTC，事发时价值约 1.147 亿美元，其中 87% 没有移动过<a class="ref" href="#s15">[15]</a>。被盗的全是单签钱包，没有一笔来自多签<a class="ref" href="#s14">[14]</a>。截至 2026 年 10 月，Coinkite 的正式事后分析仍在准备中<a class="ref" href="#s6">[6]</a>；它在 8 月 20 日称执法机构仍在调查这些盗窃<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Coldcard 是 Coinkite 公司生产的只支持比特币的硬件钱包，型号有 Mk2、Mk3、Mk4、Q 和 Mk5，固件在 GitHub 上开源。Mk4 及以后的型号在主控之外还有两颗安全芯片 SE1 和 SE2<a class="ref" href="#s2">[2]</a>。按 Block 对固件历史的梳理，Mk2、Mk3 在 3.2.2 及以前的固件里直接调用 STM32 的硬件随机数，不受这个问题影响<a class="ref" href="#s7">[7]</a>。</p>
+        <p>2021 年 3 月 17 日发布的 4.0.0 是一次大改：椭圆曲线运算改用 Bitcoin Core 的 libsecp256k1，“所有加密和 BIP39 相关代码都被替换”，新库 libNgU 由开发者 switck 提供<a class="ref" href="#s17">[17]</a>。Coinkite 事后说，选择 libsecp256k1 本身没有问题，“问题在集成”<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Coldcard 允许用户在生成种子时加入掷骰子的结果。受影响的固件会把设备生成的种子与每一次骰子结果一起做哈希；独立、保密地掷了 50 次以上的用户，骰子本身就贡献了至少 128 位熵，不受这次缺陷影响。使用了强 BIP-39 密码短语的钱包，也多了一道独立的屏障<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">Coinkite 与研究者行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2018-05-22</time><div class="ev">MicroPython 为没有硬件 RNG 的芯片加入 Yasmarang 软件回退，提交说明写着“伪随机数生成器并不理想，但暂且这样”<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="key"><time>2021-03</time><div class="ev">Coldcard 固件迁移到 libNgU（3 月 1 日的提交《First pass w/ libNgU》），种子生成改为调用 <code>ngu.random.bytes()</code>；4.0.0 于 3 月 17 日发布，4.0.1 于 3 月 29 日发布<a class="ref" href="#s8">[8]</a><a class="ref" href="#s17">[17]</a>。Coinkite 把受影响范围定为从 4.0.1 开始<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2022-03-11</time><div class="ev">libNgU 加入 <code>reseed()</code>；Mk4 在开机时用它混入安全芯片的随机数<a class="ref" href="#s9">[9]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2026-07 上旬</time><div class="ev">Coinkite 用“最好的 AI 模型之一”审查了代码，没有发现这个缺陷<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk key"><time>2026-07-30</time><div class="ev">01:10–01:51（UTC），第一波攻击在区块 960,183 至 960,191 间从 1,196 个地址扫走 1,082.65 枚 BTC，每笔交易手续费都是 30 sat/vB、没有找零输出<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2026-07-30</time><div class="ev">Coinkite 发布安全通告和技术说明；Block 的比特币工程与安全团队同日发布分析<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2026-07-31</time><div class="ev">修复固件发布：Mk2/Mk3 4.2.0，Mk4/Mk5 5.6.0，Q 1.5.0Q，Edge 版 6.6.0X 和 6.6.0QX<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2026-08-01</time><div class="ev">通告更新：没掷满 50 次骰子、也没有强 BIP-39 密码短语保护的种子，资金处于风险中<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2026-08-02</time><div class="ev">Coinkite 销毁用受影响固件生产的库存，停止发货，并向用户推荐其他厂商的硬件钱包和多签托管服务<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2026-08-03</time><div class="ev">Galaxy 统计三波攻击共盗走约 1,367 枚 BTC（约 8,860 万美元），涉及 4,585 个地址<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="atk"><time>2026-08-04</time><div class="ev">Galaxy 识别出至少 15 个不同的攻击者；同日，200 ETH 被存入 Tornado Cash，64.9 BTC 进入 Wasabi 混币<a class="ref" href="#s13">[13]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2026-08-06</time><div class="ev">Galaxy 认定的最后一个高置信度攻击波次发生在这一天或之前<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2026-08-07</time><div class="ev">Coinkite 因法律上的证据保全义务，暂停按期清除客户资料<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2026-08-20</time><div class="ev">固件 5.6.1、1.5.1Q 发布：新种子必须加入用户自己提供的熵，备用生成器从 Yasmarang 换成 SHA-256 Hash_DRBG<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>2026-08-25</time><div class="ev">Galaxy 统计：8,865 个地址被盗 1,789.28 枚 BTC，87.3% 未移动<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="atk"><time>2026-09-02 至 06</time><div class="ev">第三波的攻击者把 97.09 枚 BTC 经 THORChain 和 CoinJoin 转出，这是这些资金第一次离开原攻击地址<a class="ref" href="#s18">[18]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2026-09-04</time><div class="ev">固件 5.6.2、1.5.2Q 发布，可以显示并独立验证种子生成时设备提供的熵<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def"><time>2026-09-22</time><div class="ev">Galaxy 指出第二波中约四成其实是白帽抢先转移，52.37 枚 BTC 被归集到一个为受害者设立的信托地址<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2026-10-01</time><div class="ev">官方状态页最后更新：当前固件为 5.6.3 和 1.5.3Q，详细的技术事后分析“仍在准备中”<a class="ref" href="#s6">[6]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>Coldcard 生成新钱包时，先取 32 字节随机数，再做一次 SHA-256，作为 24 词助记词的熵。按设计，这 32 字节应该来自 STM32 的硬件 TRNG。问题在于从固件代码到硬件之间的那条调用链：它经过两个子模块（libNgU 和 MicroPython），最后接到了错误的实现上<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 400" role="img" aria-labelledby="cc-t cc-d">
+            <title id="cc-t">Coldcard 种子生成的调用链：设计与实际</title>
+            <desc id="cc-d">固件的 seed.py 调用 libNgU 的 my_random_bytes，它又调用 rng_get 取“芯片随机数”。按设计 rng_get 应接到 STM32 硬件 TRNG，实际却链接到 MicroPython 的 Yasmarang 软件回退，其状态只由芯片编号、SysTick 和 RTC 寄存器初始化。libNgU 再用自己从固定常数开始的 Yasmarang 做一次异或，最后 SHA-256 得到种子。Mk4、Q、Mk5 开机时会用 reseed 把安全芯片随机数的前 4 个字节写进 libNgU 的状态。构建检查用的是 ifndef，宏被定义为 0 时照样通过。</desc>
+            <defs>
+              <marker id="cc-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="cc-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="cc-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <rect class="d-box" x="15" y="20" width="200" height="62" rx="4"/>
+            <text class="d-t b" x="115" y="45" text-anchor="middle">固件 seed.py</text>
+            <text class="d-t s m" x="115" y="67" text-anchor="middle">ngu.random.bytes(32)</text>
+            <rect class="d-box" x="285" y="20" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="390" y="45" text-anchor="middle">libNgU 取随机字节</text>
+            <text class="d-t s m" x="390" y="67" text-anchor="middle">my_random_bytes()</text>
+            <rect class="d-box" x="565" y="20" width="200" height="62" rx="4"/>
+            <text class="d-t b m" x="665" y="45" text-anchor="middle">rng_get()</text>
+            <text class="d-t s" x="665" y="67" text-anchor="middle">由谁提供？</text>
+            <line class="d-line" x1="215" y1="51" x2="283" y2="51" marker-end="url(#cc-ah)"/>
+            <line class="d-line" x1="495" y1="51" x2="563" y2="51" marker-end="url(#cc-ah)"/>
+            <line class="d-line def dash" x1="715" y1="82" x2="715" y2="168" marker-end="url(#cc-ah-def)"/>
+            <text class="d-t s def halo" x="705" y="130" text-anchor="end">设计</text>
+            <path class="d-line atk" d="M615,82 V120 H390 V168" marker-end="url(#cc-ah-atk)"/>
+            <text class="d-t s atk halo" x="500" y="114" text-anchor="middle">实际链接到软件回退</text>
+            <rect class="d-box def" x="575" y="170" width="190" height="62" rx="4"/>
+            <text class="d-t b" x="670" y="195" text-anchor="middle">STM32 硬件 TRNG</text>
+            <text class="d-t s" x="670" y="217" text-anchor="middle">在固件里，但没接上</text>
+            <rect class="d-box atk" x="285" y="170" width="210" height="62" rx="4"/>
+            <text class="d-t b atk" x="390" y="195" text-anchor="middle">Yasmarang 软件回退</text>
+            <text class="d-t s" x="390" y="217" text-anchor="middle">种子来自芯片 ID 和计时器</text>
+            <rect class="d-box doubt" x="15" y="170" width="200" height="62" rx="4"/>
+            <text class="d-t b" x="115" y="195" text-anchor="middle">构建检查没拦住</text>
+            <text class="d-t s" x="115" y="217" text-anchor="middle">宏定义为 0，#ifndef 照样通过</text>
+            <rect class="d-box" x="285" y="276" width="210" height="62" rx="4"/>
+            <text class="d-t b" x="390" y="301" text-anchor="middle">libNgU 再异或一次</text>
+            <text class="d-t s" x="390" y="323" text-anchor="middle">自带 Yasmarang，固定常数起步</text>
+            <rect class="d-box" x="565" y="276" width="200" height="62" rx="4"/>
+            <text class="d-t b" x="665" y="301" text-anchor="middle">32 字节 → SHA-256</text>
+            <text class="d-t s" x="665" y="323" text-anchor="middle">得到种子，熵并未增加</text>
+            <rect class="d-box soft" x="15" y="276" width="200" height="62" rx="4"/>
+            <text class="d-t b" x="115" y="301" text-anchor="middle">Mk4 / Q / Mk5</text>
+            <text class="d-t s" x="115" y="323" text-anchor="middle">开机写入安全芯片的 4 字节</text>
+            <line class="d-line atk" x1="390" y1="232" x2="390" y2="274" marker-end="url(#cc-ah-atk)"/>
+            <line class="d-line atk" x1="495" y1="307" x2="563" y2="307" marker-end="url(#cc-ah-atk)"/>
+            <line class="d-line dash" x1="215" y1="307" x2="283" y2="307" marker-end="url(#cc-ah)"/>
+            <text class="d-t s m halo" x="249" y="299" text-anchor="middle">reseed()</text>
+            <rect class="d-box soft" x="15" y="352" width="750" height="40" rx="4"/>
+            <text class="d-t s" x="390" y="377" text-anchor="middle">两个确定性序列异或，结果仍是确定性的。Coinkite 估计有效搜索空间：Mk2/Mk3 约 40 位，Mk4/Q/Mk5 约 72 位</text>
+          </svg>
+          </div>
+          <figcaption>图 1：蓝色虚线是设计中的路径，红色是实际走的路径。硬件 TRNG 的代码一直在固件二进制里，只是种子生成从未调用到它<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a>。</figcaption>
+        </figure>
+        <p>先看固件这一端。4.0.1 的种子生成代码本身很简单，<code>random.bytes</code> 就是 libNgU 的 <code>ngu.random.bytes</code>：</p>
+<pre class="code"><code><span class="c"># Coldcard/firmware，shared/seed.py（v4.0.1）</span>
+async def make_new_wallet():
+    # Pick a new random seed.
+    await ux_dramatic_pause('Generating...', 4)
+    # always full 24-word (256 bit) entropy
+    seed = random.bytes(32)
+<span class="c">    # 只能发现输出“卡死”的情况；一个确定性的伪随机序列能轻松通过</span>
+    assert len(set(seed)) &gt; 4       # TRNG failure
+    # hash to mitigate possible bias in TRNG
+<span class="c">    # 哈希能消除偏差，但不能增加熵</span>
+    seed = ngu.hash.sha256s(seed)
+
+<span class="c"># shared/random.py（v4.0.1）：注释写着“使用密码学级别的随机数”</span>
+bytes = ngu.random.bytes</code></pre>
+        <p class="code-cap">来源：Coldcard/firmware 仓库标签 2021-03-29T1927-v4.0.1，shared/seed.py 第 348–359 行，shared/random.py 第 3、11 行<a class="ref" href="#s8">[8]</a>。省略了空行。</p>
+        <p>libNgU 这一端，取随机字节时调用 <code>rng_get()</code> 作为“芯片 TRNG”，并设了一道构建检查，防止在没有硬件 RNG 的情况下编译：</p>
+<pre class="code"><code><span class="c">// Coldcard/firmware，stm32/COLDCARD/mpconfigboard.h（v4.0.1）</span>
+// We have our own version of this code.
+<span class="bad">#define MICROPY_HW_ENABLE_RNG       (0)   <span class="c">// 本意是“不用 MicroPython 的版本”</span></span>
+
+<span class="c">// switck/libngu，ngu/random.c</span>
+#ifdef MICROPY_PY_STM
+// ports/stm32/rng.c
+extern uint32_t rng_get(void);
+# define CHIP_TRNG_SETUP()
+# define CHIP_TRNG_32()         rng_get()
+<span class="c">// 只检查宏有没有定义，不检查它的值；定义成 0 也能通过</span>
+<span class="bad"># ifndef MICROPY_HW_ENABLE_RNG</span>
+# error "get a HW TRNG plz"
+# endif
+#endif
+
+void my_random_bytes(uint8_t *dest, uint32_t count)
+{
+    uint32_t last = 0;
+    while(count) {
+<span class="c">        // 这里拿到的其实是 MicroPython 的 Yasmarang 软件回退</span>
+<span class="bad">        uint32_t chip = CHIP_TRNG_32();</span>
+        if(chip == last) {
+            // maybe TRNG is not clocked? Fail hard
+            mp_raise_OSError(MP_EFAULT);
+        }
+        last = chip;
+<span class="c">        // 再与 libNgU 自己的 Yasmarang 异或，它从固定常数 0x0a8ce26f 起步</span>
+        chip ^= my_yasmarang();
+        int here = MIN(4, count);
+        memcpy(dest, &amp;chip, here);
+        dest += here;
+        count -= here;
+    }
+}</code></pre>
+        <p class="code-cap">来源：Coldcard/firmware 标签 2021-03-29T1927-v4.0.1，mpconfigboard.h 第 76–77 行；switck/libngu 提交 0cf3196 的 ngu/random.c 第 22–31 行、第 55 行和第 68–89 行<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。省略了空行。</p>
+        <p><code>MICROPY_HW_ENABLE_RNG</code> 为 0 时，MicroPython 并不是“什么都不提供”，而是编译出一个同名的 <code>rng_get()</code>，用软件生成器代替硬件：</p>
+<pre class="code"><code><span class="c">// micropython/micropython，ports/stm32/rng.c（v1.14），MICROPY_HW_ENABLE_RNG 为 0 时的分支</span>
+STATIC uint32_t pyb_rng_yasmarang(void) {
+    static bool seeded = false;
+    static uint32_t pad = 0, n = 0, d = 0;
+    static uint8_t dat = 0;
+    if (!seeded) {
+        seeded = true;
+        rtc_init_finalise();
+<span class="c">        // 全部初始状态：芯片唯一 ID 异或 SysTick 计数，再加两个 RTC 寄存器</span>
+<span class="bad">        pad = *(uint32_t *)MP_HAL_UNIQUE_ID_ADDRESS ^ SysTick-&gt;VAL;</span>
+<span class="bad">        n = RTC-&gt;TR;</span>
+<span class="bad">        d = RTC-&gt;SSR;</span>
+    }
+<span class="c">    // ……此后每次调用只做确定性的状态更新，不再收集任何新的熵……</span>
+}
+
+uint32_t rng_get(void) {
+    return pyb_rng_yasmarang();
+}
+
+<span class="c">// switck/libngu，ngu/random.c（2022-03-11 加入）：Mk4 开机时调用</span>
+STATIC mp_obj_t random_reseed(mp_obj_t arg)
+{
+<span class="c">    // 只替换一个 32 位状态字，不接收完整摘要，也不重置其他状态</span>
+    yasmarang_pad = mp_obj_get_int_truncated(arg);
+    return mp_const_none;
+}</code></pre>
+        <p class="code-cap">来源：MicroPython v1.14，ports/stm32/rng.c 第 74–98 行（中间的状态更新部分从略）<a class="ref" href="#s20">[20]</a>；Block 的分析引用了 Coldcard 所用版本中相同的初始化语句<a class="ref" href="#s7">[7]</a>。libNgU 提交 61ffc74，ngu/random.c 第 157–162 行<a class="ref" href="#s9">[9]</a>。</p>
+        <p>据 Block 的分析，Mk4、Q、Mk5 开机时会从 SE1 取 32 字节、从 SE2 取 8 字节，做双重 SHA-256，但只把摘要的前 4 个字节传给 <code>reseed()</code>；MicroPython 那一侧的回退生成器也没有被重新播种<a class="ref" href="#s7">[7]</a>。于是安全芯片最多只贡献了 32 位熵。</p>
+        <h3>为什么每一道检查都没拦住</h3>
+        <ul>
+          <li><b>构建检查</b>：<code>#ifndef</code> 只问“这个宏定义过没有”，Coldcard 把它定义成了 0，<code>#error</code> 就不会触发<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>链接</b>：两个 <code>rng_get()</code> 的函数签名完全相同，链接器选了 MicroPython 那一个，不会报任何错<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>运行时检查</b>：<code>chip == last</code> 和 <code>len(set(seed)) &gt; 4</code> 只能发现输出卡死或几乎全是同一个值。一个确定性的伪随机序列，输出看上去和真随机一样。</li>
+          <li><b>哈希</b>：SHA-256 能抹平硬件随机数的统计偏差，但输入只有 40 位的不确定性，输出也只有 40 位。</li>
+          <li><b>代码审查</b>：既有的审查确认了正确的 TRNG 代码在固件二进制里，却没有核实种子生成路径最终调用的是哪一个 <code>rng_get()</code><a class="ref" href="#s2">[2]</a>。</li>
+        </ul>
+        <blockquote>
+          <p>The bulk of randomness on the COLDCARD was coming from a PRNG that I didn't know was actually in the source code base (it is from a submodule, Micropython).</p>
+          <cite>Coinkite，《Technical Deep Dive into the Entropy Issue》，2026-07-30<a class="ref" href="#s2">[2]</a></cite>
+        </blockquote>
+        <h3>哪些种子受影响</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>型号与固件</th><th>Coinkite 的估计</th><th>Block 的估计</th><th>修复版本</th></tr></thead>
+            <tbody>
+              <tr><td>Mk2、Mk3，4.0.1–4.1.9</td><td>约 40 位</td><td>计时器已知时为 2⁰；SysTick 未知约 2¹⁶·³；宽松上限不到 2⁴⁰·⁷</td><td>4.2.0</td></tr>
+              <tr><td>Mk4、Mk5，修复前的固件</td><td rowspan="2">约 72 位</td><td rowspan="2">回退状态已知时不超过 2³²；宽松上限约 2⁷³·³，但“不是 73 位的密码学安全”</td><td>5.6.0；Edge 6.6.0X</td></tr>
+              <tr><td>Q，修复前的固件</td><td>1.5.0Q；Edge 6.6.0QX</td></tr>
+              <tr><td>TAPSIGNER、OPENDIME、SATSCARD</td><td colspan="2">不受影响，代码库不同</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">来源：Coinkite 安全通告与技术说明<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>，Block<a class="ref" href="#s7">[7]</a>。设计目标为 128 位。用了至少 50 次独立、保密的骰子，或强且唯一的 BIP-39 密码短语的钱包除外。</p>
+        <p>两家对起始版本的说法不同：Coinkite 写的是 Mk2、Mk3 从 4.0.1（2021 年 3 月）开始受影响<a class="ref" href="#s1">[1]</a>，Block 列出的易受攻击范围是 v4.0.0–v4.1.9<a class="ref" href="#s7">[7]</a>。本站比对了两个版本标签的源码，<code>make_new_wallet()</code> 的写法相同；4.0.1 的更新说明只写了“修复 v4.0.0 中发现的安全问题”，没有说明是什么问题<a class="ref" href="#s17">[17]</a>。另据 Cointelegraph 7 月 31 日的报道，Coinkite 最初的分析认为只有 Mk3 受影响，Mk4、Q、Mk5 不受影响<a class="ref" href="#s23">[23]</a>；现行的通告已把后三者列入受影响范围。</p>
+        <div class="note">
+          <span class="h">AI 审查没有发现它</span>
+          <p>Coinkite 写道，事发前几周它用“最好的 AI 模型之一”审查过代码，没有发现这个缺陷；它推测有人用 AI 审查旧版固件时偶然发现了这个问题，“同样的 AI 工具，攻击者和防守者都有，今天它没有帮到我们，只帮了坏人”<a class="ref" href="#s2">[2]</a>。事后它又用 Kimi K3、Claude Fable、Codex 5.6 等前沿模型测试，也都没有发现，因此建议依赖 AI 审查安全代码的团队，专门针对构建和子模块的边界做测试<a class="ref" href="#s4">[4]</a>。</p>
+        </div>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>Coinkite 说得很明确：设备没有被入侵、远程访问或接管，攻击者是在离线状态下重新算出了弱种子对应的私钥<a class="ref" href="#s1">[1]</a>。Galaxy 的描述是，只要大致知道设备标识和种子生成的时间，就可以离线生成候选种子，再与公开的区块链比对，不需要接触钱包<a class="ref" href="#s25">[25]</a>。下面依据 Galaxy、TRM、Cointelegraph 等已发表的分析整理。</p>
+        <ol class="steps">
+          <li><b>第一波：41 分钟</b>7 月 30 日 01:10 至 01:51（UTC），1,196 个地址的 1,082.65 枚 BTC 被转走，交易都用 30 sat/vB 的手续费、没有找零输出。Galaxy 提醒，之后的攻击不一定还有这个特征<a class="ref" href="#s10">[10]</a>。其中约 562 枚随即被归集到另一个地址<a class="ref" href="#s23">[23]</a>。Arkham 公布的盗贼地址 <span class="addr">bc1qq85v2c926eg6pgxhwp6q7lf6cnsz80qs3fcu9r</span> 后来成了一块公开留言板，不少人用 OP_RETURN 往里写话，从哀求到恶搞都有<a class="ref" href="#s26">[26]</a>。</li>
+          <li><b>更多波次、更多攻击者</b>8 月 4 日，Galaxy 识别出至少 15 个不同的攻击者；一名受害者报告自己被盗不到 1 BTC，研究者顺着它找到了另一起从 126 个地址盗走 12 BTC 的攻击<a class="ref" href="#s13">[13]</a>。到 8 月 14 日，Galaxy 的结论改为“高度确信有多个攻击者”，但无法判断各个波次是否出自同一人；所有高置信度的波次都发生在 8 月 6 日或以前<a class="ref" href="#s14">[14]</a>。</li>
+          <li><b>程序化清扫</b>Galaxy 的 Alex Thorn 称这些清扫“看起来是有计划、程序化的”，被盗的币平均已经放了 3.18 年没动<a class="ref" href="#s16">[16]</a>。一名把 Coldcard 放在银行保险箱里、从未联网的用户，7 分钟内丢了 18.25 BTC，他说：“最难受的是，我每一步都做对了。”<a class="ref" href="#s25">[25]</a></li>
+          <li><b>白帽也在抢</b>9 月，Galaxy 指出第二波中约四成其实是白帽在抢先转移、保护受害者的资金，其中 52.37 枚 BTC 被归集到为受害者设立的 Crypto Recovery Trust 地址<a class="ref" href="#s19">[19]</a>。</li>
+        </ol>
+        <div class="note warn">
+          <span class="h">与交易所被盗的根本区别</span>
+          <p>交易所被盗，攻击者要先拿到某一个热钱包的密钥。这次每个受害者的种子都各自很弱，任何理解了缺陷的人都能独立地重算、扫描、清扫，没有迁移的地址会一直暴露。Galaxy 因此判断“每一台有漏洞的设备最终都会被清空”<a class="ref" href="#s16">[16]</a>，这也解释了为什么会出现多个攻击者、多个波次，以及白帽与攻击者赛跑。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>8,865 个弱种子地址</b>全部是单签</li>
+          <li class="atk"><b>多个波次扫走</b>约 1,790 BTC</li>
+          <li class="doubt"><b>攻击者地址</b>8 月 25 日时 87.3% 仍未移动</li>
+          <li class="atk"><b>少量洗出</b>Wasabi、Tornado Cash、THORChain、CoinJoin</li>
+        </ol>
+        <p>攻击者没有急着洗钱。TRM 记录到 8 月 4 日有一笔 64.9 BTC 存入 Wasabi、200 ETH 存入 Tornado Cash，除此之外基本只是再归集一次<a class="ref" href="#s11">[11]</a>。Galaxy 8 月 14 日统计，约 1,531 BTC 留在攻击者地址，移动过的约 246 BTC 中有 65% 进了 CoinJoin，其余继续转移，少量到了交易所或跨链桥<a class="ref" href="#s14">[14]</a>。9 月 2 日至 6 日，第三波的攻击者把 97.09 枚 BTC 经 THORChain 换到以太坊、或送进 CoinJoin；他的兑换多次失败退款，仍在反复尝试<a class="ref" href="#s18">[18]</a><a class="ref" href="#s21">[21]</a>。Galaxy 把识别出的攻击者地址分享给了交易所、合规公司和执法机构<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>损失口径</h3>
+        <p>媒体上出现过 3,800 万、7,000 万、8,900 万、1.16 亿、1.3 亿、1.44 亿美元等多个数字。它们大多来自 Galaxy 在不同日期的统计，差别在于统计时点、是否计入未确认的波次，以及用哪一天的币价折算：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>发布日期</th><th>来源</th><th class="n">BTC</th><th class="n">美元</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>07-31</td><td>AnchorWatch 的 Rob Hamilton</td><td class="n">594.48</td><td class="n">约 3,830 万</td><td>三个区块内约 500 笔交易<a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>08-01</td><td>Galaxy</td><td class="n">1,082.65</td><td class="n">约 7,020 万</td><td>第一波，1,196 个地址<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>08-03</td><td>Galaxy</td><td class="n">约 1,367</td><td class="n">约 8,860 万</td><td>三波，4,585 个地址<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>08-04</td><td>Galaxy</td><td class="n">—</td><td class="n"><span class="dispute">近 1.3 亿</span></td><td>含当时疑似的第四波<a class="ref" href="#s13">[13]</a><a class="ref" href="#s25">[25]</a></td></tr>
+              <tr><td>08-05</td><td>TRM 引用 Galaxy 中期统计</td><td class="n">1,816</td><td class="n">约 1.16 亿</td><td>5,200 多个地址，TRM 称“并非最终数字”<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>08-14</td><td>Galaxy</td><td class="n">1,778.84</td><td class="n">1.127 亿</td><td>8,600 多个地址；计入中等置信度候选和未确认的第四波则为 2,417.35 BTC<a class="ref" href="#s14">[14]</a></td></tr>
+              <tr><td>08-25</td><td>Galaxy</td><td class="n">1,789.28</td><td class="n">1.147 亿</td><td>8,865 个地址，按被盗时价格<a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>09-07</td><td>CoinDesk</td><td class="n">约 1,806</td><td class="n"><span class="dispute">约 1.439 亿</span></td><td>未说明折算价格<a class="ref" href="#s21">[21]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>本页采用 Galaxy 8 月 25 日按被盗时价格计算的 1,789.28 BTC、约 1.147 亿美元。Galaxy 说明，其中约 44% 的金额有受害者直接报案佐证，221 份报告的损失中位数约 1.04 BTC<a class="ref" href="#s15">[15]</a>。9 月 22 日，Thorn 按波次核对：第一波 1,082.57 BTC 未动，第三波 116.98 BTC 未动、97.09 BTC 已洗出，信托地址 52.37 BTC，合计约占被盗总额的 76%；第二波另外六成的去向仍不清楚，是否也是白帽所为无法确定<a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>自托管的风险换了地方</h3>
+        <p>TRM 称这是 2026 年最大的硬件钱包漏洞事件<a class="ref" href="#s11">[11]</a>。受害者大多是严格按照“不信任交易所、自己保管私钥”的原则行事的比特币持有者，有人把设备放在银行保险箱里从不联网，资金照样被转走。Galaxy 的总结是：去掉第三方托管人并不能消除托管风险，只是把风险转移到了硬件、软件和密钥生成过程上；“私钥的安全程度，取决于生成它的流程和基础设施”<a class="ref" href="#s25">[25]</a>。Galaxy 的 Thorn 还直言，这件事除了 Coinkite 不能怪任何人<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>多签挡住了全部损失</h3>
+        <p>Galaxy 核对的被盗交易里，没有一笔来自多签钱包<a class="ref" href="#s14">[14]</a>。多签要求多把密钥同时签名，即使其中一把是在有缺陷的 Coldcard 上生成的，攻击者算出它也不够。Block 的分析也指出，需要一组足够数量的安全设备，才能防住这类问题<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>开源与 AI</h3>
+        <p>Coldcard 的代码一直公开，缺陷在公开代码里待了五年多，却在 2026 年突然被多人利用。Coinkite 推测攻击者借助了 AI 审查代码<a class="ref" href="#s2">[2]</a>，这一点没有被证实。可以确定的是，缺陷位于两个子模块的交界处，而大多数内部和第三方审查关注的是加密和比特币相关逻辑本身<a class="ref" href="#s4">[4]</a>。竞争对手 Ledger 的 CTO 事后撰文强调，其设备的种子来自安全芯片内置的真随机数发生器，并经过 AIS-31 PTG.2 认证<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>弱随机数的老问题</h3>
+        <p>这是本站收录的第三起因密钥生成熵不足造成的大额损失。2020 年的 <a href="2020-lubian.html">LuBian</a> 和 2022 年的 <a href="2022-wintermute.html">Wintermute</a>，问题都出在用 32 位种子初始化的软件生成器上。这一次的软件生成器同样不是为密码学设计的，只是藏得更深：它不在 Coldcard 自己的代码里，而在一个依赖库的回退分支里。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>升级固件为什么不够</h3>
+        <p>修复固件只保证今后新生成的种子是安全的，不能修复已经用旧固件生成的种子。Coinkite 要求受影响的用户：先升级固件，再生成全新的种子，记录并核对备份、钱包指纹和收款地址，先发一笔小额测试交易，确认无误后再转移全部资金，旧备份留到迁移完成为止；它同时提醒，仓促迁移可能比这个缺陷本身带来更直接的风险<a class="ref" href="#s1">[1]</a>。只有一台 Mk2 或 Mk3 的用户，可以在升级到 4.2.0 后在同一台设备上交替恢复新旧种子完成迁移，也可以选择用至少 99 次骰子单独生成种子，完全不经过设备的随机数生成器<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>修复与加固</h3>
+        <ul>
+          <li><b>7 月 31 日的紧急修复</b>：构建时明确排除 MicroPython 的回退生成器，并加入符号检查，除非板级代码定义了全局的 <code>rng_get()</code> 且上游回退代码没有定义任何符号，否则构建失败<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>libNgU</b>：8 月 1 日起，Yasmarang 被换成 SHA-256 Hash_DRBG，并加强了熵输入的检查<a class="ref" href="#s9">[9]</a>。</li>
+          <li><b>5.6.1 / 1.5.1Q（8 月 20 日）</b>：每个新种子都必须加入一种用户自己提供的熵，至少 65 次时机不可预测的按键、50 次骰子或 128 次抛硬币；再与 STM32 TRNG、SE1、SE2 的新随机数混合<a class="ref" href="#s12">[12]</a>。</li>
+          <li><b>5.6.2 / 1.5.2Q（9 月 4 日）</b>：新增“View TRNG Words”，把设备提供的 256 位熵显示成 24 个词，并附上独立的校验脚本 <code>verify_seed_mix.py</code>，用户可以自己重算最终种子<a class="ref" href="#s22">[22]</a>。</li>
+        </ul>
+        <h3>公司与社区</h3>
+        <p>Coinkite 销毁了用受影响固件生产的剩余库存，确认漏洞时就已停止发货，并请受影响的用户不要丢弃设备，称如果资金被追回，设备可能成为关键证据；其法律团队会视情况与多个司法辖区的执法机构配合<a class="ref" href="#s3">[3]</a>。8 月 7 日，它因法律上的证据保全义务，暂停了“交付 120 天后自动清除客户资料”的做法<a class="ref" href="#s5">[5]</a>。它还建立了一个页面，汇总所有与 Coldcard 有关的公开安全研究、披露和审查记录<a class="ref" href="#s4">[4]</a>。9 月初，Coinkite 称 Coldcard 已恢复供货，需求有所增加<a class="ref" href="#s22">[22]</a>。</p>
+        <p>社区方面，Rob Hamilton、Calle、James O'Beirne 和另外约 25 人组成的“比特币红队”开始审计相关代码库；Galaxy 持续统计损失并与执法机构共享攻击者地址<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。截至 2026 年 10 月，官方状态页没有提到任何赔偿安排，详细的技术事后分析仍在准备中<a class="ref" href="#s6">[6]</a>；本站也没有查到与此案有关的逮捕报道。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给固件和钱包开发者</span>
+          <ul>
+            <li>对安全关键的符号做构建期检查：确认 <code>rng_get()</code> 这类函数最终链接到的是哪个目标文件，不是预期的就让构建失败。Coinkite 的修复正是这么做的。</li>
+            <li>条件编译的保护要检查值，而不只是检查“有没有定义”。用 <code>#if !MICROPY_HW_ENABLE_RNG</code> 加 <code>#error</code>，宏被定义为 0 时同样会报错。</li>
+            <li>密钥生成路径要“失败即停”，不允许任何软件回退。硬件随机源不可用时，宁可无法生成种子。</li>
+            <li>审查熵来源时，从种子生成的调用一路追到硬件寄存器。源码里有正确的实现，不等于运行时调用的就是它。</li>
+            <li>输出看起来随机、通过了重复值检查，都证明不了熵来源是对的。伪随机序列的输出同样“看起来随机”。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给持有人和机构</span>
+          <ul>
+            <li>不要把种子的全部熵交给一家厂商的随机数生成器。生成时加入至少 50 次独立、保密的骰子，或使用强而唯一的 BIP-39 密码短语，都能让这次的缺陷失效。</li>
+            <li>大额资金用多签，并让各把密钥来自不同厂商的设备。这次没有一笔多签被盗。</li>
+            <li>厂商发布随机数相关的通告后，尽快迁移到新种子。升级固件不会改变旧种子，拖得越久，被扫走的可能越大。</li>
+            <li>迁移要按步骤来：先验证新种子和地址，再小额测试，最后转移全部资金。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Coinkite，《Coldcard Security Advisory》，2026-07-30（2026-08-01、08-14 更新）。<a href="https://blog.coinkite.com/coldcard-mk3-seed-generation-warning/">blog.coinkite.com</a></li>
+          <li id="s2">Coinkite，《Technical Deep Dive into the Entropy Issue》，2026-07-30。<a href="https://blog.coinkite.com/entropy-technical-backgrounder/">blog.coinkite.com</a></li>
+          <li id="s3">Coinkite，《Update, Sunday.》，2026-08-02。<a href="https://blog.coinkite.com/update-sunday/">blog.coinkite.com</a></li>
+          <li id="s4">Coinkite，《Adding to the Public Record on Our Ongoing Investigation》，2026-08-04。<a href="https://blog.coinkite.com/adding-to-public-record/">blog.coinkite.com</a></li>
+          <li id="s5">Coinkite，《Update on Customer Data Retention》，2026-08-07。<a href="https://blog.coinkite.com/update-on-customer-data-retention/">blog.coinkite.com</a></li>
+          <li id="s6">Coinkite，《COLDCARD Security Status》，2026-10-01 更新。<a href="https://coldcard.com/security/status">coldcard.com</a></li>
+          <li id="s7">Block Bitcoin Engineering and Security，《Predictable RNG Fallback and 32-Bit Reseed in COLDCARD Firmware》，2026-07-30。<a href="https://engineering.block.xyz/blog/predictable-rng-fallback-and-32-bit-reseed-in-coldcard-firmware">engineering.block.xyz</a></li>
+          <li id="s8">Coldcard/firmware 仓库：标签 2021-03-29T1927-v4.0.1（shared/seed.py、shared/random.py、stm32/COLDCARD/mpconfigboard.h）及提交 b18723d《First pass w/ libNgU》（2021-03-01）。<a href="https://github.com/Coldcard/firmware/tree/2021-03-29T1927-v4.0.1">github.com</a>　<a href="https://github.com/Coldcard/firmware/commit/b18723dddb6d751c39978e4364b56b2414f68b47">github.com</a></li>
+          <li id="s9">switck/libngu 仓库：ngu/random.c 的提交 0cf3196、61ffc74（2022-03-11）及 2026 年 8 月的修复提交。<a href="https://github.com/switck/libngu/commits/master/ngu/random.c">github.com</a></li>
+          <li id="s10">Cointelegraph，《Coldcard Bitcoin loss estimate rises to $70M after Galaxy analysis》，2026-08-01。<a href="https://cointelegraph.com/news/coldcard-bitcoin-loss-estimate-70-million-galaxy-analysis">cointelegraph.com</a></li>
+          <li id="s11">TRM Labs，《The Largest Hardware Wallet Exploit of 2026: Inside the USD 116 Million Coldcard Hack》，2026-08-05。<a href="https://www.trmlabs.com/resources/blog/the-largest-hardware-wallet-exploit-of-2026-inside-the-usd-116-million-coldcard-hack">trmlabs.com</a></li>
+          <li id="s12">Coinkite，《COLDCARD Security Update: Seed Generation, Transaction Integrity, and Data Isolation》（5.6.1 / 1.5.1Q），2026-08-20。<a href="https://blog.coinkite.com/coldcard-security-update-5.6.1-1.5.1q/">blog.coinkite.com</a></li>
+          <li id="s13">Cointelegraph，《At least 15 attackers exploited Coldcard vulnerability: Galaxy》，2026-08-04。<a href="https://cointelegraph.com/news/15-attackers-exploited-coldcard-vulnerability-galaxy">cointelegraph.com</a></li>
+          <li id="s14">Alex Thorn（Galaxy Research），《Coldcard Exploit Abates as Total Losses Climb to at Least 1,700 BTC》，2026-08-14。<a href="https://www.galaxy.com/insights/research/coldcard-exploit-abates-as-total-losses-climb-to-at-least-1700-btc">galaxy.com</a></li>
+          <li id="s15">Cointelegraph，《Galaxy puts Coldcard hack losses at 1,789 BTC, with 87% unmoved》，2026-08-25。<a href="https://cointelegraph.com/news/coldcard-hack-galaxy-btc-lost-87-unmoved">cointelegraph.com</a></li>
+          <li id="s16">Yahoo Finance，《Coldcard Bitcoin Exploit Balloons to $88 Million as Attackers Keep Draining Wallets》，2026-08-03。<a href="https://finance.yahoo.com/markets/crypto/articles/coldcard-bitcoin-exploit-balloons-88-171851804.html">finance.yahoo.com</a></li>
+          <li id="s17">Coldcard/firmware，releases/ChangeLog.md（4.0.0、4.0.1 条目）。<a href="https://github.com/Coldcard/firmware/blob/2021-03-29T1927-v4.0.1/releases/ChangeLog.md">github.com</a></li>
+          <li id="s18">Cointelegraph，《Coldcard hacker swaps stolen Bitcoin for ETH via THORChain》，2026-09-03。<a href="https://cointelegraph.com/news/coldcard-hacker-swaps-stolen-bitcoin-eth-thorchain">cointelegraph.com</a></li>
+          <li id="s19">Bitcoin.com News，《White Hats Beat Coldcard Attackers, Rescuing Millions of Dollars in Bitcoin》，2026-09-22。<a href="https://news.bitcoin.com/crypto-news/white-hats-beat-coldcard-attackers-rescuing-millions-bitcoin/">news.bitcoin.com</a></li>
+          <li id="s20">micropython/micropython：提交 f68e722《stm32/rng: Use Yasmarang for rng_get() if MCU doesn't have HW RNG》（2018-05-22）；v1.14 的 ports/stm32/rng.c。<a href="https://github.com/micropython/micropython/commit/f68e722005">github.com</a>　<a href="https://github.com/micropython/micropython/blob/v1.14/ports/stm32/rng.c">github.com</a></li>
+          <li id="s21">CoinDesk，《Coldcard hacker moves $7.7 million in BTC, 45% of bitcoin stolen in third attack wave》，2026-09-07。<a href="https://www.coindesk.com/business/2026/09/07/coldcard-hacker-moves-45-of-bitcoin-stolen-in-third-attack-wave">coindesk.com</a></li>
+          <li id="s22">Coinkite，《COLDCARD Firmware Update 5.6.2 &amp; 1.5.2Q: Verifiable Seed Mixing; Continued Security Review》，2026-09-04。<a href="https://blog.coinkite.com/coldcard-firmware-update-5.6.2-1.5.2q/">blog.coinkite.com</a></li>
+          <li id="s23">Cointelegraph，《Coldcard issues Mk3 warning as experts examine $38M Bitcoin wallet drain》，2026-07-31。<a href="https://cointelegraph.com/news/coldcard-mk3-warning-594-btc-sweep">cointelegraph.com</a></li>
+          <li id="s24">Charles Guillemet（Ledger），《The Coldcard Incident: How Did This Happen?》，2026-08-02。<a href="https://www.ledger.com/blog-coldcard-incident">ledger.com</a></li>
+          <li id="s25">Jianing Wu（Galaxy Research），《Your Keys, Not Your Coins: Coldcard Wallets Hacked for $130m and Counting》，2026-08-07。<a href="https://www.galaxy.com/insights/research/your-keys-not-your-coins-coldcard-wallets-hacked-for-130m-and-counting">galaxy.com</a></li>
+          <li id="s26">Finn Grant（Arkham），《Coldcard: Why Are Users Sending On-Chain Messages to the Hacker's Address?》，2026-08-04。<a href="https://info.arkm.com/research/coldcard-why-are-users-sending-on-chain-messages-to-the-hackers-address">info.arkm.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

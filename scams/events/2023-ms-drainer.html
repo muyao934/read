@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MS Drainer：靠搜索广告和推广帖引流的盗币工具｜区块链诈骗与骗局</title>
+<meta name="description" content="2023 年，盗币工具 MS Drainer 的买家在 Google 搜索广告和 X 推广帖里投放冒充 DeFi 项目的网站，ScamSniffer 统计 9 个月从 63,210 名受害者手里盗走约 5,898 万美元。本页讲这些广告怎样冒用官方网址、怎样只给目标用户看钓鱼页，开发者怎样按 1,500 美元一套出售源码，Google 和 X 做了什么，以及 2024 年它怎样混进 Google Play。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-ms-drainer">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　<a href="../index.html#cat-phish">钓鱼与授权盗币</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>MS Drainer：靠搜索广告和推广帖引流的盗币工具</h1>
+    <p class="lede">2023 年 12 月 21 日，反诈骗平台 ScamSniffer 发表报告：一款叫 MS Drainer 的盗币工具，3 月以来被用在 10,072 个钓鱼站上，9 个月里从 63,210 名受害者手里盗走约 5,898 万美元。把人带到这些网站的，主要是 Google 搜索广告和 X（推特）上的推广帖。用户搜 Zapper、Lido、Radiant 这些 DeFi 项目的名字，排在最上面的“赞助”结果就是假网站；X 上的钓鱼广告常常挂着认证标志。它的开发者在论坛上按 1,500 美元左右一套出售源码。2024 年 Check Point 又在 Google Play 上一款假 WalletConnect 应用里发现了它。到 2026 年 11 月，没有查到针对开发者或买家的执法行动。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">MS Drainer 是一套装在钓鱼网站上的盗币程序，和同期的 <a href="2023-inferno-drainer.html">Inferno Drainer</a> 一样，骗受害者签下授权，再把钱包里的币转走<a class="ref" href="#s12">[12]</a>。不同的是流量从哪里来：ScamSniffer 说，MS Drainer 被大量用在钓鱼广告里，先出现在 Google 搜索广告，后来出现在 X 的推广帖里<a class="ref" href="#s1">[1]</a>。广告主花钱买关键词和投放人群，假网站就排在用户要找的项目前面。</p>
+        <p>按 ScamSniffer 2023 年 12 月 21 日的统计，2023 年 3 月以来它监控到 10,072 个用 MS Drainer 的钓鱼站，从约 63,210 名受害者手里盗走约 5,898 万美元，其中一名受害者 9 月损失约 2,406 万美元<a class="ref" href="#s1">[1]</a>。在 ScamSniffer 的 2023 年报里，它的被盗金额仅次于 Inferno，排第二<a class="ref" href="#s11">[11]</a>。</p>
+        <p>这些广告用几种办法躲过平台审核：只对特定地区投放，其他地方的人打开看到的是正常网站；审核时和从广告点进来时显示不同的页面；让广告上显示的网址看起来属于被冒充项目的官方域名<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。Google 的政策禁止这些做法<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>，但广告还是上线了。本站没有找到 Google 或 X 针对 MS Drainer 的公开回应。</p>
+        <p>MS Drainer 的开发者自己不搭钓鱼站，在论坛上出售源码，买家自己部署、自己投广告<a class="ref" href="#s1">[1]</a>。Check Point 2024 年 9 月写道，它的基础价是 1,499.99 美元，附带完整源码、安装说明和售后支持；买家经开发者提供的合约转走的钱，开发者再抽 10%<a class="ref" href="#s12">[12]</a>。开发者和买家的身份都没有公开。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>名字</h3>
+        <p>ScamSniffer、BleepingComputer、Check Point 都写作 MS Drainer<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s12">[12]</a>，Bitcoin.com 写作 MS Wallet Drainer<a class="ref" href="#s5">[5]</a>。本站查到的资料里，没有一家解释 MS 两个字母代表什么，所以本页不做推测。它和微软没有关系。</p>
+        <h3>2023 年的 drainer 换代</h3>
+        <p>ScamSniffer 的 2023 年报写道，Monkey Drainer 被曝光后退出，客户转到 Venom；MS、Inferno、Angel、Pink 几家在 3 月前后一起冒出来<a class="ref" href="#s11">[11]</a>。年报列出的 2023 年主要 drainer 里，Inferno 盗走 8,100 万美元、13.4 万名受害者，MS 是 5,900 万美元、6.3 万名受害者，两家都从 2023 年 3 月起算<a class="ref" href="#s11">[11]</a>。ScamSniffer 2025 年的年报回顾三年变化时，也把 2023 年的主要 drainer 写成 Inferno、MS 和 Pink<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>卖源码，不做托管</h3>
+        <p>Inferno 这类 drainer 是托管服务：开发者管后台和收款合约，客户只拿到一段脚本，被盗的钱开发者自动抽 20%，见 <a href="2023-inferno-drainer.html">Inferno 页</a>。ScamSniffer 在论坛上找到了 MS Drainer 的销售信息，发现它的卖法不一样：开发者出售源码和增值模块，例如想用 Blur 的签名钓 NFT，要另买模块<a class="ref" href="#s1">[1]</a>。BankInfoSecurity 引 ScamSniffer 的话说，MS Drainer 这类服务“卖源码和增值模块”，让骗子可以自己定制攻击<a class="ref" href="#s10">[10]</a>。</p>
+        <p>Check Point 2024 年 9 月写道，MS Drainer 出自讲俄语的程序员之手。它在论坛上的使用规则写明，禁止在俄罗斯、独联体和欧亚经济联盟境内使用，脚本发现用户在这些地区会停止工作；配置里有一个 CIS 开关，Check Point 分析的那个样本把它关掉了<a class="ref" href="#s12">[12]</a>。</p>
+        <p>买家拿到源码以后，网站、服务器、收款地址都归自己管。这一点对后面几节有影响：同一个名字下面是很多互不相干的买家，各自投广告、各自收钱。ScamSniffer 统计的 5,898 万美元，是它关联到这套工具的所有钓鱼地址的合计<a class="ref" href="#s1">[1]</a>，不是某一个团伙的收入。</p>
+        <h3>为什么算诈骗</h3>
+        <p>本站按转账是谁签的来分：受害者自己签的转账和授权算诈骗，攻击者拿到私钥后自己转走的算被盗。MS Drainer 不碰私钥。Check Point 分析的样本里，受害者被要求“验证钱包”，连续签下几笔交易，币才被转走<a class="ref" href="#s12">[12]</a>。被盗站的 <a href="../../hacks/events/2021-badgerdao.html">BadgerDAO 前端注入</a>里，用户访问的是被篡改的真网站，所以写在被盗站；MS Drainer 的买家用的是自建的假网站，靠广告把人骗过去。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2023-03</time><div class="ev">ScamSniffer 第一次发现 MS Drainer；它统计的钓鱼站和受害者都从这个月算起<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2023-04</time><div class="ev">月初，安全公司 SlowMist（慢雾）把追到的线索分享给 ScamSniffer<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2023-04-27</time><div class="ev">ScamSniffer 发布 Google 搜索广告钓鱼报告：约 3,000 名受害者、约 416 万美元，假 Radiant 广告后来被确认用的是 MS Drainer<a class="ref" href="#s2">[2]</a><a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-05</time><div class="ev">用 MS Drainer 的钓鱼站出现第一个高峰，6 月又有一个<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-06</time><div class="ev">月底，链上调查者 ZachXBT 把一组叫“Ordinals Bubbles”的 X 钓鱼广告发给 ScamSniffer，背后是同一套 drainer<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-09</time><div class="ev">一个以太坊地址因一笔 Increase Allowance 授权被盗约 2,406 万美元，是 ScamSniffer 统计的 2023 年单笔最大损失<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2023-11</time><div class="ev">钓鱼站数量出现全年第三个高峰<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2023-12-21</time><div class="ev">ScamSniffer 发布专门报告：10,072 个钓鱼站、63,210 名受害者、约 5,898 万美元；X 信息流抽样的 9 条钓鱼广告里有 6 条用它<a class="ref" href="#s1">[1]</a>。BleepingComputer 当天报道<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2024-01</time><div class="ev">X 上的加密骗局广告引起大量用户抱怨；CertiK、Netgear、Mandiant 等认证账号相继被盗用来推 drainer<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2024-03-21</time><div class="ev">一款名为 Mestox Calculator 的计算器应用上架 Google Play，后来改名冒充 WalletConnect<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2024-03-27</time><div class="ev">Google 发布 2023 年广告安全报告：全年封禁 1,270 万个广告主账户<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2024-09-26</time><div class="ev">Check Point 报告：假 WalletConnect 应用用的是 MS Drainer 2024 年 5 月 26 日的版本，150 多名受害者、7 万多美元；应用已被 Google Play 下架<a class="ref" href="#s12">[12]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2025-01-03</time><div class="ev">ScamSniffer 2024 年报列出的各家 drainer 份额里，已经没有 MS<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="atk"><time>2026-03</time><div class="ev">白帽组织 SEAL 称 Google 搜索上的钓鱼广告明显增多，3 月 13 日到 30 日盗走 127 万美元，不确定和 MS Drainer 有关<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2026-11</time><div class="ev">没有查到针对 MS Drainer 开发者或买家的起诉、逮捕或制裁的公开报道。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>授权怎样被骗走，<a href="2023-inferno-drainer.html">Inferno 页</a>已经讲过，MS Drainer 用的也是 approve 一类的授权<a class="ref" href="#s12">[12]</a><a class="ref" href="#s15">[15]</a>。本页重点讲前一半：受害者怎样被带到假网站，广告又怎样通过平台审核。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 590" role="img" aria-labelledby="ms-flow-t ms-flow-d">
+            <title id="ms-flow-t">MS Drainer 的流量从哪里来，钓鱼页给谁看</title>
+            <desc id="ms-flow-d">上方三个框是三个流量来源：Google 搜索广告，买 DeFi 项目名的关键词，显示的网址像官方域名；X 推广帖，多来自带认证标志的账号，按兴趣投给币圈用户；Google Play 应用，2024 年以计算器上架，后改名冒充 WalletConnect。三者都指向中间的访客筛选：按 IP、User-Agent、广告点击参数，以及有没有打开开发者工具来判断。筛选分成两路：左边是审核员、爬虫、不在目标地区的人和桌面浏览器，看到正常网站或计算器；右边是目标用户，看到冒充 Zapper、Lido、Radiant 等的假网站，脚本先查钱包里值钱的资产。右边再往下是受害者签名：代币授权给攻击者地址，后端调用 transferFrom 转到收款地址；原生币经开发者的公开合约转走。最后分到买家的收款地址，经公开合约的那部分开发者抽 10%。</desc>
+            <defs>
+              <marker id="ms-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="ms-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="228" height="100" rx="4"/>
+            <text class="d-t b atk" x="34" y="46">Google 搜索广告</text>
+            <text class="d-t s" x="34" y="70">买 DeFi 项目名的关键词</text>
+            <text class="d-t s" x="34" y="90">显示的网址像官方域名</text>
+            <text class="d-t s" x="34" y="110">2023 年 4 月起</text>
+            <rect class="d-box atk" x="266" y="20" width="228" height="100" rx="4"/>
+            <text class="d-t b atk" x="280" y="46">X 推广帖</text>
+            <text class="d-t s" x="280" y="70">多来自带认证标志的账号</text>
+            <text class="d-t s" x="280" y="90">按兴趣投给币圈用户</text>
+            <text class="d-t s" x="280" y="110">2023 年 6 月起</text>
+            <rect class="d-box atk" x="512" y="20" width="228" height="100" rx="4"/>
+            <text class="d-t b atk" x="526" y="46">Google Play 应用</text>
+            <text class="d-t s" x="526" y="70">以计算器的名义上架</text>
+            <text class="d-t s" x="526" y="90">后改名冒充 WalletConnect</text>
+            <text class="d-t s" x="526" y="110">2024 年 3 月起</text>
+            <path class="d-line atk" d="M134,120 L134,140 L300,140 L300,158" marker-end="url(#ms-ah-atk)"/>
+            <line class="d-line atk" x1="380" y1="120" x2="380" y2="158" marker-end="url(#ms-ah-atk)"/>
+            <path class="d-line atk" d="M626,120 L626,140 L460,140 L460,158" marker-end="url(#ms-ah-atk)"/>
+            <rect class="d-box" x="160" y="160" width="440" height="80" rx="4"/>
+            <text class="d-t b" x="380" y="186" text-anchor="middle">筛选访客（cloaking）</text>
+            <text class="d-t s" x="380" y="208" text-anchor="middle">看 IP、User-Agent、广告点击参数，</text>
+            <text class="d-t s" x="380" y="228" text-anchor="middle">以及有没有打开开发者工具</text>
+            <path class="d-line" d="M270,240 L270,260 L170,260 L170,278" marker-end="url(#ms-ah)"/>
+            <path class="d-line atk" d="M490,240 L490,260 L590,260 L590,278" marker-end="url(#ms-ah-atk)"/>
+            <rect class="d-box soft" x="20" y="280" width="300" height="100" rx="4"/>
+            <text class="d-t b" x="170" y="306" text-anchor="middle">审核员、爬虫、</text>
+            <text class="d-t b" x="170" y="326" text-anchor="middle">不在目标地区的人</text>
+            <text class="d-t s" x="170" y="350" text-anchor="middle">看到正常网站或计算器，</text>
+            <text class="d-t s" x="170" y="370" text-anchor="middle">广告和应用因此过审</text>
+            <rect class="d-box atk" x="440" y="280" width="300" height="100" rx="4"/>
+            <text class="d-t b atk" x="590" y="306" text-anchor="middle">目标用户：假网站</text>
+            <text class="d-t s" x="590" y="330" text-anchor="middle">冒充 Zapper、Lido、Radiant 等</text>
+            <text class="d-t s" x="590" y="350" text-anchor="middle">脚本先查钱包里有什么资产，</text>
+            <text class="d-t s" x="590" y="370" text-anchor="middle">从最值钱的开始偷</text>
+            <line class="d-line atk" x1="590" y1="380" x2="590" y2="408" marker-end="url(#ms-ah-atk)"/>
+            <text class="d-t s" x="578" y="400" text-anchor="end">受害者签名</text>
+            <rect class="d-box atk" x="300" y="410" width="440" height="80" rx="4"/>
+            <text class="d-t s" x="520" y="436" text-anchor="middle">代币：授权给攻击者地址，后端调用</text>
+            <text class="d-t s" x="520" y="456" text-anchor="middle">transferFrom 转到另一个收款地址</text>
+            <text class="d-t s" x="520" y="476" text-anchor="middle">原生币：直接转，或经开发者的公开合约</text>
+            <line class="d-line atk" x1="520" y1="490" x2="520" y2="518" marker-end="url(#ms-ah-atk)"/>
+            <rect class="d-box atk" x="300" y="520" width="440" height="56" rx="4"/>
+            <text class="d-t b atk" x="520" y="544" text-anchor="middle">钱进买家自己的收款地址</text>
+            <text class="d-t s" x="520" y="564" text-anchor="middle">经公开合约的那部分，开发者抽 10%</text>
+          </svg>
+          </div>
+          <figcaption>流量来源和绕过审核的手法据 ScamSniffer 和 BleepingComputer<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>；Google Play 应用、转账方式和 10% 的抽成据 Check Point 2024 年 9 月的报告<a class="ref" href="#s12">[12]</a>。BleepingComputer 写的抽成是 20%<a class="ref" href="#s3">[3]</a>，见下文“卖价各说不一”。</figcaption>
+        </figure>
+        <h3>Google 搜索广告：排在真网站前面</h3>
+        <p>ScamSniffer 2023 年 4 月查了一批受害者搜过的关键词，发现结果页最上面就是恶意广告。搜 zapper 出现 webapp-zapper.com，搜 lido 出现 lido.is，搜 defillama 出现 defeilllama.com，搜 radiant 出现 radiantcapital.info，此外还有 Stargate、Orbiter Finance<a class="ref" href="#s2">[2]</a>。它写道，大多数用户没意识到搜索广告会骗人，直接点第一个结果<a class="ref" href="#s2">[2]</a>。</p>
+        <p>有的广告连显示的网址也是假的。ScamSniffer 12 月举例说，你以为点的是 StarkNet 官网的广告，进去的却是钓鱼站；它称之为“重定向欺骗”，让广告看起来来自官方域名，最后落在钓鱼页上<a class="ref" href="#s1">[1]</a>。BleepingComputer 转述，很多这类广告利用的是 Google Ads 跟踪模板的漏洞<a class="ref" href="#s3">[3]</a>。按 Google 的说明，广告主可以填一个跟踪模板网址，用户点击后可能先经过几台中间跟踪服务器再跳到最终网址，后面的跳转 Google 控制不了<a class="ref" href="#s20">[20]</a>。Google 的政策规定，显示网址的域名要和最终网址一致，最终网址跳到别的域名、跟踪模板不指向同样内容的广告都会被拒<a class="ref" href="#s18">[18]</a>。这些广告还是上线了。ScamSniffer 没有公开它们具体怎样过的审。</p>
+        <h3>审核员看到的是另一个网站</h3>
+        <p>ScamSniffer 4 月列出两种办法。一是看参数：Google 广告的每次点击都带一个 gclid 参数，假网站据此判断访客从哪里来，审核阶段显示正常网页。二是防调试：浏览器一打开开发者工具，就跳到正常网站，直接访问才显示钓鱼页，这能骗过 Google 的一部分机器审核<a class="ref" href="#s2">[2]</a>。12 月它又写道，这些广告只投给特定地区，其他地区的人打开链接看到的是正常网站；直接打开和从广告点进去，看到的页面也不一样<a class="ref" href="#s1">[1]</a>。BleepingComputer 把这叫作地理围栏<a class="ref" href="#s3">[3]</a>。</p>
+        <p>Google 把这类做法叫 cloaking：给不同的人或给 Google 看不同的内容，以掩盖违规的东西。它的政策写明 cloaking 不允许，属于“严重违规”，发现即封号，不事先警告<a class="ref" href="#s19">[19]</a>。规则管不到的是发现之前那段时间。ScamSniffer 的估算是，这类关键词每次点击 1 到 2 美元，按 7,500 次点击、40% 的转化率算，约 1.5 万美元的广告费，换来约 414 万美元的赃款<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>X 推广帖：带认证标志的账号</h3>
+        <p>X 上的广告换了一套主题。ZachXBT 6 月底发现的一组叫“Ordinals Bubbles”，推销一批限量的气泡角色 NFT，蹭的是当年比特币上 <a href="../../milestones/events/2023-ordinals.html">Ordinals 铭文</a>的热度；其他广告推 NFT 空投和新币上线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。ScamSniffer 12 月在自己的 X 信息流里做了一次简单抽样，看到的广告几乎全是钓鱼广告，9 条里 6 条用的是 MS Drainer<a class="ref" href="#s1">[1]</a>。</p>
+        <p>BleepingComputer 写道，X 上很多这类广告出自合法的“已验证”账号，投放时带着蓝色勾<a class="ref" href="#s3">[3]</a>。安全研究员 MalwareHunterTeam 认为，这些账号的主人可能中了恶意软件，登录 cookie 或密码被偷，骗子就用他们的账号投广告。他联系过一个在投骗局广告的账号，对方说自己的广告账户里查不到这些广告<a class="ref" href="#s3">[3]</a>。X 按用户的兴趣投放广告，不关注加密货币的人可能看不到，常看币圈内容的人看到的几乎全是这类广告<a class="ref" href="#s7">[7]</a>。</p>
+        <p>同一时期，X 上还有另一种引流：直接盗用企业和机构的认证账号发帖。2024 年 1 月，安全公司 CertiK、Netgear、Hyundai 中东的账号相继被盗，用来推 drainer 网站<a class="ref" href="#s8">[8]</a>。BleepingComputer 没有说这些帖子用的是哪一家 drainer；Mandiant 账号被盗那次，用的是 Solana 上的另一款 CLINKSINK<a class="ref" href="#s9">[9]</a>。这些是普通帖子，不是付费广告。</p>
+        <h3>Google Play：先做计算器</h3>
+        <p>2024 年的一例换成了应用商店。Check Point 发现，一款应用 2024 年 3 月 21 日以“Mestox Calculator”的名字上架 Google Play，后来几次改名，最后叫“WalletConnect – Crypto Wallet”<a class="ref" href="#s12">[12]</a>。WalletConnect 是把钱包连到 DApp 的协议，不是单独的钱包，但不少钱包对它支持得不好，用户连不上时，可能以为要另外下载一个叫 WalletConnect 的应用。在 Google Play 里搜 WalletConnect，这款假应用排在最前面，下面是大量假好评，下载超过 1 万次<a class="ref" href="#s12">[12]</a>。</p>
+        <p>应用本身只是一个网页外壳，打开的网址指向一个计算器网站。服务器按访客的 IP 和 User-Agent 决定跳不跳：来自某些国家、或者不是手机浏览器的访客，被引到正常网站；其余的人看到的是仿照 WalletConnect 官方 Web3Inbox 应用做的钓鱼页。Check Point 说，这让 Google Play 的自动和人工审核都只看到无害的计算器<a class="ref" href="#s12">[12]</a>。它还查到，几个月前另一款“Walletconnect | Web3Inbox”用的是同一套手法，安装超过 5,000 次<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>为什么看到“赞助”还会点</h3>
+        <p>几方面的说法合起来，有几个原因：</p>
+        <ul>
+          <li>位置。搜索广告排在自然结果上面，用户要找的项目名本身就是广告的关键词。ScamSniffer 说，多数用户直接点第一个<a class="ref" href="#s2">[2]</a>。2026 年 SEAL 说，攻击者出价高过正规的交易所和协议，抢到“赞助结果”的位置<a class="ref" href="#s22">[22]</a>。</li>
+          <li>网址。广告上显示的域名可以是官方的，点进去才跳走<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。用户检查网址，检查的是广告给他看的那一个。</li>
+          <li>标签本身。Cointelegraph 2026 年 6 月的一篇长文写道，“赞助”标签不一定让人更小心，有人反而把它当成可信的标志，以为广告主经过了平台验证<a class="ref" href="#s23">[23]</a>。X 上的认证标志也一样，它说明的是账号，账号可能已经被盗<a class="ref" href="#s3">[3]</a><a class="ref" href="#s8">[8]</a>。</li>
+          <li>不容易被发现。ScamSniffer 的年报说，项目方账号被盗发的链接，社区一般 10 到 50 分钟就会发现；付费广告、空投这些渠道要隐蔽得多<a class="ref" href="#s11">[11]</a>。广告只给目标人群看，安全研究员不一定刷得到。</li>
+        </ul>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>渠道</th><th>受害者看到什么</th><th>怎样过审</th></tr></thead>
+          <tbody>
+            <tr><td>Google 搜索广告</td><td>搜项目名，第一条“赞助”结果，网址像官方的</td><td>按 gclid 参数、地区、开发者工具切换页面；跟踪模板跳转<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>X 推广帖</td><td>认证账号推限量 NFT、空投、新币</td><td>用被盗的账号投放，只投特定地区<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>Google Play 应用</td><td>搜 WalletConnect 排第一，好评很多</td><td>审核时显示计算器，按 IP 和 User-Agent 跳转<a class="ref" href="#s12">[12]</a></td></tr>
+          </tbody>
+        </table></div>
+        <h3>到了假网站以后</h3>
+        <p>Check Point 拆开了 2024 年那个样本。脚本先通过 DeBank、Ankr、Zapper 或 OpenSea 查钱包里有哪些币和 NFT、各值多少，从最贵的开始偷，尽量少花手续费；支持以太坊、BNB Chain、Polygon、Avalanche、Arbitrum、Fantom、Optimism<a class="ref" href="#s12">[12]</a>。收款地址不写在脚本里，要从指挥服务器取。Check Point 2025 年写道，MS Drainer 这类工具往往只在钱包余额够多时才去取地址，安全公司因此更难提前拉黑<a class="ref" href="#s15">[15]</a>。</p>
+        <p>偷代币分两步。受害者先签一笔 approve，把最大额度授权给配置里的一个攻击者地址；然后后端用这个地址调用 transferFrom，把币转到另一个收款地址。Check Point 的解释是，做授权的那个地址的私钥要放在服务器上，可能被查封；真正存钱的地址私钥不必放上去。受害者不撤销授权，以后转进这个钱包的同种代币也会被转走<a class="ref" href="#s12">[12]</a>。ETH、BNB 这类原生币，要么直接转给攻击者，要么经开发者部署的一个公开合约转。那个合约的地址开头结尾都是一串 0，源码在区块浏览器上验证过，函数名有 ClaimReward、Connect、Withdraw、Execute，做的事都一样：把钱转给攻击者，按比例分给开发者<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>2023 年 3 月到 6 月：搜索广告</h3>
+        <p>ScamSniffer 3 月第一次看到 MS Drainer，4 月初 SlowMist 把它追到的线索分享过来<a class="ref" href="#s1">[1]</a>。4 月，ScamSniffer 身边几个朋友误点了搜索广告被骗，它开始查 Google 上的恶意广告<a class="ref" href="#s1">[1]</a>。4 月 27 日的报告说，打开假 Zapper 广告的网页，页面就要求用 Permit 签名授权代币；很多钱包对这种签名没有明显的风险提示，普通用户以为是登录签名，随手就签了<a class="ref" href="#s2">[2]</a>。报告估计，与这批恶意广告网站有关的地址盗走约 416 万美元，受害者约 3,000 人，大部分发生在最近一个月<a class="ref" href="#s2">[2]</a>。</p>
+        <p>这份报告没有说用的是哪一家 drainer。ScamSniffer 12 月才写明，其中的假 Radiant 广告用的就是 MS Drainer<a class="ref" href="#s1">[1]</a>。4 月的报告还列出了投这些广告的两个广告主，一家乌克兰公司和一名加拿大人<a class="ref" href="#s2">[2]</a>，他们没有被起诉，也可能是账户被别人冒用，本站不写名字。报告建议 Google 接入专门识别 Web3 钓鱼网站的引擎，并在广告投放的全过程持续检查落地页，发现页面动态切换就处理<a class="ref" href="#s2">[2]</a>。用 MS Drainer 的钓鱼站 5 月、6 月各出现一个高峰<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>2023 年 6 月到 11 月：X 广告</h3>
+        <p>6 月底，ZachXBT 把“Ordinals Bubbles”那组 X 钓鱼广告发给 ScamSniffer，分析下来用的是同一套 drainer<a class="ref" href="#s1">[1]</a>。9 月，一个以太坊地址被盗约 2,406 万美元。ScamSniffer 年报列的签名类型是 Increase Allowance，也就是受害者签了一笔增加代币额度的授权<a class="ref" href="#s11">[11]</a>；BankInfoSecurity 引 ScamSniffer 说，这是 2023 年和 drainer 有关的单笔最大损失<a class="ref" href="#s10">[10]</a>。12 月的报告把这名受害者算在 MS Drainer 名下<a class="ref" href="#s1">[1]</a>。11 月，钓鱼站数量出现全年第三个高峰<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>2023 年 12 月：报告和报道</h3>
+        <p>12 月 21 日，ScamSniffer 发表报告，把这批钓鱼广告和 MS Drainer 联系起来，给出 9 个月的统计数字<a class="ref" href="#s1">[1]</a>。BleepingComputer 当天报道<a class="ref" href="#s3">[3]</a>，Infosecurity、IANS 通讯社、Bitcoin.com 在之后几天跟进<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s5">[5]</a>。ScamSniffer 的结论是，广告已经成了钓鱼团伙接触受害者的重要手段：靠 Google 的搜索词和 X 的关注人群，他们能挑出特定目标，用很低的成本持续钓鱼<a class="ref" href="#s1">[1]</a>。据 IANS 转述，这套 drainer 的活动 11 月达到高峰，此后几乎降到零<a class="ref" href="#s6">[6]</a>；ScamSniffer 的英文原文里没有这句话。</p>
+        <p>2024 年 1 月 6 日，BleepingComputer 写道，X 用户受够了源源不断的加密骗局广告；MalwareHunterTeam 收集的截图里，这类广告几乎都来自已验证用户，用户只能在广告下面加社区笔记互相提醒<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>2024 年：进了应用商店</h3>
+        <p>Check Point 2024 年 9 月 26 日的报告说，假 WalletConnect 应用里用的是 MS Drainer 2024 年 5 月 26 日的版本，而应用 3 月就上架了，说明使用者在不断更新到最新版<a class="ref" href="#s12">[12]</a>。应用在 Google Play 上留了近五个月才被下架<a class="ref" href="#s12">[12]</a><a class="ref" href="#s14">[14]</a>。Check Point 说，这是第一次发现只针对手机用户的 drainer<a class="ref" href="#s12">[12]</a>。同一份报告写道，当时 MS Drainer 仍在论坛上出售<a class="ref" href="#s12">[12]</a>。</p>
+        <p>ScamSniffer 2024 年的年报按各家 drainer 的钓鱼站数量算份额，列出的是 Angel、Pink、Inferno 和 Acedrainer，没有 MS<a class="ref" href="#s16">[16]</a>。本站没有找到 MS Drainer 宣布停售或源码泄露的报道。买家买走的是源码，名字不再出现在统计里，不等于这套代码不再被用。</p>
+        <h3>2026 年：广告还在</h3>
+        <p>到 2026 年，搜索广告钓鱼还在。据 Cointelegraph，SEAL 4 月称 3 月 Google 搜索上的钓鱼明显增多，攻击者付钱投放，或者盗用正规广告主的账户；3 月 13 日到 30 日盗走 127 万美元。SEAL 封掉了 356 个恶意广告链接，说这代表“一年多来每周都有”的稳定投放量<a class="ref" href="#s22">[22]</a>。5 月，冒充 Uniswap 的 Google 广告又让骗子拿到至少 40 万美元<a class="ref" href="#s22">[22]</a>。这些报道没有说用的是哪一家 drainer。</p>
+        <div class="note doubt"><span class="h">卖价各说不一</span><p>各家对 MS Drainer 卖法的描述不一致。BleepingComputer 写，源码卖 1,500 美元，卖家还对用它盗到的钱收 20%，扩展模块 500 到 1,000 美元<a class="ref" href="#s3">[3]</a>。ScamSniffer 的原文是，它不同于全托管、收 20% 的那些 drainer，卖的是源码和增值模块<a class="ref" href="#s1">[1]</a>；Bitcoin.com 写的是只对附加模块另收费<a class="ref" href="#s5">[5]</a>。IANS 写的是统一价 1,499.99 美元，模块 699.99 美元、999.99 美元等<a class="ref" href="#s6">[6]</a>。Check Point 2024 年 9 月写，基础价 1,499.99 美元，不含附加模块，经公开合约的交易开发者抽 10%<a class="ref" href="#s12">[12]</a>。几家的数字可能来自不同时间的广告帖，20% 也可能是和托管型 drainer 混在一起了。本页的示意图按 Check Point 拆解的样本写 10%。</p></div>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <h3>大部分归买家</h3>
+        <p>MS Drainer 卖的是源码，收款地址由买家自己填在配置里<a class="ref" href="#s12">[12]</a>。所以一笔被盗的钱，大部分直接进买家的地址。开发者的收入有三块：卖源码和模块的钱；售后支持；经它那个公开合约转走的原生币，按比例分成<a class="ref" href="#s12">[12]</a>。Check Point 描述的代币转账走的是 approve 加 transferFrom，直接到买家的收款地址<a class="ref" href="#s12">[12]</a>，开发者从代币里能不能分到钱，公开资料没有说清楚。</p>
+        <p>开发者一共赚了多少，没有公开的估计。ScamSniffer 2023 年报按 20% 的费率估算，各家 drainer 卖服务至少赚了 4,700 万美元<a class="ref" href="#s11">[11]</a>。这个数是七家 drainer 的被盗金额合计乘 20%，不是 MS 一家；MS 不按 20% 抽成，套用这个费率也不合适。</p>
+        <h3>已发表的追踪很少</h3>
+        <p>和 Inferno 相比，MS Drainer 的资金去向公开得很少。ScamSniffer 4 月分析了几个和恶意广告网站有关的大额归集地址，发现部分资金存进了换币服务 SimpleSwap、混币器 Tornado Cash，以及交易所 KuCoin、Binance 等<a class="ref" href="#s2">[2]</a>。这份报告没有点名 drainer，这些地址和 MS Drainer 的关系没有说明。12 月的报告只列了受害者的地址，没有追后面的去向<a class="ref" href="#s1">[1]</a>。</p>
+        <p>Check Point 追了 2024 年假应用的收款地址。它在多条 EVM 链上看到 150 多个地址转进来的代币，几乎没有转出，大部分赃款还留在攻击者的地址里，按当时的价格超过 7 万美元<a class="ref" href="#s12">[12]</a>。本站没有找到交易所或稳定币发行方冻结 MS Drainer 赃款的报道。</p>
+        <div class="note doubt"><span class="h">“MS Drainer 的钱”不是一个团伙的钱</span><p>买家各自部署、各自收钱，ScamSniffer 是把它关联到这套工具的钓鱼地址合在一起统计的<a class="ref" href="#s1">[1]</a>。5,898 万美元分散在多少个买家手里，公开资料没有说。所以这个数字说的是这套工具被用来偷了多少，不能当作开发者或某一个团伙的收入。本站不做链上取证，只转述已发表的结论。</p></div>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>谁被骗</h3>
+        <p>从 ScamSniffer 4 月列出的搜索词看，受害者是在找 DeFi 工具的人：资产看板 Zapper、数据站 DefiLlama、跨链桥 Stargate 和 Orbiter Finance、质押平台 Lido、借贷协议 Radiant<a class="ref" href="#s2">[2]</a>。这些人手里本来就有币，要找的是自己常用的网站，正是转账和签名的时候。X 上的受害者是关注加密货币、会被限量 NFT、空投和新币吸引的用户<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <p>ScamSniffer 列出的最大五名受害者都只有链上地址：9 月以太坊上的约 2,406 万美元，其次是约 119 万、64 万（Arbitrum）、55 万和 44 万美元<a class="ref" href="#s1">[1]</a>。损失非常集中。按 ScamSniffer 的数字算，平均每名受害者约 930 美元；最大一名就占了总额的四成多，去掉他，其余 6.3 万人平均约 550 美元。这是本站的计算。</p>
+        <p>很多受害者可能不知道钱是怎样没的。Check Point 说，假 WalletConnect 应用的 150 多名受害者里，只有 20 人在 Google Play 留了差评，开发者还刷了大量好评把差评压下去<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>各方统计</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>出处</th><th>范围</th><th class="n">金额</th><th class="n">受害者</th></tr></thead>
+          <tbody>
+            <tr><td>ScamSniffer，2023 年 4 月</td><td>恶意 Google 广告网站，没有点名 drainer</td><td class="n">约 416 万美元<a class="ref" href="#s2">[2]</a></td><td class="n">约 3,000</td></tr>
+            <tr><td>ScamSniffer，2023 年 12 月</td><td>2023 年 3 月起 9 个月，10,072 个钓鱼站</td><td class="n">约 5,898 万美元<a class="ref" href="#s1">[1]</a></td><td class="n">约 63,210</td></tr>
+            <tr><td>ScamSniffer 年报</td><td>2023 年 3 月至年底</td><td class="n">5,900 万美元<a class="ref" href="#s11">[11]</a></td><td class="n">6.3 万</td></tr>
+            <tr><td>BleepingComputer、Infosecurity</td><td>转述 12 月报告</td><td class="n">5,900 万美元<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a></td><td class="n">63,210</td></tr>
+            <tr><td>Bitcoin.com</td><td>同上</td><td class="n">5,800 万美元以上<a class="ref" href="#s5">[5]</a></td><td class="n">6.3 万以上</td></tr>
+            <tr><td>Check Point，2024 年 9 月</td><td>一款假 WalletConnect 应用</td><td class="n">7 万美元以上<a class="ref" href="#s12">[12]</a></td><td class="n">150 以上</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">这些数字的口径</span><p>12 月的 5,898 万美元是 ScamSniffer 分析和这套 drainer 关联的钓鱼地址的链上数据得出的<a class="ref" href="#s1">[1]</a>，标题写的是 5,800 万，媒体多半取整成 5,900 万<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。ScamSniffer 在 2025 年报里写明了它的统计方法：按被盗时的美元价值计算，只算能追踪到的 drainer 活动，是下限<a class="ref" href="#s17">[17]</a>。4 月的 416 万美元不能全算在 MS Drainer 头上，那份报告没有点名，只有其中的假 Radiant 广告后来被确认用了 MS<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。受害者人数一般按钱包地址算。Check Point 那例的 7 万美元是另一款应用、另一段时间，和 2023 年的统计不能相加。本站按 ScamSniffer 12 月的报告记约 5,898 万美元、63,210 名受害者。</p></div>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>到 2026 年 11 月，本站没有查到针对 MS Drainer 开发者或买家的起诉、逮捕、制裁的公开报道，也没有执法机构公开说过在查它。ScamSniffer 和 BleepingComputer 公布过卖家在论坛上用的名字<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>，Check Point 公布过论坛帖子的地址和攻击者的链上地址<a class="ref" href="#s12">[12]</a>。这些都没有经过法院认定，本站不写人名和账号。Check Point 说开发者讲俄语，脚本禁止在俄罗斯和独联体使用<a class="ref" href="#s12">[12]</a>，开发者的所在地没有公开。</p>
+        <h3>Google</h3>
+        <p>本站没有找到 Google 针对 MS Drainer 或 ScamSniffer 报告的公开回应。2024 年 9 月 Cointelegraph 就假 WalletConnect 应用联系 Google，Google 没有立即回应<a class="ref" href="#s13">[13]</a>；应用已被 Google Play 下架<a class="ref" href="#s14">[14]</a>。</p>
+        <p>Google 在 2024 年 3 月 27 日发布的 2023 年广告安全报告里，给出了全平台的数字：全年拦截或移除 55 亿多条广告，封禁 1,270 万个广告主账户，比上一年多了近一倍；因滥用广告网络（包括推广恶意软件）拦截或移除 10 亿多条<a class="ref" href="#s21">[21]</a>。2023 年 11 月它推出“有限投放”政策，对还没有良好记录的广告主设一段观察期，广告主和它提到的品牌关系不清楚时，广告的展示可能受限<a class="ref" href="#s21">[21]</a>。冒充 DeFi 项目的广告正是这种情况。报告没有提到加密钓鱼广告，也没有说这些措施对它们效果如何。</p>
+        <h3>X</h3>
+        <p>本站也没有找到 X 的回应。BleepingComputer 2024 年 1 月写 X 骗局广告时说，它没有联系 X，因为 X 一直没有回复它此前的新闻邮件<a class="ref" href="#s7">[7]</a>。用户能做的是在广告下面写社区笔记，提醒别人这是骗局<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>安全公司</h3>
+        <ul>
+          <li>ScamSniffer 2023 年 4 月建议 Google 接入 Web3 钓鱼识别引擎，在广告投放全程监测落地页<a class="ref" href="#s2">[2]</a>；12 月说广告平台要加强验证流程<a class="ref" href="#s1">[1]</a>。</li>
+          <li>Check Point 呼吁应用商店加强审核<a class="ref" href="#s12">[12]</a>。它在 2024 年的报告末尾写道，靠跳转和检查 User-Agent 隐藏的应用，Google 搜索、Shodan 和自动检查一般都发现不了<a class="ref" href="#s12">[12]</a>。</li>
+          <li>SEAL 2026 年封掉了 356 个恶意广告链接<a class="ref" href="#s22">[22]</a>。</li>
+        </ul>
+        <p>这些措施都是给骗子加成本，没有一项能把钱还给受害者。本站没有找到 MS Drainer 受害者拿回钱的报道。到 2026 年，冒充加密项目的搜索广告仍然每周都有<a class="ref" href="#s22">[22]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">不要靠广告找网站</span>
+          <ul>
+            <li>常用的 DeFi 网站存成书签，从书签打开，不要每次去搜。ScamSniffer 建议搜索时提高警惕，最好屏蔽广告区域<a class="ref" href="#s2">[2]</a>；Cointelegraph 那篇长文的建议是钱包、交易所和 DeFi 应用的赞助链接一概不点<a class="ref" href="#s23">[23]</a>。</li>
+            <li>“赞助”标签和 X 的认证标志都不代表广告主经过了核实<a class="ref" href="#s23">[23]</a>。2023 年的 X 钓鱼广告多半出自已验证账号，账号本身可能已经被盗<a class="ref" href="#s3">[3]</a>。</li>
+            <li>广告上显示的网址也不能全信。显示的是官方域名，点进去可能跳到别处<a class="ref" href="#s1">[1]</a>。要看的是打开以后地址栏里的域名。</li>
+            <li>留意多一个字母、多一个词的域名：defeilllama.com、defllllama.com 冒充 DefiLlama，webapp-zapper.com 冒充 Zapper，radiantcapital.info 冒充 Radiant<a class="ref" href="#s2">[2]</a>。</li>
+            <li>别人打开没问题，不代表你打开也没问题。这些钓鱼页只给特定地区、特定设备的人看，审核员和其他地区的人看到的是正常网站<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a>。</li>
+            <li>X 广告里的“限量 NFT”“空投”“新币上线”，是 ScamSniffer 和 BleepingComputer 列出的 MS Drainer 广告主题<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">应用商店里的“WalletConnect”</span>
+          <ul>
+            <li>WalletConnect 是钱包里内置的连接协议，不需要另外下载一个叫 WalletConnect 的应用。Check Point 发现的假应用就是利用了这个误解，在 Google Play 搜索结果里排第一<a class="ref" href="#s12">[12]</a>。</li>
+            <li>评分高、好评多不说明什么。Check Point 说那款应用的好评明显是假的，内容和应用本身毫无关系；差评出现后，开发者会刷一批好评压下去<a class="ref" href="#s12">[12]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">签名之前和之后</span>
+          <ul>
+            <li>正常的网站不会为了“验证钱包”让你连续签几笔交易。Check Point 那个假应用就是用“验证钱包”的说法，要用户接连签下授权，每一笔都把某种代币的最大额度交给攻击者<a class="ref" href="#s12">[12]</a>。签名的种类和怎样看懂，见 <a href="2023-inferno-drainer.html">Inferno 页</a>。</li>
+            <li>“登录签名”也要看清楚。假 Zapper 页面弹出的是 Permit 签名，ScamSniffer 说普通用户常把它当成登录签名，随手就签了<a class="ref" href="#s2">[2]</a>。</li>
+            <li>签了就马上撤销授权，再把剩下的资产转到新钱包。Check Point 说，不撤销的话，以后转进这个钱包的币，攻击者不用你再做什么就能转走<a class="ref" href="#s12">[12]</a>。</li>
+            <li>保存广告截图、网址和交易记录，向当地警方报案。遇到可疑广告，用 Google 和 X 的举报功能报告；X 上也可以给广告加社区笔记提醒别人<a class="ref" href="#s7">[7]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">ScamSniffer，《From Google to X Ads: Tracing the Crypto Wallet Drainer’s $58 Million Trail》，2023-12-21。<a href="https://drops.scamsniffer.io/from-google-to-x-ads-tracing-the-crypto-wallet-drainers-58-million-trail/">drops.scamsniffer.io</a></li>
+          <li id="s2">ScamSniffer，《$4 Million Stolen Due to Google Search Ad Phishing》，2023-04-27。<a href="https://drops.scamsniffer.io/4-million-stolen-due-to-google-search-ad-phishing/">drops.scamsniffer.io</a></li>
+          <li id="s3">BleepingComputer（Bill Toulas），《Crypto drainer steals $59 million from 63k people in Twitter ad push》，2023-12-21。<a href="https://www.bleepingcomputer.com/news/security/crypto-drainer-steals-59-million-from-63k-people-in-twitter-ad-push/">bleepingcomputer.com</a></li>
+          <li id="s4">Infosecurity Magazine（Phil Muncaster），《Crypto Drainer Steals $59m Via Google and X Ads》，2023-12-22。<a href="https://www.infosecurity-magazine.com/news/crypto-drainer-steals-59m-google-x/">infosecurity-magazine.com</a></li>
+          <li id="s5">Bitcoin.com News（Sergio Goschenko），《MS Wallet Drainer Has Siphoned Over $58 Million Using Google and X Phishing Ads》，2023-12-26。<a href="https://news.bitcoin.com/ms-wallet-drainer-has-siphoned-over-58-million-using-google-and-x-phishing-ads/">news.bitcoin.com</a></li>
+          <li id="s6">Gulf News 转载 IANS，《Scammers use Google, X ads to steal $59m in crypto from 63,000 victims》，2023-12-24。<a href="https://gulfnews.com/your-money/cryptocurrency/scammers-use-google-x-ads-to-steal-59m-in-crypto-from-63000-victims-1.1703425814794">gulfnews.com</a></li>
+          <li id="s7">BleepingComputer（Lawrence Abrams），《X users fed up with constant stream of malicious crypto ads》，2024-01-06。<a href="https://www.bleepingcomputer.com/news/security/x-users-fed-up-with-constant-stream-of-malicious-crypto-ads/">bleepingcomputer.com</a></li>
+          <li id="s8">BleepingComputer（Sergiu Gatlan），《Netgear, Hyundai latest X accounts hacked to push crypto drainers》，2024-01-08。<a href="https://www.bleepingcomputer.com/news/security/netgear-hyundai-latest-x-accounts-hacked-to-push-crypto-drainers/">bleepingcomputer.com</a></li>
+          <li id="s9">BleepingComputer（Sergiu Gatlan），《Mandiant’s X account hacked by crypto Drainer-as-a-Service gang》，2024-01-10。<a href="https://www.bleepingcomputer.com/news/security/mandiants-x-account-hacked-by-crypto-drainer-as-a-service-gang/">bleepingcomputer.com</a></li>
+          <li id="s10">BankInfoSecurity，《Crypto-Seeking Drainer Scam-as-a-Service Operations Thrive》，2024-01-16。<a href="https://www.bankinfosecurity.com/crypto-seeking-drainer-scam-as-a-service-operations-thrive-a-24107">bankinfosecurity.com</a></li>
+          <li id="s11">ScamSniffer，《Scam Sniffer 2023: Crypto Phishing Scams Drain $300 Million from 320,000 Users》，2024-01-01。<a href="https://drops.scamsniffer.io/scam-sniffer-2023-crypto-phishing-scams-drain-300-million-from-320000-users/">drops.scamsniffer.io</a></li>
+          <li id="s12">Check Point Research，《Wallet Scam: A Case Study in Crypto Drainer Tactics》，2024-09-26。<a href="https://research.checkpoint.com/2024/wallet-scam-a-case-study-in-crypto-drainer-tactics/">research.checkpoint.com</a></li>
+          <li id="s13">Cointelegraph（Jesse Coghlan），《Crypto wallet drainer was on Google Play for months, stole $70K: Report》，2024-09-30。<a href="https://cointelegraph.com/news/crypto-wallet-drainer-google-play-stole-70k-check-point">cointelegraph.com</a></li>
+          <li id="s14">Infosecurity Magazine（Phil Muncaster），《First Mobile Crypto Drainer Found on Google Play》，2024-09-26。<a href="https://www.infosecurity-magazine.com/news/first-mobile-crypto-drainer-google/">infosecurity-magazine.com</a></li>
+          <li id="s15">Check Point Research，《Inferno Drainer Reloaded: Deep Dive into the Return of the Most Sophisticated Crypto Drainer》，2025-05-07。<a href="https://research.checkpoint.com/2025/inferno-drainer-reloaded-deep-dive-into-the-return-of-the-most-sophisticated-crypto-drainer/">research.checkpoint.com</a></li>
+          <li id="s16">ScamSniffer，《Scam Sniffer 2024: Web3 Phishing Attacks – Wallet Drainers Drain $494 Million》，2025-01-03。<a href="https://drops.scamsniffer.io/scam-sniffer-2024-web3-phishing-attacks-wallet-drainers-drain-494-million/">drops.scamsniffer.io</a></li>
+          <li id="s17">ScamSniffer，《Scam Sniffer 2025: Crypto Phishing Losses Fall 83% to $84 Million》，2026-01-03。<a href="https://drops.scamsniffer.io/scam-sniffer-2025-crypto-phishing-losses-fall-83-to-84-million/">drops.scamsniffer.io</a></li>
+          <li id="s18">Google 广告政策帮助中心，《Destination requirements》，2026-11 查阅。<a href="https://support.google.com/adspolicy/answer/6368661?hl=en">support.google.com</a></li>
+          <li id="s19">Google 广告政策帮助中心，《Circumventing systems》，2026-11 查阅。<a href="https://support.google.com/adspolicy/answer/15938075?hl=en">support.google.com</a></li>
+          <li id="s20">Google Ads 帮助中心，《About tracking in Google Ads》，2026-11 查阅。<a href="https://support.google.com/google-ads/answer/6076199?hl=en">support.google.com</a></li>
+          <li id="s21">Google，《Our 2023 Ads Safety Report》，2024-03-27。<a href="https://blog.google/products/ads-commerce/google-ads-safety-report-2023/">blog.google</a></li>
+          <li id="s22">Cointelegraph（Martin Young），《Scammers make $400K through fake Uniswap ads on Google》，2026-05-26。<a href="https://cointelegraph.com/news/scammers-make-400k-through-fake-uniswap-ads-on-google">cointelegraph.com</a></li>
+          <li id="s23">Cointelegraph（Dilip Kumar Patairya），《Why Google search can be a crypto wallet risk》，2026-06-22。<a href="https://cointelegraph.com/learn/fake-google-ads-crypto-wallet-security">cointelegraph.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Qtum 与 UTXO｜区块链基础知识</title>
+<meta name="description" content="比特币的记账方式上怎么跑 EVM；“EVM 兼容”到底兼容到哪一层">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="qtum">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 01 章</p>
+    <h1>Qtum 与 UTXO</h1>
+    <p class="lede">比特币的记账方式上怎么跑以太坊的合约，以及“EVM 兼容”到底兼容到哪一层。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">Qtum = 比特币的代码和记账方式 + 一台 EVM</p>
+  <p class="lead">Qtum 的代码分叉自 Bitcoin Core，底层用 UTXO 记账、用 PoS 出块；再通过一层叫 AAL 的“翻译层”，让以太坊虚拟机（EVM）能在上面运行 Solidity 合约。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常听到的说法里，对的部分</h3>
+      <ul>
+        <li>能部署和运行 Solidity 合约，EVM 版本一直跟着以太坊升级，目前到 Pectra</li>
+        <li>有自己的代币标准 QRC-20，接口和 ERC-20 一样</li>
+        <li>每个 Qtum 地址背后都是 20 字节，可以写成 40 位 hex，看起来像以太坊地址</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>Qtum 不是以太坊的分叉</b>，是 Bitcoin Core 的分叉。最新 v30.2 同步的是 Bitcoin Core 30.2</li>
+        <li>底层<b>没有账户余额，也没有账户 nonce</b>，链上只有 UTXO</li>
+        <li><b>同一把私钥在 Qtum 和以太坊上算出来的地址不一样</b></li>
+        <li>标准 MetaMask 不能直接给 Qtum 交易签名</li>
+        <li>主网 chainId 81 在公共登记表里属于另一条链</li>
+      </ul>
+    </div>
+  </div>
+  <div class="tbl"><table class="mw-620">
+    <thead><tr><th>档案</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><th>上线</th><td>创世块 2017-09-06；主网 v1.0 发布于 2017-09-08</td></tr>
+      <tr><th>代码来源</th><td>Bitcoin Core 分叉，持续跟进比特币上游版本</td></tr>
+      <tr><th>记账模型</th><td>UTXO（和 BTC 一样）</td></tr>
+      <tr><th>共识</th><td>PoS，内核算法源自 Blackcoin</td></tr>
+      <tr><th>出块间隔</th><td>32 秒。最初是 128 秒，2021 年 “Fastlane” 硬分叉（主网区块 845000）改为 32 秒</td></tr>
+      <tr><th>原生币</th><td><code>QTUM</code>，8 位小数（最小单位 satoshi，和 BTC 一样），用来付转账费和 gas</td></tr>
+      <tr><th>EVM 版本</th><td>Pectra（v29.1，主网区块 5483000 激活）。之前依次升级过 London、Shanghai、Dencun</td></tr>
+      <tr><th>EVM chainId</th><td>主网 <code>81</code>；测试网 <code>8889</code>，regtest <code>8890</code>（Shanghai 升级前也都是 81）</td></tr>
+      <tr><th>区块浏览器</th><td><a href="https://qtum.info" rel="noopener">qtum.info</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="utxo">
+  <h2 class="eyebrow">底层</h2>
+  <p class="lead">要理解 Qtum，先得理解它和以太坊在“账本怎么记”上的根本区别。比特币和 Qtum 记的是一张张“钞票”，以太坊记的是每个账户的余额。</p>
+  <div class="bit wide"><div class="anim" data-anim="utxo"></div></div>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th></th><th>UTXO 模型（Bitcoin、Qtum）</th><th>账户模型（Ethereum、Base、BSC）</th></tr></thead>
+    <tbody>
+      <tr><th>链上存什么</th><td>一张张“未花费的输出”，每张写着金额和谁能花</td><td>每个地址一行：余额、nonce、合约代码和存储</td></tr>
+      <tr><th>余额怎么来</th><td>钱包把属于你的所有 UTXO 加起来</td><td>直接读那一行的数字</td></tr>
+      <tr><th>转账</th><td>花掉整张输入，生成新输出（含找零）</td><td>一行减、一行加</td></tr>
+      <tr><th>防重放</th><td>输出花掉就没了</td><td>每个账户的递增 nonce</td></tr>
+      <tr><th>手续费</th><td>输入总额 − 输出总额</td><td>gasUsed × gas 价格</td></tr>
+      <tr><th>写合约</th><td>Bitcoin Script 能力有限，写不了通用合约</td><td>EVM 图灵完备，合约直接读写账户状态</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Qtum 想要的是两边的好处：底层沿用比特币久经考验的 UTXO，上层又能跑以太坊生态的合约。代价就是中间要有一层翻译，也就是下一节的 AAL。</p>
+</section>
+
+<section id="aal">
+  <h2 class="eyebrow">核心机制</h2>
+  <p class="sub">AAL：把 UTXO 交易翻译给 EVM</p>
+  <p class="lead">EVM 只认“账户”：谁调用、带了多少钱、余额多少。Qtum 链上只有 UTXO。AAL（Account Abstraction Layer）夹在中间，把 UTXO 交易里的合约指令取出来，翻译成 EVM 能执行的调用，再把执行结果翻译回 UTXO。</p>
+  <div class="callout"><p><b>别和以太坊的“账户抽象”搞混。</b>以太坊的 ERC-4337、EIP-7702 也叫 account abstraction，讲的是让用户账户可编程，和 Qtum 的 AAL 毫无关系，只是名字撞了。</p></div>
+  <h3>四个 Qtum 特有的脚本操作码</h3>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>操作码</th><th>出现在哪</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">OP_CREATE (0xc1)</td><td>交易输出</td><td>部署合约。输出脚本里带 gas 上限、gas 价格和合约字节码</td></tr>
+      <tr><td class="mono">OP_CALL (0xc2)</td><td>交易输出</td><td>调用合约。带合约地址、调用数据、gas 上限和价格；这个输出的金额就是 <code>msg.value</code></td></tr>
+      <tr><td class="mono">OP_SPEND (0xc3)</td><td>节点生成的交易输入</td><td>花掉合约名下的 UTXO。只出现在节点自动生成的“condensing transaction”里</td></tr>
+      <tr><td class="mono">OP_SENDER (0xc4)</td><td>交易输出</td><td>显式指定调用者是谁（2019 年 QIP-5 加入）。离线质押的委托就用到它</td></tr>
+    </tbody>
+  </table></div>
+  <h3>一次合约调用的旅程</h3>
+  <div class="bit wide"><div class="anim" data-anim="aal"></div></div>
+  <h3>谁是 msg.sender</h3>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">规则</span><h4>从交易的第一个输入推出来</h4></div>
+      <p>交易里有 OP_SENDER，就用它指定的地址；否则用<b>第一个输入</b>所花的那个 UTXO 的地址。这个 UTXO 必须是 P2PKH 或 P2PK 类型，否则交易无效。gas 找零永远退回第一个输入的地址，不跟随 OP_SENDER。</p></div>
+    <div class="bit"><div class="bh"><span class="term">限制</span><h4>多签地址不能直接调合约</h4></div>
+      <p>Qtum README 原文：合约“不能从 pay-to-pubkeyhash（Q 开头）以外的任何地址类型收币或向其发币”。比特币式的 P2SH 多签地址、segwit 地址都不能当 <code>msg.sender</code>。OP_SENDER 也没有放宽这一点。另外，创建合约时不能附带 QTUM。</p></div>
+  </div>
+</section>
+<section id="addr">
+  <h2 class="eyebrow">地址</h2>
+  <p class="lead">Qtum 沿用比特币的算法：对<b>压缩公钥</b>做 SHA-256 再做 RIPEMD-160，得到 20 字节（hash160）。以太坊则对<b>未压缩公钥</b>做 Keccak-256，取最后 20 字节。算法不同，所以同一把私钥导入两边，得到的地址完全不同。</p>
+  <p>这 20 字节在 Qtum 上有两种写法：给人看的 base58 地址（主网 <code>Q</code> 开头），和给 EVM 用的 40 位 hex。两者是同一个东西，只是编码不同。</p>
+  <div class="bgrid">
+    <div class="bit">
+      <div class="bh"><span class="term">Tool</span><h4>Q 地址 ↔ hex 互转</h4></div>
+      <p>输入 Q / q 开头的地址，或 40 位 hex。全部在浏览器里计算，不联网。</p>
+      <div class="tool">
+        <label for="qaIn">地址或 hex<input id="qaIn" type="text" spellcheck="false" autocomplete="off" value="qUbxboqjBRp96j3La8D1RYkyqx5uQbJPoW"></label>
+        <div class="ctrl gap-6">
+          <button class="btn ghost" type="button" data-qa="qUbxboqjBRp96j3La8D1RYkyqx5uQbJPoW">示例：测试网地址</button>
+          <button class="btn ghost" type="button" data-qa="6c89a1a6ca2ae7c00b248bb2832d6f480f27da68">示例：hex</button>
+        </div>
+        <div class="out" id="qaOut" aria-live="polite"></div>
+      </div>
+      <p class="note">示例取自 Janus README 和 Qtum RPC 文档。base58check 末尾 4 字节是校验和，抄错一位就能被发现。</p>
+    </div>
+    <div class="bit">
+      <div class="bh"><span class="term">Types</span><h4>Qtum 的地址类型</h4></div>
+      <div class="tbl"><table>
+        <thead><tr><th>类型</th><th>开头</th><th>能调合约吗</th></tr></thead>
+        <tbody>
+          <tr><td>P2PKH 主网</td><td class="mono">Q</td><td class="y">能</td></tr>
+          <tr><td>P2PKH 测试网</td><td class="mono">q</td><td class="y">能</td></tr>
+          <tr><td>P2SH（多签）主网 / 测试网</td><td class="mono">M / m</td><td class="n">不能</td></tr>
+          <tr><td>segwit（bech32）</td><td class="mono">qc1 / tq1</td><td class="n">不能</td></tr>
+          <tr><td>合约地址</td><td>40 位 hex</td><td>—</td></tr>
+        </tbody>
+      </table></div>
+      <p><b>合约地址怎么来：</b>以太坊用“部署者地址 + nonce”算；Qtum 没有账户 nonce，用的是 <code>RIPEMD160(SHA256(创建交易的 txid ‖ 输出序号))</code>。用 Qtum 主网上 USDC.e 的创建交易验证过：txid <code>4b01f6e6…85e6</code>、输出 0，算出来正好是它的地址 <code>0xecfc68f4…019a</code>。按以太坊规则预先计算合约地址的工具，在 Qtum 上会算错。</p>
+    </div>
+  </div>
+</section>
+
+<section id="pos">
+  <h2 class="eyebrow">共识与治理</h2>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">PoS</span><h4>谁来出块</h4></div>
+      <p>持有已成熟 QTUM 的人都能参与“质押”出块，内核算法源自 Blackcoin，目标间隔 32 秒。UTXO 要有 2000 个确认（约 18 小时）才能用于质押；新挖出的币和 gas 找零也要等 2000 块才能花。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Offline Staking</span><h4>离线质押（2020 年起）</h4></div>
+      <p>不想一直开着钱包的人，可以通过委托合约把质押权委托给一个 Super Staker，约定分成比例。官方原文：离线质押是<b>非托管</b>的，币不会被锁定，私钥一直在自己手里。默认最少 100 QTUM。</p></div>
+    <div class="bit"><div class="bh"><span class="term">DGP</span><h4>链上治理协议</h4></div>
+      <p>一组系统合约，可以不分叉就调整网络参数：gas 价目表、区块大小、最低 gas 价格、区块 gas 上限。当前最低 gas 价格 40 sat/gas，区块 gas 上限 4000 万。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Finality</span><h4>没有“最终确定”这个状态</h4></div>
+      <p>以太坊有明确的 finalized 区块。Qtum 没有，它用同步检查点拒绝过深的重组：早于币成熟期（当前 2000 块）的分叉会被拒绝。比这浅的重组理论上都可能发生，桥要自己选等多少个确认。</p></div>
+  </div>
+</section>
+
+<section id="compat">
+  <h2 class="eyebrow">关键结论</h2>
+  <p class="lead">Qtum 的 EVM 兼容是真的，但只在“合约执行”这一层。往外每多走一层，差异就多一些。</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>层面</th><th>和以太坊一样吗</th><th>具体差异与后果</th></tr></thead>
+    <tbody>
+      <tr><td>合约执行（opcode、存储、事件）</td><td class="y">基本一样</td><td>EVM 版本到 Pectra；底层引擎是 evmone</td></tr>
+      <tr><td>Solidity 编译</td><td class="y">一样</td><td>编译目标要选节点支持的 EVM 版本。Qtum Core 把 EVM 版本最高映射到 <code>EVMC_PRAGUE</code>：blob 相关操作码能执行，但 Qtum 没有 blob 交易，节点给 EVM 的区块上下文里 blob 哈希、blob 基础费、基础费都没填，<code>BLOBHASH</code> / <code>BLOBBASEFEE</code> / <code>BASEFEE</code> 都返回 0；v29.1 发布说明列出的 Pectra 内容只有 EIP-2537、EIP-2935，没有 EIP-7702（UTXO 交易里也没有 7702 的交易类型）</td></tr>
+      <tr><td>代币标准</td><td class="y">接口一样</td><td>QRC-20 与 ERC-20 方法和事件相同</td></tr>
+      <tr><td>金额单位</td><td class="n">不同</td><td><code>msg.value</code> 以 satoshi 计（8 位小数），不是 wei（18 位）</td></tr>
+      <tr><td>地址与私钥</td><td class="n">不同</td><td>同一私钥两边地址不同；签名消息前缀是 <code>QTUM Signed Message</code></td></tr>
+      <tr><td>交易构造</td><td class="n">不同</td><td>要挑 UTXO、写 OP_CALL 脚本；没有账户 nonce。ethers.js 直接生成的交易不能广播到 Qtum</td></tr>
+      <tr><td>合约地址</td><td class="n">不同</td><td>由 txid + 输出序号算出，不是部署者 + nonce</td></tr>
+      <tr><td>调用者</td><td class="n">有限制</td><td>只能是 P2PKH / P2PK；合约钱包（合约调合约）可以</td></tr>
+      <tr><td>节点 RPC</td><td class="n">不同</td><td>Qtum 节点讲比特币式 RPC，以太坊工具需要 Janus 或专用库翻译</td></tr>
+      <tr><td>钱包</td><td class="n">不同</td><td>标准 MetaMask 不能签 Qtum 交易，要用 Qtum Snap 或专用钱包</td></tr>
+      <tr><td>chainId</td><td class="n">有冲突</td><td>81 在 ethereum-lists 登记的是 Japan Open Chain（标记 reusedChainId），Qtum 没有登记</td></tr>
+      <tr><td>出块与确认</td><td class="n">不同</td><td>32 秒一块，没有 finalized 状态，深度重组上限约 2000 块</td></tr>
+    </tbody>
+  </table></div>
+</section>
+<section id="janus">
+  <h2 class="eyebrow">工具链</h2>
+  <p class="lead">MetaMask、ethers.js、Hardhat 只会说 <code>eth_*</code> 这套 RPC。Qtum 节点（qtumd）说的是比特币式的 RPC。Janus 是官方做的翻译代理：前面接 <code>eth_*</code> 请求，后面转成 Qtum 节点能执行的调用。</p>
+  <div class="bit wide"><div class="anim" data-anim="janus"></div></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Limits</span><h4>README 里写明的限制</h4></div>
+      <ul class="note-list">
+        <li>公共实例只适合“不需要 <code>eth_sendTransaction</code> 或 <code>eth_accounts</code>”的场景；要发交易得自建 Janus + qtumd，由节点钱包保管私钥</li>
+        <li>把以太坊格式签名的 <code>eth_sendRawTransaction</code> 透明转换成 Qtum 交易，写在“未来工作”里</li>
+        <li><code>eth_subscribe</code> 只支持 <code>logs</code></li>
+      </ul></div>
+    <div class="bit"><div class="bh"><span class="term">Status</span><h4>现状（2026-10-27 查询）</h4></div>
+      <p>GitHub 上的 <code>qtumproject/janus</code> 仓库于 2026-09-17 被 GitHub 封禁访问，API 返回原因 “tos”。官方没有声明继任项目。仍在维护的替代方案是在客户端签名、自己选 UTXO 的 <code>qtum-ethers-wrapper</code>，以及 Qtum 的 MetaMask Snap。</p></div>
+  </div>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li><a href="https://github.com/qtumproject/qtum/blob/master/README.md" rel="noopener">Qtum Core README</a>（UTXO、DGP、合约地址类型限制）</li>
+    <li><a href="https://github.com/qtumproject/qtum/releases" rel="noopener">Qtum Core 发布说明</a>（Fastlane、Shanghai、Dencun、Pectra 激活高度）</li>
+    <li>Qtum Core 源码：<code>src/kernel/chainparams.cpp</code>（版本字节、出块间隔、成熟期）、<code>src/validation.cpp</code>（msg.sender、gas 找零）、<code>src/script/script.h</code>（操作码）、<code>src/qtum/qtumutils.h</code>（chainId）、<code>src/qtum/qtumstate.cpp</code>（condensing transaction）</li>
+    <li><a href="https://github.com/qtumproject/qips/issues/25" rel="noopener">QIP-25 离线质押</a></li>
+    <li><a href="https://github.com/qtumproject/documents" rel="noopener">qtumproject/documents</a>（QRC20、RPC API、Offline Staking）</li>
+    <li>Janus README（web.archive.org 2023-03-16 快照）；GitHub API <code>repos/qtumproject/janus</code></li>
+    <li><a href="https://github.com/ethereum-lists/chains/blob/master/_data/chains/eip155-81.json" rel="noopener">ethereum-lists eip155-81.json</a></li>
+    <li><a href="https://github.com/qtumproject/bridge-evm-contracts/tree/a351a067f6ba06640c6ec000701fa86b1dd954d8" rel="noopener">bridge-evm-contracts @ a351a067</a>（Bridge.sol、ERC20Handler.sol）</li>
+  </ol>
+  <p>核查日期 2026-10-27。docs.qtum.site 当天无法访问，相关内容改用源码和 documents 仓库核对。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // UTXO 与账户模型对比：上半 UTXO，下半账户
+  A.utxo = {h:300,
+    b:[['ub',2,3,96,45,'UTXO 模型 · Bitcoin、Qtum'],['in',4,13,27,32,'Alice 的未花费输出'],['tx',36,13,27,32,'交易'],['outs',68,13,28,32,'新输出'],
+       ['ab',2,52,96,45,'账户模型 · Ethereum、Base、BSC'],['acc',4,62,92,32,'链上状态']],
+    it:[
+      {id:'u5', h:chip('5','--btc'), x:17.5, y:24}, {id:'u3', h:chip('3','--btc'), x:17.5, y:37},
+      {id:'o6', h:chip('Bob 6','--btc'), x:82, y:22, hide:1}, {id:'oc', h:chip('找零 1.99','--btc','out'), x:82, y:32, hide:1},
+      {id:'fee', h:'<div class="lbl m">手续费 0.01</div>', x:82, y:42, hide:1},
+      {id:'ra', h:'<span class="cell">Alice  余额 8</span>', x:28, y:72}, {id:'rb', h:'<span class="cell">Bob    余额 0</span>', x:28, y:86},
+      {id:'na', h:'<span class="cell">nonce 7</span>', x:72, y:72}],
+    s:[
+      {c:'Alice 有 8 个币。在 UTXO 模型里，链上没有“Alice 余额 = 8”这一行，只有两张属于她、还没花掉的“钞票”：一张 5、一张 3。钱包把它们加起来显示 8。', lit:['in']},
+      {c:'她要付给 Bob 6。没有面额正好的钞票，所以交易必须把 5 和 3 整张作为输入花掉。', set:{u5:{x:49.5}, u3:{x:49.5}}, lit:['tx']},
+      {c:'交易产生新的输出：6 给 Bob，1.99 作为找零回到 Alice 自己的地址，输入减输出剩下的 0.01 就是手续费。那两张旧钞票从此作废。“UTXO”（未花费的交易输出）这个名字就是这么来的：只有还没被花掉的输出才算钱。',
+       set:{u5:{hide:1}, u3:{hide:1}, o6:{hide:0}, oc:{hide:0}, fee:{hide:0}}, lit:['outs']},
+      {c:'同一件事放在账户模型里：链上直接存着“Alice 余额 8”。转账就是 Alice 那一行减 6.01，Bob 那一行加 6。没有钞票，也没有找零。',
+       set:{ra:{h:'<span class="cell" style="color:var(--warn)">Alice  余额 1.99</span>'}, rb:{h:'<span class="cell" style="color:var(--ok)">Bob    余额 6</span>'}}, lit:['acc']},
+      {c:'防重放的方式也不同。UTXO：钞票花掉就没了，同一笔交易再广播一次也花不出第二次。账户模型：余额一直在，所以每个账户带一个递增的 nonce，每笔交易写上序号，同一个序号只认一次。',
+       set:{ra:{h:'<span class="cell">Alice  余额 1.99</span>'}, rb:{h:'<span class="cell">Bob    余额 6</span>'}, na:{h:'<span class="cell" style="color:var(--accent)">nonce 7 → 8</span>'}}, lit:['in','acc']},
+    ]};
+  // AAL：上半是链上的 UTXO 交易，下半是 EVM 看到的世界
+  A.aal = {h:330,
+    b:[['ul',2,3,96,44,'链上：UTXO 交易'],['in',4,13,24,30,'输入'],['tx',31,13,30,30,'Alice 的交易'],['out',64,13,32,30,'输出'],
+       ['el',2,53,96,44,'EVM 看到的：账户'],['call',4,63,30,30,'一次调用'],['st',37,63,30,30,'合约存储（QRC-20 账本）'],['bal',70,63,26,30,'合约余额']],
+    it:[
+      {id:'u10', h:chip('10 QTUM','--qtum'), x:16, y:30},
+      {id:'oc', h:chip('OP_CALL · 1','--qtum'), x:80, y:24, hide:1}, {id:'chg', h:chip('找零 8.9','--qtum','out'), x:80, y:36, hide:1},
+      {id:'txl', h:'<div class="lbl m">一笔普通的<br>比特币式交易</div>', x:46, y:30},
+      {id:'msg', h:'<div class="lbl"><span class="mono">sender = Alice</span><br><span class="mono">value = 1 QTUM</span><br><span class="mono">data = transfer(…)</span></div>', x:19, y:80, hide:1},
+      {id:'s1', h:'<span class="cell">Alice 100 → 90</span>', x:52, y:76, hide:1}, {id:'s2', h:'<span class="cell">Bob     0 → 10</span>', x:52, y:86, hide:1},
+      {id:'cb', h:'<div class="lbl">1 QTUM</div>', x:83, y:80, hide:1},
+      {id:'sp', h:chip('OP_SPEND → Bob','--warn'), x:80, y:30, hide:1},
+      {id:'rf', h:chip('gas 找零','--ok','out'), x:80, y:30, hide:1}],
+    s:[
+      {c:'Alice 想调用一个 QRC-20 合约的 transfer，顺便给合约转 1 QTUM。她发出的是一笔比特币式交易：花掉自己一张 10 QTUM 的 UTXO。', lit:['in']},
+      {c:'交易有两个输出。一个是 OP_CALL 输出，脚本里写着合约地址、调用数据、gas 上限和 gas 价格，金额 1 QTUM。另一个是普通找零。输入减输出剩下的 0.1 QTUM，用来预付 gas 和手续费。',
+       set:{u10:{x:46}, txl:{hide:1}, oc:{hide:0}, chg:{hide:0}}, lit:['tx','out']},
+      {c:'交易进块时，节点发现 OP_CALL 输出，AAL 把它翻译成一次 EVM 调用：msg.sender 取第一个输入的地址（Alice），msg.value 是这个输出的 1 QTUM，calldata 原样交给 EVM。',
+       set:{u10:{hide:1}, msg:{hide:0}}, lit:['out','call']},
+      {c:'EVM 照常执行合约代码，和在以太坊上一模一样：QRC-20 账本里 Alice 减 10，Bob 加 10。EVM 完全不知道底下是 UTXO。',
+       set:{s1:{hide:0}, s2:{hide:0}}, lit:['st']},
+      {c:'在 EVM 看来，合约余额多了 1 QTUM。在链上，那个 OP_CALL 输出本身就成了一张属于合约的 UTXO。',
+       set:{cb:{hide:0}, oc:{h:chip('合约的 UTXO · 1','--qtum')}}, lit:['bal','out']},
+      {c:'如果合约要把 QTUM 转出去（比如付给 Bob），合约自己没法签名。节点会在同一个区块里自动生成一笔“condensing transaction”：用 OP_SPEND 花掉合约的 UTXO，输出给收款人。',
+       set:{oc:{hide:1}, sp:{hide:0}, cb:{h:'<div class="lbl">0</div>'}}, lit:['out','bal']},
+      {c:'没用完的 gas 怎么退？出块者的 coinstake（出块奖励）交易里必须带一个输出，把找零退给第一个输入的地址。少了这个输出，整个区块无效。这笔找零要等 2000 块成熟才能花。',
+       set:{sp:{hide:1}, rf:{hide:0}}, lit:['out']},
+      {c:'小结：EVM 只看到账户和余额，链上永远只记 UTXO，AAL 负责两头翻译。所以合约代码可以照搬，但交易怎么拼、地址怎么算、谁能当调用者，都按 Qtum 自己的规则来。',
+       set:{rf:{hide:1}}, lit:['ul','el']},
+    ]};
+  // Janus：以太坊工具 → Janus → qtumd
+  A.janus = {h:220,
+    b:[['tool',2,20,28,60,'以太坊工具'],['jn',36,20,28,60,'Janus'],['node',70,20,28,60,'qtumd 节点']],
+    it:[
+      {id:'t1', h:'<div class="lbl">MetaMask<br>ethers.js<br>Hardhat</div>', x:16, y:56},
+      {id:'j1', h:'<div class="lbl m">翻译代理</div>', x:50, y:56},
+      {id:'n1', h:'<div class="lbl m">比特币式 RPC<br>+ 节点钱包</div>', x:84, y:56},
+      {id:'rq', h:chip('eth_call','--eth'), x:16, y:88, hide:1},
+      {id:'kk', h:chip('私钥在这里','--warn'), x:84, y:88, hide:1}],
+    s:[
+      {c:'以太坊工具只会发 eth_* 请求，Qtum 节点听不懂。Janus 站在中间翻译，并把 Q 地址和 hex 地址互相转换。'},
+      {c:'读数据很顺：比如 eth_call 读合约状态、eth_getLogs 查事件，Janus 转成 Qtum 节点的 RPC，再把结果包装成以太坊格式返回。',
+       set:{rq:{hide:0,x:50}}, lit:['tool','jn']},
+      {c:'发交易就麻烦了。以太坊钱包签出来的是以太坊格式的交易，Qtum 节点不认。Janus 的做法是走 eth_sendTransaction：让 qtumd 用它自己钱包里的私钥去挑 UTXO、签名、广播。',
+       set:{rq:{h:chip('eth_sendTransaction','--eth'), x:84}, kk:{hide:0}}, lit:['jn','node']},
+      {c:'所以要发交易，私钥得放在你自己运行的 qtumd 里，公共 Janus 实例不能用。让钱包本地签名、再把以太坊格式交易透明转换成 Qtum 交易，README 写在“未来工作”里。这也是标准 MetaMask 不能直接用于 Qtum 的原因之一。',
+       set:{rq:{hide:1}}, bad:['node']},
+    ]};
+  Guide.mount(A);
+  // ---------- 小工具：Qtum 地址 ↔ hex（base58check，纯 JS，离线可用） ----------
+  // SHA-256：常量由前 64 个质数的立方根小数部分算出，避免手抄常量出错
+  const sha256 = (() => {
+    const K = [], H0 = [], pr = [];
+    for (let n = 2; pr.length < 64; n++) if (pr.every(p => n % p)) pr.push(n);
+    const frac = x => (x - Math.floor(x)) * 4294967296 >>> 0;
+    pr.forEach((p, i) => { K[i] = frac(Math.cbrt(p)); if (i < 8) H0[i] = frac(Math.sqrt(p)); });
+    const rot = (x, n) => (x >>> n) | (x << (32 - n));
+    return bytes => {
+      const l = bytes.length, bl = ((l + 9 + 63) >> 6) << 6, m = new Uint8Array(bl);
+      m.set(bytes); m[l] = 0x80;
+      const dv = new DataView(m.buffer);
+      dv.setUint32(bl - 4, l * 8 >>> 0); dv.setUint32(bl - 8, Math.floor(l / 536870912));
+      const H = H0.slice(), W = new Uint32Array(64);
+      for (let o = 0; o < bl; o += 64) {
+        for (let t = 0; t < 64; t++) {
+          if (t < 16) W[t] = dv.getUint32(o + t * 4);
+          else {
+            const a = W[t - 15], b = W[t - 2];
+            W[t] = (W[t - 16] + (rot(a, 7) ^ rot(a, 18) ^ (a >>> 3)) + W[t - 7] + (rot(b, 17) ^ rot(b, 19) ^ (b >>> 10))) >>> 0;
+          }
+        }
+        let [a, b, c, d, e, f, g, h] = H;
+        for (let t = 0; t < 64; t++) {
+          const t1 = (h + (rot(e, 6) ^ rot(e, 11) ^ rot(e, 25)) + ((e & f) ^ (~e & g)) + K[t] + W[t]) >>> 0;
+          const t2 = ((rot(a, 2) ^ rot(a, 13) ^ rot(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+          h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+        }
+        [a, b, c, d, e, f, g, h].forEach((v, i) => H[i] = (H[i] + v) >>> 0);
+      }
+      const out = new Uint8Array(32), ov = new DataView(out.buffer);
+      H.forEach((v, i) => ov.setUint32(i * 4, v));
+      return out;
+    };
+  })();
+  const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+  const hex = b => Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+  const unhex = h => new Uint8Array(h.match(/../g).map(x => parseInt(x, 16)));
+  function b58encode(bytes){
+    let n = BigInt('0x' + (hex(bytes) || '0')), s = '';
+    while (n > 0n) { s = B58[Number(n % 58n)] + s; n /= 58n; }
+    for (const x of bytes) { if (x) break; s = '1' + s; }
+    return s;
+  }
+  function b58decode(str){
+    let n = 0n;
+    for (const ch of str) { const v = B58.indexOf(ch); if (v < 0) return null; n = n * 58n + BigInt(v); }
+    let h = n.toString(16); if (h.length % 2) h = '0' + h;
+    const lead = str.match(/^1*/)[0].length;
+    return new Uint8Array([...new Array(lead).fill(0), ...(n ? unhex(h) : [])]);
+  }
+  const check = p => sha256(sha256(p)).slice(0, 4);
+  function toBase58(ver, h160){ const p = new Uint8Array([ver, ...h160]); return b58encode(new Uint8Array([...p, ...check(p)])); }
+  function fromBase58(addr){
+    const raw = b58decode(addr);
+    if (!raw || raw.length !== 25) return {err:'长度不对，不是有效的 base58 地址'};
+    const p = raw.slice(0, 21), cs = raw.slice(21);
+    if (hex(check(p)) !== hex(cs)) return {err:'校验和不对，地址可能抄错了一位'};
+    return {ver:p[0], h160:p.slice(1)};
+  }
+  // 地址工具界面
+  const VER = {58:['主网 P2PKH', 'Q'], 120:['测试网 P2PKH', 'q'], 50:['主网 P2SH（多签）', 'M'], 110:['测试网 P2SH（多签）', 'm']};
+  const qaIn = document.getElementById('qaIn'), qaOut = document.getElementById('qaOut');
+  function qaRender(){
+    const v = qaIn.value.trim();
+    const h = v.replace(/^0x/i, '');
+    if (/^[0-9a-fA-F]{40}$/.test(h)) {
+      const b = unhex(h.toLowerCase());
+      qaOut.innerHTML = `<span class="m">这是 hex 形式。对应的 base58 地址：</span>
+        <span>主网 <b>${toBase58(58, b)}</b></span><span>测试网 <b>${toBase58(120, b)}</b></span>`;
+      return;
+    }
+    if (!v) { qaOut.innerHTML = '<span class="m">请输入地址或 40 位 hex</span>'; return; }
+    const r = fromBase58(v);
+    if (r.err) { qaOut.innerHTML = `<span style="color:var(--warn)">${r.err}</span>`; return; }
+    const t = VER[r.ver];
+    if (!t) { qaOut.innerHTML = `<span style="color:var(--warn)">校验和正确，但版本字节 ${r.ver} 不是 Qtum 的地址类型</span>`; return; }
+    const other = r.ver === 58 ? 120 : r.ver === 120 ? 58 : r.ver === 50 ? 110 : 50;
+    qaOut.innerHTML = `<span class="m">校验和正确 · 版本字节 ${r.ver}（0x${r.ver.toString(16)}）· ${t[0]}</span>
+      <span>hex（EVM 里用）<b>0x${hex(r.h160)}</b></span>
+      <span class="m">同一个 hash160 在${VER[other][0]}：${toBase58(other, r.h160)}</span>`
+      + (r.ver === 50 || r.ver === 110 ? '<span style="color:var(--warn)">P2SH 地址不能作为合约调用者</span>' : '');
+  }
+  qaIn.addEventListener('input', qaRender);
+  document.querySelectorAll('[data-qa]').forEach(b => b.addEventListener('click', () => { qaIn.value = b.dataset.qa; qaRender(); }));
+  qaRender();
+})();
+</script>
+</body>
+</html>

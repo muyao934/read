@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>以太坊主网上线（Frontier）｜区块链大事记</title>
+<meta name="description" content="2015 年 7 月 30 日以太坊主网 Frontier 上线的经过：比特币脚本的局限和白皮书，2014 年的 ETH 众筹，用户自己生成的创世区块，5,000 gas 的“解冻期”、金丝雀合约和难度炸弹，第一个共识故障，交易所开盘，以及到 Homestead 的半年。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2015-ethereum-launch">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2015 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>以太坊主网上线（Frontier）</h1>
+    <p class="lede">2015 年 7 月 30 日，以太坊主网挖出第一个区块。上线没有统一的发布动作：用户各自运行一个开源脚本，从比特币链上读出 2014 年众筹的记录，生成同一份创世文件。这一版叫 Frontier，只给开发者用：每块 5,000 gas 的上限让最简单的转账也发不出去，客户端里埋着由四名开发者控制的“金丝雀合约”，几周后又加进逼迫将来硬分叉的难度炸弹。账户模型、gas 和 EVM 从这一天起运行，后来的代币、ICO、DeFi 和 NFT 都建在它上面。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Vitalik Buterin 2013 年 11 月写出以太坊白皮书的初稿，2014 年 1 月在迈阿密的比特币大会上公开<a class="ref" href="#s3">[3]</a><a class="ref" href="#s8">[8]</a>。2014 年 7 月至 9 月的 ETH 众筹收到 31,529 枚 BTC，按当时的市价约 1,840 万美元<a class="ref" href="#s33">[33]</a>。经过九轮概念验证和四个月的 Olympic 测试网<a class="ref" href="#s6">[6]</a><a class="ref" href="#s11">[11]</a>，主网 Frontier 在 2015 年 7 月 30 日上线：1 号区块在 15:26:28 UTC 挖出<a class="ref" href="#s30">[30]</a>，创世区块分配了约 7,200 万 ETH<a class="ref" href="#s31">[31]</a>。</p>
+        <p>以太坊基金会对 Frontier 的定位是“live, but barebone”，只给会用命令行的开发者，并提醒这里“机会很多，危险也很多”<a class="ref" href="#s13">[13]</a>。客户端起初把每块的 gas 上限定在 5,000，一笔最简单的转账要 21,000 gas，所以头几天实际发不了交易，这段时间叫“解冻期”<a class="ref" href="#s13">[13]</a><a class="ref" href="#s19">[19]</a>。8 月 4 日的客户端更新把目标上限改成 3,141,592<a class="ref" href="#s21">[21]</a>，8 月 7 日 Kraken 开始交易 ETH<a class="ref" href="#s36">[36]</a>。同一次更新宣布了难度炸弹：从区块 200,000 起难度按指数增长，迫使网络在大约 16 个月内硬分叉<a class="ref" href="#s21">[21]</a>。</p>
+        <p>上线第三周，主力客户端 geth 在区块 116,522 出了共识故障，基金会让矿工临时换用 C++ 或 Python 客户端<a class="ref" href="#s24">[24]</a>。2016 年 3 月 14 日，区块 1,150,000 激活 Homestead，基金会把网站上划掉的“safe”一词去掉，算是第一个正式版<a class="ref" href="#s25">[25]</a>。此后，The DAO、ERC-20 代币和 ICO 狂潮、CryptoKitties 和 The Merge 都发生在这条链上。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>比特币脚本做不了什么</h3>
+        <p>以太坊白皮书承认，<a href="2009-bitcoin-genesis.html">比特币</a>的脚本已经能写多签、托管和悬赏，接着列了它的四个局限<a class="ref" href="#s4">[4]</a>：</p>
+        <ul>
+          <li><b>不是图灵完备。</b>主要缺的是循环，为的是验证交易时不陷入死循环。任何循环都可以把代码重复写很多遍来模拟，但脚本会变得非常占空间。</li>
+          <li><b>看不见金额。</b>一个 UTXO 要么整个花掉，要么不花，脚本无法精细控制能取多少。两人对赌 1,000 美元的 BTC，只能事先准备一堆面额不同的 UTXO，让预言机挑着给。</li>
+          <li><b>没有状态。</b>UTXO 只有“已花”和“未花”两种状态，写不了分几步执行的合约，也写不了取款限额。</li>
+          <li><b>看不见链上的数据。</b>脚本读不到 nonce、时间戳和上一个区块的哈希，缺少随机数的来源。</li>
+        </ul>
+        <p>当时的做法是在比特币上再搭一层协议。Buterin 回忆，2013 年 10 月他在以色列给 Mastercoin 团队写过一份提议，让它支持更多种合约，脚本仍不是图灵完备；对方没有采纳。11 月在旧金山散了一次长步之后，他想到合约本身可以是一个账户，能持有、发送和接收资产，还有永久的存储<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>白皮书、迈阿密和黄皮书</h3>
+        <p>Buterin 2014 年 1 月写道，他在 11 月旧金山一个寒冷的日子里写出白皮书初稿；此后团队扩大到 Gavin Wood、Jeffrey Wilcke（分别是 C++ 和 Go 客户端的主开发者）、Charles Hoskinson、Anthony Di Iorio、Mihai Alisie 等人，他将在 1 月 25 日至 26 日的迈阿密比特币大会上演讲<a class="ref" href="#s3">[3]</a>。Wired 当时称他为“19 岁的黑客”，他提醒即将上线的测试网“不是正式网络……一开始很可能问题很多、经常出故障”<a class="ref" href="#s8">[8]</a>。The New Yorker 2018 年写道，几位创始人在大会期间租了一栋海滨别墅，用一周左右把以太坊的设想补完整<a class="ref" href="#s7">[7]</a>。</p>
+        <p>把设想写成规范的是 Gavin Wood 的黄皮书。Internet Archive 最早的存档是 2014 年 4 月 10 日，署名“Dr. Gavin Wood, CTO, Ethereum Project”<a class="ref" href="#s5">[5]</a>。Buterin 说，到 2014 年夏天，协议已经基本稳定，黄皮书成了一份半正式的规范<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>基金会和众筹</h3>
+        <p>创始人对办公司还是办基金会意见不一。The New Yorker 写道，迈阿密之后六个月，全体创始人第一次聚到瑞士楚格州，Buterin 让 Hoskinson 等人离开，并决定以太坊以非营利的方式推进，留下的人在楚格成立了以太坊基金会<a class="ref" href="#s7">[7]</a>。Mihai Alisie 2014 年 7 月在基金会博客上写道，要让协议和软件保持纯粹，“唯一现实的选择”是非营利结构<a class="ref" href="#s10">[10]</a>。</p>
+        <p>2014 年 7 月 22 日，Buterin 宣布开卖 ETH：头 14 天 1 BTC 换 2,000 ETH，之后线性降到 1,337 ETH，共 42 天，9 月 2 日 23:59（楚格时间）结束；收款地址是一个 3-of-4 的多签冷钱包；创世区块上线之前 ETH 不能使用，也不能转让。公告写明“Ether 是一种产品，不是证券或投资”，另设两个捐赠池，各为售出量的 9.9%，分给早期贡献者和基金会的长期储备<a class="ref" href="#s1">[1]</a>。CoinDesk 报道，开卖约 12 小时卖出 700 多万 ETH<a class="ref" href="#s32">[32]</a>；两周后，Buterin 说已收到 25,000 多枚 BTC，卖出 5,000 多万 ETH，是“迄今最大的加密代币发售”<a class="ref" href="#s2">[2]</a>。公告预计创世区块在 2014 年冬至 2015 年间上线<a class="ref" href="#s1">[1]</a>，实际晚了半年多。先卖币、再上链的做法，后来在 <a href="2017-ico-boom.html">ICO 狂潮</a>里被大量照搬。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>加粗的条目是主网的规则真正改变的时刻，其余是公告、测试和报道。</p>
+        <ol class="timeline">
+          <li><time>2013-11</time><div class="ev">Buterin 在旧金山写出白皮书初稿<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2014-01</time><div class="ev">Buterin 在迈阿密的北美比特币大会上介绍以太坊<a class="ref" href="#s3">[3]</a><a class="ref" href="#s32">[32]</a>。</div></li>
+          <li><time>2014-02-01</time><div class="ev">第一个概念验证版本 PoC 1 发布<a class="ref" href="#s25">[25]</a>。</div></li>
+          <li><time>2014-04</time><div class="ev">Gavin Wood 的黄皮书出现，最早存档为 4 月 10 日<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2014-07-22 至 09-02</time><div class="ev">ETH 公开发售；头两周收到 25,000 多枚 BTC<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2015-03-03</time><div class="ev">Vinay Gupta 公布四步发布计划：Frontier、Homestead、Metropolis、Serenity<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2015-05-09</time><div class="ev">最后一个测试网 Olympic 开放，奖金最多 25,000 ether<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2015-07-22</time><div class="ev">基金会公布 Frontier 的限制：解冻期、金丝雀合约<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2015-07-27</time><div class="ev">基金会公布创世区块的生成办法，选定测试网区块 1,028,201 的哈希作参数<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2015-07-29</time><div class="ev">geth v1.0.0 发布<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="key"><time>2015-07-30</time><div class="ev">主网 1 号区块在 15:26:28 UTC 挖出，每块 gas 上限 5,000<a class="ref" href="#s30">[30]</a>。</div></li>
+          <li><time>2015-08-04</time><div class="ev">客户端更新，gas 上限的目标改为 3,141,592；同时宣布难度炸弹<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2015-08-07</time><div class="ev">Kraken 开始交易 ETH，当时约 2.50 美元<a class="ref" href="#s36">[36]</a><a class="ref" href="#s38">[38]</a>。</div></li>
+          <li><time>2015-08-20</time><div class="ev">区块 116,522 上 geth 出现共识故障，当晚发布 1.0.2 修复<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="key"><time>2015-09-07</time><div class="ev">区块 200,000，难度炸弹的指数项开始起作用<a class="ref" href="#s21">[21]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2015-09-28</time><div class="ev">Buterin 公布基金会的财务状况<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li class="key"><time>2016-03-14</time><div class="ev">区块 1,150,000 激活 Homestead<a class="ref" href="#s25">[25]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2016-04-04</time><div class="ev">geth 删除金丝雀检查，随 v1.4.0 发布<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="key"><time>2016-07-20</time><div class="ev">为追回 The DAO 被盗资金，区块 1,920,000 硬分叉<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="key"><time>2017-10-16</time><div class="ev">Byzantium 第一次推迟难度炸弹（EIP-649）<a class="ref" href="#s18">[18]</a><a class="ref" href="#s40">[40]</a>。</div></li>
+          <li class="key"><time>2022-09-15</time><div class="ev">The Merge，挖矿结束，难度炸弹随之失去作用<a class="ref" href="#s18">[18]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <h3>账户代替 UTXO</h3>
+        <p>比特币的状态是所有还没花掉的输出（UTXO），每个有面额和主人；一笔交易引用旧的 UTXO 作输入，产生新的 UTXO 作输出。以太坊的状态由“账户”组成，交易直接在账户之间转移价值和信息。白皮书规定账户有四个字段：nonce（防止同一笔交易被处理两次）、ETH 余额、合约代码、存储<a class="ref" href="#s4">[4]</a>。</p>
+        <div class="compare">
+          <div><h4>外部账户</h4><p>由私钥控制，没有代码。从外部账户发出消息，要签一笔交易<a class="ref" href="#s4">[4]</a>。</p></div>
+          <div><h4>合约账户</h4><p>由自己的代码控制。每收到一条消息，代码就运行，可以读写自己的存储、发出别的消息、创建新合约<a class="ref" href="#s4">[4]</a>。</p></div>
+        </div>
+        <p>黄皮书把账户状态写成 nonce、balance、stateRoot 和 codeHash 四项：存储放在另一棵树里，账户只记树根；代码只记哈希，部署后不能修改<a class="ref" href="#s5">[5]</a>。合约就是一个带代码和存储的账户，比特币脚本缺的状态、金额和链上数据都有了。</p>
+        <h3>gas：给每一步计算标价</h3>
+        <p>交易里带两个数：STARTGAS 是最多允许执行多少步，GASPRICE 是每一步付多少 ETH。执行每一步扣 gas，用完了就回滚，已花的费用照付给矿工，没用完的退还。白皮书据此认为，图灵完备“出人意料地好管理”：写一个死循环，只会烧光发送者预付的 gas<a class="ref" href="#s4">[4]</a>。Buterin 在 2014 年 7 月的开卖公告里写道，2 月到 6 月之间协议改成由交易预付计算费用，原来是由合约自己付，每个合约都要包一层最低费用，防止余额被耗光<a class="ref" href="#s1">[1]</a>。</p>
+        <p>每个区块能装多少 gas 也有上限。团队找不到一条不会被操纵的自动规则，干脆让矿工投票：每个矿工出块时可以把上限比父块调高或调低一点<a class="ref" href="#s6">[6]</a>。geth v1.0.0 校验区块头时只查两件事：和父块相比变化不超过父块的 1/1024，不低于 5,000<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>解冻期：上限为什么卡在 5,000</h3>
+        <p>矿工出块时的上限由客户端算出。geth v1.0.0 的算法是：先按父块的用量向上或向下调；如果结果低于 GenesisGasLimit，就尽量往上调，但不超过它。v1.0.0 把 GenesisGasLimit 设成 5,000，所以按默认设置挖矿的节点都把上限停在 5,000：</p>
+<pre class="code"><code><span class="c">// params/protocol_params.go</span>
+MinGasLimit     = big.NewInt(5000) // Minimum the gas limit may ever be.
+GenesisGasLimit = big.NewInt(5000) // Gas limit of the Genesis block.
+TxGas           = big.NewInt(21000) <span class="c">// 每笔交易的基础费用（行尾原注释略）</span>
+
+<span class="c">// core/chain_util.go，CalcGasLimit（节选）</span>
+gl := new(big.Int).Sub(parent.GasLimit(), decay)
+gl = gl.Add(gl, contrib)
+gl = gl.Add(gl, big.NewInt(1))
+gl.Set(common.BigMax(gl, params.MinGasLimit))
+
+<span class="c">// 低于目标时尽量上调，但不超过 GenesisGasLimit：目标就是 5,000</span>
+if gl.Cmp(params.GenesisGasLimit) &lt; 0 {
+    gl.Add(parent.GasLimit(), decay)
+    gl.Set(common.BigMin(gl, params.GenesisGasLimit))
+}</code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.0.0（2015 年 7 月 29 日发布，发布说明写“Temp hard limit of 5000g”），params/protocol_params.go、core/chain_util.go，节选；TxGas 一行重新对齐过空格<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。英文为原文，中文注释为本站所加。</p>
+        <p>一笔最简单的转账就要 21,000 gas，所以上限停在 5,000 时，任何交易都进不了区块，只能挖空块。基金会说，这段“解冻期”是让矿工先把机器开起来、早期用户不慌不忙地装好客户端<a class="ref" href="#s13">[13]</a>。这个 5,000 是客户端的默认目标，共识规则只限制每块的变化幅度。Stephan Tual 8 月 4 日解释，上线时两个客户端都以 5k 为目标、“从不偏离”；矿工其实早就可以合伙改代码，让网络换一种跑法，基金会只是顾问<a class="ref" href="#s21">[21]</a>。</p>
+        <p>更新后的客户端改以 3,141,592（“pi million”）为目标。因为每块最多只能变动 1/1024，即使所有矿工都升级，从 5,000 爬到 21,000 也至少要 6 小时，到 300 万至少要 28 小时；没升级的矿工出块时会把上限往回拉，实际还要更久<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。geth v1.0.2 把 GenesisGasLimit 改成了 3141592<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>金丝雀合约：由四个人拉的刹车</h3>
+        <p>基金会这样描述金丝雀合约：每个合约是一个只存 0 或 1 的开关，分别由开发团队里的一名成员控制；如果内部的“Frontier 灾难恢复小组”发现分叉之类的共识问题，就把它改成 1。客户端每出一个块检查一次四个合约，有两个变成 1 就停止挖矿，并提示用户更新客户端，以免没人照看的矿机拖住升级。基金会写明，这套办法是中心化的，只在 Frontier 期间使用，目的是避免 24 小时以上的长时间停摆<a class="ref" href="#s13">[13]</a>。Vinay Gupta 对 CoinDesk 说，团队原本设想在 Frontier 里放很多干预点，最后只留下这几个“kill switch”，等确认一切可靠再拿掉<a class="ref" href="#s34">[34]</a>。</p>
+<pre class="code"><code><span class="c">// core/canary.go（v1.0.0）</span>
+var (
+    jeff      = common.HexToAddress("a8edb1ac2c86d3d9d78f96cd18001f60df29e52c")
+    vitalik   = common.HexToAddress("1baf27b88c48dd02b744999cf3522766929d2b2a")
+    christoph = common.HexToAddress("60d11b58744784dc97f878f7e3749c0f1381a004")
+    gav       = common.HexToAddress("4bb7e8ae99b645c2b7860b8f3a2328aae28bd80a")
+)
+
+func Canary(statedb *state.StateDB) bool {
+    var r int
+    if (statedb.GetState(jeff, common.Hash{}).Big().Cmp(big.NewInt(0)) &gt; 0) {
+        r++
+    }
+    <span class="c">// ……gav、christoph、vitalik 三个地址同样检查 0 号存储槽</span>
+    return r &gt; 1 <span class="c">// 两个及以上非零，金丝雀“死了”</span>
+}
+
+<span class="c">// miner/worker.go，push()：把新的挖矿任务交给矿工之前先检查</span>
+if core.Canary(self.current.state) {
+    glog.Infoln("Toxicity levels rising to deadly levels. Your canary has died. ...")
+    glog.Infoln("You turn back and abort mining")
+    return
+}</code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.0.0，core/canary.go、miner/worker.go，节选；第一条日志原文较长，以“...”省略后半句<a class="ref" href="#s15">[15]</a>。英文为原文，中文注释为本站所加。</p>
+        <p>从代码看，金丝雀只拦住挖矿：检查发生在把任务交给矿机之前，节点照常同步和验证区块。geth 的提交记录显示，这个检查 2015 年 6 月 29 日由 Jeffrey Wilcke 加入，7 月 2 日 Buterin 把规则改成“两个以上非零”，2016 年 4 月 4 日由 Péter Szilágyi 删除<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>难度炸弹：给将来的硬分叉定一个期限</h3>
+        <p>v1.0.0 的难度只看出块时间：比父块快于 13 秒就加父块难度的 1/2048，否则减同样多<a class="ref" href="#s15">[15]</a>。8 月发布的 v1.0.2 加了一项只看区块高度的指数项，每 100,000 个区块翻一倍<a class="ref" href="#s19">[19]</a>：</p>
+<pre class="code"><code><span class="c">// core/chain_util.go，CalcDifficulty（v1.0.2，节选）</span>
+expDiffPeriod = big.NewInt(100000)
+<span class="c">// ……先按出块时间调整，再加上指数项</span>
+periodCount := new(big.Int).Add(parentNumber, common.Big1)
+periodCount.Div(periodCount, expDiffPeriod)
+if periodCount.Cmp(common.Big1) &gt; 0 {
+    // diff = diff + 2^(periodCount - 2)
+    expDiff := periodCount.Sub(periodCount, common.Big2)
+    expDiff.Exp(common.Big2, expDiff, nil)
+    diff.Add(diff, expDiff)
+    diff = common.BigMax(diff, params.MinimumDifficulty)
+}</code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.0.2（2015 年 8 月 22 日发布），core/chain_util.go，节选<a class="ref" href="#s19">[19]</a>。英文为原文，中文注释为本站所加。</p>
+        <p>区块 200,000 时这一项只有 1，几乎没有影响。Tual 解释，指数增长大约一年后才会被察觉，出块时间随之变长，再过三四个月难度高到谁也挖不出块，进入“冰河期”；到那时以太坊就可以改用权益证明，也许就是 Casper。他说这套办法保证 16 个月内一定会有一次硬分叉<a class="ref" href="#s21">[21]</a>。Gupta 3 月写发布计划时已经提到，Frontier 之后的切换由“TheBomb”强制<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>创世区块的参数</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>字段</th><th>值</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>timestamp</td><td>0</td><td>创世区块没有真实的出块时间<a class="ref" href="#s29">[29]</a></td></tr>
+            <tr><td>gasLimit</td><td>0x1388（5,000）</td><td>放不下一笔 21,000 gas 的交易<a class="ref" href="#s29">[29]</a></td></tr>
+            <tr><td>difficulty</td><td>0x400000000（2³⁴）</td><td>Etherscan 显示 17,179,869,184<a class="ref" href="#s29">[29]</a><a class="ref" href="#s30">[30]</a></td></tr>
+            <tr><td>nonce</td><td>0x…42</td><td>固定值<a class="ref" href="#s29">[29]</a></td></tr>
+            <tr><td>extraData</td><td>运行脚本时传入</td><td>按公告应填测试网区块 1,028,201 的哈希<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>alloc</td><td>8,893 条分配</td><td>按购买地址各一条，基金会地址另得售出量的 19.8%<a class="ref" href="#s29">[29]</a><a class="ref" href="#s30">[30]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p class="code-cap">字段值据 ethereum/genesis_block_generator 的 mk_genesis_block.py（最后一次修改代码在 2015 年 7 月 29 日）<a class="ref" href="#s29">[29]</a>，分配条数据 Etherscan 的 0 号区块页面<a class="ref" href="#s30">[30]</a>。</p>
+        <p>脚本按买家付款前一个比特币区块的时间决定价格：开卖后 14 天内 1 BTC 换 2,000 ETH，之后每天少 30，最后几天按 1,337；结果精确到 finney（0.001 ETH）。19.8% 正是公告里两个 9.9% 的捐赠池之和<a class="ref" href="#s1">[1]</a><a class="ref" href="#s29">[29]</a>。Etherscan 记创世区块共分配 72,009,990.50 ETH，其中约 6,000 万来自众筹，约 1,200 万是其他<a class="ref" href="#s31">[31]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>九轮概念验证和 Olympic</h3>
+        <p>Jeffrey Wilcke 回顾，开发从 2013 年 12 月开始，第一个概念验证版本 PoC 1 在 2014 年 2 月 1 日发布，众筹开始时已经做到 PoC 5，几个客户端能互相兼容；2015 年 3 月 5 日的黑客松结束了 PoC 系列<a class="ref" href="#s25">[25]</a>。5 月 9 日开放的 Olympic 是第九个、也是最后一个测试网，目的是奖励把网络往极限推的人：狂发交易、折腾状态，奖金最多 25,000 ether，分交易量、虚拟机使用、挖矿和“折腾”四类；谁能让 Go 和 C++ 两个客户端在主链上分叉，分享至少 5,000 ether 的大奖。当时网络有 20 到 100 个节点，各客户端一直保持一致<a class="ref" href="#s11">[11]</a>。Buterin 回忆，Olympic 跑了四个月，前两个月发现了各实现的很多 bug，出过共识故障，6 月前后稳定下来，7 月决定冻结代码、随后发布<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>谁来按发布键</h3>
+        <p>Tual 7 月 22 日写道，Frontier 没有倒计时，因为以太坊不是被谁“集中发布”的，而是从共识里产生：用户要自愿下载并运行指定版本的软件，再生成、载入创世区块，才算加入官方网络<a class="ref" href="#s13">[13]</a>。7 月 27 日他公布了办法。众筹全部发生在比特币链上，记录是公开的，所以基金会不提供创世文件的下载，只发布一个开源脚本，谁都可以自己生成、自己核对。脚本还需要一个谁也无法事先预测的参数，好让大家同时开始，基金会选了测试网上未来区块 1,028,201 的哈希，因为这个数“既是质数又是回文”。基金会只在事后公布自己算出的创世哈希，方便大家识别假文件<a class="ref" href="#s14">[14]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 470" role="img" aria-labelledby="eth-gen-t eth-gen-d">
+            <title id="eth-gen-t">创世区块是怎样生成的</title>
+            <desc id="eth-gen-d">三样输入：比特币链上发往众筹地址的付款记录，测试网区块 1,028,201 的哈希，基金会发布的开源脚本 mk_genesis_block.py。脚本按付款时间换算每个地址的 ETH，基金会地址另得 19.8%，输出 genesis.json，其中 timestamp 为 0、gasLimit 为 5,000。每个用户用 geth --genesis 自己载入，基金会只事后公布创世哈希供核对。得到 0 号区块，有 8,893 条分配；矿工随后挖出 1 号区块，时间 15:26:28 UTC。此后每块的 gas 上限停在 5,000，直到客户端更新。</desc>
+            <defs>
+              <marker id="eth-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box soft" x="20" y="20" width="230" height="76" rx="3"/>
+            <text class="d-t b" x="135" y="46" text-anchor="middle">比特币链上的众筹记录</text>
+            <text class="d-t s" x="135" y="67" text-anchor="middle">发往 exodus 多签地址的付款</text>
+            <text class="d-t s" x="135" y="86" text-anchor="middle">2014-07-22 至 09-02</text>
+            <rect class="d-box soft" x="265" y="20" width="230" height="76" rx="3"/>
+            <text class="d-t b" x="380" y="46" text-anchor="middle">测试网区块 1,028,201</text>
+            <text class="d-t s" x="380" y="67" text-anchor="middle">它的哈希事先无人知道</text>
+            <text class="d-t s" x="380" y="86" text-anchor="middle">作为“开始”的信号</text>
+            <rect class="d-box soft" x="510" y="20" width="230" height="76" rx="3"/>
+            <text class="d-t b" x="625" y="46" text-anchor="middle">开源脚本</text>
+            <text class="d-t m" x="625" y="67" text-anchor="middle">mk_genesis_block.py</text>
+            <text class="d-t s" x="625" y="86" text-anchor="middle">按付款时间换算 ETH</text>
+            <rect class="d-box" x="150" y="146" width="460" height="76" rx="3"/>
+            <text class="d-t b m" x="380" y="172" text-anchor="middle">genesis.json</text>
+            <text class="d-t s" x="380" y="193" text-anchor="middle">每个购买地址一条余额，基金会地址另得 19.8%</text>
+            <text class="d-t s" x="380" y="212" text-anchor="middle">timestamp 0，gasLimit 5,000，difficulty 2³⁴</text>
+            <rect class="d-box" x="150" y="262" width="460" height="68" rx="3"/>
+            <text class="d-t b" x="380" y="288" text-anchor="middle">每个用户自己载入</text>
+            <text class="d-t s" x="380" y="312" text-anchor="middle">geth --genesis；基金会事后只公布创世哈希</text>
+            <rect class="d-box" x="40" y="370" width="300" height="64" rx="3"/>
+            <text class="d-t b" x="190" y="396" text-anchor="middle">0 号区块</text>
+            <text class="d-t s" x="190" y="418" text-anchor="middle">8,893 条分配，没有交易</text>
+            <rect class="d-box" x="420" y="370" width="300" height="64" rx="3"/>
+            <text class="d-t b" x="570" y="396" text-anchor="middle">1 号区块</text>
+            <text class="d-t s" x="570" y="418" text-anchor="middle">15:26:28 UTC 挖出，奖励 5 ETH</text>
+            <text class="d-t s" x="380" y="460" text-anchor="middle">此后每块 gas 上限停在 5,000，交易进不来，直到客户端更新</text>
+            <line class="d-line" x1="135" y1="96" x2="260" y2="142" marker-end="url(#eth-ah)"/>
+            <line class="d-line" x1="380" y1="96" x2="380" y2="142" marker-end="url(#eth-ah)"/>
+            <line class="d-line" x1="625" y1="96" x2="500" y2="142" marker-end="url(#eth-ah)"/>
+            <line class="d-line" x1="380" y1="222" x2="380" y2="258" marker-end="url(#eth-ah)"/>
+            <line class="d-line" x1="330" y1="330" x2="225" y2="366" marker-end="url(#eth-ah)"/>
+            <line class="d-line" x1="340" y1="402" x2="416" y2="402" marker-end="url(#eth-ah)"/>
+          </svg>
+          </div>
+          <figcaption>创世区块的生成步骤。办法据以太坊基金会 7 月 27 日的公告<a class="ref" href="#s14">[14]</a>，字段值据创世脚本<a class="ref" href="#s29">[29]</a>，分配条数和 1 号区块的时间据 Etherscan<a class="ref" href="#s30">[30]</a>。</figcaption>
+        </figure>
+        <h3>7 月 30 日</h3>
+        <p>Tual 当天写道：“几分钟前，你们许多人生成并载入了以太坊的创世区块。”<a class="ref" href="#s22">[22]</a> Etherscan 记 1 号区块在 15:26:28 UTC 挖出，奖励 5 ETH<a class="ref" href="#s30">[30]</a>。基金会的 Gustav Simonsson 统计，第 2 个区块用了 29 秒，接下来两个是 31 秒和 29 秒；大矿工涌入后出块时间很快降到协议允许的下限 1 秒，难度每块最多调整 1/2048，追了几千个区块才回到 4 到 5 秒，过了 9,000 块左右才接近 15 秒的目标<a class="ref" href="#s23">[23]</a>，和 geth v1.0.0 发布说明里的目标一致<a class="ref" href="#s16">[16]</a>。</p>
+        <div class="note doubt"><span class="h">上线的时刻</span><p>创世文件的 timestamp 是 0<a class="ref" href="#s29">[29]</a>，0 号区块没有真实的出块时间。Etherscan 给 0 号区块显示 15:26:13 UTC，比 1 号区块早 15 秒<a class="ref" href="#s30">[30]</a>，ethereum.org 的历史页记的 Frontier 时刻也是 15:26:13 UTC<a class="ref" href="#s18">[18]</a>，这应是推算的显示值。基金会《Ethereum Launches》一文的元数据写着 13:32:48 UTC，早于 1 号区块两个小时<a class="ref" href="#s22">[22]</a>，原因不明。本页以 1 号区块的 15:26:28 UTC 作为上线的时刻。</p></div>
+        <h3>8 月：解冻和第一次共识故障</h3>
+        <p>8 月 4 日的两篇公告合并了“解冻”更新，把默认 gas 价格定为 50 shannon（即 50 gwei），并宣布了难度炸弹<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。8 月 8 日，Gavin Wood 公布基金会对“链重组深度”的预期：8 日 18:00（欧洲中部夏令时）之前是 6,000 个区块，之后逐级减半，8 月 15 日起是 375 个区块，约 90 分钟。他说，这些数字可以拿来定确认数，风险由运营者自己承担<a class="ref" href="#s26">[26]</a>。</p>
+        <p>8 月 20 日，区块 116,522 出了问题：geth 在执行 SUICIDE 指令、删除账户数据时，状态数据库算错了，C++ 客户端 eth 和 Python 客户端 pyethereum 不受影响。基金会让 geth 矿工尽快改用 eth 或 pyethereum，把最终确认的等待时间延长到 12 小时，当晚发布修复版 1.0.2；第二天说大多数矿工已经升级或换了客户端，预计最大重组深度为 750 个区块<a class="ref" href="#s24">[24]</a>。</p>
+        <div class="note doubt"><span class="h">“解冻”发生在哪一天</span><p>ethereum.org 的历史页把“Frontier thawing”记在 2015 年 9 月 7 日、区块 200,000，说这次分叉取消了 5,000 的上限、把默认 gas 价格定为 51 gwei，并引入了难度炸弹<a class="ref" href="#s18">[18]</a>。基金会当时的公告把两件事分开写：8 月 4 日的客户端更新把上限的目标改成 3,141,592，区块 200,000 是难度炸弹开始起作用的高度，默认 gas 价格是 50 shannon<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。8 月 7 日 Kraken 已经开始交易 ETH，首周成交 300 多万枚<a class="ref" href="#s36">[36]</a>，那时链上应该已经能发交易。本页按基金会当时的公告写：上限在 8 月初靠客户端更新放开，区块 200,000 只是难度炸弹的起点。</p></div>
+        <h3>到 Homestead</h3>
+        <p>Wilcke 2016 年 2 月 29 日写道，Frontier 上线“没有任何小问题”，此后几个月社区一起解决了两个共识 bug；基金会认为现在可以把网站上划掉的“safe”一词去掉了。Homestead 在区块 1,150,000 激活，大约在 π 日（3 月 14 日）中午，包括 EIP-2（主要的硬分叉改动）、EIP-7（DELEGATECALL）和 EIP-8（devp2p 向前兼容）<a class="ref" href="#s25">[25]</a><a class="ref" href="#s41">[41]</a>。ethereum.org 记激活时间为 18:49:53 UTC，ETH 价格 12.50 美元<a class="ref" href="#s18">[18]</a>。CoinDesk 报道，社区在 Google Hangout 上看着它在 18:50 UTC 前后生效；网络每天处理约 25,000 笔交易，约有 5,100 个节点<a class="ref" href="#s35">[35]</a>。</p>
+        <div class="note doubt"><span class="h">金丝雀合约什么时候拿掉的</span><p>CoinDesk 的 Homestead 报道引 Tual 的话，说 Homestead 的一大改动是去掉了金丝雀合约<a class="ref" href="#s35">[35]</a>。geth 的源码不是这样：Homestead 版本 v1.3.5 的矿工代码仍在检查金丝雀，删除它的提交 2016 年 4 月 4 日才合并，随 4 月 20 日的 v1.4.0 发布<a class="ref" href="#s17">[17]</a>。本页按源码写。C++ 客户端的情况本站没有核实。</p></div>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>开发者和早期应用</h3>
+        <p>Tual 上线次日对《华尔街日报》说，网络还“在解冻期”，已经有 70 多个团队在上面开发，“一年半的血汗和泪水，我们终于做到了”<a class="ref" href="#s37">[37]</a>。2015 年 8 月初的 ethereum.org 首页标题是“Welcome to the frontier”，给开发者列了七步：装命令行工具、拿到 ether、部署打招呼的 Greeter 合约、发行自己的代币（用一套标准的代币接口，好让钱包和交易所自动兼容）、做一个无需信任的众筹、建一个“民主自治组织”、做新的去中心化应用；下面列出已在开发的项目，有 Augur、IBM 和三星的物联网项目、BoardRoom、Slock.it、MakerDAO 等<a class="ref" href="#s9">[9]</a>。代币、众筹和自治组织这三步，一年后各自长成了 ERC-20 代币、ICO 和 The DAO。</p>
+        <p>9 月 28 日，Buterin 列举了基金会没有参与的生态项目：预测市场 Augur 的众筹募到 450 万美元，ConsenSys 开发的 Gnosis 已经在接受押注，开发者生态里有银行、企业、政府和上百个 DApp<a class="ref" href="#s27">[27]</a>。CoinDesk 报道，ConsenSys 10 月在微软的 Azure 云上推出以太坊区块链即服务<a class="ref" href="#s28">[28]</a>；2016 年 1 月，区块链联盟 R3 用一条私有的以太坊网络和 11 家大银行做了测试<a class="ref" href="#s35">[35]</a>。</p>
+        <h3>矿工</h3>
+        <p>CoinDesk 写道，以太坊的挖矿算法抗 ASIC，有 GPU 就能挖<a class="ref" href="#s34">[34]</a>。算力很快集中：Simonsson 统计，前 10 万个区块里，第一个矿池 ethpool 挖了 11.28%，最近 15,000 个区块里它占了 38.5%，第二、第三大的矿工只有约 4%<a class="ref" href="#s23">[23]</a>。</p>
+        <h3>交易所</h3>
+        <p>Kraken 宣布开始交易 ETH，页面发布时间是美东 8 月 8 日 00:13；它说这是 Kraken 成交量最大的一次上新，首周成交 300 多万枚 ETH，按当时价格超过 15,000 枚 BTC，Kraken 很快成了 ETH/BTC 成交量全球第二大的交易所，没有说第一是谁<a class="ref" href="#s36">[36]</a>。CoinDesk 后来写道，Kraken 8 月 7 日宣布时 ETH 约 2.50 美元；Bitfinex 当时说“不考虑”上线，2016 年 3 月 12 日才开盘；那时最大的以太币交易所是 Poloniex<a class="ref" href="#s38">[38]</a>。价格先跌后涨：9 月 28 日 Kraken 上 1 ETH 约 0.70 美元<a class="ref" href="#s33">[33]</a>，2016 年 3 月中旬约 13.55 美元，市值超过 10 亿美元<a class="ref" href="#s38">[38]</a>。</p>
+        <h3>基金会：钱不够了</h3>
+        <p>Buterin 9 月 28 日承认基金会资金有限，主要原因是比特币跌到 220 美元之前没能按计划卖掉足够的 BTC，“损失了约 900 万美元的潜在资金”，原定维持三年多的招聘计划只撑了不到两年。他列出的持仓约为 200,000 瑞士法郎、1,800 BTC、2,700,000 ETH，另有 490,000 瑞士法郎的法律基金；每月开支约 41 万瑞士法郎，10 月 1 日起降到 34 万。同一篇里他宣布，上海的万向已经买下 41.6 万 ETH<a class="ref" href="#s27">[27]</a>。他也写道，链从第一天起就承载了超过 5,000 万美元的价值<a class="ref" href="#s27">[27]</a>。</p>
+        <h3>媒体</h3>
+        <p>CoinDesk 的上线报道开头写：“在首次公布 18 个月、花了约 1,800 万美元之后，以太坊上线了。”Tual 提醒：“除非你真的、真的确定自己在做什么，否则不要把很多钱押上去。”报道也收进了批评：比特币开发者 Mike Hearn 认为这个项目野心太大，新加坡国立大学的一篇论文质疑它的激励设计，康奈尔大学的 Emin Gün Sirer 说“炒作和幻想出来的用途超出了这个平台的能力”<a class="ref" href="#s34">[34]</a>。TechCrunch 的 Jon Evans 写道，这一天可能像 Altair 8800 那样被人记住，也可能像 CP/M 那样成为脚注；以太坊“不再是空气了”，但性能会很差，是一台“慢得痛苦、很弱”的去中心化虚拟机<a class="ref" href="#s39">[39]</a>。</p>
+        <div class="note doubt"><span class="h">众筹募了多少钱</span><p>CoinDesk 2015 年 9 月写，众筹收到 31,529 枚 BTC，按当时的市价约 1,840 万美元<a class="ref" href="#s33">[33]</a>；《华尔街日报》写 1,800 万美元<a class="ref" href="#s37">[37]</a>。TechCrunch 上线当天写的是约 1,000 万美元（以比特币计）<a class="ref" href="#s39">[39]</a>，没有说按什么价格折算。基金会的公告只写到头两周的 25,000 多枚 BTC<a class="ref" href="#s2">[2]</a>。本页用 CoinDesk 的数字。</p></div>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>可编程的链跑起来了</h3>
+        <p>Frontier 之前，智能合约只存在于白皮书、测试网和比特币上的元协议里。上线以后，任何人都能在一条有真实价值的公链上部署合约，合约之间可以互相调用。Buterin 2015 年 9 月写道，以太坊“现在真的存在了”<a class="ref" href="#s27">[27]</a>。Homestead 时，CoinDesk 记网络约有 5,100 个节点，比特币约 6,000 个<a class="ref" href="#s35">[35]</a>。</p>
+        <h3>代币、众筹和自治组织</h3>
+        <p>2015 年首页上“发行代币”那一步提到的标准接口，同年 11 月成了 ERC-20 提案；代币只要部署一份合约，钱包和交易所就能直接支持，2017 年的 <a href="2017-ico-boom.html">ICO 狂潮</a>由此而来。“民主自治组织”那一步在 2016 年变成 Slock.it 发起的 The DAO，它募到约 1,150 万 ETH，6 月被重入攻击抽走，经过见被盗站的<a href="../../hacks/events/2016-the-dao.html">The DAO 重入攻击</a>。2017 年的 <a href="2017-cryptokitties.html">CryptoKitties</a> 让 gas 上限这一设计第一次被普通用户感受到；2020 年的 <a href="2020-defi-summer.html">DeFi 之夏</a>和 2021 年 <a href="2021-beeple.html">Beeple 的 NFT 拍卖</a>，也都用的是这一天开始运行的账户、合约和 gas。</p>
+        <h3>基金会和客户端的分工</h3>
+        <p>Buterin 在财务公告里说，基金会和它的子机构人手不够，做不完整个愿景，一大批员工会转到营利性的生态公司去，基金会自己更像比特币那样靠开源社区推进<a class="ref" href="#s27">[27]</a>。geth 和 C++ 客户端并存的做法也留了下来：第一次共识故障时，正是另外两个实现让矿工有路可退<a class="ref" href="#s24">[24]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>难度炸弹一再推迟</h3>
+        <p>Tual 设想的期限是 16 个月<a class="ref" href="#s21">[21]</a>，权益证明却迟了好几年。EIP-649 写道，难度炸弹（也叫“冰河期”）正在慢慢加速，出块时间越来越长，而 Casper 和权益证明的切换推迟了，所以把炸弹推后约一年半，并把出块奖励从 5 ETH 降到 3 ETH<a class="ref" href="#s40">[40]</a>。此后 Constantinople（2019）、Muir Glacier（2020）、London（2021）、Arrow Glacier（2021）、Gray Glacier（2022）又推迟了五次<a class="ref" href="#s18">[18]</a>。London 那次和 <a href="2021-eip1559.html">EIP-1559</a> 一起上线。直到 2022 年 9 月的 <a href="2022-the-merge.html">The Merge</a>，挖矿结束，炸弹才失去作用；质押的 ETH 要等 2023 年 4 月的 <a href="2023-shapella.html">Shapella</a> 才能取出。</p>
+        <h3>四个阶段的去向</h3>
+        <p>Gupta 2015 年规划的四步里，Frontier 和 Homestead 按名字上线了<a class="ref" href="#s12">[12]</a><a class="ref" href="#s25">[25]</a>。EIP-649 把 2017 年的 Byzantium 称为“Metropolis 的第一部分”<a class="ref" href="#s40">[40]</a>。Gupta 给 Serenity 定的目标是改用权益证明<a class="ref" href="#s12">[12]</a>，这一步到 2022 年的 The Merge 才完成，名字也没再用<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>The DAO 分叉</h3>
+        <p>2016 年 7 月 20 日，区块 1,920,000 硬分叉，把被攻击合约里的资金转到一个只能取款的新合约，每 100 个 DAO 代币可取回 1 ETH。ethereum.org 写道，一些矿工认为 DAO 出事不是协议的缺陷，拒绝分叉，另组了 Ethereum Classic<a class="ref" href="#s18">[18]</a>。经过见被盗站的<a href="../../hacks/events/2016-the-dao.html">The DAO 重入攻击</a>。Homestead 里加的 DELEGATECALL 后来被 Parity 多签钱包用来调用共享的库合约，2017 年出了两次事故，见被盗站的<a href="../../hacks/events/2017-parity-multisig.html">Parity 多签钱包事件</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>把风险写在最显眼的地方。Frontier 的公告说这里“机会很多，危险也很多”，不熟悉命令行就等下一版<a class="ref" href="#s13">[13]</a>；网站上“safe”一词一直是划掉的，到 Homestead 才去掉<a class="ref" href="#s25">[25]</a>；基金会还公布了每个阶段建议等多少个区块<a class="ref" href="#s26">[26]</a>。</li>
+            <li>上线可以慢慢放开。头几天把 gas 上限压在 5,000，网络只挖空块，节点先稳定下来，再按每块 1/1024 的速度放开<a class="ref" href="#s13">[13]</a><a class="ref" href="#s21">[21]</a>。</li>
+            <li>多一个独立实现，就多一条退路。区块 116,522 上 geth 出错时，C++ 和 Python 客户端都没事，矿工可以临时换过去<a class="ref" href="#s24">[24]</a>。Olympic 专门悬赏让两个客户端分叉，就是为了把这类问题提前逼出来<a class="ref" href="#s11">[11]</a>。</li>
+            <li>启动的过程也可以去中心化。创世文件由每个人从比特币链上的公开记录自己生成，开始的信号是一个事先无法预测的区块哈希，基金会只事后公布结果供核对<a class="ref" href="#s14">[14]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给治理者</span>
+          <ul>
+            <li>紧急刹车是中心化的，要写明用到什么时候。金丝雀合约由四个人控制，基金会公告说只在 Frontier 期间使用<a class="ref" href="#s13">[13]</a>，geth 实际在 2016 年 4 月才删掉<a class="ref" href="#s17">[17]</a>。</li>
+            <li>用代码定期限，期限也会被代码推迟。难度炸弹原本保证 16 个月内硬分叉<a class="ref" href="#s21">[21]</a>，后来被推迟了六次，到 2022 年才不再需要<a class="ref" href="#s18">[18]</a><a class="ref" href="#s40">[40]</a>。它确实逼出了一次次升级，但没能逼出预定的日期。</li>
+            <li>共识规则之外的默认值也在左右网络。5,000 的上限不是共识规则，只是两个客户端的默认目标，所有矿工照着用，效果就和规则一样<a class="ref" href="#s15">[15]</a><a class="ref" href="#s21">[21]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给早期用户</span>
+          <ul>
+            <li>新链上线的头几个月要当测试看。Tual 上线当天说，除非真的确定自己在做什么，不要押很多钱<a class="ref" href="#s34">[34]</a>；Buterin 早在 2014 年就说，测试网一开始很可能经常出故障<a class="ref" href="#s8">[8]</a>。</li>
+            <li>价格和资金也会出意外。基金会因为没及时卖出 BTC，少了约 900 万美元<a class="ref" href="#s27">[27]</a>；ETH 从约 2.50 美元跌到约 0.70 美元，半年后又涨到 13 美元以上<a class="ref" href="#s33">[33]</a><a class="ref" href="#s38">[38]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">以太坊基金会博客（Vitalik Buterin），《Launching the Ether Sale》，2014-07-22。<a href="https://blog.ethereum.org/2014/07/22/launching-the-ether-sale">blog.ethereum.org</a></li>
+          <li id="s2">以太坊基金会博客（Vitalik Buterin），《Ether Sale: A Statistical Overview》，2014-08-08。<a href="https://blog.ethereum.org/2014/08/08/ether-sale-a-statistical-overview">blog.ethereum.org</a></li>
+          <li id="s3">以太坊基金会博客（Vitalik Buterin），《Ethereum: Now Going Public》，2014-01-23。<a href="https://blog.ethereum.org/2014/01/23/ethereum-now-going-public">blog.ethereum.org</a></li>
+          <li id="s4">ethereum.org，《Ethereum Whitepaper》（页面注明写于 2014 年），2026 年 11 月查阅。<a href="https://ethereum.org/en/whitepaper/">ethereum.org</a></li>
+          <li id="s5">Gavin Wood，《Ethereum: A Secure Decentralised Generalised Transaction Ledger》（黄皮书），gavwood.com/Paper.pdf 的 Internet Archive 存档，2014-04-10。<a href="https://web.archive.org/web/20140410013339/http://gavwood.com/Paper.pdf">web.archive.org</a></li>
+          <li id="s6">Vitalik Buterin，《A Prehistory of the Ethereum Protocol》，2017-09-14。<a href="https://vitalik.eth.limo/general/2017/09/14/prehistory.html">vitalik.eth.limo</a></li>
+          <li id="s7">The New Yorker（Nick Paumgarten），《The Prophets of Cryptocurrency Survey the Boom and Bust》，2018-10-22 刊。<a href="https://www.newyorker.com/magazine/2018/10/22/the-prophets-of-cryptocurrency-survey-the-boom-and-bust">newyorker.com</a></li>
+          <li id="s8">Wired（Klint Finley），《Out in the Open: Teenage Hacker Transforms Web Into One Giant Bitcoin Network》，2014-01-27（Internet Archive 存档）。<a href="https://web.archive.org/web/20160318170702/http://www.wired.com/2014/01/ethereum/">web.archive.org</a></li>
+          <li id="s9">ethereum.org 首页《Ethereum Frontier》，Internet Archive 2015-08-02 存档。<a href="https://web.archive.org/web/20150802035735/https://www.ethereum.org/">web.archive.org</a></li>
+          <li id="s10">以太坊基金会博客（Mihai Alisie），《the ethereum project: learning to dream with open minds》，2014-07-14。<a href="https://blog.ethereum.org/2014/07/14/the-ethereum-project">blog.ethereum.org</a></li>
+          <li id="s11">以太坊基金会博客（Vitalik Buterin），《Olympic: Frontier Pre-Release》，2015-05-09。<a href="https://blog.ethereum.org/2015/05/09/olympic-frontier-pre-release">blog.ethereum.org</a></li>
+          <li id="s12">以太坊基金会博客（Vinay Gupta），《The Ethereum Launch Process》，2015-03-03（文中有后加的更正）。<a href="https://blog.ethereum.org/2015/03/03/ethereum-launch-process">blog.ethereum.org</a></li>
+          <li id="s13">以太坊基金会博客（Stephan Tual），《Frontier is coming - what to expect, and how to prepare》，2015-07-22。<a href="https://blog.ethereum.org/2015/07/22/frontier-is-coming-what-to-expect-and-how-to-prepare">blog.ethereum.org</a></li>
+          <li id="s14">以太坊基金会博客（Stephan Tual），《Final Steps》，2015-07-27（7 月 28、29 日更新）。<a href="https://blog.ethereum.org/2015/07/27/final-steps">blog.ethereum.org</a></li>
+          <li id="s15">ethereum/go-ethereum，v1.0.0，core/canary.go、miner/worker.go、core/chain_util.go、core/block_processor.go、params/protocol_params.go。<a href="https://github.com/ethereum/go-ethereum/blob/v1.0.0/core/canary.go">github.com</a></li>
+          <li id="s16">ethereum/go-ethereum，《Frontier (1.0.0)》发布说明，2015-07-29。<a href="https://github.com/ethereum/go-ethereum/releases/tag/v1.0.0">github.com</a></li>
+          <li id="s17">ethereum/go-ethereum，core/canary.go 的提交历史（含 2016-04-04 的 e9254bb“core, miner: remove Frontier canary”），以及 v1.3.5 的 miner/worker.go、v1.4.0 发布说明（2016-04-20）。<a href="https://github.com/ethereum/go-ethereum/commit/e9254bb0f9">github.com</a></li>
+          <li id="s18">ethereum.org，《Timeline of all Ethereum forks (2014 to present)》，2026 年 11 月查阅。<a href="https://ethereum.org/en/history/">ethereum.org</a></li>
+          <li id="s19">ethereum/go-ethereum，v1.0.2（2015-08-22 发布），core/chain_util.go、params/protocol_params.go。<a href="https://github.com/ethereum/go-ethereum/blob/v1.0.2/core/chain_util.go">github.com</a></li>
+          <li id="s20">以太坊基金会博客（Stephan Tual），《The Thawing Frontier》，2015-08-04。<a href="https://blog.ethereum.org/2015/08/04/the-thawing-frontier">blog.ethereum.org</a></li>
+          <li id="s21">以太坊基金会博客（Stephan Tual），《Ethereum Protocol Update 1》，2015-08-04。<a href="https://blog.ethereum.org/2015/08/04/ethereum-protocol-update-1">blog.ethereum.org</a></li>
+          <li id="s22">以太坊基金会博客（Stephan Tual），《Ethereum Launches》，2015-07-30。<a href="https://blog.ethereum.org/2015/07/30/ethereum-launches">blog.ethereum.org</a></li>
+          <li id="s23">以太坊基金会博客（Gustav Simonsson），《An Analysis of the First 100000 Blocks》，2015-08-18。<a href="https://blog.ethereum.org/2015/08/18/frontier-first-100k-blocks">blog.ethereum.org</a></li>
+          <li id="s24">以太坊基金会博客（Jutta Steiner），《Security alert [consensus issue]》，2015-08-20（8 月 21 日更新）。<a href="https://blog.ethereum.org/2015/08/20/security-alert-consensus-issue">blog.ethereum.org</a></li>
+          <li id="s25">以太坊基金会博客（Jeffrey Wilcke），《Homestead Release》，2016-02-29。<a href="https://blog.ethereum.org/2016/02/29/homestead-release">blog.ethereum.org</a></li>
+          <li id="s26">以太坊基金会博客（Gavin Wood），《Chain Reorganisation Depth Expectations》，2015-08-08。<a href="https://blog.ethereum.org/2015/08/08/chain-reorganisation-depth-expectations">blog.ethereum.org</a></li>
+          <li id="s27">以太坊基金会博客（Vitalik Buterin），《The Evolution of Ethereum》，2015-09-28。<a href="https://blog.ethereum.org/2015/09/28/the-evolution-of-ethereum">blog.ethereum.org</a></li>
+          <li id="s28">CoinDesk（Pete Rizzo），《Ethereum Swaps Tool Added to Microsoft's Blockchain Sandbox》，2015-11-23（Internet Archive 存档）。<a href="https://web.archive.org/web/20151125162533/http://www.coindesk.com/ethereum-swaps-microsoft-blockchain-toolkit/">web.archive.org</a></li>
+          <li id="s29">ethereum/genesis_block_generator，mk_genesis_block.py 及提交历史（最后一次改代码 b52d6d0，2015-07-29）。<a href="https://github.com/ethereum/genesis_block_generator/blob/master/mk_genesis_block.py">github.com</a></li>
+          <li id="s30">Etherscan，区块 #0 和 #1 页面，2026-11-05 读取。<a href="https://etherscan.io/block/0">etherscan.io</a></li>
+          <li id="s31">Etherscan，《Ether Total Supply and Market Capitalization Chart》，2026-11-05 读取。<a href="https://etherscan.io/stat/supply">etherscan.io</a></li>
+          <li id="s32">CoinDesk（Victoria van Eyk），《Ethereum Launches Own 'Ether' Coin, With Millions Already Sold》，2014-07-23（Internet Archive 存档）。<a href="https://web.archive.org/web/20150103182812/http://www.coindesk.com/ethereum-launches-ether-coin-millions-already-sold">web.archive.org</a></li>
+          <li id="s33">CoinDesk（Pete Rizzo），《Ethereum: Bitcoin Price Decline Created $9 Million Funding Shortfall》，2015-09-28（Internet Archive 存档）。<a href="https://web.archive.org/web/20150930214630/http://www.coindesk.com/ethereum-bitcoin-decline-9-million-funding-shortfall">web.archive.org</a></li>
+          <li id="s34">CoinDesk（Grace Caffyn），《Ethereum Launches Long-Awaited Decentralized App Network》，2015-07-30（Internet Archive 存档）。<a href="https://web.archive.org/web/20150801214731/http://www.coindesk.com/ethereum-decentralized-app-network-launch/">web.archive.org</a></li>
+          <li id="s35">CoinDesk（Jacob Donnelly），《Ethereum Blockchain Project Launches First Production Release》，2016-03-14（Internet Archive 存档）。<a href="https://web.archive.org/web/20160315180456/http://www.coindesk.com/ethereum-blockchain-homestead/">web.archive.org</a></li>
+          <li id="s36">Kraken 博客，《Kraken Launches Ether Trading》，页面发布时间 2015-08-08 00:13（美东）（Internet Archive 存档）。<a href="https://web.archive.org/web/20160315104526/http://blog.kraken.com/post/137588082707/kraken-launches-ether-trading">web.archive.org</a></li>
+          <li id="s37">The Wall Street Journal（Paul Vigna），《BitBeat: Ethereum Opens Its 'Frontier' for Business》，2015-07-31（Internet Archive 存档）。<a href="https://web.archive.org/web/20150803043014/http://blogs.wsj.com/moneybeat/2015/07/31/bitbeat-ethereum-opens-its-frontier-for-business/">web.archive.org</a></li>
+          <li id="s38">CoinDesk（Pete Rizzo），《Bitcoin Exchange Bitfinex Adds Ether Trading Amid Increasing Demand》，2016-03-14（Internet Archive 存档）。<a href="https://web.archive.org/web/20160315175427/http://www.coindesk.com/ethereum-bitfinex-ether-trading/">web.archive.org</a></li>
+          <li id="s39">TechCrunch（Jon Evans），《Vapor No More: Ethereum Has Launched》，2015-08-01。<a href="https://techcrunch.com/2015/08/01/vapor-no-more-ethereum-has-launched/">techcrunch.com</a></li>
+          <li id="s40">Afri Schoedon、Vitalik Buterin，EIP-649《Metropolis Difficulty Bomb Delay and Block Reward Reduction》，2017-06-21 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-649">eips.ethereum.org</a></li>
+          <li id="s41">Vitalik Buterin，EIP-2《Homestead Hard-fork Changes》，2015-11-15 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-2">eips.ethereum.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

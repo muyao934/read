@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The DAO 重入攻击｜区块链被盗事件编年史</title>
+<meta name="description" content="2016 年 The DAO 被重入攻击转走约 364 万枚 ETH 的完整经过：漏洞代码、攻击步骤、资金去向、以太坊硬分叉与 ETC 的诞生。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2016-the-dao">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2016 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>The DAO 重入攻击</h1>
+    <p class="lede">2016 年 6 月 17 日，攻击者利用 The DAO 合约“先转账、后记账”的顺序错误，在几个小时里转走约 364 万枚 ETH，约占 The DAO 全部资金的三分之一。为了追回这笔钱，以太坊社区在一个月后硬分叉，链从此分成 ETH 和 ETC 两条。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">The DAO 是一个用智能合约管理的投资基金，代币持有人投票决定资金投向。合约提供了“分拆”功能，让反对多数决议的人带着自己那份 ETH 离开。分拆函数 <code>splitDAO</code> 在转出 ETH 和发放奖励之后，才把调用者的代币余额清零；而发放奖励时会调用调用者的地址，把执行权交给对方。</p>
+        <p>攻击者在这次回调里再次调用 <code>splitDAO</code>。由于余额还没清零，同一份余额可以一次又一次地兑换成 ETH，全部转进攻击者控制的“子 DAO”。子 DAO 的规则规定资金要锁定约 27 天才能动用，这段时间成了社区应对的窗口<a class="ref" href="#s1">[1]</a>。</p>
+        <p>社区先提出软分叉冻结资金，后因该方案会给矿工带来拒绝服务风险而放弃。最终以太坊在 2016 年 7 月 20 日于区块 1,920,000 硬分叉，把 The DAO 及其子 DAO 的资金转入只能退款的 WithdrawDAO 合约，每 100 个 DAO 代币可取回 1 ETH<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。不接受分叉的人继续运行原链，即今天的 Ethereum Classic，攻击者在那条链上保住了全部所得。攻击者的身份至今没有经过司法认定。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>The DAO 建在 2015 年 7 月 30 日上线的以太坊上<a class="ref" href="#s15">[15]</a>，以太坊的上线经过见大事记的<a href="../../milestones/events/2015-ethereum-launch.html">以太坊主网上线（Frontier）</a>。The DAO 由德国创业公司 Slock.it 的团队发起，核心合约主要由 Christoph Jentzsch 编写。它的设想是一个“没有管理人的风险投资基金”：任何人都可以用 ETH 换取 DAO 代币，代币持有人对投资提案投票，资金只按投票结果流出。</p>
+        <p>为了防止多数人投票把钱转给自己，合约设计了两道保护。一是“策展人”（Curator），负责审核可以收款的地址白名单。二是分拆：如果少数人不同意多数人的决定，可以发起分拆，带着自己按比例应得的 ETH 进入一个新的“子 DAO”，并为它指定自己的策展人。后来被攻击的，正是这第二道保护。</p>
+        <p>众筹从 2016 年 4 月 30 日开始，持续 28 天，共募集约 1,150 万枚 ETH，按当时价格超过 1.5 亿美元，参与者超过 1.1 万人，约占当时 ETH 总量的 14%<a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。在当时，这是规模最大的众筹项目之一。</p>
+        <p>上线后不久就有人提出质疑。5 月下旬，Dino Mark、Vlad Zamfir 和 Emin Gün Sirer 发文指出投票机制存在博弈漏洞，呼吁暂停 The DAO。6 月 12 日，Slock.it 的 Stephan Tual 公开表示团队发现了一个“递归调用”漏洞，但称 The DAO 的资金没有风险<a class="ref" href="#s5">[5]</a>。五天后，攻击就发生了。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2016-04-30</time><div class="ev">The DAO 开始众筹，为期 28 天。</div></li>
+          <li><time>2016-05-28</time><div class="ev">众筹结束，募集约 1,150 万枚 ETH。</div></li>
+          <li><time>2016-06-12</time><div class="ev">Slock.it 公开承认发现递归调用漏洞，表示资金无风险。</div></li>
+          <li class="atk key"><time>2016-06-17</time><div class="ev">攻击开始。攻击者通过一个分拆提案创建子 DAO，在几个小时里反复调用 <code>splitDAO</code>，把约 364 万枚 ETH 转入其中<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2016-06-17</time><div class="ev">Vitalik Buterin 发布紧急公告，说明这是 The DAO 合约的漏洞、以太坊本身没有问题，并提出软分叉冻结相关资金<a class="ref" href="#s1">[1]</a>。ETH 价格从 20 多美元跌到 13 美元以下<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>2016-06-18 前后</time><div class="ev">自称攻击者的人发布公开信，称这笔钱是按合约规则合法取得的，并威胁起诉；信中的签名经核验无效<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2016-06-21 前后</time><div class="ev">Griff Green 等人组成的白帽团队（又称 Robin Hood Group）用同样的手法，把 The DAO 中剩余的大部分资金转入自己控制的子 DAO，防止被继续转走<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2016-06-28</time><div class="ev">康奈尔大学的研究者指出软分叉方案会让矿工面临拒绝服务攻击，软分叉随后被放弃<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2016-07 中旬</time><div class="ev">Carbonvote 链上投票：参与投票的 ETH 中约 87% 支持硬分叉，但参与投票的只占总量的约 5.5%<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def key"><time>2016-07-20</time><div class="ev">以太坊在区块 1,920,000 硬分叉，约 1,200 万枚 ETH 被转入 WithdrawDAO 退款合约，约 85% 的算力跟随分叉<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2016-07 下旬</time><div class="ev">交易所上线原链代币 ETC，不接受分叉的原链作为 Ethereum Classic 继续运行。</div></li>
+          <li><time>2017-07-25</time><div class="ev">美国 SEC 发布调查报告，认定 DAO 代币属于证券<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2022-02-22</time><div class="ev">记者 Laura Shin 发表调查，借助链上分析指向 TenX 联合创始人 Toby Hoenisch，本人否认<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2026-01-29</time><div class="ev">Griff Green 等人宣布用多年无人认领的约 7.05 万枚 ETH 等资产设立 TheDAO Security Fund，资助以太坊安全工作<a class="ref" href="#s11">[11]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>分拆提案投票通过后，投了赞成票的人可以调用 <code>splitDAO</code>。这个函数依次做五件事：第一次调用时创建子 DAO，并把当前的资金总额和代币总量存成快照；按调用者的代币余额算出应得的 ETH，转给子 DAO；转移奖励权益；给调用者发放奖励；最后把调用者的代币销毁，也就是余额清零。</p>
+        <p>问题出在第四步和第五步的顺序上。下面是 The DAO v1.0 源码中 <code>splitDAO</code> 的后半段<a class="ref" href="#s4">[4]</a>，英文注释是原有的，中文注释是本站加的：</p>
+<pre class="code"><code><span class="c">// DAO.sol（v1.0），splitDAO 函数后半段，中间奖励代币的记账部分从略</span>
+// Move ether and assign new Tokens
+<span class="c">// 按余额占比算出应转走的 ETH；splitBalance 和 totalSupply 是第一次调用时存下的快照</span>
+uint fundsToBeMoved =
+    (balances[msg.sender] * p.splitData[0].splitBalance) /
+    p.splitData[0].totalSupply;
+if (p.splitData[0].newDAO.createTokenProxy.value(fundsToBeMoved)(msg.sender) == false)
+    throw;                        <span class="c">// ETH 转进子 DAO</span>
+<span class="c">// ……（奖励代币 rewardToken 的转移记账）……</span>
+
+// Burn DAO Tokens
+Transfer(msg.sender, 0, balances[msg.sender]);
+<span class="bad">withdrawRewardFor(msg.sender); // be nice, and get his rewards   <span class="c">// 外部调用在清零之前</span></span>
+totalSupply -= balances[msg.sender];
+<span class="bad">balances[msg.sender] = 0;      <span class="c">// 余额到这里才清零</span></span>
+paidOut[msg.sender] = 0;
+return true;</code></pre>
+        <p class="code-cap">来源：blockchainsllc/DAO 仓库 v1.0 标签，DAO.sol 第 639–671 行（去掉了一层缩进）。</p>
+        <p><code>withdrawRewardFor</code> 会算出调用者应得的奖励，再让奖励账户 <code>rewardAccount</code> 把钱付给他：</p>
+<pre class="code"><code><span class="c">// DAO.sol（v1.0）</span>
+function withdrawRewardFor(address _account) noEther internal returns (bool _success) {
+    if ((balanceOf(_account) * rewardAccount.accumulatedInput()) / totalSupply &lt; paidOut[_account])
+        throw;
+
+    uint reward =
+        (balanceOf(_account) * rewardAccount.accumulatedInput()) / totalSupply - paidOut[_account];
+    if (!rewardAccount.payOut(_account, reward))   <span class="c">// 调用奖励账户付款</span>
+        throw;
+    paidOut[_account] += reward;
+    return true;
+}
+
+<span class="c">// ManagedAccount.sol（v1.0），奖励账户的付款函数</span>
+function payOut(address _recipient, uint _amount) returns (bool) {
+    if (msg.sender != owner || msg.value &gt; 0 || (payOwnerOnly &amp;&amp; _recipient != owner))
+        throw;
+<span class="bad">    if (_recipient.call.value(_amount)()) {   <span class="c">// 交出全部剩余 gas，收款方的代码被执行</span></span>
+        PayOut(_recipient, _amount);
+        return true;
+    } else {
+        return false;
+    }
+}</code></pre>
+        <p class="code-cap">来源：同上，DAO.sol 第 716–726 行，ManagedAccount.sol 第 57–66 行。</p>
+        <p><code>_recipient.call.value(_amount)()</code> 是当时 Solidity 里最常见的转账写法。它会把剩余的全部 gas 转给收款地址；如果收款地址是一个合约，它的 fallback 函数就会被执行，即使转账金额是 0 也一样。也就是说，<code>splitDAO</code> 还没执行到清零那一行，执行权就已经交到了调用者手里。</p>
+        <p>攻击者让一个合约来持有 DAO 代币并调用 <code>splitDAO</code>。这个合约的 fallback 函数里写的是“再调用一次 <code>splitDAO</code>”。第二次进入时，函数开头的各项检查照样通过，因为第一次调用卡在 <code>withdrawRewardFor</code> 里，余额还没清零；<code>fundsToBeMoved</code> 用的又是第一次调用时存下的快照，所以每一层算出来的金额都一样。同一份余额就这样被一层层重复兑现，直到攻击者主动停下或 gas 不够用，然后调用栈才逐层返回，清零只执行了一次。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 460" role="img" aria-labelledby="dao-seq-t dao-seq-d">
+            <title id="dao-seq-t">splitDAO 重入调用时序</title>
+            <desc id="dao-seq-d">攻击合约调用 splitDAO，The DAO 先把 ETH 转进子 DAO，再通过 rewardAccount 给攻击合约付奖励。付奖励时攻击合约的 fallback 被触发，再次调用 splitDAO。余额还没清零，同一份余额被重复兑现，所有调用返回后余额才被清零一次。</desc>
+            <defs>
+              <marker id="dao-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="dao-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="90" y1="66" x2="90" y2="450"/>
+            <line class="d-line dash" x1="290" y1="66" x2="290" y2="450"/>
+            <line class="d-line dash" x1="490" y1="66" x2="490" y2="450"/>
+            <line class="d-line dash" x1="690" y1="66" x2="690" y2="450"/>
+            <rect class="d-box atk" x="15" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="90" y="35" text-anchor="middle">攻击合约</text>
+            <text class="d-t s" x="90" y="55" text-anchor="middle">fallback 里再调一次</text>
+            <rect class="d-box" x="215" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="290" y="35" text-anchor="middle">The DAO</text>
+            <text class="d-t s m" x="290" y="55" text-anchor="middle">splitDAO()</text>
+            <rect class="d-box" x="415" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="490" y="35" text-anchor="middle">rewardAccount</text>
+            <text class="d-t s m" x="490" y="55" text-anchor="middle">payOut()</text>
+            <rect class="d-box atk" x="615" y="12" width="150" height="54" rx="4"/>
+            <text class="d-t b" x="690" y="35" text-anchor="middle">攻击者的子 DAO</text>
+            <text class="d-t s" x="690" y="55" text-anchor="middle">资金锁定约 27 天</text>
+            <line class="d-line" x1="90" y1="110" x2="288" y2="110" marker-end="url(#dao-ah)"/>
+            <text class="d-t halo" x="190" y="102" text-anchor="middle">① splitDAO()</text>
+            <line class="d-line atk" x1="290" y1="150" x2="688" y2="150" marker-end="url(#dao-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="142" text-anchor="middle">② 按余额转出 ETH</text>
+            <line class="d-line" x1="290" y1="195" x2="488" y2="195" marker-end="url(#dao-ah)"/>
+            <text class="d-t halo" x="390" y="187" text-anchor="middle">③ 发奖励 payOut()</text>
+            <line class="d-line atk" x1="490" y1="240" x2="92" y2="240" marker-end="url(#dao-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="232" text-anchor="middle">④ 回调 fallback</text>
+            <line class="d-line atk" x1="90" y1="285" x2="288" y2="285" marker-end="url(#dao-ah-atk)"/>
+            <text class="d-t atk halo" x="190" y="277" text-anchor="middle">⑤ 再次 splitDAO()</text>
+            <line class="d-line atk" x1="290" y1="330" x2="688" y2="330" marker-end="url(#dao-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="322" text-anchor="middle">⑥ 余额未清零，再转一次</text>
+            <rect class="d-box soft" x="150" y="352" width="480" height="34" rx="4"/>
+            <text class="d-t s" x="390" y="374" text-anchor="middle">④ ⑤ ⑥ 在同一笔交易里一层层重复，直到攻击者停手或 gas 不足</text>
+            <path class="d-line" d="M290,408 h34 v20 h-32" marker-end="url(#dao-ah)"/>
+            <text class="d-t halo" x="336" y="424">⑦ 各层返回后，才执行 <tspan class="m">balances[msg.sender] = 0</tspan></text>
+          </svg>
+          </div>
+          <figcaption>图 1：一次 <code>splitDAO</code> 调用中的重入路径。红色是被利用的步骤。清零放在了最后，所以每一次重入看到的都是旧余额。</figcaption>
+        </figure>
+        <h3>什么是重入</h3>
+        <p>一个函数还没执行完，就因为它发出的外部调用被再次调用，这就叫重入（reentrancy）。重入本身不一定是漏洞；只有当函数在外部调用之后才更新状态时，重入进来的那次调用看到的才是过期的状态。今天的合约开发规范把这条原则总结为“检查-生效-交互”（Checks-Effects-Interactions）：先检查条件，再改自己的状态，最后才和外部合约交互。<code>splitDAO</code> 恰好把后两步颠倒了。</p>
+        <p>按这个原则改写，只需要在任何外部调用之前，先记下要转的金额并把余额清零。下面是示意写法，并非 The DAO 当时的补丁：</p>
+<pre class="code"><code><span class="c">// 示意：按“检查-生效-交互”调整顺序后的分拆逻辑</span>
+uint fundsToBeMoved =
+    (balances[msg.sender] * p.splitData[0].splitBalance) / p.splitData[0].totalSupply;
+uint reward =
+    (balances[msg.sender] * rewardAccount.accumulatedInput()) / totalSupply - paidOut[msg.sender];
+
+<span class="good">totalSupply -= balances[msg.sender];   <span class="c">// 生效：先改自己的状态</span></span>
+<span class="good">balances[msg.sender] = 0;</span>
+<span class="good">paidOut[msg.sender] = 0;</span>
+
+<span class="c">// 交互：最后才调用外部合约。此时再重入，余额已经是 0，算出来的金额也是 0</span>
+if (!p.splitData[0].newDAO.createTokenProxy.value(fundsToBeMoved)(msg.sender)) throw;
+if (!rewardAccount.payOut(msg.sender, reward)) throw;</code></pre>
+        <p class="code-cap">示意代码，省略了奖励代币的记账和部分检查。</p>
+        <div class="note">
+          <span class="h">为什么漏洞早有人提过却没修</span>
+          <p>The DAO 合约部署后不能修改代码。要修复，只能通过 <code>newContract</code> 提案把资金迁到新合约，而普通提案的辩论期至少两周。另外，即使奖励账户里一分钱都没有，<code>payOut</code> 照样会调用收款方并触发 fallback，所以“奖励为零”并不能让这个漏洞变得无害。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>根据合约代码和事后公开的分析，攻击大致分以下几步。攻击者没有公开过自己的代码，下面的部分细节来自事后对链上交易的还原。</p>
+        <ol class="steps">
+          <li><b>准备代币和攻击合约</b>攻击者买入 DAO 代币，部署一个 fallback 函数会再次调用 <code>splitDAO</code> 的合约，由这个合约持有代币。</li>
+          <li><b>发起分拆提案</b>提出一个“更换策展人”的分拆提案，把新策展人设为自己控制的地址，并用持有代币的地址投赞成票。分拆提案的最短辩论期是 1 周；投票截止后，有 27 天可以执行分拆。</li>
+          <li><b>触发递归</b>6 月 17 日，攻击合约调用 <code>splitDAO</code>。The DAO 把 ETH 转进新建的子 DAO，在发放奖励时回调攻击合约，攻击合约的 fallback 再次调用 <code>splitDAO</code>，同一份余额被反复兑换。</li>
+          <li><b>保住代币，重复执行</b>余额最终会被清零。The DAO 的 <code>transfer</code> 只阻止“已投票且提案未到期”的地址转账，投票截止后就不再受限。事后的分析普遍认为，攻击者在递归结束前把代币转到另一个地址，让最后的清零落了空，然后把代币转回来，用同一批代币发起下一笔攻击交易。</li>
+          <li><b>停手</b>数小时内累计转走约 364 万枚 ETH 后，攻击在 The DAO 还有大量余额时停了下来，原因不明。剩下的资金随后被白帽团队用同样的方法转走保护起来。</li>
+        </ol>
+<pre class="code"><code><span class="c">// 示意：攻击合约的核心结构（不是真实的攻击代码）</span>
+contract Attacker {
+    DAO dao;
+    uint proposalId;
+    address curator;
+    uint depth;
+
+    function attack() {
+        dao.splitDAO(proposalId, curator);   <span class="c">// 第一次进入</span>
+    }
+
+    function () {                            <span class="c">// 收到 payOut 时被执行的 fallback</span>
+        if (depth &lt; 20) {                    <span class="c">// 控制递归层数，避免 gas 耗尽导致整笔交易回滚</span>
+            depth++;
+            dao.splitDAO(proposalId, curator); <span class="c">// 余额尚未清零，再兑现一次</span>
+        }
+    }
+}</code></pre>
+        <p class="code-cap">示意代码。真实攻击每笔交易的递归层数和代币转移细节以链上记录为准。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>攻击者转走的 ETH 进了一个和 The DAO 结构相同的子 DAO，地址是 <span class="addr">0x304a554a310c7e546dfe434669c62820b7d83490</span>，通常被称为 Dark DAO<a class="ref" href="#s1">[1]</a>。按子 DAO 的规则，这笔钱至少约 27 天内无法取出。硬分叉后，同一笔资金在两条链上的命运完全不同。</p>
+        <h3>在分叉后的以太坊（ETH）上</h3>
+        <ol class="flow">
+          <li class="atk"><b>Dark DAO</b>约 364 万枚 ETH，处于锁定期</li>
+          <li class="def"><b>硬分叉改写状态</b>区块 1,920,000，The DAO 及子 DAO 的余额被直接转走</li>
+          <li class="ok"><b>WithdrawDAO 合约</b>只有一个功能：按 100 DAO 换 1 ETH 退款</li>
+          <li class="ok"><b>代币持有人</b>基金会公告时，已有约 450 万枚 ETH 被领回</li>
+        </ol>
+        <h3>在原链（ETC）上</h3>
+        <ol class="flow">
+          <li class="atk"><b>Dark DAO</b>没有分叉，资金原样留在攻击者的子 DAO 里</li>
+          <li class="atk"><b>锁定期结束</b>攻击者取得约 364 万枚 ETC 的控制权</li>
+          <li class="atk"><b>陆续转出变现</b>数月后这部分 ETC 价值约 850 万美元<a class="ref" href="#s8">[8]</a></li>
+          <li class="doubt"><b>身份仍是谜</b>2022 年的调查通过链上追踪指向一名嫌疑人，未经司法认定</li>
+        </ol>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>众筹募集</td><td class="n">约 1,150 万 ETH</td><td>约占当时 ETH 总量的 14%</td></tr>
+              <tr><td>攻击者转入 Dark DAO</td><td class="n">约 364 万 ETH</td><td>约为 The DAO 资金的三分之一</td></tr>
+              <tr><td>硬分叉转入 WithdrawDAO</td><td class="n">约 1,200 万 ETH</td><td>来自 Dark DAO、白帽子 DAO 等合约<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>分叉公告时已领回</td><td class="n">约 450 万 ETH</td><td>以太坊基金会分叉完成公告中的数据<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>2026 年转作安全基金</td><td class="n">约 7.05 万 ETH</td><td>ExtraBalance 提款合约中多年无人认领的部分<a class="ref" href="#s11">[11]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>以太坊分裂</h3>
+        <p>这是以太坊第一次面对一个根本问题：当代码的执行结果和社区的是非判断冲突时，以哪个为准。支持分叉的一方认为，被盗资金规模大、仍在锁定期内，追回它是维护用户信任的必要之举。反对的一方坚持“代码即法律”（code is law）：合约允许的就是有效的，回滚资金会破坏区块链不可篡改这一最根本的承诺<a class="ref" href="#s7">[7]</a>。分叉之后，后者聚集在 Ethereum Classic 周围，两条链从此并存。</p>
+        <h3>合约安全的起点</h3>
+        <p>重入成了智能合约安全的第一课。“检查-生效-交互”被写进开发规范，Solidity 文档加入了相应警告，重入锁（如 OpenZeppelin 的 <code>ReentrancyGuard</code>）成了常用工具，上线前做独立审计也逐渐成为惯例。一度流行的“用 <code>transfer()</code> 只给 2300 gas 防重入”的做法，在 2019 年 EIP-1884 调整 gas 价格后也被认为不再可靠。</p>
+        <h3>监管</h3>
+        <p>2017 年 7 月，美国 SEC 发布针对 The DAO 的调查报告，认定 DAO 代币属于证券，相关发行可能违反美国证券法<a class="ref" href="#s9">[9]</a>。此后 SEC 又以未登记发售证券处理了 Munchee、Block.one 等 ICO<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>，见大事记的<a href="../../milestones/events/2017-ico-boom.html">ICO 狂潮（2017–2018）</a>。</p>
+        <h3>重入并没有消失</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th class="n">损失</th><th>重入从哪里来</th></tr></thead>
+            <tbody>
+              <tr><td>Lendf.Me</td><td>2020-04</td><td class="n">约 2,500 万美元</td><td>ERC-777 代币转账时的回调钩子</td></tr>
+              <tr><td>Fei Rari</td><td>2022-04</td><td class="n">约 8,000 万美元</td><td>沿用 Compound 代码，借款时先转账后记账</td></tr>
+              <tr><td><a href="2023-curve-vyper.html">Curve / Vyper</a></td><td>2023-07</td><td class="n">约 6,930 万美元</td><td>编译器生成的重入锁不起作用</td></tr>
+              <tr><td>GMX V1</td><td>2025-07</td><td class="n">约 4,200 万美元</td><td>跨合约重入，攻击者事后归还大部分资金</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>白帽“抢先转移”</h3>
+        <p>攻击者停手时，The DAO 里还有大量 ETH，而漏洞对所有人都开着。Griff Green 等人组成的白帽团队于是用同样的手法，把剩余的大部分资金转进他们控制的子 DAO<a class="ref" href="#s6">[6]</a>。这是区块链史上第一次大规模的“为了保护资金而抢先攻击”。</p>
+        <h3>软分叉为什么放弃</h3>
+        <p>软分叉方案要求矿工拒绝任何会减少 The DAO 及其子 DAO 余额的交易<a class="ref" href="#s1">[1]</a>。问题在于，要判断一笔交易会不会碰到这些合约，矿工必须先执行它；而被拒绝的交易不会被打包，也就不用付 gas。攻击者因此可以免费制造大量需要执行、最终又被拒绝的交易，拖垮矿工<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>硬分叉</h3>
+        <p>硬分叉直接在状态里改写余额，不存在上面的问题。Carbonvote 投票中，3,964,516 枚 ETH 投了赞成，577,899 枚投了反对；但参与投票的 ETH 只占总量的约 5.5%，赞成票中约四分之一来自同一个地址，这一点至今被反对者引用<a class="ref" href="#s7">[7]</a>。7 月 20 日 13:20:40（UTC），区块 1,920,000 执行分叉，约 85% 的算力跟随<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <h3>退款与无人认领的余款</h3>
+        <p>WithdrawDAO 合约只有一个提款功能，持有人按每 100 个 DAO 代币取回 1 ETH<a class="ref" href="#s3">[3]</a>。众筹后期参与的人当时付出的价格高于这个比例，多付的部分进了 ExtraBalance，由单独的合约处理。多年后，ExtraBalance 等合约里仍有约 7.05 万枚 ETH 无人认领。2026 年 1 月，Griff Green 等人宣布用这笔钱设立 TheDAO Security Fund，以质押收益资助以太坊安全工作，由以太坊基金会的资助管理团队做资格审核<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>攻击者是谁</h3>
+        <p>攻击者从未被正式认定。2022 年，记者 Laura Shin 在为新书做调查时借助 Chainalysis 追踪 ETC 链上的资金流向，指向奥地利程序员、TenX 联合创始人 Toby Hoenisch<a class="ref" href="#s10">[10]</a>。Hoenisch 否认了这一说法，此事也没有进入任何司法程序。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>先改状态，再调外部。任何会把执行权交出去的调用（转账、调用其他合约、代币回调）都放在状态更新之后。</li>
+            <li>给涉及资金的函数加重入锁，但不要只依赖锁。2023 年 Curve 的事件说明，锁本身也可能因为编译器问题失效。</li>
+            <li>优先用“拉取”代替“推送”：让用户自己来领钱，而不是在复杂逻辑中途给用户打钱。</li>
+            <li>不要指望 gas 限额挡住重入。gas 价格会随协议升级改变。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议设计者</span>
+          <ul>
+            <li>托管大额资金的合约要有出事时的手段：限额、暂停、可控的升级路径。The DAO 一样都没有，最后只能动用整条链的分叉。</li>
+            <li>漏洞被公开讨论时，应当假设攻击者也在读。从 Slock.it 承认存在递归调用问题到攻击发生只隔了五天。</li>
+            <li>链级干预是代价极高的最后手段，它换回了资金，也永久地分裂了社区。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Vitalik Buterin，《CRITICAL UPDATE Re: DAO Vulnerability》，以太坊基金会博客，2016-06-17。<a href="https://blog.ethereum.org/2016/06/17/critical-update-re-dao-vulnerability">blog.ethereum.org</a></li>
+          <li id="s2">以太坊基金会，《Hard Fork Completed》，2016-07-20。<a href="https://blog.ethereum.org/2016/07/20/hard-fork-completed">blog.ethereum.org</a></li>
+          <li id="s3">ethereum.org，《The history of Ethereum》中 DAO 分叉条目。<a href="https://ethereum.org/en/ethereum-forks/">ethereum.org</a></li>
+          <li id="s4">The DAO 源码，blockchainsllc/DAO 仓库 v1.0 标签（DAO.sol、ManagedAccount.sol）。<a href="https://github.com/blockchainsllc/DAO/tree/v1.0">github.com</a></li>
+          <li id="s5">CoinDesk，《Understanding The DAO Attack》，2016-06-25。<a href="https://www.coindesk.com/learn/understanding-the-dao-attack">coindesk.com</a></li>
+          <li id="s6">维基百科，《The DAO》。<a href="https://en.wikipedia.org/wiki/The_DAO">en.wikipedia.org</a></li>
+          <li id="s7">维基百科，《Ethereum Classic》（Carbonvote 数据与“代码即法律”之争）。<a href="https://en.wikipedia.org/wiki/Ethereum_Classic">en.wikipedia.org</a></li>
+          <li id="s8">Gemini Cryptopedia，《What Was The DAO?》。<a href="https://www.gemini.com/cryptopedia/the-dao-hack-makerdao">gemini.com</a></li>
+          <li id="s9">美国 SEC，《Report of Investigation Pursuant to Section 21(a)… : The DAO》，2017-07-25。<a href="https://www.sec.gov/litigation/investreport/34-81207.pdf">sec.gov</a></li>
+          <li id="s10">Laura Shin，《Exclusive: Austrian Programmer And Ex Crypto CEO Likely Stole $11 Billion Of Ether》，Forbes，2022-02-22。<a href="https://www.forbes.com/sites/laurashin/2022/02/22/exclusive-austrian-programmer-and-ex-crypto-ceo-likely-stole-11-billion-of-ether/">forbes.com</a></li>
+          <li id="s11">ChainCatcher，关于 TheDAO Security Fund 的报道，2026-01-30。<a href="https://www.chaincatcher.com/article/2241719">chaincatcher.com</a></li>
+          <li id="s12">Tjaden Hess、River Keefer、Emin Gün Sirer，《Ethereum's DAO Wars Soft Fork is a Potential DoS Vector》，Hacking, Distributed，2016-06-28。<a href="https://hackingdistributed.com/2016/06/28/ethereum-soft-fork-dos-vector/">hackingdistributed.com</a></li>
+          <li id="s13">美国 SEC，《Company Halts ICO After SEC Raises Registration Concerns》，2017-12-11。<a href="https://www.sec.gov/news/press-release/2017-227">sec.gov</a></li>
+          <li id="s14">美国 SEC，《SEC Orders Blockchain Company to Pay $24 Million Penalty for Unregistered ICO》，2019-09-30。<a href="https://www.sec.gov/news/press-release/2019-202">sec.gov</a></li>
+          <li id="s15">Etherscan，区块 #0 和 #1 页面，2026-11-05 读取。<a href="https://etherscan.io/block/0">etherscan.io</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

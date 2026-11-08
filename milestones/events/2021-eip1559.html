@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIP-1559 与 London 升级：交易费改成基础费加小费｜区块链大事记</title>
+<meta name="description" content="2021 年 8 月以太坊 London 升级里的 EIP-1559：一价拍卖的毛病，基础费怎样按上一个区块的用量涨跌，为什么要销毁，小费和总价上限怎样结算，Ropsten 上的共识分裂，矿工的反对和被否决的 EIP-3368，等待时间和交易费的实证结果，以及 Dencun 之后 blob 费市场和 ETH 供给的变化。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-eip1559">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>EIP-1559 与 London 升级：交易费改成基础费加小费</h1>
+    <p class="lede">2021 年 8 月 5 日，以太坊 London 升级启用 EIP-1559，交易费改成基础费加小费。基础费由协议按上一个区块的用量自动涨跌，付出去就销毁；小费归出块者。用户不用再盲猜出价，区块大小也能随需求伸缩。上线后的研究发现，等待时间缩短了，交易费的水平没有因此下降。到 2026 年 11 月，累计销毁的 ETH 约 464 万枚。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">EIP-1559 由 Vitalik Buterin 等六人在 2019 年 4 月提出<a class="ref" href="#s1">[1]</a>，2021 年 8 月 5 日 12:33:42 UTC 随 London 升级在区块 12,965,000 激活<a class="ref" href="#s4">[4]</a>。每个区块有一个基础费，上一个区块的用量高于目标就涨，低于目标就降，每块最多变动 12.5%；区块的 gas 上限是目标的两倍，用来吸收一时的需求高峰。基础费全部销毁，出块者只拿小费；用户另设一个总价上限，多出的部分不收<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>改之前，以太坊用一价拍卖收费：用户自己出价，矿工挑高的打包，出多少付多少。EIP-1559 的作者认为这种办法让费用剧烈波动，用户经常多付<a class="ref" href="#s1">[1]</a>。哥伦比亚大学的 Tim Roughgarden 在 2020 年的经济分析里预计，新机制会让估费变容易，但不太可能大幅降低平均交易费<a class="ref" href="#s21">[21]</a>。上线后的实证研究得出相近的结论：等待时间缩短，同一区块里各笔交易付的价格更接近，费用水平只受到很小的影响<a class="ref" href="#s22">[22]</a>。</p>
+        <p>销毁让 ETH 的供给和链上需求挂钩。按 ultrasound.money 的统计，London 以来累计销毁约 464.3 万枚 ETH（2026 年 11 月 5 日读取）<a class="ref" href="#s32">[32]</a>。矿工的收入因此减少，一部分矿工公开反对；长期制作挖矿教学视频的 Michael D. Carter 提出把区块奖励提高到 3 ETH 的 EIP-3368，2021 年 3 月在核心开发者会议上被否决<a class="ref" href="#s16">[16]</a><a class="ref" href="#s10">[10]</a>。2024 年 3 月的 Dencun 升级给 blob 数据开了单独计价的费市场<a class="ref" href="#s27">[27]</a>，此后主网的销毁变少，24/7 Wall St. 称 ETH 的供给从 2024 年 4 月起转为净增加<a class="ref" href="#s35">[35]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>一价拍卖</h3>
+        <p>London 之前，每个区块有一个 gas 上限，用户在交易里出一个 gas 价格，矿工按价格从高到低打包，成交的交易照自己的出价付钱。CNBC 把这比作每个区块一场公开拍卖，用户报价“常常是摸黑猜一个数”<a class="ref" href="#s26">[26]</a>。EIP-1559 的动机一节列出这种办法的四个毛病<a class="ref" href="#s1">[1]</a>：</p>
+        <ul>
+          <li><b>费用波动和成本不相称。</b>区块装满以后，出价波动极大。作者写道，每 gas 10 nanoeth 时多收一笔交易给网络带来的成本，不可能是 1 nanoeth 时的 10 倍，两种情况下都只是 800 万和 802 万 gas 的差别。</li>
+          <li><b>不必要的等待。</b>区块上限是硬的，交易量又有起伏，交易常要等好几个区块，区块大小没有伸缩的余地。</li>
+          <li><b>一价拍卖效率低。</b>机制设计的文献早已说明这一点，所以需要复杂的估费算法，这些算法也常常失灵，用户经常多付。</li>
+          <li><b>没有区块奖励的链不稳定。</b>只靠交易费奖励矿工，会诱发抢交易费的“姐妹区块”和更强的自私挖矿。</li>
+        </ul>
+        <p>拥堵时这些毛病一起出现。2017 年 12 月，养猫游戏 CryptoKitties 走红，12 月 4 日占以太坊交易笔数的 11.77%，待确认的交易约为它上线时的六倍<a class="ref" href="#s37">[37]</a>，经过见 <a href="2017-cryptokitties.html">CryptoKitties 走红：一款养猫游戏堵塞以太坊</a>。2020 年 3 月 12 日，以太坊严重拥堵，gas 价格暴涨，MakerDAO 清算拍卖里正常 keeper 的出价上不了链，经过见<a href="2020-black-thursday.html">黑色星期四与 MakerDAO 零出价拍卖</a>。</p>
+        <h3>从设想到提案</h3>
+        <p>2018 年 8 月 7 日，Buterin 在 ethresear.ch 发出一篇关于资源定价的立场文件草稿，讨论价格和数量两种调控方式、一价和二价拍卖，以及可以自动调整的最低费用<a class="ref" href="#s20">[20]</a>。8 月 17 日，他在 Zcash 的 GitHub 上提议评估其他交易费机制<a class="ref" href="#s19">[19]</a>。这篇帖子对现有费用市场三个毛病的论述，后来原样收进了 EIP-1559 的常见问答<a class="ref" href="#s18">[18]</a>。</p>
+        <p>EIP-1559 创建于 2019 年 4 月 13 日，作者是 Vitalik Buterin、Eric Conner、Rick Dudley、Matthew Slipper、Ian Norden 和 Abdelhamid Bakhta，依赖 EIP-2718（带类型的交易信封）和 EIP-2930（访问列表）<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>经济分析</h3>
+        <p>2020 年 12 月 1 日，哥伦比亚大学计算机系教授 Tim Roughgarden 发表对 EIP-1559 的博弈论分析，报告注明由 Decentralization Foundation 资助。报告开头列了十条要点，第一条说：无论 EIP-1559 还是别的交易费机制，都不太可能大幅降低平均交易费；交易费长期偏高是扩容问题，机制设计解决不了<a class="ref" href="#s21">[21]</a>。</p>
+        <p>2021 年 3 月 5 日的第 107 次核心开发者会议上，Tim Beiko 报告 EIP-1559 已经可以进入升级，Roughgarden 的经济分析和性能测试都已完成。会议确认 EIP-1559 和推迟难度炸弹一起进入 7 月的 London<a class="ref" href="#s9">[9]</a>。据 Bloomberg，Beiko 当时在 ConsenSys 领导实现这项提案的协议团队；他把当时的收费比作一个加油站四台油泵各标各的价，说 EIP-1559 修复了以太坊经济设计里“从一开始就知道的一个 bug”<a class="ref" href="#s25">[25]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span>协议、市场与其他事件（粗体为主网的关键节点）</span></p>
+        <ol class="timeline">
+          <li><time>2018-08</time><div class="ev">Buterin 在 ethresear.ch 和 Zcash 的 GitHub 上提出资源定价和交易费机制的设想<a class="ref" href="#s20">[20]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="key"><time>2019-04-13</time><div class="ev">EIP-1559 提出<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2020-12-01</time><div class="ev">Roughgarden 发表 EIP-1559 的经济分析<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2021-02-26</time><div class="ev">Paradigm 估计，矿工收入里会被销毁的部分最多约 20% 到 35%<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li><time>2021-03-05</time><div class="ev">第 107 次核心开发者会议确认 EIP-1559 和推迟难度炸弹进入 London<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2021-03-12</time><div class="ev">Michael D. Carter 提出 EIP-3368，要求提高区块奖励<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2021-03-19</time><div class="ev">第 108 次会议否决 EIP-3368；把 gas 上限写死的 EIP-3382 也不随 EIP-1559 上线<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2021-04-16</time><div class="ev">第 110 次会议决定 BASEFEE 操作码（EIP-3198）进入 London<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2021-06-18</time><div class="ev">以太坊基金会公布三个测试网的升级区块和预计日期<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2021-07-15</time><div class="ev">以太坊基金会公布主网升级区块 12,965,000，预计 8 月 3 日至 5 日到达<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2021-07-21</time><div class="ev">Ropsten 在区块 10,679,538 分裂，几个客户端接受了本该拒绝的 1559 交易<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2021-07-22</time><div class="ev">geth v1.10.6 等修复版本发布，主网升级区块不变<a class="ref" href="#s6">[6]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="key"><time>2021-08-05</time><div class="ev">12:33:42 UTC，区块 12,965,000 产出，London 激活，基础费开始销毁<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2021-08-14</time><div class="ev">一次 NFT 发售中，平均 gas 价格两个区块内从约 41 gwei 涨到约 1,360 gwei<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2021-08-16</time><div class="ev">1559 格式的交易占比达到 20%<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2022-09-15</time><div class="ev"><a href="2022-the-merge.html">The Merge</a>，以太坊转为权益证明<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="key"><time>2024-03-13</time><div class="ev">Dencun 升级，EIP-4844 引入 blob 和单独的 blob 费市场<a class="ref" href="#s4">[4]</a><a class="ref" href="#s27">[27]</a>。</div></li>
+          <li><time>2024-04</time><div class="ev">据 24/7 Wall St.，ETH 的供给从这时起转为净增加<a class="ref" href="#s35">[35]</a>。</div></li>
+          <li><time>2024-12-21</time><div class="ev">Bitcoin.com News 报道，累计销毁超过 450 万枚 ETH<a class="ref" href="#s33">[33]</a>。</div></li>
+          <li><time>2025-05-07</time><div class="ev">Pectra 升级，每块 blob 的目标和上限从 3、6 提高到 6、9<a class="ref" href="#s4">[4]</a><a class="ref" href="#s28">[28]</a>。</div></li>
+          <li><time>2025-12-03</time><div class="ev">Fusaka 升级，给 blob 基础费设保留价（EIP-7918），默认 gas 上限提高到 6,000 万（EIP-7935）<a class="ref" href="#s4">[4]</a><a class="ref" href="#s30">[30]</a>。</div></li>
+          <li><time>2026-10-17</time><div class="ev">据 cryptoticker.io，ETH 一天净增约 2,955 枚，同期只销毁 13.59 枚<a class="ref" href="#s34">[34]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>EIP-1559 改了三处：区块头多了一个基础费字段；区块的 gas 上限翻倍，平时只用一半；新的交易类型用两个上限代替原来的单一 gas 价格<a class="ref" href="#s1">[1]</a>。以太坊基金会提醒，客户端在挖矿、交易池等多处的行为都会随之改变<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>基础费怎样涨跌</h3>
+        <p>每个区块的基础费由父块决定，和本块装了什么无关。父块的目标用量是它的 gas 上限的一半。父块用量等于目标，基础费不变；高于目标就涨，低于目标就降，涨跌的比例是“偏离目标的比例 ÷ 8”。所以满块之后最多涨 12.5%，空块之后最多降 12.5%。涨的时候至少涨 1 wei。London 激活的那个区块，基础费固定为 1 gwei<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>父块用量 ÷ 目标</th><th>父块装满的程度</th><th class="n">下一块的基础费</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>空块</td><td class="n">−12.5%</td></tr>
+            <tr><td>0.5</td><td>四分之一满</td><td class="n">−6.25%</td></tr>
+            <tr><td>1</td><td>半满，正好是目标</td><td class="n">不变</td></tr>
+            <tr><td>1.5</td><td>四分之三满</td><td class="n">+6.25%</td></tr>
+            <tr><td>2</td><td>满块</td><td class="n">+12.5%</td></tr>
+          </tbody>
+        </table></div>
+        <p class="code-cap">按 EIP-1559 的公式计算<a class="ref" href="#s1">[1]</a>。</p>
+        <p>涨跌是连乘的。Roughgarden 算过，一个满块接一个空块，基础费回到原来的 9/8 × 7/8 = 63/64，约 98.4%<a class="ref" href="#s21">[21]</a>。ethereum.org 的例子里，基础费从 100 gwei 起，连续六个满块后涨到约 202.7 gwei；钱包因此能确定，下一个区块的基础费最多是当前的 112.5%<a class="ref" href="#s5">[5]</a>。Liu 等人按当时约 13 秒一个区块计算，连续满块时基础费约 80 秒翻一倍<a class="ref" href="#s22">[22]</a>。</p>
+        <p>geth 的实现和公式一一对应：</p>
+<pre class="code"><code><span class="c">// params/protocol_params.go（节选）</span>
+BaseFeeChangeDenominator = 8          <span class="c">// 每块最多变动 1/8</span>
+ElasticityMultiplier     = 2          <span class="c">// 上限是目标的 2 倍</span>
+InitialBaseFee           = 1000000000 <span class="c">// 第一个 London 区块：1 gwei</span>
+
+<span class="c">// consensus/misc/eip1559.go，CalcBaseFee（节选）</span>
+<span class="c">// If the current block is the first EIP-1559 block, return the InitialBaseFee.</span>
+if !config.IsLondon(parent.Number) {
+    return new(big.Int).SetUint64(params.InitialBaseFee)
+}
+var (
+    parentGasTarget          = parent.GasLimit / params.ElasticityMultiplier
+    parentGasTargetBig       = new(big.Int).SetUint64(parentGasTarget)
+    baseFeeChangeDenominator = new(big.Int).SetUint64(params.BaseFeeChangeDenominator)
+)
+<span class="c">// If the parent gasUsed is the same as the target, the baseFee remains unchanged.</span>
+if parent.GasUsed == parentGasTarget {
+    return new(big.Int).Set(parent.BaseFee)
+}
+if parent.GasUsed &gt; parentGasTarget {
+    <span class="c">// 涨幅 = 基础费 × 超出目标的量 ÷ 目标 ÷ 8，至少 1 wei</span>
+    gasUsedDelta := new(big.Int).SetUint64(parent.GasUsed - parentGasTarget)
+    x := new(big.Int).Mul(parent.BaseFee, gasUsedDelta)
+    y := x.Div(x, parentGasTargetBig)
+    baseFeeDelta := math.BigMax(x.Div(y, baseFeeChangeDenominator), common.Big1)
+    return x.Add(parent.BaseFee, baseFeeDelta)
+}
+<span class="c">// 低于目标时按同样的比例降，最低降到 0（略）</span></code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.10.6（2021 年 7 月 22 日发布，以太坊基金会主网公告列出的版本），params/protocol_params.go、consensus/misc/eip1559.go，节选，个别跨行的语句合成一行<a class="ref" href="#s6">[6]</a>。英文注释为原文，中文注释为本站所加。</p>
+        <h3>弹性区块</h3>
+        <p>EIP-1559 把原来的 gas 上限拆成两个数：长期的平均目标，等于原来的上限；每个区块的硬上限，是目标的两倍<a class="ref" href="#s18">[18]</a>。基础费的涨跌把平均用量拉回目标附近，ethereum.org 称之为试探调价（tâtonnement）<a class="ref" href="#s5">[5]</a>。为了不在分叉那一刻把目标减半，London 的第一个区块直接用父块的 gas 上限当目标<a class="ref" href="#s1">[1]</a>。gas 上限仍由矿工逐块小幅调整，以太坊基金会提醒矿工手动把目标调成原来的两倍，例如从 1,500 万调到 3,000 万，否则网络上的区块会变小<a class="ref" href="#s2">[2]</a>。</p>
+        <p>代价是最大区块变大了。EIP 写道，处理得不够快的矿工可能只能挖空块，客户端要能处理达到上限的单个区块<a class="ref" href="#s1">[1]</a>。Beiko 在第 107 次会议上报告，相关的性能测试已经完成，没有发现问题<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>小费和总价上限</h3>
+        <p>新交易是 EIP-2718 信封里的类型 2，带两个费用字段：愿付的小费上限 max_priority_fee_per_gas 和愿付的总价上限 max_fee_per_gas<a class="ref" href="#s1">[1]</a>，钱包和 JSON-RPC 里写作 maxPriorityFeePerGas 和 maxFeePerGas<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。结算分三步<a class="ref" href="#s1">[1]</a>：</p>
+        <ol class="steps">
+          <li><b>打包前检查</b>总价上限不能低于本块的基础费；发送方的余额要够付“gas 上限 × 总价上限”再加上转账金额。</li>
+          <li><b>定价</b>实际小费取“小费上限”和“总价上限 − 基础费”中较小的一个；实际 gas 价格 = 基础费 + 实际小费。操作码 GASPRICE 返回的就是这个价格。</li>
+          <li><b>结算</b>按实际用量扣钱，没用完的 gas 退回。出块者只得到“用量 × 实际小费”，基础费不给任何人，等于销毁。</li>
+        </ol>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 452" role="img" aria-labelledby="eip-fee-t eip-fee-d">
+            <title id="eip-fee-t">一笔 1559 交易的费用怎样结算</title>
+            <desc id="eip-fee-d">用户签名的类型 2 交易：用量 21,000 gas，总价上限 15 gwei，小费上限 2 gwei。本块基础费 10 gwei，由上一个区块的用量算出。打包前检查：总价上限 15 不低于基础费 10，余额够付 21,000 乘 15 gwei 再加转账金额。实际小费取 2 和 15 减 10 等于 5 中较小的 2 gwei，实际价格 12 gwei。21,000 乘 10 gwei，即 0.00021 ETH 被销毁；21,000 乘 2 gwei，即 0.000042 ETH 作为小费给出块者；总价上限多出的 3 gwei 乘 21,000，即 0.000063 ETH 不收。下一个区块的基础费按本块用量和目标相比涨跌，每块最多 12.5%。</desc>
+            <defs><marker id="eip-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker></defs>
+            <rect class="d-box" x="40" y="20" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="210" y="44" text-anchor="middle">用户签名的类型 2 交易</text>
+            <text class="d-t s" x="210" y="65" text-anchor="middle">用量 21,000，总价上限 15，小费上限 2 gwei</text>
+            <rect class="d-box" x="400" y="20" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="44" text-anchor="middle">本块基础费 10 gwei</text>
+            <text class="d-t s" x="570" y="65" text-anchor="middle">由上一个区块的用量算出，本块人人相同</text>
+            <rect class="d-box" x="190" y="128" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="152" text-anchor="middle">打包前检查</text>
+            <text class="d-t s" x="380" y="173" text-anchor="middle">上限 ≥ 基础费；余额 ≥ 21,000 × 15 gwei + 转账金额</text>
+            <rect class="d-box" x="190" y="236" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="260" text-anchor="middle">实际价格 = 10 + min(2, 15 − 10) = 12 gwei</text>
+            <text class="d-t s" x="380" y="281" text-anchor="middle">小费不会让总价超过上限，基础费先扣</text>
+            <rect class="d-box" x="40" y="344" width="220" height="58" rx="3"/>
+            <text class="d-t b" x="150" y="368" text-anchor="middle">销毁 0.00021 ETH</text>
+            <text class="d-t s" x="150" y="389" text-anchor="middle">21,000 × 10 gwei，不给任何人</text>
+            <rect class="d-box" x="270" y="344" width="220" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="368" text-anchor="middle">小费 0.000042 ETH</text>
+            <text class="d-t s" x="380" y="389" text-anchor="middle">21,000 × 2 gwei，给出块者</text>
+            <rect class="d-box soft" x="500" y="344" width="220" height="58" rx="3"/>
+            <text class="d-t b" x="610" y="368" text-anchor="middle">0.000063 ETH 不收</text>
+            <text class="d-t s" x="610" y="389" text-anchor="middle">上限多出的 3 gwei × 21,000</text>
+            <text class="d-t s" x="380" y="436" text-anchor="middle">下一个区块：本块用量高于目标，基础费涨，低于目标就降，每块最多 12.5%</text>
+            <line class="d-line" x1="225" y1="78" x2="320" y2="124" marker-end="url(#eip-ah)"/>
+            <line class="d-line" x1="535" y1="78" x2="440" y2="124" marker-end="url(#eip-ah)"/>
+            <line class="d-line" x1="380" y1="186" x2="380" y2="232" marker-end="url(#eip-ah)"/>
+            <line class="d-line" x1="300" y1="294" x2="170" y2="340" marker-end="url(#eip-ah)"/>
+            <line class="d-line" x1="380" y1="294" x2="380" y2="340" marker-end="url(#eip-ah)"/>
+            <line class="d-line" x1="460" y1="294" x2="590" y2="340" marker-end="url(#eip-ah)"/>
+          </svg>
+          </div>
+          <figcaption>用量、基础费和小费取自 ethereum.org 的例子<a class="ref" href="#s5">[5]</a>，15 gwei 的总价上限是本站为说明而加；检查和结算的规则据 EIP-1559 的参考实现<a class="ref" href="#s1">[1]</a>。</figcaption>
+        </figure>
+        <p>geth 在交易执行完后结算，先按 EIP-3529 的新上限退 gas，再把小费记给出块者：</p>
+<pre class="code"><code><span class="c">// core/state_transition.go，TransitionDb（节选）</span>
+if !st.evm.ChainConfig().IsLondon(st.evm.Context.BlockNumber) {
+    <span class="c">// Before EIP-3529: refunds were capped to gasUsed / 2</span>
+    st.refundGas(params.RefundQuotient)
+} else {
+    <span class="c">// After EIP-3529: refunds are capped to gasUsed / 5</span>
+    st.refundGas(params.RefundQuotientEIP3529)
+}
+effectiveTip := st.gasPrice
+if st.evm.ChainConfig().IsLondon(st.evm.Context.BlockNumber) {
+    <span class="c">// 实际小费 = min(小费上限, 总价上限 − 基础费)</span>
+    effectiveTip = cmath.BigMin(st.gasTipCap,
+        new(big.Int).Sub(st.gasFeeCap, st.evm.Context.BaseFee))
+}
+<span class="c">// 出块者（Coinbase）只得到 用量 × 实际小费；基础费不记给任何账户</span>
+st.state.AddBalance(st.evm.Context.Coinbase,
+    new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), effectiveTip))</code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.10.6，core/state_transition.go，节选，两处长语句拆成两行<a class="ref" href="#s6">[6]</a>。英文注释为原文，中文注释为本站所加。</p>
+        <h3>旧格式的交易</h3>
+        <p>London 之后，旧格式的交易照样能用。它只有一个 gas 价格，这个价格同时当作总价上限和小费上限，高出基础费的部分全部变成矿工的小费，所以旧交易享受不到新机制的好处<a class="ref" href="#s1">[1]</a>。不管哪种格式，区块 12,965,000 之后的交易都要付基础费<a class="ref" href="#s23">[23]</a>。GASPRICE 的含义也变了：以前它既是发送方每 gas 付的钱，也是矿工每 gas 收的钱；现在只表示发送方付的钱，矿工实际收了多少，在 EVM 里读不到<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>为什么要销毁</h3>
+        <p>EIP 给了四个理由：交易费只能用 ETH 付，巩固了 ETH 在以太坊上的经济地位；降低 MEV 带来的风险；抵消一部分通胀；出块者拿不到基础费，也就没有动机操纵费用多收用户的钱<a class="ref" href="#s1">[1]</a>。Beiko 对 Bloomberg 举过一个例子：当时用户可以用信用卡或别的加密货币付钱给矿工，让矿工处理交易，ETH 在自己的链上被绕开了<a class="ref" href="#s25">[25]</a>。</p>
+        <p>Roughgarden 从机制设计的角度说明，销毁和“容易估费”分不开。假如基础费付给本块的出块者，用户可以在链上只付基础费，再在链下私下补钱给矿工，经济上就等于一价拍卖。他的结论是，基础费只有在销毁、或者至少不给本块出块者时，才能改善用户体验<a class="ref" href="#s21">[21]</a>。Buterin 补充，销毁还让链上的 gas 价格变得可以信赖：以前矿工能塞进费用付给自己的假交易，把 gas 价格指数做高或做低；现在假交易也要付会被销毁的基础费，操纵的成本很高<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>同一次升级里的另外四个 EIP</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>EIP</th><th>改了什么</th><th>为什么</th></tr></thead>
+          <tbody>
+            <tr><td>EIP-3198</td><td>新增操作码 BASEFEE（0x48），合约可以读到本块的基础费</td><td>例如悬赏合约可以把赏金设成“BASEFEE + x”，不管行情如何都够付 gas；也可用于 gas 期货和欺诈证明的挑战期<a class="ref" href="#s12">[12]</a></td></tr>
+            <tr><td>EIP-3529</td><td>取消 SELFDESTRUCT 的退款；清空存储的退款降到 4,800 gas；每笔交易最多退用量的 1/5，原来是 1/2</td><td>退款催生了 GasToken，把存储槽当“电池”存 gas，加剧状态膨胀；退款还让一个区块实际消耗的 gas 接近纸面上限的两倍，这种高峰能维持的时间比 EIP-1559 允许的长得多<a class="ref" href="#s13">[13]</a></td></tr>
+            <tr><td>EIP-3541</td><td>不允许部署以 0xEF 开头的新合约，已有合约不受影响</td><td>把这个字节留给将来的 EVM 对象格式（EOF）<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>EIP-3554</td><td>推迟难度炸弹，到 2021 年 12 月第一周才起作用</td><td>为在 12 月之前完成 Shanghai 升级或合并留出时间<a class="ref" href="#s15">[15]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>退款和 EIP-1559 是放在一起考虑的。第 107 次会议上已有开发者提出，做 EIP-1559 就应该同时取消或改写退款<a class="ref" href="#s9">[9]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>测试网</h3>
+        <p>2021 年 6 月 18 日，以太坊基金会博客发出 Tim Beiko 写的测试网公告：London 先在 Ropsten 的区块 10,499,401 上线，预计 6 月 24 日；Goerli 在区块 5,062,605，预计 6 月 30 日；Rinkeby 在区块 8,897,988，预计 7 月 7 日；Kovan 以后再定。三个测试网都顺利升级之后，才定主网的区块<a class="ref" href="#s3">[3]</a>。开发工具陆续跟上，以太坊项目管理仓库的准备清单列出 Ethers.js v5.4.1、Web3.js v1.5.0、Web3.py v5.21.0 已支持 1559 交易<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>Ropsten 上的分裂</h3>
+        <p>按 London 测试网的回顾，2021 年 7 月 21 日（太平洋时间），OpenEthereum 的开发者发现节点停在 Ropsten 的区块 10,679,538。问题出在 go-ethereum 检查 1559 交易发送方余额的方式：有一笔交易，发送方的余额够付实际消耗的 gas，不够付“gas 上限 × 总价上限”，按规范应当拒绝。Ropsten 的矿工全跑 go-ethereum，这个区块被其他 go-ethereum 矿工接受，被 OpenEthereum 和 Besu 拒绝，链就分开了。Nethermind 也接受了这个区块，EthereumJS 和 Erigon 随后被确认有同样的问题<a class="ref" href="#s7">[7]</a>。</p>
+        <p>各团队当天提交修复，22 日发布 geth v1.10.6、Nethermind v1.10.79 和 Erigon v2021.07.04-alpha<a class="ref" href="#s7">[7]</a>。geth 的发布说明要求主网用户在 London 激活之前升级到这个版本，否则会脱离共识<a class="ref" href="#s6">[6]</a>。以太坊基金会在主网公告开头补了说明，升级区块不变<a class="ref" href="#s2">[2]</a>。geth 的修复只多了一行，把转账金额也算进余额检查：</p>
+<pre class="code"><code><span class="c">// core/state_transition.go，buyGas（节选）</span>
+balanceCheck := mgval
+if st.gasFeeCap != nil {
+    balanceCheck = new(big.Int).SetUint64(st.msg.Gas())
+    balanceCheck = balanceCheck.Mul(balanceCheck, st.gasFeeCap)
+<span class="good">    balanceCheck.Add(balanceCheck, st.value)</span>
+}
+if have, want := st.state.GetBalance(st.msg.From()), balanceCheck; have.Cmp(want) &lt; 0 {
+    return fmt.Errorf("%w: address %v have %v want %v", ErrInsufficientFunds, ...)
+}</code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.10.6，core/state_transition.go，节选，报错参数从略。绿色一行是相对 v1.10.5 新增的<a class="ref" href="#s6">[6]</a>。</p>
+        <p>回顾认为，规范本身的写法容易让人误读。EIP 的参考实现先从发送方余额里减去转账金额，几行之后才断言余额够付“gas 上限 × 总价上限”；有的团队核对这条断言时，用的是减之前的余额。回顾建议把断言挪到更新余额的那一行旁边，随后有人向 EIP 仓库提交了修改<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>主网激活</h3>
+        <ol class="steps">
+          <li><b>7 月 15 日：公布区块</b>以太坊基金会宣布 London 在主网区块 12,965,000 激活，预计 8 月 3 日至 5 日到达，并列出各客户端可用的版本；OpenEthereum 在 London 之后弃用。使用交易所和各类钱包的人，除非服务商另行通知，不用做任何事；自己运行节点的要升级<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>8 月 5 日 12:33:42 UTC：激活</b>区块 12,965,000 产出，London 生效，当时 ETH 的价格约 2,621 美元<a class="ref" href="#s4">[4]</a>。CNBC 当天称这次升级“备受热捧，也有些争议”<a class="ref" href="#s26">[26]</a>。</li>
+          <li><b>此后两周：慢慢切换</b>用户和矿工升级软件要时间。Liu 等人统计时跳过了刚分叉的一段，从 1559 格式交易占比达到 20% 的区块 13,035,000（8 月 16 日）算起<a class="ref" href="#s22">[22]</a>。</li>
+        </ol>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>矿工：收入少了多少</h3>
+        <p>London 之前，矿工的收入有三块：每块 2 ETH 的出块奖励（另有叔块奖励）、用户为打包交易付的费用，以及 MEV<a class="ref" href="#s24">[24]</a>。MEV 指矿工靠决定打包、剔除、插入哪些交易以及怎样排序得到的收益<a class="ref" href="#s22">[22]</a>。Paradigm 的 Hasu 和 Georgios Konstantopoulos 2021 年 2 月分析，EIP-1559 之后出块奖励和 MEV 不受影响；被销毁的是网络不拥堵时的打包费，需求超过区块上限时，用户之间还会有一场一价拍卖，收入归矿工。他们认为流传的“EIP-1559 会烧掉一半以上矿工收入”的估计完全没有根据，按他们漏算了多少 MEV 不同，估计最多在 20% 到 35% 之间<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>EIP-3368 和“示威”</h3>
+        <p>2021 年 3 月 12 日，Michael D. Carter 提交 EIP-3368：把区块奖励从 2 ETH 提到 3 ETH，再用约两年（4,724,000 个区块）逐步降到 1 ETH。理由是挖矿收入骤降可能让矿工把算力出租给出价最高的人，攻击者就能以较低的成本在短时间里租到大量算力，攻击网络<a class="ref" href="#s16">[16]</a>。他在讨论帖里自称从 2013 年起提倡挖矿，制作过 7,000 多小时教人参与挖矿的内容<a class="ref" href="#s17">[17]</a>。</p>
+        <p>讨论帖里的争论很激烈。Carter 在帖子里承认，之前的“示威”（show of force）可能有些短视，但他坚持，算力被租去攻击的威胁没有被认真对待。同一天，一位参与者写道，网上流传的“矿工要对以太坊发动 51% 攻击”是误传，此前已经多次说明，那只是展示能凑出 51% 的算力，不会真的攻击。一位反对者回应，没有人拿出证据或模型证明 EIP-1559 会招来 51% 攻击，一个月前全网算力比当时低 20%，也没有出事<a class="ref" href="#s17">[17]</a>。</p>
+        <p>3 月 19 日的第 108 次核心开发者会议上，Carter 先为 EIP-1559 讨论中的紧张气氛和用语道歉，再解释 EIP-3368 针对的是币价下跌、挖矿收益减少时的安全风险，并承认合并提前以后，这项改动可能没有必要。与会者认为讨论有必要，但最好不要动发行量，以免适得其反，手里留一个备用方案即可。Beiko 总结，没有开发者主张把 EIP-3368 原样放进 London<a class="ref" href="#s10">[10]</a>。</p>
+        <p>同一次会议上，开发者 LightClient 担心 EIP-1559 诱使矿工推高区块，提议把 gas 上限写死在 1,250 万（EIP-3382）。Tomasz Stanczak 强烈反对，认为矿工历来表现良好，由矿工调整上限也平衡了开发者和矿工的关系，Buterin 表示同意；EIP-3382 没有随 EIP-1559 上线<a class="ref" href="#s10">[10]</a>。4 月 16 日第 110 次会议的纪要记录，Stanczak 说 MEV 正在抵消 EIP-1559 可能带来的损失；开发者听到过矿工要采取激进行动的威胁，没有看到这样的行为<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>开发者和钱包</h3>
+        <p>对“矿工合谋压低基础费”的担心，EIP 写道：矿工可以先挖空块压低基础费，但只要挖矿是分散的，这个均衡就不稳定，退出合谋的矿工赚得更多；要想获利，得掌握一半以上的算力，到那时双花攻击更划算<a class="ref" href="#s1">[1]</a>。Buterin 估算，补偿叔块风险的小费约 0.8 gwei<a class="ref" href="#s18">[18]</a>；EIP 预计多数用户不必手动调费，钱包会自动估出基础费和一个很小的小费<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>等待变短，出价变容易</h3>
+        <p>Liu 等人发表在 2022 年 ACM CCS 上的论文写道，据他们所知，EIP-1559 是以太坊交易费机制的第一次大改，也是大型公链第一次真正尝试离开一价拍卖。论文比较了 London 之前的 70,000 个区块（2021 年 7 月 20 日至 8 月 5 日）和 1559 交易占比达到 20% 以后的 70,000 个区块（8 月 16 日至 31 日）。为了记录交易进入交易池的时间，他们在北美和欧洲的四个地点各运行了一个全节点<a class="ref" href="#s22">[22]</a>。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>各区块等待时间的中位数</th><th class="n">London 之前</th><th class="n">之后</th></tr></thead>
+          <tbody>
+            <tr><td>25% 分位</td><td class="n">10.7 秒</td><td class="n">5.5 秒</td></tr>
+            <tr><td>50% 分位</td><td class="n">16.9 秒</td><td class="n">10.4 秒</td></tr>
+            <tr><td>75% 分位</td><td class="n">34.0 秒</td><td class="n">18.6 秒</td></tr>
+          </tbody>
+        </table></div>
+        <p class="code-cap">先算每个区块里交易等待时间的中位数，再看这些中位数的分布。据 Liu 等人<a class="ref" href="#s22">[22]</a>。</p>
+        <p>旧格式交易的等待也缩短了，London 之后和 1559 格式相差不多（按上表口径的中位数，9.4 秒和 8.9 秒），作者认为新机制的好处溢出到了没有换格式的交易上。按他们的回归，London 让平均等待时间少了约 9 秒；如果所有用户都改用新格式，还能再少 6 到 11 秒。同一区块里各笔交易付的 gas 价格，差距随新格式的普及明显缩小。他们还发现，ETH 价格波动大时等待时间明显变长；London 之后区块明显变大，区块越大，同一高度出现竞争区块（论文称 sibling）的可能越大<a class="ref" href="#s22">[22]</a>。</p>
+        <h3>费用没有变低</h3>
+        <p>作者的另一个结论是，在他们的数据期内，EIP-1559 没有降低交易费的水平，只是让估费变容易：以前用户按出价付钱，网络后来没那么拥堵，多付的也拿不回来；现在超出“基础费 + 小费”的部分不收。分叉后约两周，gas 价格开始上涨，作者说无法判断是不是 EIP-1559 造成的<a class="ref" href="#s22">[22]</a>。这和 Roughgarden 事前的分析一致：需求平稳时，任何机制都不能让费用长期低于市场出清价；要降低出清价，只能增加供给或减少需求，这通常不归交易费机制管<a class="ref" href="#s21">[21]</a>。CNBC 在激活当天也写道，费用更平稳，不一定更便宜<a class="ref" href="#s26">[26]</a>。</p>
+        <h3>需求突增时跟不上</h3>
+        <p>Reijsbergen 等人分析了 2021 年 8 月 3 日到 23 日的链上数据，发现 gas 价格的尖峰大多来自 NFT 发售。8 月 14 日的一次发售中，平均 gas 价格从区块 13,025,736 的 40.82 gwei，两个区块内涨到 207.33 gwei 和 1,360.02 gwei。这三个区块的矿工分别得到 2.019、3.472 和 45.646 ETH；最后一个区块里，交易费收入是 2 ETH 出块奖励的 20 多倍<a class="ref" href="#s23">[23]</a>。基础费每块最多涨 12.5%，追不上这样的跳涨，用户只能靠小费互相竞价，也就是 Paradigm 说的需求超过区块上限时的一价拍卖<a class="ref" href="#s24">[24]</a>。需求平稳时，他们又看到区块大小在接近满和接近空之间剧烈摆动，因此建议把固定的 1/8 调整速度换成按“加性增、乘性减”（AIMD）规则变化的速度<a class="ref" href="#s23">[23]</a>。</p>
+        <h3>矿工与共识安全</h3>
+        <p>Liu 等人发现，基础费被销毁以后，MEV 在矿工收入里的比重大了很多，这可能让矿工更愿意投入 MEV 的提取；但 EIP-1559 对共识安全的影响很小<a class="ref" href="#s22">[22]</a>。Roughgarden 事前的判断是，矿工短期内按规矩出块的激励，以及阻止双花、审查、拒绝服务和操纵基础费的博弈论障碍，在 EIP-1559 下和一价拍卖下一样强<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>ETH 的供给</h3>
+        <p>EIP 在安全考虑一节承认，销毁基础费以后，ETH 的总量不再固定：销毁多于挖矿奖励就通缩，少于就通胀；对区块空间的需求没法控制，核心开发者因此失去了对 ETH 长期数量的一部分控制<a class="ref" href="#s1">[1]</a>。Roughgarden 预计销毁至少会适度降低 ETH 的通胀率<a class="ref" href="#s21">[21]</a>。Coin Metrics 联合创始人 Nic Carter 在激活当天对 CNBC 说，只有销毁的费用超过新发行时才有通缩压力，这只在费用极高时出现<a class="ref" href="#s26">[26]</a>。合并以后新发行大幅减少，见 <a href="2022-the-merge.html">The Merge</a> 那一篇。几家统计的累计销毁量如下：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>截至</th><th class="n">累计销毁</th></tr></thead>
+          <tbody>
+            <tr><td>Bitcoin.com News<a class="ref" href="#s33">[33]</a></td><td>2024-12-21</td><td class="n">超过 450 万枚</td></tr>
+            <tr><td>cryptoticker.io，据 ultrasound.money<a class="ref" href="#s34">[34]</a></td><td>2026-10-17</td><td class="n">4,641,036 枚</td></tr>
+            <tr><td>ultrasound.money 首页<a class="ref" href="#s32">[32]</a></td><td>2026-11-05 读取</td><td class="n">约 4,643,316 枚</td></tr>
+          </tbody>
+        </table></div>
+        <p>按 Bitcoin.com News 的拆分，那 450 万枚里，普通的链上转账约占 8.17%，OpenSea 上的 NFT 约占 5.08%，Uniswap 约占 4.99%；按报道时的价格，这些 ETH 价值超过 153 亿美元<a class="ref" href="#s33">[33]</a>。</p>
+        <div class="note doubt"><span class="h">两个 ultrasound.money 的数字对不上</span><p>cryptoticker.io 引用的 10 月 17 日数字和 ultrasound.money 首页 11 月 5 日的数字相差约 2,280 枚。同一篇报道说，10 月 17 日之前 24 小时只销毁了 13.59 枚<a class="ref" href="#s34">[34]</a>，按这个速度，19 天销毁不到 300 枚。差额从哪来，本站没有查到。本站的规模数字用 ultrasound.money 首页读到的值<a class="ref" href="#s32">[32]</a>。</p></div>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>“超声波货币”</h3>
+        <p>Cointelegraph 写道，“超声波货币”（ultrasound money）的设想是：2021 年开始的销毁，加上 2022 年合并后新发行大幅减少，会让 ETH 比比特币更稀缺，长期趋于通缩<a class="ref" href="#s36">[36]</a>。cryptoticker.io 称，ETH 在 2021 年到 2023 年间得到这个绰号<a class="ref" href="#s34">[34]</a>。24/7 Wall St. 写道，从合并到 2024 年初，费用高的时候销毁曾经超过新发行<a class="ref" href="#s35">[35]</a>。</p>
+        <h3>blob 有了自己的费市场</h3>
+        <p>2024 年 3 月的 Dencun 升级带来 EIP-4844 的 blob 交易。blob gas 是一种新的 gas，和普通 gas 分开计价，按自己的目标值涨跌，规则类似 EIP-1559；blob 费在交易执行前从发送方余额里扣除并销毁，交易失败也不退。不同的是调整公式：blob 的基础费按超出目标的累计量指数变化，最低 1 wei，参数取值让每块最多涨约 12.5%。EIP-4844 写道，单独的费市场能让 blob 在用量有限时费用很低<a class="ref" href="#s27">[27]</a>。每块 blob 的目标和上限，Dencun 时是 3 和 6，2025 年 5 月的 Pectra 升级提高到 6 和 9<a class="ref" href="#s28">[28]</a>。</p>
+        <h3>主网的销毁变少</h3>
+        <p>24/7 Wall St. 认为，Dencun 让二层网络的费用降了 90% 以上，活动转到二层，主网的费用和销毁随之减少；从 2024 年 4 月起 ETH 一直是净通胀，按所取的时段不同，年增速在 0.2% 到 0.8% 之间<a class="ref" href="#s35">[35]</a>。几家给出的数字：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>口径</th><th>数字</th></tr></thead>
+          <tbody>
+            <tr><td>Cointelegraph，据 ultrasound.money<a class="ref" href="#s36">[36]</a></td><td>合并以来的年化增速</td><td>约 0.23%</td></tr>
+            <tr><td>24/7 Wall St.<a class="ref" href="#s35">[35]</a></td><td>2024 年 4 月以来的年增速</td><td>0.2% 到 0.8%</td></tr>
+            <tr><td>cryptoticker.io，据 ultrasound.money<a class="ref" href="#s34">[34]</a></td><td>合并以来，到 2026-10-17</td><td>销毁 2,017,726 枚，流通量增加 1,616,921 枚，到 122,137,960 枚</td></tr>
+            <tr><td>cryptoticker.io<a class="ref" href="#s34">[34]</a></td><td>2026-10-17 之前 24 小时</td><td>净增 2,955 枚，销毁 13.59 枚</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">增速的口径不一样</span><p>0.23% 是合并以来的年化值，包括 2024 年之前销毁较多的时期<a class="ref" href="#s36">[36]</a>；0.2% 到 0.8% 是 2024 年 4 月以后按不同时段算的<a class="ref" href="#s35">[35]</a>。两个增速的时段不同，不能互相换算。</p></div>
+        <h3>blob 基础费落到 1 wei</h3>
+        <p>EIP-7918 的作者指出，执行成本占大头时，blob 的基础费不再起价格信号的作用，现有机制可能一路调低它，直到停在 1 wei。这时 blob 基础费涨 10%，使用 blob 的总成本只变 0.0000001%；需求回升以后，要一个多小时接近满的区块，才能回到市场出清的价格。EIP-7918 给 blob 设了一个保留价，等于执行层基础费乘以一个常数<a class="ref" href="#s29">[29]</a>。它随 2025 年 12 月 3 日的 Fusaka 升级上线；同一次升级的 EIP-7935 让执行层客户端把默认 gas 上限从 3,600 万提高到 6,000 万<a class="ref" href="#s30">[30]</a><a class="ref" href="#s31">[31]</a><a class="ref" href="#s4">[4]</a>。按 Roughgarden 的说法，降低费用的水平只能靠增加供给或减少需求<a class="ref" href="#s21">[21]</a>，提高 gas 上限和 blob 的数量走的是前一条路。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议设计者</span>
+          <ul>
+            <li>事先讲清机制能做什么、不能做什么。Roughgarden 上线前就写明，EIP-1559 能让估费变容易，不能大幅降低平均交易费<a class="ref" href="#s21">[21]</a>；上线后的实证结果与此一致<a class="ref" href="#s22">[22]</a>。</li>
+            <li>收费的去向决定机制能不能被绕开。基础费如果给本块的出块者，用户和矿工在链下补差价，机制就退回一价拍卖<a class="ref" href="#s21">[21]</a>。</li>
+            <li>固定的调整速度有两面。每块最多 12.5% 让钱包能预知下一块的价格<a class="ref" href="#s5">[5]</a>，也让它追不上 NFT 发售那样的突发需求<a class="ref" href="#s23">[23]</a>；blob 的基础费可能落到 1 wei，后来才加了保留价<a class="ref" href="#s29">[29]</a>。</li>
+            <li>规范里的断言要放在不会被误读的地方。Ropsten 的分裂，起因是几个客户端对参考实现里同一条断言的理解不同<a class="ref" href="#s7">[7]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给钱包和合约开发者</span>
+          <ul>
+            <li>用总价上限封顶，用小费表达急不急。高出实际价格的部分不会被收走<a class="ref" href="#s1">[1]</a>。</li>
+            <li>合约要读基础费，用 BASEFEE<a class="ref" href="#s12">[12]</a>。London 之后 GASPRICE 只是发送方付的价格，读不到矿工实际得到多少<a class="ref" href="#s1">[1]</a>。</li>
+            <li>依赖 gas 退款的设计，可能被协议改掉。EIP-3529 削减退款，就是要让 GasToken 这类用法不再划算<a class="ref" href="#s13">[13]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给关心 ETH 供给的人</span>
+          <ul>
+            <li>销毁量跟着需求走。EIP 的作者在上线前就说，无法断定 ETH 会通缩还是通胀<a class="ref" href="#s1">[1]</a>。</li>
+            <li>扩容会减少主网的销毁。Dencun 之后二层费用大降，ETH 的供给转为净增加<a class="ref" href="#s35">[35]</a>。</li>
+            <li>受损方的说法要核对。流传的“烧掉一半以上矿工收入”，Paradigm 认为没有根据，估计最多 20% 到 35%<a class="ref" href="#s24">[24]</a>；开发者最终没有用增发补偿矿工<a class="ref" href="#s10">[10]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Vitalik Buterin、Eric Conner、Rick Dudley、Matthew Slipper、Ian Norden、Abdelhamid Bakhta，EIP-1559《Fee market change for ETH 1.0 chain》，2019-04-13 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-1559">eips.ethereum.org</a></li>
+          <li id="s2">以太坊基金会博客（Tim Beiko），《London Mainnet Announcement》，2021-07-15（7 月 23 日、8 月 4 日更新客户端版本）。<a href="https://blog.ethereum.org/2021/07/15/london-mainnet-announcement">blog.ethereum.org</a></li>
+          <li id="s3">以太坊基金会博客（Tim Beiko），《London Testnets Announcement》，2021-06-18。<a href="https://blog.ethereum.org/2021/06/18/london-testnets-announcement">blog.ethereum.org</a></li>
+          <li id="s4">ethereum.org，《Timeline of all Ethereum forks (2014 to present)》，2026 年 11 月查阅。<a href="https://ethereum.org/en/history/">ethereum.org</a></li>
+          <li id="s5">ethereum.org，《Ethereum gas and fees: technical overview》，2026 年 11 月查阅。<a href="https://ethereum.org/en/developers/docs/gas/">ethereum.org</a></li>
+          <li id="s6">ethereum/go-ethereum，v1.10.6（2021-07-22 发布）及发布说明，consensus/misc/eip1559.go、params/protocol_params.go、params/config.go、core/state_transition.go；对照 v1.10.5 的 core/state_transition.go。<a href="https://github.com/ethereum/go-ethereum/releases/tag/v1.10.6">github.com</a></li>
+          <li id="s7">ethereum/pm，《London Testnet Retrospective》（Network-Upgrade-Archive/London/london-retro.md），2026 年 11 月查阅。<a href="https://github.com/ethereum/pm/blob/master/Network-Upgrade-Archive/London/london-retro.md">github.com</a></li>
+          <li id="s8">ethereum/pm，《London Ecosystem Readiness Checklist》（Network-Upgrade-Archive/London/london-ecosystem-readinesss.md），2026 年 11 月查阅。<a href="https://github.com/ethereum/pm/blob/master/Network-Upgrade-Archive/London/london-ecosystem-readinesss.md">github.com</a></li>
+          <li id="s9">ethereum/pm，《All Core Devs Meeting 107》纪要，会议日期 2021-03-05。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%20107.md">github.com</a></li>
+          <li id="s10">ethereum/pm，《All Core Devs Meeting 108》纪要，会议日期 2021-03-19。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%20108.md">github.com</a></li>
+          <li id="s11">ethereum/pm，《All Core Devs Meeting 110》纪要，会议日期 2021-04-16。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%20110.md">github.com</a></li>
+          <li id="s12">Abdelhamid Bakhta、Vitalik Buterin，EIP-3198《BASEFEE opcode》，2021-01-13 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-3198">eips.ethereum.org</a></li>
+          <li id="s13">Vitalik Buterin、Martin Swende，EIP-3529《Reduction in refunds》，2021-04-22 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-3529">eips.ethereum.org</a></li>
+          <li id="s14">Alex Beregszaszi 等，EIP-3541《Reject new contract code starting with the 0xEF byte》，2021-03-16 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-3541">eips.ethereum.org</a></li>
+          <li id="s15">James Hancock，EIP-3554《Difficulty Bomb Delay to December 2021》，2021-05-06 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-3554">eips.ethereum.org</a></li>
+          <li id="s16">Michael D. Carter，EIP-3368《Increase block rewards to 3 ETH, with 2 Year Decay to 1 ETH Scheduled》，2021-03-12 提出，状态 Stagnant。<a href="https://eips.ethereum.org/EIPS/eip-3368">eips.ethereum.org</a></li>
+          <li id="s17">Ethereum Magicians，《EIP-3368 - Block Reward Increase /w Decay for next two years》讨论帖，2021-03-12 开帖，引用第 20、23、40 楼。<a href="https://ethereum-magicians.org/t/eip-3368-block-reward-increase-w-decay-for-next-two-years/5550">ethereum-magicians.org</a></li>
+          <li id="s18">Vitalik Buterin，《EIP 1559 FAQ》，notes.ethereum.org，2026 年 11 月查阅。<a href="https://notes.ethereum.org/@vbuterin/eip-1559-faq">notes.ethereum.org</a></li>
+          <li id="s19">Vitalik Buterin，zcash/zcash 第 3473 号议题《Evaluate alternative transaction fee market mechanisms》，2018-08-17。<a href="https://github.com/zcash/zcash/issues/3473">github.com</a></li>
+          <li id="s20">Vitalik Buterin，《DRAFT: Position paper on resource pricing》，ethresear.ch，2018-08-07。<a href="https://ethresear.ch/t/draft-position-paper-on-resource-pricing/2838">ethresear.ch</a></li>
+          <li id="s21">Tim Roughgarden，《Transaction Fee Mechanism Design for the Ethereum Blockchain: An Economic Analysis of EIP-1559》，arXiv:2012.00854，2020-12-01，报告注明由 Decentralization Foundation 资助。<a href="https://arxiv.org/abs/2012.00854">arxiv.org</a></li>
+          <li id="s22">Yulin Liu、Yuxuan Lu、Kartik Nayak、Fan Zhang、Luyao Zhang、Yinhong Zhao，《Empirical Analysis of EIP-1559: Transaction Fees, Waiting Time, and Consensus Security》，ACM CCS 2022，第 2099–2113 页；arXiv:2201.05574（v4，2023-04-25）。<a href="https://arxiv.org/abs/2201.05574">arxiv.org</a></li>
+          <li id="s23">Daniël Reijsbergen、Shyam Sridhar、Barnabé Monnot、Stefanos Leonardos、Stratis Skoulakis、Georgios Piliouras，《Transaction Fees on a Honeymoon: Ethereum's EIP-1559 One Month Later》，IEEE Blockchain-2021；arXiv:2110.04753，2021-10-10。<a href="https://arxiv.org/abs/2110.04753">arxiv.org</a></li>
+          <li id="s24">Paradigm（Hasu、Georgios Konstantopoulos），《Establishing Bounds for Miner Revenue in EIP-1559》，2021-02-26。<a href="https://www.paradigm.xyz/2021/02/establishing-bounds-for-miner-revenue-in-eip-1559">paradigm.xyz</a></li>
+          <li id="s25">Bloomberg（Matthew Leising），《Crypto Coin Outperforming Bitcoin Is About to See Supply Reduced》，2021-03-07，经 Internet Archive 存档读取。<a href="https://web.archive.org/web/20210418155000/https://www.bloomberg.com/news/articles/2021-03-07/crypto-coin-outperforming-bitcoin-is-about-to-see-supply-reduced">web.archive.org</a></li>
+          <li id="s26">CNBC（MacKenzie Sigalos），《Ethereum just activated a major change called the 'London hard fork' — here's why it's a big deal》，2021-08-05，MSN 转载页，经 Internet Archive 存档读取。<a href="https://web.archive.org/web/20210805171459/https://www.msn.com/en-us/money/markets/ethereum-just-activated-its-london-hard-fork-and-its-a-really-big-deal/ar-AAMYsaT">web.archive.org</a></li>
+          <li id="s27">Vitalik Buterin 等，EIP-4844《Shard Blob Transactions》，2022-02-25 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-4844">eips.ethereum.org</a></li>
+          <li id="s28">Parithosh Jayanthi 等，EIP-7691《Blob throughput increase》，2024-04-17 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-7691">eips.ethereum.org</a></li>
+          <li id="s29">Anders Elowsson、Ben Adams、Francesco D'Amato，EIP-7918《Blob base fee bounded by execution cost》，2025-03-25 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-7918">eips.ethereum.org</a></li>
+          <li id="s30">Tim Beiko、Alex Stokes、Ansgar Dietrichs，EIP-7607《Hardfork Meta - Fusaka》，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-7607">eips.ethereum.org</a></li>
+          <li id="s31">Sophia Gold 等，EIP-7935《Set default gas limit to 60M》，2025-04-22 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-7935">eips.ethereum.org</a></li>
+          <li id="s32">ultrasound.money，首页统计（London 以来的累计销毁，页面自带的数据对应区块 26,342,990），2026-11-05 读取。<a href="https://ultrasound.money/">ultrasound.money</a></li>
+          <li id="s33">Bitcoin.com News（Jamie Redman），《Ethereum's $15.3B Burn Bonfire: Over 4.5M ETH Destroyed Since EIP-1559 Activation》，2024-12-21。<a href="https://news.bitcoin.com/ethereums-15-3b-burn-bonfire-over-4-5m-eth-destroyed-since-eip-1559-activation/">news.bitcoin.com</a></li>
+          <li id="s34">cryptoticker.io，《Ethereum forecast: 2,955 new ETH a day, only 13.6 burned, next target: $2,552》，2026-10-17。<a href="https://cryptoticker.io/en/ethereum-forecast-net-issuance-burn-october-2026/">cryptoticker.io</a></li>
+          <li id="s35">24/7 Wall St.（Sam Daodu），《Ethereum's Supply: Are We Seeing Inflation Again at $2,700?》，2026-10-05。<a href="https://247wallst.com/investing/cryptocurrency/2026/10/05/ethereums-supply-are-we-seeing-inflation-again-at-2700/">247wallst.com</a></li>
+          <li id="s36">Cointelegraph（Yashu Gola），《Was Ethereum 'ultrasound money' a mistake? ETH down 65% vs. BTC since pivot》，2026-03-10。<a href="https://cointelegraph.com/markets/was-ethereum-ultrasound-money-mistake-eth-btc-down-60-since-pos">cointelegraph.com</a></li>
+          <li id="s37">Quartz（Joon Ian Wong），《CryptoKitties is causing ethereum network congestion》，2017-12-04（Internet Archive 存档）。<a href="https://web.archive.org/web/20171205231301/https://qz.com/1145833/cryptokitties-is-causing-ethereum-network-congestion/">web.archive.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

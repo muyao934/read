@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OFAC 制裁 Tornado Cash｜区块链大事记</title>
+<meta name="description" content="2022 年 8 月美国财政部制裁以太坊混币器 Tornado Cash 的经过：合约怎样切断存款和取款的联系，名单上为什么有没人能改的代码，第五巡回法院为什么认定不可变的智能合约不是财产，2025 年制裁撤销，以及开发者在荷兰和美国的刑事案。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-tornado-sanctions">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　<a href="../index.html#cat-policy">监管与政策</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>OFAC 制裁 Tornado Cash</h1>
+    <p class="lede">2022 年 8 月 8 日，美国财政部海外资产控制办公室（OFAC）把以太坊混币器 Tornado Cash 列入制裁名单，名单上的地址大多是智能合约，其中一部分连开发者自己也改不了。财政部称它自 2019 年创立以来被用来洗钱超过 70 亿美元，其中包括朝鲜 Lazarus Group 盗走的 4.55 亿美元以上。2024 年 11 月，第五巡回上诉法院裁定不可变的智能合约不是法律上的“财产”，财政部 2025 年 3 月撤销制裁；开发者在荷兰和美国的刑事案仍在进行。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Tornado Cash 是以太坊上的一组智能合约。用户把固定金额的 ETH 存进资金池，之后凭零知识证明从另一个地址取出，链上看不出哪笔取款对应哪笔存款<a class="ref" href="#s14">[14]</a><a class="ref" href="#s17">[17]</a>。2022 年 8 月 8 日，OFAC 依据第 13694 号行政令把 Tornado Cash 列入特别指定国民（SDN）名单，称它自 2019 年创立以来被用来洗钱超过 70 亿美元<a class="ref" href="#s1">[1]</a>。名单上有 38 个以太坊地址，第五巡回法院写道，其中 37 个是智能合约，至少 20 个不可变<a class="ref" href="#s2">[2]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <p>六名用户在 Coinbase 支持下起诉财政部<a class="ref" href="#s9">[9]</a><a class="ref" href="#s27">[27]</a>。德州西区联邦地区法院 2023 年 8 月支持财政部<a class="ref" href="#s9">[9]</a>；第五巡回上诉法院 2024 年 11 月 26 日改判，认为没有人能控制的智能合约不能被拥有，不是《国际紧急经济权力法》（IEEPA）意义上的“财产”，OFAC 超出了国会授予的权限<a class="ref" href="#s10">[10]</a>。2025 年 3 月 21 日，财政部撤销对 Tornado Cash 的制裁<a class="ref" href="#s7">[7]</a>。</p>
+        <p>这场诉讼只回答了代码能不能被封锁，没有回答写代码的人要不要负责。荷兰法院 2024 年 5 月以洗钱罪判开发者 Alexey Pertsev 64 个月<a class="ref" href="#s13">[13]</a><a class="ref" href="#s24">[24]</a>，他已上诉<a class="ref" href="#s25">[25]</a><a class="ref" href="#s26">[26]</a>。美国的陪审团 2025 年 8 月认定联合创始人 Roman Storm 共谋经营无牌汇款业务，洗钱和违反制裁两项没有达成一致<a class="ref" href="#s12">[12]</a><a class="ref" href="#s28">[28]</a>；他的无罪动议到 2026 年 10 月仍未裁决，这两项罪名的重审定在 2027 年 4 月<a class="ref" href="#s28">[28]</a><a class="ref" href="#s29">[29]</a>。另一名联合创始人 Roman Semenov 2023 年被起诉时在逃<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>混币器和 Tornado Cash</h3>
+        <p>以太坊上的转账是公开的，只要知道一个地址属于谁，就能顺着交易查到它的钱从哪里来、到哪里去。混币器把很多人的钱汇到一起再分别转出，切断来源和去向之间的联系。财政部的说法是，Tornado Cash“不加区分地”为匿名交易提供便利，不去确认资金的来源<a class="ref" href="#s1">[1]</a>。</p>
+        <p>第五巡回法院把 Tornado Cash 描述为一个去中心化的开源软件项目，一批贡献者 2019 年把它的智能合约部署到以太坊上，其中包括 Roman Storm、Alexey Pertsev 和 Roman Semenov<a class="ref" href="#s10">[10]</a>。Chainalysis 称它 2019 年 8 月上线，到 2022 年 8 月混过的 ETH 价值超过 76 亿美元<a class="ref" href="#s17">[17]</a>。用户并不都是罪犯：判决书举例，原告 Tyler Almeida 用它匿名给乌克兰的战事捐款，因为担心俄罗斯的黑客顺着捐款找上他<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>合约怎样切断存款和取款的联系</h3>
+        <p>每个资金池只收一种固定金额。存款时，客户端在本地生成一张票据（note），里面有 nullifier 和 secret 两个值；合约收到的只是两者的 Pedersen 哈希，即承诺值（commitment），并把它插进一棵默克尔树。合约只知道有人存了一笔钱，不知道这笔钱以后归谁<a class="ref" href="#s14">[14]</a>：</p>
+<pre class="code"><code><span class="c">// contracts/Tornado.sol（tornado-core v2.1，节选）</span>
+mapping(bytes32 =&gt; bool) public nullifierHashes;
+<span class="c">// we store all commitments just to prevent accidental deposits with the same commitment</span>
+mapping(bytes32 =&gt; bool) public commitments;
+
+<span class="c">// _commitment 即 PedersenHash(nullifier + secret)，由存款人在本地算好</span>
+function deposit(bytes32 _commitment) external payable nonReentrant {
+  require(!commitments[_commitment], "The commitment has been submitted");
+  uint32 insertedIndex = _insert(_commitment);   <span class="c">// 承诺值成为默克尔树的一片叶子</span>
+  commitments[_commitment] = true;
+  _processDeposit();   <span class="c">// ETH 池在这里检查 msg.value == denomination</span>
+  emit Deposit(_commitment, insertedIndex, block.timestamp);
+}
+
+function withdraw(bytes calldata _proof, bytes32 _root, bytes32 _nullifierHash,
+    address payable _recipient, address payable _relayer, uint256 _fee, uint256 _refund)
+    external payable nonReentrant {
+  require(_fee &lt;= denomination, "Fee exceeds transfer value");
+  require(!nullifierHashes[_nullifierHash], "The note has been already spent");
+  <span class="c">// _root 必须是合约最近记下的根之一</span>
+  require(isKnownRoot(_root), "Cannot find your merkle root");
+  require(verifier.verifyProof(_proof, [uint256(_root), uint256(_nullifierHash),
+    uint256(_recipient), uint256(_relayer), _fee, _refund]), "Invalid withdraw proof");
+  <span class="c">// 证明里没有叶子的编号，合约看不出取走的是哪一笔存款</span>
+  nullifierHashes[_nullifierHash] = true;   <span class="c">// 同一张票据不能取两次</span>
+  _processWithdraw(_recipient, _relayer, _fee, _refund);
+  emit Withdrawal(_recipient, _nullifierHash, _relayer, _fee);
+}</code></pre>
+        <p class="code-cap">出处：tornadocash/tornado-core，标签 v2.1（commit a533ad9，2020-04-28），contracts/Tornado.sol，节选；这一版与 v2.0 的 Tornado.sol 只差 pragma 一行。英文注释为原文，中文注释为本站所加；为了排版，长语句拆成了多行，省略了一处行尾的英文注释。</p>
+        <p>取款时，用户在本地生成一个零知识证明，证明自己知道树上某一片叶子对应的 nullifier 和 secret，却不透露是哪一片。合约只检查三件事：默克尔根是最近记下的根之一，作废值哈希（nullifier hash）没有用过，证明有效；然后记下这个作废值哈希，把钱转给收款地址。收款地址、中继者和手续费也作为公开输入，一起交给 verifier 校验<a class="ref" href="#s14">[14]</a>。</p>
+        <p>还剩一个问题：新地址里没有 ETH，付不起取款的 gas。用户可以请中继者（relayer）代为提交取款，中继者从取出的钱里扣一笔费用。Chainalysis 写道，费用约为 0.05% 至 0.2%，这笔经中继者完成的交易切断了存款和取款之间的直接联系<a class="ref" href="#s17">[17]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 400" role="img" aria-labelledby="tc-pool-t tc-pool-d">
+            <title id="tc-pool-t">资金池怎样切断存款和取款的联系</title>
+            <desc id="tc-pool-d">地址 A、B、C 各向资金池存入 0.1 ETH，合约只把它们的承诺值 C1、C2、C3 插进默克尔树。新地址 X、Y、Z 各凭一个零知识证明和一个作废值哈希取出 0.1 ETH，合约记下作废值哈希，防止同一张票据取两次。合约不记录承诺值和作废值哈希的对应关系。链上能看到每笔存款的地址和金额、每笔取款的收款地址，看不出哪笔取款对应哪笔存款；票据里的 nullifier 和 secret 只在持有人手里。取款可以请中继者代为提交，中继者付 gas，从取出的钱里扣手续费。</desc>
+            <defs>
+              <marker id="tc-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <text class="d-t b" x="110" y="24" text-anchor="middle">存款</text>
+            <text class="d-t b" x="380" y="24" text-anchor="middle">资金池合约</text>
+            <text class="d-t b" x="650" y="24" text-anchor="middle">取款</text>
+            <rect class="d-box" x="20" y="40" width="180" height="50" rx="3"/>
+            <text class="d-t b" x="110" y="61" text-anchor="middle">地址 A 存 0.1 ETH</text>
+            <text class="d-t s" x="110" y="80" text-anchor="middle">承诺值 C1</text>
+            <rect class="d-box" x="20" y="110" width="180" height="50" rx="3"/>
+            <text class="d-t b" x="110" y="131" text-anchor="middle">地址 B 存 0.1 ETH</text>
+            <text class="d-t s" x="110" y="150" text-anchor="middle">承诺值 C2</text>
+            <rect class="d-box" x="20" y="180" width="180" height="50" rx="3"/>
+            <text class="d-t b" x="110" y="201" text-anchor="middle">地址 C 存 0.1 ETH</text>
+            <text class="d-t s" x="110" y="220" text-anchor="middle">承诺值 C3</text>
+            <rect class="d-box" x="260" y="40" width="240" height="190" rx="3"/>
+            <text class="d-t b" x="380" y="66" text-anchor="middle">固定金额的资金池（0.1 ETH）</text>
+            <text class="d-t s" x="380" y="98" text-anchor="middle">存款时：承诺值插进默克尔树</text>
+            <text class="d-t s" x="380" y="118" text-anchor="middle">C1、C2、C3……</text>
+            <text class="d-t s" x="380" y="150" text-anchor="middle">取款时：记下作废值哈希</text>
+            <text class="d-t s" x="380" y="170" text-anchor="middle">Nx、Ny、Nz……</text>
+            <text class="d-t s" x="380" y="206" text-anchor="middle">合约不记录两者的对应关系</text>
+            <rect class="d-box" x="560" y="40" width="180" height="50" rx="3"/>
+            <text class="d-t b" x="650" y="61" text-anchor="middle">新地址 X 取 0.1 ETH</text>
+            <text class="d-t s" x="650" y="80" text-anchor="middle">提交证明和 Nx</text>
+            <rect class="d-box" x="560" y="110" width="180" height="50" rx="3"/>
+            <text class="d-t b" x="650" y="131" text-anchor="middle">新地址 Y 取 0.1 ETH</text>
+            <text class="d-t s" x="650" y="150" text-anchor="middle">提交证明和 Ny</text>
+            <rect class="d-box" x="560" y="180" width="180" height="50" rx="3"/>
+            <text class="d-t b" x="650" y="201" text-anchor="middle">新地址 Z 取 0.1 ETH</text>
+            <text class="d-t s" x="650" y="220" text-anchor="middle">提交证明和 Nz</text>
+            <line class="d-line" x1="200" y1="65" x2="256" y2="120" marker-end="url(#tc-ah)"/>
+            <line class="d-line" x1="200" y1="135" x2="256" y2="135" marker-end="url(#tc-ah)"/>
+            <line class="d-line" x1="200" y1="205" x2="256" y2="150" marker-end="url(#tc-ah)"/>
+            <line class="d-line" x1="504" y1="120" x2="556" y2="65" marker-end="url(#tc-ah)"/>
+            <line class="d-line" x1="504" y1="135" x2="556" y2="135" marker-end="url(#tc-ah)"/>
+            <line class="d-line" x1="504" y1="150" x2="556" y2="205" marker-end="url(#tc-ah)"/>
+            <rect class="d-box soft" x="20" y="260" width="350" height="76" rx="3"/>
+            <text class="d-t b" x="195" y="284" text-anchor="middle">链上公开的</text>
+            <text class="d-t s" x="195" y="304" text-anchor="middle">每笔存款的地址和金额</text>
+            <text class="d-t s" x="195" y="322" text-anchor="middle">每笔取款的收款地址</text>
+            <rect class="d-box soft" x="390" y="260" width="350" height="76" rx="3"/>
+            <text class="d-t b" x="565" y="284" text-anchor="middle">链上看不出的</text>
+            <text class="d-t s" x="565" y="304" text-anchor="middle">哪笔取款对应哪笔存款</text>
+            <text class="d-t s" x="565" y="322" text-anchor="middle">票据里的 nullifier 和 secret 只在持有人手里</text>
+            <text class="d-t s" x="380" y="366" text-anchor="middle">取款可以请中继者代为提交：中继者付 gas，从取出的钱里扣手续费</text>
+          </svg>
+          </div>
+          <figcaption>资金池的存取逻辑据 tornado-core 的 Tornado.sol 和 ETHTornado.sol<a class="ref" href="#s14">[14]</a>，中继者据 Chainalysis 和第五巡回法院的判决书<a class="ref" href="#s17">[17]</a><a class="ref" href="#s10">[10]</a>。C1、Nx 等是示意的记号，不对应真实数据。</figcaption>
+        </figure>
+        <h3>合约有没有管理员</h3>
+        <p>最早的资金池并非没人能动。合约里有一个 operator 角色，可以换掉负责验证证明的 verifier 合约。源码的注释写明，最后一次可信设置仪式之后，operator 的权限应当转给零地址<a class="ref" href="#s14">[14]</a>：</p>
+<pre class="code"><code><span class="c">// contracts/Tornado.sol（tornado-core v2.1，节选）</span>
+<span class="c">// operator can update snark verification key</span>
+<span class="c">// after the final trusted setup ceremony operator rights are supposed to be</span>
+<span class="c">// transferred to zero address</span>
+address public operator;
+modifier onlyOperator {
+  require(msg.sender == operator, "Only operator can call this function.");
+  _;
+}
+<span class="c">// ……deposit、withdraw 等函数……</span>
+function updateVerifier(address _newVerifier) external onlyOperator {
+  verifier = IVerifier(_newVerifier);   <span class="c">// 换掉验证证明的合约</span>
+}
+function changeOperator(address _newOperator) external onlyOperator {
+  operator = _newOperator;   <span class="c">// 设为零地址后，上面两个函数再也没人能调用</span>
+}</code></pre>
+        <p class="code-cap">出处：同上，contracts/Tornado.sol，节选。英文注释为原文，一行长注释拆成了两行；中文注释为本站所加。</p>
+        <p>换 verifier 的权力不小。按代码的逻辑，withdraw 只认 verifier 的判断；换上一个对任何证明都回答“有效”的合约，任何人都能凭编造的证明取走池子里的钱。operator 在不在，决定了这些合约还能不能被人控制。</p>
+        <p>2020 年 5 月 1 日，团队宣布启动可信设置仪式，请社区参与生成最终的 verifier，并写道：仪式完成后，团队会更新所有资金池的 verifier，把 operator 地址设为零，届时“Tornado.cash 的智能合约将完全不可变、无法阻止”<a class="ref" href="#s15">[15]</a>。第五巡回法院记载，1,100 多名用户参加了这次仪式，之后包括资金池在内的至少 20 个合约不可逆地成为不可变合约，再也不能被修改、移除或控制<a class="ref" href="#s10">[10]</a>。</p>
+        <p>并非所有合约都不可变。仪式之后，开发者成立了 DAO，发行治理代币 TORN；DAO 可以投票上线新项目、修改部分可选功能，但改不了资金池这类不可变合约。登记中继者的合约和治理合约本身是可变的<a class="ref" href="#s10">[10]</a>。地区法院写道，DAO 从经中继者完成的交易中收取 TORN，这类交易占绝大多数<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>Lazarus 和 2022 年的跨链桥盗窃</h3>
+        <p>财政部称，经 Tornado Cash 洗过的钱里，有朝鲜的 Lazarus Group 2022 年 3 月盗走的超过 4.55 亿美元，这是当时已知最大的虚拟货币盗窃案；此后又有 6 月 Harmony 跨链桥被盗的超过 9,600 万美元、8 月 Nomad 被盗的至少 780 万美元经它洗出<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。Chainalysis 指出，3 月那一起就是 Axie Infinity 的 Ronin 跨链桥被盗<a class="ref" href="#s17">[17]</a>。三起盗窃的经过见被盗站的 <a href="../../hacks/events/2022-ronin-bridge.html">Ronin 跨链桥被盗</a>、<a href="../../hacks/events/2022-harmony-horizon.html">Harmony Horizon 跨链桥被盗</a>和 <a href="../../hacks/events/2022-nomad-bridge.html">Nomad 跨链桥“众筹式”抢劫</a>。</p>
+        <p>司法部称，Storm 明知是 Ronin 案的赃款，仍经手转移了数亿美元，FBI 公开把这起盗窃归到 Lazarus 名下之后也没有停止<a class="ref" href="#s12">[12]</a>。起诉书还指控，2022 年 4 月和 5 月 Lazarus 经 Tornado Cash 洗了数亿美元，Storm 和 Semenov 知情；他们做了一处改动，好对外宣称遵守制裁，私下却认为这处改动不会起作用<a class="ref" href="#s11">[11]</a>。这些是检方的指控，陪审团在违反制裁一项上没有达成一致<a class="ref" href="#s28">[28]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">违法行为与损失</span><span class="def">立法、监管、法院与执法</span><span>市场与其他</span></p>
+        <ol class="timeline">
+          <li><time>2019-08</time><div class="ev">Tornado Cash 在以太坊上线<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2020-05-01</time><div class="ev">团队宣布启动可信设置仪式，完成后把资金池的 operator 设为零地址<a class="ref" href="#s15">[15]</a>；第五巡回法院记载有 1,100 多人参加<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>2022-03</time><div class="ev">Ronin 跨链桥被盗。财政部称，Lazarus Group 盗走的超过 4.55 亿美元经 Tornado Cash 洗出<a class="ref" href="#s1">[1]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2022-05-06</time><div class="ev">OFAC 制裁另一个混币器 Blender.io<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2022-06 至 08</time><div class="ev">Harmony 跨链桥（6 月）和 Nomad 跨链桥（8 月初）先后被盗；财政部称，分别有超过 9,600 万美元和至少 780 万美元经 Tornado Cash 洗出<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-08-08</time><div class="ev">OFAC 依据第 13694 号行政令，把 Tornado Cash 和 38 个以太坊地址列入 SDN 名单<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2022-08-08</time><div class="ev">GitHub 删除 Tornado Cash 的账号；到 8 月 10 日，至少三名贡献者的个人账号也被停用<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def"><time>2022-08-10</time><div class="ev">荷兰财政情报与侦查局（FIOD）在阿姆斯特丹逮捕一名 29 岁男子，怀疑他经 Tornado Cash 帮助洗钱<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2022-09-08</time><div class="ev">Joseph Van Loon 等六名用户起诉财政部<a class="ref" href="#s9">[9]</a>，诉讼由 Coinbase 支持<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li><time>2022-09-13</time><div class="ev">OFAC 发布 FAQ 1076 至 1079，说明接触开源代码本身不被禁止<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2022-11-08</time><div class="ev">OFAC 撤销并同时重新指定 Tornado Cash，依据加上针对朝鲜的第 13722 号行政令，名单上的地址增至 90 个<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-08-17</time><div class="ev">德州西区联邦地区法院驳回用户的动议，支持财政部<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2023-08-23</time><div class="ev">纽约南区检察官公布对 Storm 和 Semenov 的起诉，Storm 在华盛顿州被捕，Semenov 在逃<a class="ref" href="#s11">[11]</a>；OFAC 同日把 Semenov 列入 SDN 名单<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2024-03-13</time><div class="ev">2023 年 11 月 HTX 和 Heco 跨链桥被盗的资金开始流入 Tornado Cash，Elliptic 统计到次日已超过 1 亿美元；它把这起盗窃归到 Lazarus 名下<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2024-05-14</time><div class="ev">荷兰东布拉班特地区法院以洗钱罪判 Pertsev 64 个月<a class="ref" href="#s13">[13]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def"><time>2024-11-26</time><div class="ev">第五巡回上诉法院改判：不可变的智能合约不是 IEEPA 下的财产，OFAC 越权<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2025-02-07</time><div class="ev">荷兰法院暂停对 Pertsev 的羁押，让他在狱外准备上诉<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2025-03-21</time><div class="ev">财政部撤销对 Tornado Cash 的制裁，OFAC 删除 90 个地址；Semenov 本人仍在名单上<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2025-08-06</time><div class="ev">经过四周庭审，陪审团认定 Storm 共谋经营无牌汇款业务，这项罪名最高刑期 5 年<a class="ref" href="#s12">[12]</a>；洗钱和违反制裁两项没有达成一致<a class="ref" href="#s28">[28]</a>。</div></li>
+          <li class="def"><time>2026-08</time><div class="ev">法官 Failla 把重审从 2026 年 10 月 26 日推迟到 2027 年 4 月 26 日，Storm 的无罪动议仍未裁决<a class="ref" href="#s28">[28]</a>。</div></li>
+          <li class="def"><time>2026-10-05</time><div class="ev">FinCEN 撤回 2023 年提出的混币规则<a class="ref" href="#s30">[30]</a>。同日检方援引 Bitcoin Fog 案的上诉判决，反对 Storm 的无罪动议<a class="ref" href="#s29">[29]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="content">
+        <h2>制裁与判决</h2>
+        <h3>2022 年 8 月：第一次指定</h3>
+        <p>OFAC 依据第 13694 号行政令指定 Tornado Cash，理由是它为一类网络活动提供了实质支持：这类活动源自美国境外，可能威胁美国的国家安全或经济稳定，目的或效果是造成资金被大量盗用<a class="ref" href="#s1">[1]</a>。指定之后，它在美国境内或由美国人控制的财产都被封锁，须向 OFAC 报告；没有许可，美国人不得与它交易<a class="ref" href="#s1">[1]</a>。</p>
+        <p>名单条目列出两个别名 Tornado Cash Classic、Tornado Cash Nova，网站 tornado.cash 和 38 个以太坊地址，其中 6 个同时列为 USDC 地址<a class="ref" href="#s2">[2]</a>。第五巡回法院把被指定的对象归纳为网站、37 个智能合约（其中至少 20 个不可变）和一个收捐款的地址<a class="ref" href="#s10">[10]</a>。财政部副部长 Brian E. Nelson 说，Tornado Cash 虽然公开作过保证，却一再没有实施有效的控制，经常替恶意网络行为者洗钱<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>2022 年 9 月：OFAC 的问答</h3>
+        <p>制裁公布后，开发者和研究者不清楚还能不能看、复制、讨论这些代码。OFAC 9 月 13 日发布的几条问答划了界线<a class="ref" href="#s5">[5]</a>：</p>
+        <ul>
+          <li>FAQ 1076：与 Tornado Cash 或其被封锁财产的交易被禁止，接触开源代码本身不被禁止。没有其他情节时，复制代码放到网上供人查看，讨论、教学，把代码写进教科书，都不违反制裁规定。</li>
+          <li>FAQ 1078：制裁后，有美国人收到合约转来的、没有索要的小额资产，即“粉尘”。规定对这类转账同样适用，但只要没有其他制裁关联，OFAC 不把迟交封锁财产报告作为执法重点；收到的人也可以申请特别许可。</li>
+          <li>FAQ 1079：制裁前存入、还没取出的钱，可以申请特别许可取回；只要交易不涉及其他应受制裁的行为，OFAC 倾向于批准。</li>
+        </ul>
+        <h3>2022 年 11 月：重新指定</h3>
+        <p>11 月 8 日，OFAC 撤销 8 月的指定并同时重新指定，8 月的指定从此失效，由新的指定完全取代。依据除了第 13694 号行政令，还加上针对朝鲜的第 13722 号行政令，理由是 Tornado Cash 向朝鲜政府提供了支持<a class="ref" href="#s3">[3]</a>。财政部这次把智能合约写成“一种计算机代码”，说 Tornado Cash 用它实施治理结构、提供混币服务、给用户财务激励、扩大用户群<a class="ref" href="#s3">[3]</a>。新条目列出 90 个以太坊地址<a class="ref" href="#s4">[4]</a>。</p>
+        <p>同日发布的 FAQ 1095 回答了被制裁的“人”是谁。OFAC 写道，Tornado Cash 是可以按 IEEPA 指定的组织，由两部分构成：一是创始人和相关开发者，二是负责表决和实施新功能的 DAO。OFAC 同时写明，目前没有指定任何创始人、开发者、DAO 成员或用户个人<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>地区法院：支持财政部</h3>
+        <p>Van Loon 等六人 2022 年 9 月 8 日起诉，依据《行政程序法》（APA）和宪法第一、第五修正案。2023 年 8 月 17 日，德州西区联邦地区法院驳回原告的部分简易判决动议，批准政府的简易判决动议<a class="ref" href="#s9">[9]</a>。第五巡回法院后来概括，地区法院认定了三点：Tornado Cash 是可以按 IEEPA 指定的实体；智能合约是“财产”；DAO 从合约上运行的混币和中继服务获利，因而对合约有“利益”。原告在两项宪法主张上的败诉没有上诉<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>第五巡回法院：不可变的合约不是财产</h3>
+        <p>IEEPA 允许封锁外国国民或实体享有“利益”的“财产”。第五巡回法院认为，“财产”这一要件就能决定结果，其余要件不必讨论<a class="ref" href="#s10">[10]</a>。</p>
+        <p>法院先看字面含义。它查了 1977 年立法前后的词典，认为财产的通常含义是能被拥有的东西，拥有的核心是占有、控制和排除他人的权利。不可变的合约做不到这一点：上千名志愿者参加的可信设置仪式“不可撤销地去掉了任何人更新、移除或以其他方式控制这些代码的可能”，谁也不能把别人挡在资金池外面。判决写道，合约照常运行，“被针对的朝鲜不法分子实际上没有被挡住，仍能取回他们的资产”<a class="ref" href="#s10">[10]</a>。</p>
+        <p>财政部提出，OFAC 规章里的“财产”包括“任何性质的合同”和“任何性质的服务”。法院回答，即使按这个定义，财产也必须能被拥有；而且这些合约既不是合同，也不是服务。说它不是合同，是因为没有缔约的另一方：用户可以发出要约，对面只有代码，没有人能接受或还价。法院拿自动售货机作比较：售货机的主人可以搬走或毁掉机器，也可以拔掉电源撤回要约；Tornado Cash 却“拔不掉”这些不可变的合约<a class="ref" href="#s10">[10]</a>。</p>
+        <p>法院也划了界线：开发者能停用的可变合约，在这个意义上可以被拥有，判决只针对不可变的合约<a class="ref" href="#s10">[10]</a>。判决还援引最高法院推翻 Chevron 原则的 Loper Bright 案，认为地区法院对 OFAC 的定义给予“更高程度的尊重”，做法有误<a class="ref" href="#s10">[10]</a>。</p>
+        <p>合议庭由 Jones、Willett、Engelhardt 三位法官组成，Willett 执笔。法院认定 OFAC 超出了国会授予的权限，把案子发回地区法院，指示批准原告依据 APA 提出的部分简易判决动议。Willett 写道，也许国会会更新这部卡特政府时期制定的法律，把混币软件这样的现代技术纳入；在那之前，不可变的合约不能按 IEEPA 封锁<a class="ref" href="#s10">[10]</a>。</p>
+        <p>制裁和诉讼这条线，从列入名单到撤销用了两年七个月：</p>
+        <ol class="flow">
+          <li><b>2022-08 列入名单</b>第 13694 号行政令，38 个地址</li>
+          <li><b>2022-09 用户起诉</b>六名用户，Coinbase 支持</li>
+          <li><b>2022-11 重新指定</b>加上第 13722 号行政令，90 个地址</li>
+          <li><b>2023-08 一审</b>地区法院支持财政部</li>
+          <li><b>2024-11 二审改判</b>不可变的合约不是财产</li>
+          <li><b>2025-03 撤销制裁</b>财政部行使裁量权</li>
+        </ol>
+        <h3>荷兰：同一组合约，开发者被判洗钱</h3>
+        <p>荷兰的案子问的是另一件事：开发者本人有没有洗钱。2024 年 5 月 14 日，东布拉班特地区法院认定被告惯常洗钱（gewoontewitwassen），判处 64 个月监禁。判决书隐去了被告的姓名，媒体报道被告是 Alexey Pertsev<a class="ref" href="#s13">[13]</a><a class="ref" href="#s24">[24]</a>。起诉的期间是 2019 年 7 月 9 日至 2022 年 8 月 10 日。法院认定，涉案的约 535,809 枚 ETH、价值约 12.17 亿美元，来自 36 起不同的黑客盗窃；起诉书只收入了被盗超过 500 万美元且已经公开的案子，法院称这个数字因此是下限<a class="ref" href="#s13">[13]</a>。</p>
+        <p>法院的推理落在工具的设计上。判决写道，Tornado Cash 一方面把匿名和隐匿做到极致，另一方面严重缺少识别身份、实施控制或协助侦查的功能，因此不能看作被犯罪分子意外滥用的合法工具；按其性质和运作方式，它就是为犯罪分子准备的，会自动完成洗钱所需的隐匿操作<a class="ref" href="#s13">[13]</a>。判决还写道，被告和同案人造出了一条为犯罪、极权政权和恐怖主义输送资金的“暗道”，而且这条暗道“造得不可改变、无法阻止”；黑客受害者和侦查机关来求助时，他敷衍了事<a class="ref" href="#s13">[13]</a>。</p>
+        <p>同一个特点，在两个法院得出了相反的结论。第五巡回法院从“没有人能控制”推出合约不能被拥有、财政部无权封锁；荷兰法院把“不可改变、无法阻止”算作开发者的责任。两者回答的是不同的问题：一个问代码能不能当作财产封锁，一个问写代码、运营服务的人是否构成洗钱。</p>
+        <h3>美国：Storm 一项罪名成立</h3>
+        <p>纽约南区 2023 年 8 月公布的起诉书给 Storm 和 Semenov 各列了三项罪名：共谋洗钱、共谋违反 IEEPA，最高刑期各 20 年；共谋经营无牌汇款业务，最高 5 年。检方称，Tornado Cash 促成了超过 10 亿美元的洗钱交易；两人没有按法律要求实施了解客户（KYC）和反洗钱程序，收到黑客受害者的投诉和求助后，仍拒绝采取任何控制措施<a class="ref" href="#s11">[11]</a>。</p>
+        <p>经过在法官 Katherine Polk Failla 面前四周的庭审，陪审团 2025 年 8 月 6 日认定 Storm 共谋经营无牌汇款业务<a class="ref" href="#s12">[12]</a>，另两项没有达成一致<a class="ref" href="#s28">[28]</a>。司法部称，Storm 和同伙从这项业务中套现了超过 1,200 万美元的利润<a class="ref" href="#s12">[12]</a>。Storm 随后请求法院在全部三项罪名上判他无罪，理由是检方没有证明他有意帮助罪犯滥用 Tornado Cash<a class="ref" href="#s28">[28]</a>。经营无牌汇款业务这一类罪名，Binance 2023 年也承认过<a class="ref" href="#s33">[33]</a>，经过见<a href="2023-binance-plea.html">Binance 与赵长鹏在美国认罪</a>。据 Business Insider 报道，出庭的检方证人里有 Frosties NFT 跑路案的被告 Andre Llacuna，他说曾用 Tornado Cash 混过卷走的 ETH，见诈骗站的 <a href="../../scams/events/2022-frosties-nft.html">Frosties NFT</a>。</p>
+        <p>三个案子的问题和结果如下：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>案子</th><th>问的问题</th><th>结果（截至 2026 年 11 月）</th></tr></thead>
+          <tbody>
+            <tr><td>Van Loon 诉财政部（美国，民事）</td><td>不可变的合约是不是 IEEPA 下的财产</td><td>一审财政部胜；二审改判；财政部撤销制裁</td></tr>
+            <tr><td>荷兰诉 Pertsev（刑事）</td><td>开发和运营 Tornado Cash 是否构成洗钱</td><td>一审判 64 个月，已上诉</td></tr>
+            <tr><td>美国诉 Storm（刑事）</td><td>是否共谋洗钱、违反制裁、经营无牌汇款业务</td><td>一项成立，两项待重审，无罪动议未裁决</td></tr>
+          </tbody>
+        </table></div>
+      </section>
+      <section id="reaction">
+        <h2>各方反应</h2>
+        <h3>平台和公司</h3>
+        <p>制裁公布当天，GitHub 删除了 Tornado Cash 的账号；它还停用了至少三名贡献者的个人账号，包括 Semenov、Storm 和 Pertsev。Semenov 在推特上问，写开源代码“现在违法了吗”。GitHub 的发言人说，贸易法要求它限制被列为 SDN 或其他被封锁方的用户<a class="ref" href="#s22">[22]</a>。</p>
+        <p>USDC 的发行方 Circle 8 月 9 日说，已把部分 Tornado Cash 地址列入黑名单，限制其中 USDC 的转移<a class="ref" href="#s21">[21]</a>；CNBC 引用数据平台 Dune 的数据报道，被冻结的约有 7.5 万美元<a class="ref" href="#s20">[20]</a>。Circle 的 CEO Jeremy Allaire 说公司遵守制裁，同时认为这次监管干预“越过了互联网历史和开放区块链金融历史上的一道重要门槛”<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>研究者和开源社区</h3>
+        <p>约翰斯·霍普金斯大学的密码学教授 Matthew Green 说，三十年来为软件发布争取第一修正案保护的法律努力，“被 GitHub 和微软一天之内炸掉了”<a class="ref" href="#s22">[22]</a>。电子前哨基金会（EFF）代表 Green 写信给 OFAC，指出代码下架妨碍了他在隐私技术课上使用这些代码。几周后 OFAC 发布了 FAQ 1076。EFF 认为它缓解了最要紧的担忧，但对继续开发或改作他用没有表态，开发者仍不清楚会不会因此担刑事责任<a class="ref" href="#s23">[23]</a>。</p>
+        <h3>用户和行业团体</h3>
+        <p>Van Loon 案的六名原告都是 Tornado Cash 的用户<a class="ref" href="#s10">[10]</a>。第五巡回法院判决后，Coinbase 的首席法务官 Paul Grewal 说，公司“很自豪帮助领导了这场挑战”<a class="ref" href="#s27">[27]</a>。智库 Coin Center 2022 年 10 月另行起诉财政部；地区法院一年后驳回，Coin Center 上诉到第十一巡回法院，到 2024 年 11 月仍在审理。第五巡回法院判决几小时后，以太坊联合创始人 Vitalik Buterin 向 Coin Center 捐了 320 枚 ETH，价值超过 100 万美元<a class="ref" href="#s31">[31]</a>。</p>
+        <h3>执法机构</h3>
+        <p>FIOD 在逮捕公告里说，它的金融高级网络小组（FACT）2022 年 6 月对 Tornado Cash 立案，可能助长洗钱的去中心化组织等新技术会受到它的额外关注，不排除再逮捕其他人<a class="ref" href="#s16">[16]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>合约照常运行</h3>
+        <p>第五巡回法院指出，制裁改变不了不可变的合约，它们仍对任何人开放<a class="ref" href="#s10">[10]</a>。不过，在以太坊出块这一层，一部分参与者为遵守制裁，不把与被制裁地址交互的交易收进区块：一篇 2023 年的论文发现，以太坊合并后两个月里，至少 46% 的区块出自这类参与者<a class="ref" href="#s32">[32]</a>，经过见<a href="2022-the-merge.html">The Merge</a>。Elliptic 观察到，制裁之后 Lazarus 一度不再用 Tornado Cash，改用跨链桥和比特币混币器 Sinbad.io；2023 年 11 月 Sinbad.io 被美国当局查封。2024 年 3 月 13 日起，2023 年 11 月 HTX 和 Heco 跨链桥被盗的资金又开始流入 Tornado Cash，到 3 月 14 日已超过 1 亿美元<a class="ref" href="#s18">[18]</a>。这起盗窃的经过见被盗站的 <a href="../../hacks/events/2023-htx-heco.html">HTX 与 Heco 跨链桥同日被盗</a>。</p>
+        <h3>谁被卡住了</h3>
+        <p>《华尔街日报》援引 TRM Labs 的数据，到 8 月 10 日，因这次制裁不能交易的数字资产约有 4.24 亿美元<a class="ref" href="#s21">[21]</a>。据 Crypto Briefing 报道，Van Loon 案的原告出于正当目的使用 Tornado Cash，制裁后资金被冻结<a class="ref" href="#s27">[27]</a>。第五巡回法院还指出，区块链允许不经收款方同意就向它转账，用户可能在不知情的情况下，因收到经 Tornado Cash 转来的资产而承担责任<a class="ref" href="#s10">[10]</a>；OFAC 在 FAQ 1078 里也承认，制裁后确有美国人收到了合约转来的“粉尘”<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>洗了多少钱：几种说法</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>出处</th><th class="n">金额（美元）</th><th>口径</th></tr></thead>
+          <tbody>
+            <tr><td>财政部（2022 年 8 月）</td><td class="n">超过 70 亿</td><td>2019 年创立以来“被用来洗钱”的虚拟货币<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>Chainalysis（2022 年 8 月）</td><td class="n">超过 76 亿</td><td>上线以来混过的 ETH 总值，近 30% 与非法行为者有关<a class="ref" href="#s17">[17]</a></td></tr>
+            <tr><td>FIOD 引 FACT（2022 年 8 月）</td><td class="n">至少 70 亿</td><td>2019 年以来的交易额，其中犯罪来源的至少 10 亿<a class="ref" href="#s16">[16]</a></td></tr>
+            <tr><td>Elliptic（2022 年 8 月）</td><td class="n">至少 15 亿</td><td>勒索软件、黑客、诈骗等犯罪所得<a class="ref" href="#s19">[19]</a></td></tr>
+            <tr><td>司法部起诉书（2023 年 8 月）</td><td class="n">超过 10 亿</td><td>Tornado Cash 促成的洗钱交易<a class="ref" href="#s11">[11]</a></td></tr>
+            <tr><td>荷兰法院（2024 年 5 月）</td><td class="n">约 12.17 亿</td><td>36 起黑客的赃款，只计被盗超过 500 万美元且公开的案子，是下限<a class="ref" href="#s13">[13]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">70 亿美元指的是流经的总额</span><p>财政部说 Tornado Cash 被用来洗钱超过 70 亿美元<a class="ref" href="#s1">[1]</a>。Elliptic 对 TechCrunch 说，这是流经它的资产总值，可能包括保护隐私等正当用途的转账；它算出的犯罪所得至少 15 亿美元<a class="ref" href="#s19">[19]</a>，CNBC 也转述了这一说法<a class="ref" href="#s20">[20]</a>。Chainalysis 的总量和财政部接近，但说其中近 30% 与非法行为者有关<a class="ref" href="#s17">[17]</a>。事件要素按财政部的口径列出，并注明是 OFAC 的说法。</p></div>
+        <h3>开发者的寒蝉效应</h3>
+        <p>EFF 写道，GitHub 下架代码、荷兰逮捕一名开发者之后，“一波恐惧和不确定感席卷了开源社区”<a class="ref" href="#s23">[23]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>2025 年 3 月：撤销制裁</h3>
+        <p>2025 年 3 月 21 日，财政部宣布，政府审查了在不断变化的技术和法律环境中使用金融制裁所引出的新问题，据此行使裁量权，撤销对 Tornado Cash 的经济制裁；这一决定体现在它向 Van Loon 案法院提交的文件里。声明同时说，财政部仍对朝鲜为窃取数字资产而进行的黑客和洗钱活动“深感担忧”，提醒美国人在可能带来这类风险的交易前保持谨慎<a class="ref" href="#s7">[7]</a>。当天 OFAC 删除了 Tornado Cash 的条目和 90 个地址；Semenov 的个人条目保留，只去掉了网络制裁项目的标签，留下朝鲜项目的标签<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>两起民事诉讼</h3>
+        <p>第五巡回法院把 Van Loon 案发回地区法院，指示批准原告的部分简易判决动议<a class="ref" href="#s10">[10]</a>；发回之后地区法院怎样结案，本站没有查到。Coin Center 的上诉到 2024 年 11 月仍在第十一巡回法院审理<a class="ref" href="#s31">[31]</a>，后来的结果本站也没有查到。</p>
+        <h3>Storm 案：无罪动议悬而未决</h3>
+        <p>2026 年 3 月，检方申请在 10 月重审两项未决的罪名。Storm 的律师 8 月 3 日请求延期，说法院就无罪动议作出裁决后，他们至少需要 90 天准备；检方反对。法官 Failla 把重审从 2026 年 10 月 26 日推迟到 2027 年 4 月 26 日<a class="ref" href="#s28">[28]</a>。</p>
+        <p>10 月 5 日，FinCEN 撤回了 2023 年 10 月提出的混币规则，理由是它可能对正当活动产生寒蝉效应，给金融机构带来很重的申报负担<a class="ref" href="#s30">[30]</a>。同一天，检方援引哥伦比亚特区巡回上诉法院 9 月 25 日维持 Bitcoin Fog 经营者定罪的判决，主张从曼哈顿发起的 Tornado Cash 交易足以让案子在纽约南区审理；到 10 月 7 日，Failla 仍未就无罪动议作出裁决<a class="ref" href="#s29">[29]</a>。行政部门在放松对混币的监管，纽约南区的检察官仍在追诉 Storm。</p>
+        <h3>Pertsev 的上诉</h3>
+        <p>一审后 Pertsev 提出上诉。2024 年 7 月 13 日，法院第三次驳回他的保释申请，也不准他用电脑准备上诉<a class="ref" href="#s25">[25]</a>。2025 年 2 月 7 日，法院暂停对他的羁押；他的律师说，这让他能用上互联网等最基本的资源准备辩护<a class="ref" href="#s26">[26]</a>。上诉审的开庭或判决，本站没有查到公开的记录。</p>
+      </section>
+      <section id="lessons">
+        <h2>启示</h2>
+        <div class="note lesson">
+          <span class="h">给开发者</span>
+          <ul>
+            <li>合约能不能被人控制，决定了它在法律上能不能被封锁。第五巡回法院认为不可变的资金池不能被拥有；开发者能停用的可变合约，在这个意义上可以被拥有<a class="ref" href="#s10">[10]</a>。</li>
+            <li>不可变不等于没有责任。荷兰法院把“造得不可改变、无法阻止”列为对开发者不利的理由<a class="ref" href="#s13">[13]</a>；美国检方指控的是人的行为：创建核心功能、付钱维护关键的基础设施、推广服务并从中获利，明知是犯罪所得仍继续经手<a class="ref" href="#s12">[12]</a>。</li>
+            <li>对外的合规说法会被拿来和内部记录对照。起诉书称两人对外宣称遵守制裁，私下却认为那处改动无效<a class="ref" href="#s11">[11]</a>；陪审团在这一项上没有达成一致<a class="ref" href="#s28">[28]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给合规和基础设施</span>
+          <ul>
+            <li>名单一公布，最先动作的是中心化的环节。Circle 第二天就限制了名单地址里的 USDC<a class="ref" href="#s21">[21]</a>；GitHub 走得更远，连贡献者的个人账号也停用了<a class="ref" href="#s22">[22]</a>。</li>
+            <li>链上谁都能给你转账。收到“粉尘”的地址在规定上同样涉及制裁，OFAC 只承诺不把迟交报告作为执法重点<a class="ref" href="#s5">[5]</a>；第五巡回法院也指出，用户可能在不知情时承担责任<a class="ref" href="#s10">[10]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给监管者</span>
+          <ul>
+            <li>法律跟不上技术时，法院按字面读。第五巡回法院按 1977 年前后的词义解释“财产”，把混币软件要不要纳入 IEEPA 的问题留给国会<a class="ref" href="#s10">[10]</a>。</li>
+            <li>封锁合约挡不住不需要许可的使用者。合约照常运行，Lazarus 在 Sinbad.io 被查封后又回到了 Tornado Cash<a class="ref" href="#s18">[18]</a>。</li>
+            <li>洗钱的数字要分清流量和犯罪所得。财政部的 70 亿美元和 Elliptic 的 15 亿美元说的不是同一件事<a class="ref" href="#s1">[1]</a><a class="ref" href="#s19">[19]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国财政部，《U.S. Treasury Sanctions Notorious Virtual Currency Mixer Tornado Cash》，新闻稿 JY0916，2022-08-08。<a href="https://home.treasury.gov/news/press-releases/jy0916">home.treasury.gov</a></li>
+          <li id="s2">美国财政部 OFAC，《Cyber-related Designation》，Recent Actions，2022-08-08。<a href="https://ofac.treasury.gov/recent-actions/20220808">ofac.treasury.gov</a></li>
+          <li id="s3">美国财政部，《Treasury Designates DPRK Weapons Representatives》（含“Tornado Cash Redesignated with Additional DPRK Authorities, New OFAC Guidance”一节），新闻稿 JY1087，2022-11-08。<a href="https://home.treasury.gov/news/press-releases/jy1087">home.treasury.gov</a></li>
+          <li id="s4">美国财政部 OFAC，《Burma-related Designations; North Korea Designations; Cyber-related Designation; Cyber-related Designation Removal; Publication of Cyber-related Frequently Asked Questions》，Recent Actions，2022-11-08。<a href="https://ofac.treasury.gov/recent-actions/20221108">ofac.treasury.gov</a></li>
+          <li id="s5">美国财政部 OFAC，网络相关制裁的常见问题：FAQ 1076 至 1079（2022-09-13 发布，11-08 更新）和 FAQ 1095（2022-11-08 发布），Internet Archive 2024 年存档。<a href="https://web.archive.org/web/2024/https://ofac.treasury.gov/faqs/topic/1546">web.archive.org</a></li>
+          <li id="s6">美国财政部 OFAC，《Burma-related Designations; Cyber-related Designation; North Korea Designation; Iraq-related Designation Removal; Publication of Burma-related Determination and Associated Frequently Asked Questions》，Recent Actions，2023-08-23（配套新闻稿《Treasury Designates Roman Semenov, Co-Founder of Sanctioned Virtual Currency Mixer Tornado Cash》）。<a href="https://ofac.treasury.gov/recent-actions/20230823">ofac.treasury.gov</a></li>
+          <li id="s7">美国财政部，《Tornado Cash Delisting》，新闻稿 SB0057，2025-03-21。<a href="https://home.treasury.gov/news/press-releases/sb0057">home.treasury.gov</a></li>
+          <li id="s8">美国财政部 OFAC，《Cyber-related Designation Removal; North Korea Designation Update and Removal》，Recent Actions，2025-03-21。<a href="https://ofac.treasury.gov/recent-actions/20250321">ofac.treasury.gov</a></li>
+          <li id="s9">Van Loon v. Department of Treasury（德州西区联邦地区法院，No. 1:23-CV-312-RP），Doc. 94，就双方简易判决动议作出的裁定，2023-08-17。<a href="https://www.govinfo.gov/content/pkg/USCOURTS-txwd-1_23-cv-00312/pdf/USCOURTS-txwd-1_23-cv-00312-2.pdf">govinfo.gov</a></li>
+          <li id="s10">Van Loon v. Department of the Treasury（第五巡回上诉法院，No. 23-50669），判决书，2024-11-26。<a href="https://www.ca5.uscourts.gov/opinions/pub/23/23-50669-CV0.pdf">ca5.uscourts.gov</a></li>
+          <li id="s11">美国司法部纽约南区检察官办公室，《Tornado Cash Founders Charged With Money Laundering And Sanctions Violations》，2023-08-23。<a href="https://www.justice.gov/usao-sdny/pr/tornado-cash-founders-charged-money-laundering-and-sanctions-violations">justice.gov</a></li>
+          <li id="s12">美国司法部纽约南区检察官办公室，《Founder Of Tornado Cash Crypto Mixing Service Convicted Of Knowingly Transmitting Criminal Proceeds》，2025-08-06。<a href="https://www.justice.gov/usao-sdny/pr/founder-tornado-cash-crypto-mixing-service-convicted-knowingly-transmitting-criminal">justice.gov</a></li>
+          <li id="s13">荷兰东布拉班特地区法院（Rechtbank Oost-Brabant），判决 ECLI:NL:RBOBR:2024:2069（案号 82/198261-22），2024-05-14。<a href="https://data.rechtspraak.nl/uitspraken/content?id=ECLI:NL:RBOBR:2024:2069">data.rechtspraak.nl</a></li>
+          <li id="s14">tornadocash/tornado-core，标签 v2.1（commit a533ad9，2020-04-28）：contracts/Tornado.sol、contracts/ETHTornado.sol、README.md。<a href="https://github.com/tornadocash/tornado-core/blob/v2.1/contracts/Tornado.sol">github.com</a></li>
+          <li id="s15">Tornado Cash，《Tornado.cash Trusted Setup Ceremony》，Medium，2020-05-01（Internet Archive 存档；年份按存档时间推定）。<a href="https://web.archive.org/web/20200508155017/https://medium.com/@tornado.cash/tornado-cash-trusted-setup-ceremony-b846e1e00be1">web.archive.org</a></li>
+          <li id="s16">荷兰财政情报与侦查局（FIOD），《Arrest of suspected developer of Tornado Cash》，2022-08-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20220812105846/https://www.fiod.nl/arrest-of-suspected-developer-of-tornado-cash/">web.archive.org</a></li>
+          <li id="s17">Chainalysis，《Understanding Tornado Cash, Its Sanctions Implications, and Key Compliance Questions》，2022-08-30。<a href="https://www.chainalysis.com/blog/tornado-cash-sanctions-challenges/">chainalysis.com</a></li>
+          <li id="s18">Elliptic，《North Korean hackers return to Tornado Cash despite sanctions》，2024-03-14。<a href="https://www.elliptic.co/blog/north-korean-hackers-return-to-tornado-cash-despite-sanctions">elliptic.co</a></li>
+          <li id="s19">TechCrunch，《US Treasury sanctions Tornado Cash, accused of laundering stolen crypto》，2022-08-08。<a href="https://techcrunch.com/2022/08/08/treasury-tornado-cash-laundering-stolen-crypto/">techcrunch.com</a></li>
+          <li id="s20">CNBC，《Tornado Cash crackdown by Treasury puts honest crypto investors at risk of criminal exposure》，2022-08-08（Internet Archive 存档）。<a href="https://web.archive.org/web/20220818020318/https://www.cnbc.com/2022/08/08/tornado-cash-crackdown-by-treasury-punishes-honest-crypto-investors.html">web.archive.org</a></li>
+          <li id="s21">《华尔街日报》，《Tornado Cash’s Sanctions Show Shift in Crypto Regulatory Focus》，2022-08-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20220816010546/https://www.wsj.com/articles/tornado-cashs-sanctions-show-shift-in-crypto-regulatory-focus-11660336224">web.archive.org</a></li>
+          <li id="s22">The Register，《GitHub courts controversy by suspending Tornado Cash developers and reneging on cookie commitments》，2022-08-10（Internet Archive 存档）。<a href="https://web.archive.org/web/20220810105621/https://www.theregister.com/2022/08/10/github_tornado_cookies/">web.archive.org</a></li>
+          <li id="s23">电子前哨基金会（EFF），《An Update on Tornado Cash》，2023-04-11。<a href="https://www.eff.org/deeplinks/2023/04/update-tornado-cash">eff.org</a></li>
+          <li id="s24">The Record，《Tornado Cash co-founder convicted of laundering $1.2 billion by Dutch court》，2024-05-14。<a href="https://therecord.media/tornado-cash-money-laundering-verdict-netherlands-alexey-pertsev">therecord.media</a></li>
+          <li id="s25">Cointelegraph，《Tornado Cash developer Alexey Pertsev denied bail while preparing appeal》，2024-07-14。<a href="https://cointelegraph.com/news/tornado-cash-developer-alexey-pertsev-denied-bail-while-awaiting-appeal">cointelegraph.com</a></li>
+          <li id="s26">Cointelegraph Magazine，《Tornado Cash dev Alexey Pertsev’s bail a ‘crucial step’ in getting fair trial, defense says》，2025-02-07。<a href="https://cointelegraph.com/magazine/tornado-cash-founder-alexey-pertsev-bail-defense">cointelegraph.com</a></li>
+          <li id="s27">Crypto Briefing，《Federal court declares Treasury sanctions on Tornado Cash unlawful》，2024-11-26。<a href="https://cryptobriefing.com/ofac-sanctions-unlawful-tornado-cash/">cryptobriefing.com</a></li>
+          <li id="s28">Cointelegraph，《Tornado Cash developer Roman Storm’s retrial delayed to April 2027》，2026-08-26。<a href="https://cointelegraph.com/news/roman-storm-retrial-delayed-april-2027">cointelegraph.com</a></li>
+          <li id="s29">FinanceFeeds，《DOJ Cites Bitcoin Fog Ruling in Fight Against Roman Storm Acquittal》，2026-10-07。<a href="https://financefeeds.com/doj-cites-bitcoin-fog-ruling-in-fight-against-roman-storm-acquittal/">financefeeds.com</a></li>
+          <li id="s30">Cointelegraph，《FinCEN withdraws proposed crypto mixing rule over ‘legitimate activity’ concerns》，2026-10-05。<a href="https://cointelegraph.com/news/fincen-crypto-mixing-rule-legitimate-activity">cointelegraph.com</a></li>
+          <li id="s31">CoinDesk（Yahoo Finance 转载），《Vitalik Buterin Donated $1M in Ether to Coin Center Hours After Tornado Cash Victory》，2024-11-28。<a href="https://finance.yahoo.com/news/vitalik-buterin-donated-1m-ether-160014395.html">finance.yahoo.com</a></li>
+          <li id="s32">Anton Wahrstätter 等，《Blockchain Censorship》，arXiv:2305.18545，2023-05-29。<a href="https://arxiv.org/abs/2305.18545">arxiv.org</a></li>
+          <li id="s33">United States v. Binance Holdings Limited（西华盛顿区联邦地区法院，No. 2:23-cr-00178-RAJ），Doc. 23，认罪协议及附件 A 事实陈述，2023-11-21（司法部公布的扫描件）。<a href="https://www.justice.gov/archives/opa/media/1326901/dl?inline">justice.gov</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

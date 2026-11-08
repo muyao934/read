@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vulcan Forged 托管钱包被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2021 年 12 月链游平台 Vulcan Forged 的 96 个托管钱包私钥被盗、约 450 万枚 PYR 被转走的经过：Venly 半托管钱包的结构、双方各执一词的说法、资金经 Polygon 桥回到以太坊、国库赔付，以及托管与自托管的取舍。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-vulcan-forged">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Vulcan Forged 托管钱包被盗</h1>
+    <p class="lede">2021 年 12 月 12 日深夜到 13 日（UTC），链游平台 Vulcan Forged 的 96 个用户钱包被转空，攻击者拿走约 450 万枚 PYR，按当时价格约 1.4 亿美元，约占 PYR 总供应量的 9%。这些钱包由平台通过托管服务商 Venly 代用户创建和保管，用户看得到自己的链上地址，却从没拿到过私钥。Vulcan Forged 用国库资金补偿了大部分用户，随后放弃了这种半托管钱包。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">用户在 Vulcan Forged 注册账号时，平台会在以太坊、Polygon 和 VeChain 上为他创建一组钱包，私钥由平台代管，用户不用自己保存助记词<a class="ref" href="#s1">[1]</a>。这套被称为 MyForge 的钱包由托管服务商 Venly（原名 Arkane Network）提供。CEO Jamie Thomson 的说法是，有人攻破了 Vulcan Forged 的服务器，拿到平台调用 Venly 的凭据，再用它取出了 MyForge 用户的私钥<a class="ref" href="#s3">[3]</a>。Venly 则说自己的服务器和方案没有被攻破<a class="ref" href="#s1">[1]</a>。</p>
+        <p>96 个钱包里共有约 450 万枚 PYR，以及数量不详的 ETH 和 MATIC<a class="ref" href="#s1">[1]</a>。PYR 价格从约 31 美元跌到 21 美元左右<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。Vulcan Forged 从国库向受影响的用户发放 PYR 和平台代币 LAVA，到 12 月 14 日已补偿了“几乎所有”用户，并宣布改用用户自己掌握私钥的钱包<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。私钥到底怎样被取出、责任在哪一方，两家都没有公布技术细节。本站没有找到事后报告、逮捕或起诉的记录。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Vulcan Forged 是一家区块链游戏工作室，经营名为 VulcanVerse 的奇幻题材“边玩边赚”游戏和自己的 NFT 市场。PYR 是平台代币，用于游戏内交易和市场交易<a class="ref" href="#s4">[4]</a>。PYR 的总供应量是 5,000 万枚<a class="ref" href="#s6">[6]</a>。</p>
+        <p>为了让不熟悉加密钱包的玩家也能直接上手，平台不让用户自己管理私钥，而是“代表用户”管理<a class="ref" href="#s1">[1]</a>。Vulcan Forged 的项目 wiki 写明，它通过钱包管理服务 Venly 创建这些钱包。据 The Block 报道，Atari、Matic 和区块链游戏联盟也用过 Venly 的服务<a class="ref" href="#s1">[1]</a>。Vulcan Forged 自己把这种方案称为“半托管”（semi-custodial）：每个用户都有一个属于自己的链上地址，但私钥不在用户手里。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方行动</span><span>其他事件</span></p>
+        <p>时刻均为 UTC。各方公告的日期多按美欧时间书写，比链上时间晚一天左右。</p>
+        <ol class="timeline">
+          <li class="atk key"><time>2021-12-12 22:27</time><div class="ev">攻击者在以太坊上的地址开始收到从用户钱包转来的代币，先是 AAG、SAND、USDC，22:34 收到第一笔 PYR<a class="ref" href="#s5">[5]</a>。Polygon 一侧的转出时间本站没有核对。</div></li>
+          <li class="atk"><time>12-12 23:30 至 12-13 01:25</time><div class="ev">约 290 万枚 PYR 经 Polygon PoS 桥提回以太坊，进入同一个攻击者地址<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>12-13 01:44</time><div class="ev">攻击者把 200 万枚 PYR 转到另一个地址，02:34 又把约 90 万枚转到第三个地址；此前后有小额 PYR 在 Uniswap 卖出<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>12-13</time><div class="ev">Vulcan Forged 在推特上公布被盗：已请所有交易所拉黑相关地址，攻击者“可能在一家交易所做过 KYC”；宣布将移除半托管钱包<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>12-13</time><div class="ev">Venly CEO Tim Dierckxens：Venly 的服务器和方案没有被攻破，正在帮助 Vulcan Forged 做数据分析<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>12-13</time><div class="ev">PYR 从约 31 美元跌到 21 美元左右<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>12-13 至 12-14</time><div class="ev">国库向受影响用户新建的 MetaMask 钱包发放 PYR 和 LAVA，被盗的 ETH、MATIC 按等值 PYR 补偿。The Block 报道时已补偿一半，CoinDesk 报道时已补偿“几乎所有”用户<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def key"><time>12-14</time><div class="ev">Jamie Thomson 在视频中说“有人攻破了我们的服务器，拿到 Venly 凭据，用它取出了 MyForge 用户的私钥”；平台称两天内上线去中心化钱包，并将回购销毁 PYR<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2026-07-03</time><div class="ev">币安给 PYR 加上“观察”标签<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2026-07</time><div class="ev">Jamie Thomson 宣布退出日常管理、重组公司；他把 2021 年的损失说成“超过 1 亿美元”<a class="ref" href="#s7">[7]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <h3>半托管钱包的结构</h3>
+        <p>玩家在游戏里转出 PYR 或买 NFT 时，交易需要用这个玩家地址的私钥签名。MyForge 的私钥不在玩家设备上，签名由平台一侧完成：平台持有调用 Venly 服务的凭据，替用户发起签名。这样玩家不用管助记词，但也意味着平台一侧的凭据能代表所有用户行事。</p>
+        <h3>两种说法</h3>
+        <p>Jamie Thomson 说，有人攻破了 Vulcan Forged 自己的服务器，拿到了 Venly 凭据，再用这些凭据取出了 MyForge 用户的私钥<a class="ref" href="#s3">[3]</a>。Venly CEO 说“Venly 的服务器或方案没有被攻破”<a class="ref" href="#s1">[1]</a>。两句话可以同时成立：被攻破的是 Vulcan Forged 的服务器，Venly 的系统本身没有被入侵，只是如实响应了持有合法凭据的请求。真正的问题在于，平台一侧保存的一组凭据，竟然足以取出用户私钥的原文。按 Thomson 的描述，攻击者拿到的是私钥本身，而不只是对某几笔交易的签名权限。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 380" role="img" aria-labelledby="vf-fig1-t vf-fig1-d">
+            <title id="vf-fig1-t">Vulcan Forged 的半托管钱包被攻破的路径和资金去向</title>
+            <desc id="vf-fig1-d">第一行是攻击路径：Vulcan Forged 的服务器被攻破，攻击者拿到平台调用 Venly 的凭据，用凭据从托管服务取出 96 个 MyForge 钱包的私钥。第二行是 96 个用户钱包的资产被转到攻击者地址，约 290 万枚 PYR 经 Polygon PoS 桥提回以太坊。第三行是去向：200 万枚 PYR 转到一个地址后据报道一直未动，约 90 万枚转到另一个地址，另有小额在 Uniswap 卖出。</desc>
+            <defs>
+              <marker id="vf-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="vf-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="220" height="60" rx="4"/>
+            <text class="d-t b" x="130" y="45" text-anchor="middle">Vulcan Forged 的服务器</text>
+            <text class="d-t s" x="130" y="66" text-anchor="middle">据 CEO 所说被攻破</text>
+            <rect class="d-box atk" x="280" y="20" width="220" height="60" rx="4"/>
+            <text class="d-t b" x="390" y="45" text-anchor="middle">平台的 Venly 凭据</text>
+            <text class="d-t s" x="390" y="66" text-anchor="middle">能代表所有用户调用</text>
+            <rect class="d-box" x="540" y="20" width="220" height="60" rx="4"/>
+            <text class="d-t b" x="650" y="45" text-anchor="middle">Venly 托管服务</text>
+            <text class="d-t s" x="650" y="66" text-anchor="middle">Venly 称自身没被入侵</text>
+            <line class="d-line atk" x1="240" y1="50" x2="278" y2="50" marker-end="url(#vf-ah-atk)"/>
+            <line class="d-line atk" x1="500" y1="50" x2="538" y2="50" marker-end="url(#vf-ah-atk)"/>
+            <line class="d-line atk" x1="650" y1="80" x2="650" y2="128" marker-end="url(#vf-ah-atk)"/>
+            <text class="d-t s atk halo" x="660" y="108">取出私钥</text>
+            <rect class="d-box" x="540" y="130" width="220" height="60" rx="4"/>
+            <text class="d-t b" x="650" y="155" text-anchor="middle">96 个 MyForge 钱包</text>
+            <text class="d-t s" x="650" y="176" text-anchor="middle">以太坊、Polygon 上的资产</text>
+            <rect class="d-box atk" x="200" y="130" width="300" height="76" rx="4"/>
+            <text class="d-t b" x="350" y="154" text-anchor="middle">攻击者地址</text>
+            <text class="d-t s m" x="350" y="175" text-anchor="middle">0x48ad…73B1</text>
+            <text class="d-t s" x="350" y="195" text-anchor="middle">约 290 万 PYR 经 Polygon PoS 桥提回以太坊</text>
+            <line class="d-line atk" x1="540" y1="160" x2="502" y2="160" marker-end="url(#vf-ah-atk)"/>
+            <text class="d-t s atk halo" x="521" y="152" text-anchor="middle">转空</text>
+            <line class="d-line atk" x1="290" y1="206" x2="130" y2="272" marker-end="url(#vf-ah-atk)"/>
+            <line class="d-line atk" x1="350" y1="206" x2="390" y2="272" marker-end="url(#vf-ah-atk)"/>
+            <line class="d-line" x1="410" y1="206" x2="650" y2="272" marker-end="url(#vf-ah)"/>
+            <rect class="d-box atk" x="20" y="274" width="220" height="68" rx="4"/>
+            <text class="d-t b" x="130" y="298" text-anchor="middle">200 万 PYR</text>
+            <text class="d-t s m" x="130" y="318" text-anchor="middle">0xe3cd…3b66</text>
+            <text class="d-t s" x="130" y="335" text-anchor="middle">报道时一直未动</text>
+            <rect class="d-box atk" x="280" y="274" width="220" height="68" rx="4"/>
+            <text class="d-t b" x="390" y="298" text-anchor="middle">约 90 万 PYR</text>
+            <text class="d-t s m" x="390" y="318" text-anchor="middle">0x36d0…b347</text>
+            <text class="d-t s" x="390" y="335" text-anchor="middle">12-13 02:34 转入</text>
+            <rect class="d-box soft" x="540" y="274" width="220" height="68" rx="4"/>
+            <text class="d-t b" x="650" y="298" text-anchor="middle">小批卖出</text>
+            <text class="d-t s" x="650" y="318" text-anchor="middle">在 Uniswap 换成 ETH</text>
+            <text class="d-t s" x="650" y="335" text-anchor="middle">另有 150 ETH 转入左侧地址</text>
+          </svg>
+          </div>
+          <figcaption>图 1：攻击路径依据 Vulcan Forged CEO 和 Venly CEO 的公开说法，地址取自 rekt.news，以太坊上的金额和时间是本站查阅链上公开记录的统计。Polygon 一侧没有核对。</figcaption>
+        </figure>
+        <h3>托管、半托管与自托管</h3>
+        <p>判断一种钱包方案的风险，关键是问“攻破一台服务器能拿走多少人的钱”。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>方案</th><th>私钥在谁手里</th><th>服务器失守的后果</th><th>本站案例</th></tr></thead>
+            <tbody>
+              <tr><td>交易所托管</td><td>交易所，用户只有账面余额</td><td>热钱包里的全部资产</td><td><a href="2018-coincheck.html">Coincheck</a>、<a href="2021-bitmart.html">BitMart</a></td></tr>
+              <tr><td>半托管（嵌入式钱包）</td><td>平台与托管服务商，用户有独立链上地址</td><td>平台凭据能触及的所有用户钱包</td><td>Vulcan Forged</td></tr>
+              <tr><td>自托管</td><td>只有用户</td><td>服务器上没有私钥可偷，但网页前端仍可能被篡改</td><td><a href="2021-badgerdao.html">BadgerDAO</a> 前端注入</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>半托管给用户的感觉最接近自托管：每个人都有自己的地址，可以在区块浏览器上看到余额。但从攻击者的角度看，它更接近交易所托管，一组凭据就能触及大量用户的钱包。用户获得的便利，是以把私钥交给平台一侧的系统为代价的。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>Vulcan Forged 和 Venly 都没有发布事后报告。下面的经过依据两家 CEO 的公开说法、媒体报道和以太坊上的公开记录。</p>
+        <ol class="steps">
+          <li><b>攻破平台服务器</b>攻击者攻破了 Vulcan Forged 的服务器，拿到平台调用 Venly 的凭据<a class="ref" href="#s3">[3]</a>。攻破的方式没有公开。</li>
+          <li><b>取出私钥</b>攻击者用这些凭据取出了 96 个 MyForge 钱包的私钥<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。按 Forkast 的计算，链上约有 6,498 个地址持有 PYR，被盗的 96 个平均每个约 146 万美元，攻击者挑的是大户<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>转空钱包</b>12 月 12 日 22:27（UTC）起，用户钱包里的 PYR、ETH、MATIC 和其他代币被转到攻击者地址<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>跨链汇集</b>Polygon 上的 PYR 经 Polygon PoS 桥提回以太坊，约 290 万枚进入攻击者在以太坊上的地址<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>分散和变现</b>攻击者把 200 万枚 PYR 转到一个新地址，把约 90 万枚转到另一个地址，同时在 Uniswap 上小批卖出<a class="ref" href="#s5">[5]</a>。The Block 写道，攻击者每次只卖一小批，以免一次性砸穿价格<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>rekt.news 给出的攻击者地址是 <span class="addr">0x48ad05a3B73c9E7fAC5918857687d6A11d2c73B1</span>（以太坊和 Polygon 上为同一地址），后续转入资金的一个地址是 <span class="addr">0xe3cd90be37a79d9da86b5e14e2f6042cd0e53b66</span>，里面有约 4,000 万美元的 PYR 和约 60 万美元的 ETH<a class="ref" href="#s4">[4]</a>。以太坊上的记录显示，这个地址在 12 月 13 日 01:44 从攻击者地址收到 200 万枚 PYR，此后又收到 150 ETH<a class="ref" href="#s5">[5]</a>，与 rekt.news 的描述一致。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数额</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>被盗 PYR</td><td class="n">约 450 万枚</td><td>约占总供应量的 9%、流通量的 23.7%<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>事发时价值</td><td class="n"><span class="dispute">约 1.4 亿美元</span></td><td>多家媒体的估算；2026 年 Thomson 说“超过 1 亿美元”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>受影响钱包</td><td class="n">96 个</td><td>平均每个约 146 万美元<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>其他资产</td><td class="n">数量不详</td><td>ETH、MATIC 等<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>经 Polygon 桥回到以太坊的 PYR</td><td class="n">约 290 万枚</td><td>本站统计以太坊上的公开记录<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>价格变化</td><td class="n">约 −30%</td><td>约 31 美元跌到 21 美元左右<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Vulcan Forged 说已请交易所拉黑攻击者地址，并发现攻击者可能在某家交易所做过 KYC<a class="ref" href="#s1">[1]</a>；CoinDesk 引述它的说法称，已在所有中心化交易所“隔离”了被盗代币<a class="ref" href="#s2">[2]</a>。本站没有找到这些线索后来带来任何追回或执法结果的公开记录。用户拿到的补偿来自平台国库，不是追回的被盗资产。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>谁该负责，说不清</h3>
+        <p>rekt.news 的评论是：“私钥泄露”这种说法外人无法分析，这一点只对内部人有利；该怪 Vulcan Forged 尽职调查不足，还是怪钱包服务商 Venly，没有进一步的细节就永远不会知道<a class="ref" href="#s4">[4]</a>。两家都没有公布凭据怎样保存、为什么一组平台凭据能导出用户私钥、Venly 一侧有没有对异常的批量导出做限制。对使用同类服务的其他项目来说，这些恰恰是最需要知道的。</p>
+        <h3>托管与自托管</h3>
+        <p>Vulcan Forged 在事发当天就宣布移除半托管方案，此后用户要自己保管私钥<a class="ref" href="#s1">[1]</a>。它的推文写道，“100% 去中心化的方案也许是这件事里的一线光明”<a class="ref" href="#s2">[2]</a>。这次事件让“嵌入式钱包”的取舍变得很具体：平台代管私钥换来了免助记词的上手体验，代价是平台一侧的一次失守就能波及所有大户。</p>
+        <h3>代币价格</h3>
+        <p>被盗的 PYR 约占流通量的四分之一，消息传出后 PYR 下跌约 30%，市值从约 6.12 亿美元降到约 4.12 亿美元<a class="ref" href="#s3">[3]</a>。补偿发放的也是 PYR。Vulcan Forged 随后宣布将回购并销毁 PYR<a class="ref" href="#s2">[2]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>国库补偿</h3>
+        <p>受影响的用户需要先创建 MetaMask 钱包，Vulcan Forged 再从国库把 PYR 和 LAVA 发到新地址；被盗的 ETH 或 MATIC 按等值 PYR 补偿<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。补偿从 12 月 13 日深夜开始，持续到 14 日上午。The Block 13 日报道时已补偿一半，CoinDesk 14 日报道称“几乎所有”投资者都拿到了补偿<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。常见的“全额补偿”说法来自这些报道，本站没有找到 Vulcan Forged 宣布全部补偿完成的公告。</p>
+        <h3>放弃半托管钱包</h3>
+        <p>Vulcan Forged 称所有 MyForge 钱包都已安全，将在两天内上线去中心化的钱包系统<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <h3>截至 2026 年 10 月</h3>
+        <p>本站没有找到这起事件的技术报告、逮捕或起诉记录。2026 年 7 月 3 日，币安给 PYR 加上了“观察”标签。同月 Jamie Thomson 宣布退出日常管理、重组公司，他说标签加上之后代币一直在“自由落体”；回顾 2021 年的被盗，他给出的损失是“超过 1 亿美元”<a class="ref" href="#s7">[7]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给托管服务商</span>
+          <ul>
+            <li>不要让客户平台持有的 API 凭据能导出用户私钥的原文。签名应在服务商一侧的 HSM 或 MPC 中完成，平台只能请求签名。</li>
+            <li>按钱包和按时间窗口设限额，对“短时间内大量钱包同时转出”自动拦截。96 个钱包被接连转空，本身就是一个可以检测的异常。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给接入嵌入式钱包的项目</span>
+          <ul>
+            <li>把服务器上保存的托管凭据当作所有用户资产的总钥匙来保护，和交易所的热钱包私钥同等对待。</li>
+            <li>向用户说清楚谁掌握私钥、出事时谁赔。Vulcan Forged 这次有国库可以兜底，很多项目没有。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>能看到自己的链上地址，不等于掌握私钥。大额资产放在只有自己掌握私钥的钱包里。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Tim Copeland，《96 private keys stolen from Vulcan Forged in $140 million theft》，The Block，2021-12-13。<a href="https://www.theblock.co/post/127270/96-private-keys-stolen-from-vulcan-forged-in-140-million-theft">theblock.co</a>（存档：<a href="http://web.archive.org/web/20260719162231/https://www.theblock.co/post/127270/96-private-keys-stolen-from-vulcan-forged-in-140-million-theft">web.archive.org</a>）</li>
+          <li id="s2">CoinDesk，《Vulcan Forged Play-to-Earn Gaming Platform Refunds Users After $140M Hack》，2021-12-14。<a href="https://www.coindesk.com/business/2021/12/14/gaming-platform-vulcan-forged-refunds-users-after-140m-hack">coindesk.com</a></li>
+          <li id="s3">Monika Ghosh，《Vulcan Forged replaces majority of tokens worth $140M stolen in hack》，Forkast，2021-12-14。<a href="https://forkast.news/vulcan-forged-replaces-token-stolen-hack/">forkast.news</a></li>
+          <li id="s4">rekt.news，《Vulcan Forged - REKT》，2021-12-13。<a href="https://rekt.news/vulcan-forged-rekt/">rekt.news</a></li>
+          <li id="s5">Blockscout（以太坊主网），攻击者地址 0x48ad…73B1 的代币转入、转出与交易记录，2026-10 查阅。<a href="https://eth.blockscout.com/address/0x48ad05a3B73c9E7fAC5918857687d6A11d2c73B1">eth.blockscout.com</a></li>
+          <li id="s6">Blockscout（以太坊主网），Vulcan Forged PYR 代币合约 0x430EF9263E76DAE63c84292C3409D61c598E9682，总供应量 5,000 万枚，2026-10 查阅。<a href="https://eth.blockscout.com/token/0x430EF9263E76DAE63c84292C3409D61c598E9682">eth.blockscout.com</a></li>
+          <li id="s7">eGamers.io，《Vulcan Forged’s Jamie Thomson to Step Back From CEO Role as PYR Struggles Under Binance Monitoring Tag》，2026-07-22。<a href="https://egamers.io/vulcan-forgeds-jamie-thomson-to-step-back-from-ceo-role-as-pyr-struggles-under-binance-monitoring-tag/">egamers.io</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>黑色星期四与 MakerDAO 零出价拍卖｜区块链大事记</title>
+<meta name="description" content="2020 年 3 月 12 日加密市场暴跌、以太坊拥堵，MakerDAO 的清算拍卖被接近零的出价拍走：Cat.bite 与 Flipper 的代码、10 分钟出价窗口、keeper 为什么出不了价、约 540 万 Dai 的坏账与 MKR 增发，以及补偿、诉讼和 Liquidations 2.0。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2020-black-thursday">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2020 年　/　<a href="../index.html#cat-crash">崩盘与暴雷</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>黑色星期四与 MakerDAO 零出价拍卖</h1>
+    <p class="lede">2020 年 3 月 12 日，新冠疫情引发全球抛售，ETH 几小时内跌了 43%，以太坊网络严重拥堵。MakerDAO 约 1,200 个 Vault 被清算，正常的 keeper 出价上不了链，三分之一以上的拍卖被接近零的出价拍走，Vault 持有人损失约 832 万美元的抵押品。协议出现约 540 万 Dai 的缺口，靠增发 MKR 补上；受损用户没有得到协议的补偿。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">MakerDAO 让用户抵押 ETH 借出稳定币 Dai。抵押品价值跌破清算线时，任何人都可以触发清算，抵押品进入拍卖，由叫作 keeper 的机器人用 Dai 竞买<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。这套拍卖从 0 Dai 起拍，合约只要求后一口出价比前一口高 5%<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>；当时出价后 10 分钟内没人加价，拍卖就可以结算，出价者拿走这批抵押品<a class="ref" href="#s2">[2]</a>。</p>
+        <p>2020 年 3 月 12 日，美股出现 1987 年以来最大的单日跌幅<a class="ref" href="#s20">[20]</a>，ETH 几小时内跌 43%，BTC 跌 39%<a class="ref" href="#s14">[14]</a>。以太坊交易拥堵，gas 价格暴涨。约 1,200 个 Vault 被清算，触发 4,447 场拍卖；当时大约只有四个 keeper 在运行，有的机器人出了故障，有的用光了 Dai<a class="ref" href="#s1">[1]</a>，有的交易卡在内存池里<a class="ref" href="#s14">[14]</a>。按 Blocknative 的统计，3,994 场相关拍卖中有 1,462 场被零出价拍走，约 12 小时内 Vault 持有人损失 832 万美元的抵押品<a class="ref" href="#s14">[14]</a>。</p>
+        <p>拍卖收回的 Dai 不够抵债，协议出现约 540 万 Dai 的缺口。按协议设计，MKR 持有人用增发 MKR 的方式承担损失，到 3 月 29 日债务拍卖卖出 20,980 枚 MKR，换回 530 万 Dai<a class="ref" href="#s1">[1]</a>。治理随后通过执行投票调整拍卖参数（风险团队提议把出价窗口从 10 分钟延长到 6 小时），并加入 USDC 作抵押品<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。补偿受损 Vault 的方案讨论了半年，MKR 投票者最终决定不推进<a class="ref" href="#s8">[8]</a>；一起集体诉讼 2023 年公布了最多 116 万美元的和解方案<a class="ref" href="#s16">[16]</a>。2021 年 4 月，Maker 把清算换成价格从高往低走的荷兰式拍卖<a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>Dai 与 Vault</h3>
+        <p>Dai 是 MakerDAO 发行的稳定币，2017 年 12 月 18 日在以太坊主网上线<a class="ref" href="#s22">[22]</a>。用户把 ETH 等资产锁进 Vault，按抵押率借出 Dai，还清 Dai 和稳定费后取回抵押品<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。黑色星期四时，单抵押 Dai（SCD，也叫 Sai）和多抵押 Dai（MCD）两套系统同时在运行，基金会风险团队的应急方案同时调整了两边的参数<a class="ref" href="#s2">[2]</a>。本页讲的清算拍卖属于 MCD。按 Gudgeon 等人的统计，到 2020 年 4 月 15 日，Maker 约占 DeFi 锁仓资金的 65%，约 3.429 亿美元<a class="ref" href="#s18">[18]</a>。CoinDesk 引 DeFi Pulse 的数据写道，两个月后的 6 月 20 日，Compound 的锁仓（4.84 亿美元）超过 Maker（4.81 亿美元）<a class="ref" href="#s23">[23]</a>，经过见<a href="2020-defi-summer.html">DeFi 之夏</a>。</p>
+        <h3>清算由谁来做</h3>
+        <p>Vault 的抵押率跌破清算线时，协议不自己卖抵押品，而是开一场拍卖，由外部的 keeper 用 Dai 出价买走。论坛上的说明是：正常情况下 keeper 互相竞价，胜出者付出的 Dai 被烧掉，债务抹去，剩下的 ETH 退回 Vault 持有人<a class="ref" href="#s2">[2]</a>。价格来自预言机，经过 OSM 延迟一小时才生效，给持有人留出补抵押品或还 Dai 的时间<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>拍卖收回的 Dai 不够抵销债务时，缺口算作系统的坏账。按协议设计，MKR 持有人用增发 MKR 的方式承担这部分损失：协议开债务拍卖，新铸 MKR 换 Dai。MakerDAO 的复盘说，这种稀释风险是为了促使 MKR 持有人负责任地治理<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>事前的警告</h3>
+        <p>黑色星期四前三周，2020 年 2 月 19 日，帝国理工的 Gudgeon 等人在 arXiv 上提交论文《The Decentralized Financial Crisis》，研究流动性枯竭时 DeFi 借贷协议的偿付风险，以及对 Maker 治理的攻击<a class="ref" href="#s18">[18]</a>。论文 6 月修订的版本写道，按他们的参数，流动性足够差时，一个总债务 4 亿美元的借贷协议可能在 19 天内变得抵押不足<a class="ref" href="#s18">[18]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">清算与损失</span><span class="def">治理与补救</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2017-12-18</time><div class="ev">Dai 在以太坊主网上线<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2020-02-19</time><div class="ev">Gudgeon 等人在 arXiv 提交《The Decentralized Financial Crisis》，研究流动性枯竭时 DeFi 借贷协议的偿付风险<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2020-03-12</time><div class="ev">道指跌 2,352.60 点（−9.99%），收于 21,200.62 点，这一天被称为“黑色星期四”<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="atk"><time>2020-03-12</time><div class="ev">ETH 几小时内跌 43%，BTC 跌 39%<a class="ref" href="#s14">[14]</a>；以太坊交易拥堵，gas 价格暴涨<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2020-03-12</time><div class="ev">约 1,200 个 Vault 被清算，触发 4,447 场拍卖。约四个 keeper 在运行：基金会的 keeper 出了技术问题，两个提交零出价，另一个用光了 Dai<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2020-03-12</time><div class="ev">据后来的起诉书，BitMEX 当天强平并扣走 Celsius 的 1,325.84 BTC 抵押品<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2020-03-12</time><div class="ev">17:11 UTC，MakerDAO 论坛开出 Black Thursday Response Thread，讨论做什么、何时做，以及是否在短期内触发紧急关停<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2020-03-12</time><div class="ev">18:22 UTC，论坛用户 silto 说，出价窗口当时设为 10 分钟<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2020-03-12</time><div class="ev">Dai 全市场短缺，Coinbase 上一度涨到 1.126447 美元<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2020-03-13</time><div class="ev">BitMEX 3 月 16 日称，13 日 02:16 和 12:56 UTC 平台遭到两次 DDoS 攻击<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="atk"><time>2020-03-13</time><div class="ev">据起诉书，BitMEX 扣走投资基金 JST 的 5,034.33 BTC<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2020-03-13</time><div class="ev">05:48 UTC，基金会风险团队在论坛提出周五执行投票的参数：Flipper 出价窗口从 10 分钟改为 3 小时，单场拍卖从 50 ETH 提高到 500 ETH，最长拍卖时间从 3 天缩短到 1 天。随后的补充把 Flipper 和债务拍卖的窗口都改为 6 小时，并把债务拍卖推迟 6.5 天<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2020-03</time><div class="ev">MKR 持有人先后通过执行投票：调整拍卖参数，调整风险参数应对 Dai 溢价，加入 USDC 作抵押品<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2020-03-29</time><div class="ev">截至这一天，债务拍卖共卖出 20,980 枚 MKR，换回 530 万 Dai<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2020-04-01</time><div class="ev">MakerDAO 发布复盘《The Market Collapse of March 12-13, 2020》<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2020-04-28</time><div class="ev">社区成员 MakerMan 发布 MCD 以太坊清算报告和黑色星期四补偿分析<a class="ref" href="#s6">[6]</a>；两天后 psychonaut 提议用链上投票决定补偿额<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2020-07-22</time><div class="ev">Blocknative 发布内存池分析，称 3 月 12、13 日的清算是一次被人为制造的事件<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2020-08</time><div class="ev">论坛公布 Liquidations 1.2 升级，用 box 和 dunk 两个参数限制同时排队拍卖的 Dai 总额<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2020-12-08</time><div class="ev">补偿工作组发帖说明，经过几个月的数据整理和投票，MKR 投票者决定不推进 Vault 补偿<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2021-02-03</time><div class="ev">MIP45 提出 Liquidations 2.0，把英式拍卖换成荷兰式拍卖<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2021-04</time><div class="ev">Liquidations 2.0 合约 4 月中旬获得授权，LINK-A 先启用<a class="ref" href="#s12">[12]</a>；4 月 30 日的执行提案把 ETH-A、ETH-B 等加入新框架<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2022-05-16</time><div class="ev">仲裁庭认定受损用户 Johnson 的请求不在 2018 年服务条款的仲裁范围内；6 月，原告申请恢复联邦地区法院的诉讼<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2023-09-11</time><div class="ev">论坛公布集体诉讼和解通知：和解基金最多 116 万美元，最终批准听证定在 2024 年 2 月 9 日<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2026-09-12</time><div class="ev">Celsius 的遗产代表起诉 BitMEX 的五家关联公司，追讨 2020 年 3 月被强平的约 6,360 BTC<a class="ref" href="#s17">[17]</a>，经过见<a href="2022-celsius.html">Celsius 冻结提款与破产</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>崩盘机制</h2>
+        <p>MCD 的清算分三步：价格经 OSM 进入系统；Cat 合约的 bite 判定 Vault 不安全，收走抵押品；Flipper 合约拍卖这批抵押品。黑色星期四的问题出在第三步：拍卖从 0 起拍，出价窗口很短，网络一拥堵，接近零的出价就能成交。下面的代码出自 makerdao/dss 仓库的 1.0.0 标签，注释是本页加的。</p>
+        <h3>第一步：价格晚一小时生效</h3>
+        <p>OSM 合约的 hop 默认是一小时，poke 每个 hop 只能执行一次：执行时把排队的价格 nxt 换成当前价格 cur，再读进新报价<a class="ref" href="#s5">[5]</a>。系统用的价格总比最新报价晚一轮。MakerDAO 的复盘说，预言机工作正常，只是和所有人一样受网络延迟影响；延迟让 Vault 持有人多了补抵押品的时间，但他们在一小时的窗口里补抵押品或还 Dai 时，同样被高 gas 和交易延迟拖住<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>第二步：bite 收走抵押品，起拍价写死为 0</h3>
+        <pre class="code"><code>function bite(bytes32 ilk, address urn) external returns (uint id) {
+    (, uint rate, uint spot) = vat.ilks(ilk);
+    (uint ink, uint art) = vat.urns(ilk, urn);
+    <span class="c">// 抵押品按 spot 折算的价值低于债务，Vault 才算不安全</span>
+    require(spot &gt; 0 &amp;&amp; mul(ink, spot) &lt; mul(art, rate), "Cat/not-unsafe");
+    <span class="c">// 一次最多收走 lump 数量的抵押品</span>
+    uint lot = min(ink, ilks[ilk].lump);
+    art      = min(art, mul(lot, art) / ink);
+    vat.grab(ilk, urn, address(this), address(vow), -int(lot), -int(art));
+    <span class="c">// 这部分债务记到 vow 名下，等拍卖收回 Dai</span>
+    vow.fess(mul(art, rate));
+    id = Kicker(ilks[ilk].flip).kick({ urn: urn
+                                     , gal: address(vow)
+                                     , tab: rmul(mul(art, rate), ilks[ilk].chop)
+                                     , lot: lot
+<span class="bad">                                     , bid: 0</span>
+                                     });
+}</code></pre>
+        <p class="code-cap">出自 makerdao/dss 标签 1.0.0（提交 6fd7de0）src/cat.sol 第 120–142 行，省略了 live 检查、溢出检查和事件，缩进整体左移。tab 是这场拍卖要收回的 Dai：债务乘以清算罚金 chop。</p>
+        <p>lump 决定单场拍卖的规模。当时 ETH 的单场拍卖是 50 ETH，风险团队事后建议提高到 500 ETH，以减少拍卖和交易的数量<a class="ref" href="#s2">[2]</a>。按上面的代码，抵押品多于 lump 的 Vault 要被 bite 多次才能清算完，每次开一场拍卖；这是拍卖场数多于 Vault 数的一个原因，属于本页根据代码的推断。</p>
+        <h3>第三步：英式拍卖，从 0 往上叫</h3>
+        <p>Flipper 有三个参数：beg 是每口最少加价的比例，ttl 是出价后多久没人加价就可以结算，tau 是整场拍卖的最长时间。代码里的默认值是 5%、3 小时和 2 天，治理可以用 file() 修改<a class="ref" href="#s4">[4]</a>。黑色星期四时，ETH 拍卖的 ttl 是 10 分钟，最长拍卖时间是 3 天<a class="ref" href="#s2">[2]</a>。</p>
+        <pre class="code"><code>uint256 public   beg = 1.05E18;  <span class="c">// 每口至少加价 5%</span>
+uint48  public   ttl = 3 hours;  <span class="c">// 出价后多久没人加价就可以结算</span>
+uint48  public   tau = 2 days;   <span class="c">// 整场拍卖的最长时间</span>
+
+function tend(uint id, uint lot, uint bid) external note {
+    require(bids[id].guy != address(0), "Flipper/guy-not-set");
+    require(bids[id].tic &gt; now || bids[id].tic == 0, "Flipper/already-finished-tic");
+    require(bids[id].end &gt; now, "Flipper/already-finished-end");
+    require(lot == bids[id].lot, "Flipper/lot-not-matching");
+    require(bid &lt;= bids[id].tab, "Flipper/higher-than-tab");
+    require(bid &gt;  bids[id].bid, "Flipper/bid-not-higher");
+    <span class="c">// 前一口是 0 时右边恒为 0，任何大于 0 的出价都满足</span>
+<span class="bad">    require(mul(bid, ONE) &gt;= mul(beg, bids[id].bid) || bid == bids[id].tab,</span>
+<span class="bad">            "Flipper/insufficient-increase");</span>
+    vat.move(msg.sender, bids[id].guy, bids[id].bid);
+    vat.move(msg.sender, bids[id].gal, bid - bids[id].bid);
+    bids[id].guy = msg.sender;
+    bids[id].bid = bid;
+    bids[id].tic = add(uint48(now), ttl);
+}
+
+function deal(uint id) external note {
+    <span class="c">// 有过出价，并且 ttl 内没人加价或整场拍卖到期，任何人都可以结算</span>
+    require(bids[id].tic != 0 &amp;&amp; (bids[id].tic &lt; now || bids[id].end &lt; now),
+            "Flipper/not-finished");
+<span class="bad">    vat.flux(ilk, address(this), bids[id].guy, bids[id].lot);</span>
+    delete bids[id];
+}</code></pre>
+        <p class="code-cap">出自 makerdao/dss 标签 1.0.0（提交 6fd7de0）src/flip.sol 第 69–71、131–147、165–169 行。原注释换成中文，省略空行，两行过长的 require 折行，缩进整体左移。</p>
+        <h3>为什么接近零的出价能赢</h3>
+        <p>bite 把起拍价写成 0。tend 只要求新出价比前一口高 5%，0 的 5% 还是 0，所以第一口出价只要大于 0 就合格。Flipper 里没有任何一行把出价和抵押品的市价作比较。之后 10 分钟内没有人出更高的价，任何人都可以调用 deal，把整批 ETH 转给这位出价者。MakerDAO 的复盘把这类出价叫作“零出价”，指只比 0 高出小数点后几位的出价<a class="ref" href="#s1">[1]</a>。论坛当天的说明也是这样：出价超时只有 10 分钟，没有别人加价时，最高的出价就赢<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Flipper 本来分两个阶段。tend 阶段比谁付的 Dai 多；出价到 tab 后进入 dent 阶段，改比谁要的抵押品少，少要的部分由 dent 里的 vat.flux 退回 Vault 持有人<a class="ref" href="#s4">[4]</a>。零出价的拍卖停在第一阶段就结算了：协议几乎收不回 Dai，Vault 持有人也拿不回剩下的抵押品。</p>
+        <h3>坏账怎么记</h3>
+        <p>bite 时 vow.fess 已经把这笔债务记到 vow 名下<a class="ref" href="#s3">[3]</a>。拍卖收回的 Dai 抵不上，差额就留在 vow 里成为系统坏账，最后由增发 MKR 的债务拍卖补上<a class="ref" href="#s1">[1]</a>。论坛首帖当天估计，系统从跌价前约 50 万美元的盈余变成了约 400 万美元的赤字<a class="ref" href="#s2">[2]</a>；MakerDAO 后来的复盘写的是约 540 万 Dai 以上的缺口<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>网络拥堵：更高的出价上不了链</h3>
+        <p>Blocknative 当天保存了内存池的数据，用第 1866 号拍卖还原了零出价是怎么赢的<a class="ref" href="#s14">[14]</a>：</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 300" role="img" aria-labelledby="bt-1866-t bt-1866-d">
+            <title id="bt-1866-t">第 1866 号拍卖：零出价怎样赢下拍卖</title>
+            <desc id="bt-1866-d">15:59:50 UTC，零出价机器人以 200 Gwei 提交零出价，26 秒后上链，10 分钟的出价窗口开始。16:08:01，正常 keeper 以 450 Gwei 反出价，被同一地址之前留下的 nonce 缺口卡住，没有上链。16:15:31 它以 4,500 Gwei 再出价，仍然卡住，而且已在窗口之外。约 16:10 窗口结束，没有更高的出价上链，零出价赢下拍卖。</desc>
+            <rect class="d-box soft" x="92" y="156" width="360" height="40" rx="3"/>
+            <text class="d-t s" x="200" y="181" text-anchor="middle">10 分钟出价窗口</text>
+            <line class="d-line" x1="40" y1="200" x2="720" y2="200"/>
+            <line class="d-line" x1="82" y1="200" x2="82" y2="206"/>
+            <line class="d-line" x1="262" y1="200" x2="262" y2="206"/>
+            <line class="d-line" x1="442" y1="200" x2="442" y2="206"/>
+            <line class="d-line" x1="622" y1="200" x2="622" y2="206"/>
+            <text class="d-t s" x="82" y="222" text-anchor="middle">16:00</text>
+            <text class="d-t s" x="262" y="222" text-anchor="middle">16:05</text>
+            <text class="d-t s" x="442" y="222" text-anchor="middle">16:10</text>
+            <text class="d-t s" x="622" y="222" text-anchor="middle">16:15</text>
+            <line class="d-line dash" x1="76" y1="68" x2="76" y2="194"/>
+            <line class="d-line dash" x1="371" y1="68" x2="371" y2="194"/>
+            <line class="d-line dash" x1="641" y1="124" x2="641" y2="194"/>
+            <circle class="d-box atk" cx="76" cy="200" r="5"/>
+            <circle class="d-box def" cx="371" cy="200" r="5"/>
+            <circle class="d-box def" cx="641" cy="200" r="5"/>
+            <text class="d-t atk" x="20" y="40">15:59:50 零出价，200 Gwei</text>
+            <text class="d-t s" x="20" y="60">26 秒后上链，倒计时开始</text>
+            <text class="d-t def" x="330" y="40">16:08:01 keeper 反出价，450 Gwei</text>
+            <text class="d-t s" x="330" y="60">被 nonce 缺口卡住，没有上链</text>
+            <text class="d-t def" x="740" y="96" text-anchor="end">16:15:31 再出价，4,500 Gwei</text>
+            <text class="d-t s" x="740" y="116" text-anchor="end">仍被卡住，且已在窗口之外</text>
+            <text class="d-t atk" x="452" y="252" text-anchor="middle">约 16:10 窗口结束，没有更高的出价上链</text>
+            <text class="d-t s" x="452" y="276" text-anchor="middle">零出价赢下拍卖，deal 把整批 ETH 转给零出价者</text>
+          </svg>
+          </div>
+          <figcaption>时间为 UTC，出自 Blocknative 的复盘，原文没有写这场拍卖在哪一天。图中的窗口从零出价上链时算起，约到 16:10 结束；Blocknative 原文从提交时刻算，说反出价落在窗口的第 8 分 11 秒，两种算法差 26 秒。</figcaption>
+        </figure>
+        <p>零出价机器人的交易 26 秒就上了链，10 分钟的倒计时开始。正常 keeper 在 16:08:01 发出反出价，gas 价格是零出价的 2.5 倍，本来还来得及；但这个地址之前有一笔出价被内存池逐出，留下了 nonce 缺口，同一地址后面的交易都卡在缺口后面。16:15:31 它把 gas 提到 4,500 Gwei 再出价，仍然卡住，而且已经过了窗口<a class="ref" href="#s14">[14]</a>。Blocknative 写道，keeper 机器人正确地发现了零出价开局的拍卖，也给出了高得多的出价，只是没法可靠地参与这种限时拍卖<a class="ref" href="#s14">[14]</a>。合约只认已经上链的出价。</p>
+        <p>Blocknative 把内存池的问题归为三类：拥堵让卡住的交易增多，同一地址后面的交易被堵住；内存池里 gas 出价够高、矿工会考虑的那部分交易骤减，它称之为“压缩”，会带偏 gas 价格估算；还有一类被它叫作 Hammerbot 的自动程序，发出大量不打算上链的交易，gas 价格几乎总是 5 Gwei，而当时市场需要约 30 Gwei 以上，白白占用内存池的资源，加剧了拥堵<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>崩盘过程</h2>
+        <h3>3 月 12 日：keeper 接不住</h3>
+        <p>MakerDAO 的复盘把当天的困难分成几方面<a class="ref" href="#s1">[1]</a>。Vault 持有人想在一小时的窗口里补抵押品或还 Dai，却被高 gas 和交易延迟拖住。约四个 keeper 运行着多个机器人：有的一时拿不到 Dai，有的参与不了所有拍卖；手里有 Dai 的很快用完，来不及把拍到的 ETH 换回 Dai 参加下一轮。基金会自己运行的一个 keeper 出了技术问题，又被拥堵放大，几个小时里出价受到影响。中心化交易所几乎是唯一的流动性来源，同样拥堵，资产转进转出都有延迟。</p>
+        <p>论坛首帖的整理是：一度只有一个 keeper 在触发清算，并且出价 0 美元，没有竞争，持续了两三个小时，之后其他 keeper 才回来<a class="ref" href="#s2">[2]</a>。复盘写道，keeper 后来找到了流动性，扩大了处理能力，成功挑战了后来的零出价，拍卖恢复了竞争<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>Dai 涨到 1.12 美元</h3>
+        <p>还债要用 Dai，keeper 出价也要用 Dai。复盘说，3 月 12 日之前市场对 Dai 的需求已经上升，当天全市场严重短缺，Coinbase 上 Dai 一度涨到 1.126447 美元<a class="ref" href="#s1">[1]</a>。论坛上最早的建议之一，是降低稳定费和 Dai 存款利率，让 Dai 回到 1 美元<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>3 月 13 日：改参数，推迟债务拍卖</h3>
+        <p>3 月 13 日 05:48 UTC，基金会风险团队在论坛贴出建议，要放进当周五的执行投票<a class="ref" href="#s2">[2]</a>：Sai 的稳定费从 9.5% 降到 7.5%，ETH 和 BAT 的 Dai 稳定费从 8% 降到 4%，并调整几项债务上限；Flipper 的出价窗口从 10 分钟改为 3 小时，单场拍卖从 50 ETH 提高到 500 ETH，最长拍卖时间从 3 天缩短到 1 天，债务拍卖的出价窗口也从 10 分钟改为 3 小时。理由是给 keeper 时间克服网络问题，并减少拍卖和交易的数量；窗口拉长后拍卖容易拖到最长时间，所以同时缩短最长时间。</p>
+        <p>随后的补充又做了几处修改，其中两处和拍卖有关<a class="ref" href="#s2">[2]</a>。Flipper 和债务拍卖的窗口都改为 6 小时，理由是眼下最要紧的是节点很难同步，应当偏向节点的安全。债务拍卖推迟 6.5 天：一是眼下不该再添变数，二是让潜在的 MKR 买家有时间准备，在周三中午而不是周六早上出价。MakerDAO 的复盘写道，MKR 持有人先通过执行投票调整了拍卖参数，又调整风险参数应对 Dai 高于 1 美元，再加入 USDC 作抵押品<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="note doubt">
+          <span class="h">攻击还是失灵</span>
+          <p>MakerDAO 2020 年 4 月的复盘说，有人猜测零出价是协同攻击或系统被黑，目前的证据既不足以证实，也不足以排除<a class="ref" href="#s1">[1]</a>。Blocknative 7 月的分析则说，内存池数据表明这些清算是被人为制造的：Hammerbot 加剧拥堵、带偏 gas 估算，提高了零出价赢下拍卖的概率<a class="ref" href="#s14">[14]</a>。本页没有找到执法机构或法院对零出价者身份和意图的认定。</p>
+        </div>
+      </section>
+      <section id="contagion">
+        <h2>传染</h2>
+        <h3>BitMEX 的强平</h3>
+        <p>同一时间，衍生品交易所 BitMEX 上也在强平。2026 年 9 月 12 日，Celsius 的遗产代表在纽约南区破产法院起诉 BitMEX 的五家关联公司，指控 BitMEX 在 2020 年 3 月 12 日不当强平并扣走 Celsius 的 1,325.84 BTC 抵押品，13 日扣走投资基金 JST 的 5,034.33 BTC（JST 后来把相关债权转给了遗产），合计约 6,360 BTC<a class="ref" href="#s17">[17]</a>。起诉书还称，平台无法访问时强平随之停止，比特币价格随即回升，在遗产看来，这说明 BitMEX 上的强制卖出一直在压低价格；BitMEX 当时的说法是，3 月 13 日 02:16 和 12:56 UTC 平台遭到两次 DDoS 攻击<a class="ref" href="#s17">[17]</a>。这些是起诉方的指控和 BitMEX 当年的说法，本页没有查到法院的结论。Celsius 这一方的经过见<a href="2022-celsius.html">Celsius 冻结提款与破产</a>。</p>
+        <h3>Dai 开始依赖 USDC</h3>
+        <p>为了补充流动性，治理加入了与加密市场不相关的 USDC 作抵押品<a class="ref" href="#s1">[1]</a>。这一步后来继续扩大：2021 年 4 月的治理回顾记录，PSM-USDC-A 的债务上限从 10 亿 Dai 提高到 20 亿 Dai<a class="ref" href="#s12">[12]</a>。2023 年 3 月的 USDC 脱锚，经过见<a href="2023-usdc-depeg.html">SVB 倒闭与 USDC 脱锚</a>。</p>
+        <h3>MKR 持有人分担损失</h3>
+        <p>按协议设计，坏账由 MKR 持有人以增发稀释的方式承担：截至 3 月 29 日，债务拍卖新铸并卖出 20,980 枚 MKR，换回 530 万 Dai<a class="ref" href="#s1">[1]</a>。风险团队把债务拍卖推迟 6.5 天，也是为了让潜在买家准备好出价<a class="ref" href="#s2">[2]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>规模：几种口径</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>说法</th><th class="n">数量</th></tr></thead>
+          <tbody>
+            <tr><td>MakerDAO 复盘</td><td>被清算的 Vault</td><td class="n">约 1,200 个<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>MakerDAO 复盘</td><td>触发的拍卖</td><td class="n">4,447 场<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>Blocknative</td><td>与黑色星期四相关的拍卖</td><td class="n">3,994 场<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>Blocknative</td><td>被零出价拍走的拍卖</td><td class="n">1,462 场（36.6%）<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>Blocknative</td><td>约 12 小时内零出价拍卖造成的损失</td><td class="n">832 万美元<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>论坛首帖（3 月 12 日）</td><td>系统盈余，跌价前</td><td class="n">约 +50 万美元<a class="ref" href="#s2">[2]</a></td></tr>
+            <tr><td>论坛首帖（3 月 12 日）</td><td>系统盈余，跌价后</td><td class="n">约 −400 万美元<a class="ref" href="#s2">[2]</a></td></tr>
+            <tr><td>MakerDAO 复盘</td><td>拍卖收回的 Dai 与债务之间的缺口</td><td class="n">约 540 万 Dai 以上<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>MakerDAO 复盘</td><td>截至 3 月 29 日债务拍卖卖出的 MKR</td><td class="n">20,980 枚<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>MakerDAO 复盘</td><td>这些 MKR 换回的 Dai</td><td class="n">530 万<a class="ref" href="#s1">[1]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt">
+          <span class="h">这些数字为什么对不上</span>
+          <p>拍卖场数：复盘写触发了 4,447 场，Blocknative 写与黑色星期四相关的有 3,994 场，两边都没有说明怎么统计。832 万美元和 540 万 Dai 量的不是同一样东西：前者是 Vault 持有人被零出价拍走的抵押品价值，后者是协议的缺口。跌幅也有几种说法：Blocknative 说 ETH 几小时内跌 43%、BTC 跌 39%<a class="ref" href="#s14">[14]</a>，复盘说 ETH、BTC 和整个加密市场跌掉 50% 以上<a class="ref" href="#s1">[1]</a>，维基百科的比特币价格表写 2020 年初跌了 50%、疫情初期 24 小时跌 25%<a class="ref" href="#s21">[21]</a>，Qin 等人则把 ETH 跌 43% 记在 3 月 13 日<a class="ref" href="#s19">[19]</a>，时间窗口和日期各不相同。</p>
+        </div>
+        <h3>对 DeFi 清算设计的影响</h3>
+        <p>Qin 等人 2021 年的研究把借贷协议的清算分成两类：MakerDAO 这样的拍卖是非原子清算，清算人要用多笔交易和协议交互；Aave、Compound、dYdX 的固定折价清算是原子清算，一笔交易就能完成<a class="ref" href="#s19">[19]</a>。他们统计了这四个协议约两年的数据，累计清算所得（liquidation proceeds）8.0746 亿美元，涉及 2,011 个清算人地址、28,138 次清算；还估算 ETH 若像 2020 年 3 月 13 日那样立即下跌 43%，MakerDAO 上最多会有 10.7 亿美元的抵押品变得可被清算<a class="ref" href="#s19">[19]</a>。黑色星期四暴露的是非原子拍卖的一个前提：出价人要能及时把交易送上链。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>补偿：讨论半年，没有推进</h3>
+        <p>2020 年 4 月 28 日，社区成员 MakerMan 发布 MCD 以太坊清算报告和黑色星期四补偿分析<a class="ref" href="#s6">[6]</a>。两天后 psychonaut 提议用链上投票决定补偿：先从报告的表格里选一档补偿额，另设“不补偿”选项；再选 ETH 按哪天的价格折算，可选投票当天、黑色星期四当天或两者的平均<a class="ref" href="#s7">[7]</a>。一个五人工作组从 4 月做到 9 月，整理 Vault 数据，组织讨论和投票，共投入 254 小时；最终 MKR 投票者决定不推进 Vault 补偿<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>集体诉讼与和解</h3>
+        <p>受损用户 Peter Johnson 提起集体诉讼。案件在联邦地区法院因仲裁而暂停；2022 年 5 月 16 日，美国仲裁协会（AAA）的仲裁庭认定他的请求不在 2018 年服务条款的范围内，不能仲裁。6 月原告申请恢复诉讼，并获准提交第二次修订起诉状：Dai Foundation 不再是被告，剩下 Maker Ecosystem Growth Holdings（后改名 Metronym）和 Maker Ecosystem Growth Foundation<a class="ref" href="#s15">[15]</a>。</p>
+        <p>2023 年 9 月公布的和解通知写道，原告指称 Metronym 曾对用户表示，Vault 里的抵押品会受到公平市场拍卖机制的保护，实际并非如此，2020 年 3 月 12 日或 13 日数百名用户因此受损；Metronym 否认这些指控，法院没有判定谁对。和解覆盖那两天 ETH 被强制清算、每枚 ETH 拿回 10 美元或更少的 Vault 持有人，和解基金最多 116 万美元，其中律师费和开支最多 40 万美元；最终批准听证定在 2024 年 2 月 9 日，地点是北加州联邦地区法院<a class="ref" href="#s16">[16]</a>。本页没有查到最终批准的结果，也没有核实起诉的日期。</p>
+        <h3>清算系统改了两次</h3>
+        <p>2020 年 8 月，论坛公布 Liquidations 1.2 升级，作为 Liquidations 2.0 交付之前的过渡，用治理参数限制任一时刻排队拍卖的 Dai 总额；当时 Liquidations 2.0 的目标是当年第四季度交付<a class="ref" href="#s9">[9]</a>。技术说明写道，Cat 合约新增全局参数 box，变量 litter 在开拍时增加、在 deal 或 yank 时减少，box 减 litter 小于最小 Vault 债务时不能清算；新的 dunk 取代 lump，单场拍卖按债务加罚金的金额切分，而不是按抵押品数量<a class="ref" href="#s10">[10]</a>。</p>
+        <p>2021 年 2 月 3 日提出的 MIP45（Liquidations 2.0）把英式拍卖换成荷兰式拍卖<a class="ref" href="#s11">[11]</a>。开拍价是 OSM 价格乘以参数 buf，例如 OSM 价格 1,000、buf 为 1.2 时开拍价是 1,200；价格随时间按设定的曲线下降；拍卖拖过 tail 秒或跌幅超过 cusp，就要重置；买家按当时的价格立即成交，不用像英式拍卖那样锁住资金等别人加价，还可以在成交时回调自己的合约。MIP45 写道，新系统的主要好处是整个 Vault 的抵押品都能按给定的价格买到，keeper 可以在一个区块内调用链上所有的流动性<a class="ref" href="#s11">[11]</a>。按 2021 年 4 月的治理回顾，Liquidations 2.0 合约 4 月中旬获得授权，LINK-A 先启用<a class="ref" href="#s12">[12]</a>；4 月 30 日的执行提案把 ETH-A、ETH-B 等加入新框架<a class="ref" href="#s13">[13]</a>。拍卖从此不再从 0 开始叫价。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议设计者</span>
+          <ul>
+            <li>拍卖要有价格下限。从 0 起拍、只检查相对加价的拍卖，分不清“没人出价”和“公平的出价”。Liquidations 2.0 改成从高于市价的价格往下走，跌得太多就重置。</li>
+            <li>时间参数要按网络最拥堵的时候来定。10 分钟的出价窗口平时够用，拥堵时正常 keeper 的交易可能在窗口内上不了链；事后的提议先把窗口改成 3 小时，再改成 6 小时。</li>
+            <li>清算要能马上用上资金。英式拍卖要求出价人先锁住 Dai，Dai 一短缺，出价的人就少了；荷兰式拍卖即时成交，keeper 可以在同一个区块里调用链上的流动性。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给 keeper 和交易机器人</span>
+          <ul>
+            <li>被内存池逐出的交易会留下 nonce 缺口，同一地址后面的交易全部卡住，提高 gas 价格也没用。第 1866 号拍卖里，keeper 把 gas 提到 4,500 Gwei 仍然卡着。</li>
+            <li>拥堵时内存池里能成交的部分骤减，gas 价格的估算可能被带偏。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给 Vault 持有人和治理</span>
+          <ul>
+            <li>OSM 的一小时延迟不保证补仓交易能上链。几小时内可能跌四成的抵押品，抵押率要为“大跌加拥堵”留出余地。</li>
+            <li>坏账最后由 MKR 持有人通过增发承担；受损用户能不能得到补偿，取决于治理投票。这一次，MKR 投票者决定不补偿。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">MakerDAO，《The Market Collapse of March 12-13, 2020: How It Impacted MakerDAO》，2020-04-01（Internet Archive 存档）。<a href="https://web.archive.org/web/2020/https://blog.makerdao.com/the-market-collapse-of-march-12-2020-how-it-impacted-makerdao/">web.archive.org</a></li>
+          <li id="s2">MakerDAO 论坛，LongForWisdom 等，《Black Thursday Response Thread》，2020-03-12 起。<a href="https://forum.makerdao.com/t/black-thursday-response-thread/1433">forum.makerdao.com</a></li>
+          <li id="s3">makerdao/dss，src/cat.sol，标签 1.0.0（提交 6fd7de0）。<a href="https://github.com/makerdao/dss/blob/1.0.0/src/cat.sol">github.com</a></li>
+          <li id="s4">makerdao/dss，src/flip.sol，标签 1.0.0（提交 6fd7de0）。<a href="https://github.com/makerdao/dss/blob/1.0.0/src/flip.sol">github.com</a></li>
+          <li id="s5">sky-ecosystem/osm（原 makerdao/osm），src/osm.sol，commit 0399d52（2019-11-12，2020 年 3 月之前最后一次修改这个文件）。<a href="https://github.com/sky-ecosystem/osm/blob/0399d525256e6e1fb432d7d5d142b39738d54835/src/osm.sol">github.com</a></li>
+          <li id="s6">MakerDAO 论坛，MakerMan，《Maker MCD Ethereum System Liquidation report and Black Thursday Compensation Analysis》，2020-04-28。<a href="https://forum.makerdao.com/t/2243">forum.makerdao.com</a></li>
+          <li id="s7">MakerDAO 论坛，psychonaut，《Polls to determine specific Black Thurs vault compensation》，2020-04-30。<a href="https://forum.makerdao.com/t/2275">forum.makerdao.com</a></li>
+          <li id="s8">MakerDAO 论坛，monet-supply，《[Signal Request] Vault Compensation Working Group Payment》，2020-12-08。<a href="https://forum.makerdao.com/t/5562">forum.makerdao.com</a></li>
+          <li id="s9">MakerDAO 论坛，charlesstlouis，《Liquidations System 1.2 Upgrade (Timeline)》，2020-08-08。<a href="https://forum.makerdao.com/t/3592">forum.makerdao.com</a></li>
+          <li id="s10">MakerDAO 论坛，Kurt_Barry，《Liquidations 1.2 Technical Details》，2020-08-24。<a href="https://forum.makerdao.com/t/3792">forum.makerdao.com</a></li>
+          <li id="s11">Smart Contracts Domain Team，《MIP45: Liquidations 2.0 - Liquidation System Redesign》，2021-02-03 提出。<a href="https://github.com/makerdao/mips/blob/master/MIP45/mip45.md">github.com</a></li>
+          <li id="s12">MakerDAO 论坛，Davidutro，《Maker Governance Review: April 2021》，2021-05-05。<a href="https://forum.makerdao.com/t/7853">forum.makerdao.com</a></li>
+          <li id="s13">makerdao/community，《[Executive Proposal] Liquidations 2.0 Activations, Oracle Feed Changes - April 30, 2021》。<a href="https://github.com/makerdao/community/blob/master/governance/votes/Executive%20vote%20-%20April%2030%2C%202021.md">github.com</a></li>
+          <li id="s14">Blocknative，《Evidence of Mempool Manipulation on Black Thursday: Hammerbots, Mempool Compression, and Spontaneous Stuck Transactions》，2020-07-22（Internet Archive 存档）。<a href="https://web.archive.org/web/2020/https://www.blocknative.com/blog/mempool-forensics">web.archive.org</a></li>
+          <li id="s15">MakerDAO 论坛，0xbocaJ，《Johnson v. Maker Foundation Litigation Continues》，2022-09-03。<a href="https://forum.makerdao.com/t/17640">forum.makerdao.com</a></li>
+          <li id="s16">MakerDAO 论坛，CPTClassAction，《Legal Notice about a Class Action Settlement》，2023-09-11。<a href="https://forum.makerdao.com/t/22025">forum.makerdao.com</a></li>
+          <li id="s17">Cointelegraph，《Celsius Estate Sues BitMEX Over 6,360 BTC Liquidations》，2026-09-17。<a href="https://cointelegraph.com/news/celsius-estate-bitmex-6360-btc-liquidation-lawsuit">cointelegraph.com</a></li>
+          <li id="s18">Lewis Gudgeon、Daniel Perez、Dominik Harz、Benjamin Livshits、Arthur Gervais，《The Decentralized Financial Crisis》，arXiv:2002.08099（v1 2020-02-19，v2 2020-06-27）。<a href="https://arxiv.org/abs/2002.08099">arxiv.org</a></li>
+          <li id="s19">Kaihua Qin、Liyi Zhou、Pablo Gamito、Philipp Jovanovic、Arthur Gervais，《An Empirical Study of DeFi Liquidations: Incentives, Risks, and Instabilities》，arXiv:2106.06389（v2 2021-10-01）。<a href="https://arxiv.org/abs/2106.06389">arxiv.org</a></li>
+          <li id="s20">维基百科，《2020 stock market crash》。<a href="https://en.wikipedia.org/wiki/2020_stock_market_crash">en.wikipedia.org</a></li>
+          <li id="s21">维基百科，《History of bitcoin》。<a href="https://en.wikipedia.org/wiki/History_of_bitcoin">en.wikipedia.org</a></li>
+          <li id="s22">维基百科，《Dai (cryptocurrency)》。<a href="https://en.wikipedia.org/wiki/Dai_(cryptocurrency)">en.wikipedia.org</a></li>
+          <li id="s23">CoinDesk（Brady Dale），《Compound Tops MakerDAO, Now Has the Most Value Staked in DeFi》，2020-06-20（Internet Archive 存档）。<a href="https://web.archive.org/web/20200620223751/https://www.coindesk.com/compound-tops-makerdao-now-has-the-most-value-staked-in-defi">web.archive.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

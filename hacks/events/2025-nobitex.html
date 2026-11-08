@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nobitex 资产被“烧毁”｜区块链被盗事件编年史</title>
+<meta name="description" content="2025 年以伊冲突期间，Predatory Sparrow 宣布入侵伊朗最大交易所 Nobitex，把约 9,000 万美元转入写着反革命卫队标语、无人掌握私钥的地址并公开其源代码：入侵说法、地址为何无法动用、资金去向、恢复与制裁。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2025-nobitex">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2025 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Nobitex 资产被“烧毁”</h1>
+    <p class="lede">2025 年 6 月 18 日，以色列与伊朗交战的第六天，自称 Predatory Sparrow 的黑客组织控制了伊朗最大交易所 Nobitex 的热钱包系统，把约 9,000 万美元的资产转进写着反伊斯兰革命卫队标语的地址。这些地址没有人掌握私钥，资金转入即等于销毁，第二天该组织又公开了 Nobitex 的源代码。按 Chainalysis 的说法，这是第一起达到这一规模、完全出于地缘政治目的的加密资产攻击。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Nobitex 是伊朗用户最多的加密货币交易所。6 月 18 日清晨，攻击者控制了它的热钱包系统，把 Tron、EVM 链、比特币、狗狗币等多条链上的资产转进一组“靓号地址”（vanity address），地址里直接写着“F*ckIRGCterrorists”一类的字样。这类地址只是一串格式合法的字符，不是由任何私钥生成的，钱转进去以后谁也取不出来。</p>
+        <p>亲以色列的黑客组织 Predatory Sparrow（波斯语 Gonjeshke Darande）在 X 上宣布负责，称 Nobitex 是伊朗政权资助恐怖主义、规避制裁的工具，并于次日公开了 Nobitex 的源代码和内部资料<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。一天前，该组织刚宣称摧毁了伊朗国有银行 Bank Sepah 的数据。媒体常把它描述为与以色列有关，但它的身份没有得到官方确认<a class="ref" href="#s11">[11]</a>。</p>
+        <p>Nobitex 当天承认被入侵，断开全部服务器，清空剩余热钱包，并承诺用储备基金承担全部损失<a class="ref" href="#s4">[4]</a>。服务从 6 月 25 日起分步恢复，7 月上旬恢复全部交易<a class="ref" href="#s15">[15]</a>。攻击者怎样进入系统，至今没有经过独立核实的技术报告：Nobitex 一年后说是服务器管理接口 IPMI 的零日漏洞<a class="ref" href="#s6">[6]</a>，安全公司则提出过凭据被窃、私钥存放不当等推测。2026 年 6 月，美国财政部 OFAC 把 Nobitex 及其四名高管列入制裁名单<a class="ref" href="#s23">[23]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <h3>伊朗最大的交易所</h3>
+        <p>Nobitex 成立于 2017 年<a class="ref" href="#s17">[17]</a>，事发当天的公告称有 1,100 万用户<a class="ref" href="#s4">[4]</a>，2026 年的年报说到 2025 年底约有 1,150 万用户<a class="ref" href="#s6">[6]</a>（Elliptic 6 月 18 日的文章写的是“超过 700 万”<a class="ref" href="#s1">[1]</a>，口径不同）。Chainalysis 统计它的累计流入超过 110 亿美元，排在它后面的 10 家伊朗交易所合计不到 75 亿美元<a class="ref" href="#s3">[3]</a>；美国财政部称它处理了 2025 年伊朗全部数字资产流入的一半以上<a class="ref" href="#s23">[23]</a>。</p>
+        <p>伊朗长期处于全面制裁之下，普通人很难使用国际银行体系，不少人用 Nobitex 把里亚尔换成 USDT 或比特币，用来对抗通胀、保存储蓄。TRM 把这种平台称为“两用”基础设施：既服务普通居民，也被规避制裁的一方使用<a class="ref" href="#s2">[2]</a>。Elliptic、Chainalysis 和 TRM 都发现过 Nobitex 与受制裁的革命卫队人员、勒索软件运营者以及哈马斯、胡塞武装相关钱包之间的链上往来<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s15">[15]</a>。Elliptic 援引开源调查称，部分大股东与最高领袖的亲属有关<a class="ref" href="#s17">[17]</a>。Nobitex 则在公告中说自己是独立的私营企业<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>冲突中的第六天</h3>
+        <p>2025 年 6 月 13 日，以色列空袭伊朗的军事和核设施，两国随后互射导弹，冲突持续 12 天<a class="ref" href="#s2">[2]</a><a class="ref" href="#s15">[15]</a>。伊朗政府 6 月 16 日确认降低网速以防御网络攻击<a class="ref" href="#s12">[12]</a>；央行要求交易所在夜间暂停 USDT 与托曼的交易<a class="ref" href="#s2">[2]</a>。TRM 发现，空袭前后从 Nobitex 流出的资金增加了 150% 以上，用户在提前把资产转走<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>Predatory Sparrow 是谁</h3>
+        <p>Predatory Sparrow 自 2021 年起多次宣称对伊朗基础设施发动网络攻击，目标多是被制裁的企业或与革命卫队有关的机构，结果多是停摆和破坏，此前没有一起以盗取资金为目的。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th>目标</th><th>公开说法</th></tr></thead>
+            <tbody>
+              <tr><td>2021-07</td><td>伊朗铁路与道路部</td><td>车站屏幕显示“网络攻击导致长时间延误”，并留下最高领袖办公室的电话。Check Point 当时把它归于自称 Indra 的组织<a class="ref" href="#s21">[21]</a>，后来又发现 Predatory Sparrow 的工具与 Indra 有相同代码，此后的报道常把这次攻击算在该组织名下<a class="ref" href="#s20">[20]</a></td></tr>
+              <tr><td>2021-10</td><td>全国加油站支付系统</td><td>该组织宣布负责，路边广告屏显示“哈梅内伊，我们的油在哪里”<a class="ref" href="#s20">[20]</a></td></tr>
+              <tr><td>2022-06-27</td><td>三家受制裁的钢铁企业</td><td>该组织公布监控视频，显示一家工厂的设备喷出钢水起火<a class="ref" href="#s20">[20]</a></td></tr>
+              <tr><td>2023-12-18</td><td>全国加油站网络</td><td>据报道约 70% 的加油站停止服务，石油部长称至少 30% 仍在运转<a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td>2025-06-17</td><td>国有银行 Bank Sepah</td><td>该组织称“摧毁了数据”，银行网站下线，客户无法登录账户<a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>2025-06-18</td><td>Nobitex</td><td>本案</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>该组织在钢铁厂和加油站等攻击中都声称行动是“受控的”，会避免影响紧急服务<a class="ref" href="#s20">[20]</a><a class="ref" href="#s22">[22]</a>。伊朗官方指其与以色列有关<a class="ref" href="#s22">[22]</a>。《卫报》2025 年 6 月报道说，以色列媒体经常把它描述为与以色列有关，但它的身份和国籍没有得到官方确认；Sophos 威胁情报总监 Rafe Pilling 认为，没有确凿证据把它和某个国家联系起来，但它具备政府支持团体所用假身份的全部特征，其行动与以色列的地区优先事项高度一致<a class="ref" href="#s11">[11]</a>。BBC 2022 年报道，以色列媒体称时任国防部长甘茨曾下令调查记者暗示以色列参与一事的泄密来源<a class="ref" href="#s20">[20]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">Nobitex 的应对</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2025-06-13</time><div class="ev">以色列空袭伊朗军事和核设施，两国开始交战。TRM 观察到空袭前后 Nobitex 流出资金增加 150% 以上<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2025-06-16</time><div class="ev">伊朗政府确认降低网速，称是为了抵御网络攻击<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>2025-06-17</time><div class="ev">Predatory Sparrow 宣称摧毁了 Bank Sepah 的数据，银行网站下线，多地分行关闭，客户无法登录账户<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk key"><time>06-18 约 02:30 UTC</time><div class="ev">德黑兰时间约 06:00，Nobitex 热钱包开始向靓号地址转出资产<a class="ref" href="#s2">[2]</a>，Tron 上的第一批约 4,900 万美元<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>06-18 上午</time><div class="ev">Nobitex 在 X 上通报发现对“部分通知基础设施和热钱包”的未授权访问，随后断开全部服务器，把剩余热钱包余额转到新的安全地址，并联系伊朗网警<a class="ref" href="#s4">[4]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2025-06-18</time><div class="ev">Predatory Sparrow 宣布负责，警告 24 小时后公开 Nobitex 的源代码和内网资料，“之后留在那里的资产都会有风险”<a class="ref" href="#s8">[8]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2025-06-18</time><div class="ev">Elliptic、TRM、Chainalysis 当天发布分析。Elliptic 和 Chainalysis 认为资金被转入无人掌握私钥的地址，等于被销毁<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>；TRM 记录了靓号地址和 Tron 上的结构化转账<a class="ref" href="#s2">[2]</a>。Cloudflare 告诉《卫报》，伊朗的网络流量比一周前低 98%<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>06-18 16:03 UTC</time><div class="ev">Nobitex 第 4 号公告：被盗约 1 亿美元，资产被转进“用于烧毁资产”的地址，用户损失由储备基金承担<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk key"><time>2025-06-19</time><div class="ev">Predatory Sparrow 公开 Nobitex 的完整源代码、区块链脚本、内部隐私设置和服务器清单，称“留在 Nobitex 的资产现在完全暴露”<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>06-19 07:20 UTC</time><div class="ev">Nobitex 第 5 号公告：攻击比最初评估的复杂，但损失没有变化，预计 4 到 5 天内分步恢复服务<a class="ref" href="#s4">[4]</a>。当天在总部开设线下客服，持续 40 多天<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2025-06-24</time><div class="ev">第 6 号公告给出三步计划：登录时重新验证身份，然后恢复账户访问，再先开放提现、后开放交易和充值<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>06-25 至 06-28</time><div class="ev">TRM 统计服务从 6 月 25 日起分步恢复<a class="ref" href="#s15">[15]</a>。按 6 月 29 日的第 7 号公告，重新验证身份已开始，钱包访问从前一天起按现货钱包优先逐步开放；旧充值地址全部作废，往旧地址充值可能永久丢失<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>06-30 至 07-02</time><div class="ev">USDT/托曼、BTC/USDT 市场先对部分用户预开盘；7 月 1 日起开放比特币和 BNB Smart Chain 提币，7 月 2 日里亚尔充提对全部已验证用户开放<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2025-06-30</time><div class="ev">TRM 和 Elliptic 发布对泄露源代码和 Nobitex 链上活动的分析<a class="ref" href="#s14">[14]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2025-07-09</time><div class="ev">TRM 统计全部交易功能恢复<a class="ref" href="#s15">[15]</a>。7 月 12 日的第 9 号公告称所有币种的交易、里亚尔充提和大部分币种充提已恢复，安卓版同步上线<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2025-07-17</time><div class="ev">TRM 称 7 月初流入 Nobitex 的交易量同比下降 70% 以上；事发后，一批此前从未动用过的矿池收益钱包开始把资金归集到 Nobitex 的新热钱包<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2026-02-28</time><div class="ev">美国和以色列空袭伊朗后，TRM 观察到 Nobitex 把超过 3,500 万美元从热钱包转入冷钱包，判断为常规资金调度<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="key"><time>2026-06-02</time><div class="ev">OFAC 把 Nobitex、Wallex、Bitpin、Ramzinex 和 Nobitex 的四名高管列入 SDN 名单。公告提到董事长 Amir Hossein Rad 在 2025 年 6 月被黑后帮助 Nobitex 重建运营<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def"><time>2026-07-27</time><div class="ev">Nobitex 发文回顾事件，称攻击利用了服务器管理接口 IPMI 的零日漏洞，此后全部硬件已更换，热钱包资产比例降到 5% 以下<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2026-07-30</time><div class="ev">Nobitex 发文称 2025 年底主要业务指标已恢复 80% 以上，并介绍了一份储备证明<a class="ref" href="#s7">[7]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起事件要分成两个问题来看。一是攻击者怎样获得了转出资金的能力，这部分没有经过独立核实的技术细节，只有几方的说法。二是钱转出去以后为什么谁也动不了，这部分可以从地址的生成规则直接推出来。</p>
+        <h3>热钱包是怎样失守的</h3>
+        <p>热钱包为了随时处理提现，私钥或签名能力放在联网的服务器上，谁控制了这些服务器，谁就能签名转账。关于攻击者怎样走到这一步，公开材料里有以下几种说法：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th>说法</th><th>性质</th></tr></thead>
+            <tbody>
+              <tr><td>Nobitex 2026 年报告<a class="ref" href="#s6">[6]</a></td><td>攻击经过数月准备；攻击者利用服务器管理技术和 IPMI 配置中的零日漏洞取得深层访问，再修改配置、切断基础设施团队对部分系统的访问，然后攻击热钱包管理系统</td><td>受害方单方面说法，没有公开技术细节</td></tr>
+              <tr><td>TRM 对泄露代码的分析<a class="ref" href="#s14">[14]</a></td><td>冷热钱包分布在不同内部服务上，但按内网 IP 路由，这留下了一个弱点：攻击者一旦进入，可能在环境之间横向移动；开发分支把主加密密钥放在环境变量里，非生产环境暴露明文凭据和 Telegram 机器人令牌，这些问题“很可能”促成了这次深度入侵</td><td>依据泄露材料的推断</td></tr>
+              <tr><td>Hudson Rock<a class="ref" href="#s18">[18]</a></td><td>两名有服务器权限的员工的电脑分别在 2023 年 9 月和 2024 年 9 月感染窃密木马，内部管理系统、Jira 和邮件服务器的凭据外泄</td><td>来源自己说“可能”提供了入口</td></tr>
+              <tr><td>Halborn<a class="ref" href="#s19">[19]</a></td><td>私钥被不安全地存放在遭入侵的系统上</td><td>“据信”，没有给出依据</td></tr>
+              <tr><td>Cyvers（经 Cointelegraph）<a class="ref" href="#s9">[9]</a></td><td>访问控制的严重失效，使攻击者得以进入内部系统，清空多条链上的热钱包</td><td>事发当天的初步判断</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>这些说法并不互相排斥，可能是同一条攻击链上的不同环节：凭据或漏洞负责进门，内网路由负责移动，最后抵达签名环境。公开材料不足以判断真正的起点在哪里，Nobitex 也没有发布包含技术细节的事故报告。</p>
+        <p>IPMI 值得单独说明。它运行在服务器主板上的基板管理控制器（BMC）里，供管理员远程开关机、重装系统、打开控制台。美国 CISA 2013 年的警告指出，IPMI 提供的是“可以绕过操作系统控制”的底层访问，攻击者可以借此重启机器、安装新系统、读取数据，相当于拿到了物理接触权限，而且 BMC 是否被攻破几乎没有工具能监测<a class="ref" href="#s27">[27]</a>。如果 Nobitex 的说法属实，攻击者是从操作系统之下拿到控制权的，运行在系统里的安全软件看不到这一层。</p>
+        <div class="note">
+          <span class="h">对开发者来说的要点</span>
+          <p>只要签名能力和业务服务器在同一个可以被攻破的信任域里，上面哪条路走通，终点都一样。把签名放进独立的信任域（HSM 或 MPC 协签方），由它自己执行限额、地址白名单、陌生地址延迟放行等策略，服务器即使被完全控制，攻击者也只能在策略允许的范围内转钱。公开材料没有说明 Nobitex 的热钱包当时有没有这类策略；它在 2026 年的报告中说，事后已把热钱包里的资产比例降到 5% 以下<a class="ref" href="#s6">[6]</a>。</p>
+        </div>
+        <h3>为什么这些地址无人能动用</h3>
+        <p>按 TRON 开发者文档，一个 TRON 地址分三步算出：随机生成 32 字节的私钥；用 secp256k1 椭圆曲线算出公钥；对公钥的 64 字节坐标做 Keccak-256 哈希，取最后 20 字节，在前面加上版本字节 0x41。这 21 字节再经 Base58Check 编码，就是钱包里常见的以“T”开头的 34 位地址<a class="ref" href="#s25">[25]</a>。比特币和狗狗币的普通地址也是“版本字节 + 20 字节公钥哈希 + Base58Check”的结构，只是哈希用的是 SHA-256 加 RIPEMD-160<a class="ref" href="#s26">[26]</a>。</p>
+        <p>这条链上的每一步都只能正向算：从私钥算公钥、从公钥算哈希都很快，反过来分别是椭圆曲线离散对数问题和哈希原像问题，都没有可行的解法。要花掉一个地址上的钱，必须用对应的私钥签名。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 390" role="img" aria-labelledby="nbx-addr-t nbx-addr-d">
+            <title id="nbx-addr-t">正常生成的地址与“写”出来的地址</title>
+            <desc id="nbx-addr-d">上排是正常地址的生成过程：私钥、公钥、20 字节哈希、地址，每一步只能正向计算。下排是本案地址的构造方式：先写出想要的字符，补位后解码，得到的 20 字节不来自任何公钥，再重算校验和得到格式合法的地址。从这 20 字节反推公钥需要求哈希原像，约 2 的 160 次方次尝试，不可行。底部说明暴力枚举私钥找出这种地址需要 10 的 44 次方次以上尝试。</desc>
+            <defs>
+              <marker id="nbx-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="nbx-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="20" y="34">正常生成的地址：从私钥一路正向算出来</text>
+            <rect class="d-box" x="20" y="50" width="150" height="64" rx="4"/>
+            <text class="d-t b" x="95" y="76" text-anchor="middle">私钥</text>
+            <text class="d-t s" x="95" y="98" text-anchor="middle">随机 32 字节</text>
+            <rect class="d-box" x="215" y="50" width="150" height="64" rx="4"/>
+            <text class="d-t b" x="290" y="76" text-anchor="middle">公钥</text>
+            <text class="d-t s" x="290" y="98" text-anchor="middle">secp256k1 椭圆曲线</text>
+            <rect class="d-box" x="410" y="50" width="150" height="64" rx="4"/>
+            <text class="d-t b" x="485" y="76" text-anchor="middle">20 字节哈希</text>
+            <text class="d-t s" x="485" y="98" text-anchor="middle">Keccak-256 后 20 字节</text>
+            <rect class="d-box" x="605" y="50" width="155" height="64" rx="4"/>
+            <text class="d-t b" x="682" y="76" text-anchor="middle">地址 T…</text>
+            <text class="d-t s" x="682" y="98" text-anchor="middle">0x41 + Base58Check</text>
+            <line class="d-line" x1="170" y1="82" x2="213" y2="82" marker-end="url(#nbx-ah)"/>
+            <line class="d-line" x1="365" y1="82" x2="408" y2="82" marker-end="url(#nbx-ah)"/>
+            <line class="d-line" x1="560" y1="82" x2="603" y2="82" marker-end="url(#nbx-ah)"/>
+            <text class="d-t s" x="20" y="140">每一步都能正向快速计算；</text>
+            <text class="d-t s" x="20" y="160">反推是离散对数与哈希原像问题，没有可行方法。</text>
+            <line class="d-line atk dash" x1="485" y1="214" x2="485" y2="118" marker-end="url(#nbx-ah-atk)"/>
+            <text class="d-t s atk halo" x="497" y="156">反推：找一个能算出这 20 字节的公钥</text>
+            <text class="d-t s atk halo" x="497" y="176">即哈希原像，约 2^160 次尝试</text>
+            <text class="d-t b" x="20" y="200">本案的地址：先写字符，再补校验和</text>
+            <rect class="d-box" x="20" y="214" width="150" height="76" rx="4"/>
+            <text class="d-t b" x="95" y="242" text-anchor="middle">写出想要的字符</text>
+            <text class="d-t s m" x="95" y="264" text-anchor="middle">TKFuckiRGC…</text>
+            <rect class="d-box" x="215" y="214" width="150" height="76" rx="4"/>
+            <text class="d-t b" x="290" y="242" text-anchor="middle">补位后解码</text>
+            <text class="d-t s" x="290" y="264" text-anchor="middle">Base58 → 25 字节</text>
+            <rect class="d-box doubt" x="410" y="214" width="150" height="76" rx="4"/>
+            <text class="d-t b" x="485" y="238" text-anchor="middle">前 21 字节</text>
+            <text class="d-t s" x="485" y="258" text-anchor="middle">版本 + 20 字节</text>
+            <text class="d-t s atk" x="485" y="277" text-anchor="middle">不来自任何公钥</text>
+            <rect class="d-box atk" x="605" y="214" width="155" height="76" rx="4"/>
+            <text class="d-t b" x="682" y="238" text-anchor="middle">重算校验和</text>
+            <text class="d-t s m" x="682" y="258" text-anchor="middle">TKFuckiRGCTerrori</text>
+            <text class="d-t s m" x="682" y="276" text-anchor="middle">stsNoBiTEXy2r7mNX</text>
+            <line class="d-line atk" x1="170" y1="252" x2="213" y2="252" marker-end="url(#nbx-ah-atk)"/>
+            <line class="d-line atk" x1="365" y1="252" x2="408" y2="252" marker-end="url(#nbx-ah-atk)"/>
+            <line class="d-line atk" x1="560" y1="252" x2="603" y2="252" marker-end="url(#nbx-ah-atk)"/>
+            <rect class="d-box soft" x="20" y="312" width="740" height="62" rx="4"/>
+            <text class="d-t s" x="36" y="337">另一条路是暴力枚举私钥，直到算出的地址恰好以这串字符开头。</text>
+            <text class="d-t s" x="36" y="360">每多指定 1 位，平均尝试次数乘以约 58；本案指定了 25 位以上，约需 10^44 次以上。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：上排是正常地址的生成路径，下排是本案地址的构造方式。下排得到的地址格式和校验和都正确，链上节点照常接受转账，但它中间那 20 字节不是从任何公钥算出来的。</figcaption>
+        </figure>
+        <p>普通的靓号地址是“碰”出来的：不停地随机生成私钥、算出地址，直到地址开头恰好是想要的几个字符，得到的地址自带私钥。代价随指定的位数指数上升，Base58 有 58 个符号，每多指定一位，平均尝试次数就乘以约 58。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>指定的字符数</th><th class="n">平均尝试次数</th><th class="n">单块 GPU 约需</th></tr></thead>
+            <tbody>
+              <tr><td>6 位</td><td class="n">8.9 × 10<sup>11</sup></td><td class="n">约 7 分钟</td></tr>
+              <tr><td>7 位</td><td class="n">5.2 × 10<sup>13</sup></td><td class="n">约 7 小时</td></tr>
+              <tr><td>8 位</td><td class="n">3.0 × 10<sup>15</sup></td><td class="n">约 17 天</td></tr>
+              <tr><td>10 位</td><td class="n">约 1.0 × 10<sup>19</sup></td><td class="n">约 160 年</td></tr>
+              <tr><td>25 位（本案的量级）</td><td class="n">约 2.8 × 10<sup>45</sup></td><td class="n">约 4.5 × 10<sup>28</sup> 年</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="code-cap">6 到 8 位的难度取自比特币 wiki 的 Vanitygen 页面（区分大小写、以小写字母开头的前缀），10 位和 25 位按每位乘以 58 外推；速度按该页列出的 RTX 2080 SUPER 约每秒 20 亿次计算<a class="ref" href="#s26">[26]</a>。只是数量级估算。</p>
+        <p>本案的地址在固定的首字符之后指定了 25 位以上：Tron 地址在“TK”之后还有 25 位，比特币和狗狗币地址在首字符之后是 27 位。即使动用 10 亿块这样的 GPU，也要约 4.5 × 10<sup>19</sup> 年，是宇宙年龄的 30 亿倍以上。Elliptic 联合创始人 Tom Robinson 对《卫报》的说法是，用现有计算机算出与这些地址匹配的密钥对需要“数十亿年”<a class="ref" href="#s11">[11]</a>。</p>
+        <p>所以这些地址只能是直接“写”出来的。Base58Check 地址的结构是“版本字节 + 20 字节数据 + 4 字节校验和”，钱包和节点只检查格式和校验和，不会、也无法检查那 20 字节是否真的来自某个公钥<a class="ref" href="#s26">[26]</a>。把口号写成 Base58 字符，补齐长度后解码，保留前 21 字节，重新计算校验和再编码，就得到一个合法地址。校验和只占最后几位，所以地址看上去是“口号 + 几个随机字符”，和本案的地址一致。</p>
+        <p>这样得到的 20 字节从来没有从任何公钥算出来过。想动用这些钱，得先找到一个哈希恰好等于它的公钥（哈希原像，约 2<sup>160</sup> 次尝试），再从公钥反推私钥，两步都不可行。这是 Elliptic、TRM、Chainalysis 一致认为资金“实际上被烧毁”的依据<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s15">[15]</a>。</p>
+<pre class="code"><code><span class="c"># 示意：拼出一个格式合法、但没有任何私钥对应的 TRON 地址（不是攻击者的代码）</span>
+import hashlib
+B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"   <span class="c"># 没有 0 O I l</span>
+
+def b58decode(s):                    <span class="c"># Base58 字符串 → 25 字节</span>
+    n = 0
+    for ch in s:
+        n = n * 58 + B58.index(ch)
+    return n.to_bytes(25, "big")
+
+def b58encode(b):                    <span class="c"># 25 字节 → Base58（首字节是 0x41，无前导零）</span>
+    n, out = int.from_bytes(b, "big"), ""
+    while n:
+        n, r = divmod(n, 58)
+        out = B58[r] + out
+    return out
+
+def written_address(text):           <span class="c"># text：以 T 开头、不超过约 27 位的 Base58 字符</span>
+    <span class="c"># 用 "1"（代表 0）补到 34 位后解码，只保留版本字节和 20 字节“哈希”</span>
+<span class="bad">    body = b58decode(text.ljust(34, "1"))[:21]   <span class="c"># 这 20 字节不是任何公钥的哈希</span></span>
+    <span class="c"># 重新计算 4 字节校验和，只有末尾几个字符会因此改变</span>
+    check = hashlib.sha256(hashlib.sha256(body).digest()).digest()[:4]
+    return b58encode(body + check)</code></pre>
+        <p class="code-cap">示意代码，按 Base58Check 的定义<a class="ref" href="#s26">[26]</a>和 TRON 的地址格式<a class="ref" href="#s25">[25]</a>写成。本站用一个演示字符串在本地验证过：输出地址的校验和正确，版本字节是 0x41，前 27 位保持不变。这类地址收到的资产无法取回，不要实际使用。</p>
+        <p>地址的写法也受编码限制。Base58 字母表去掉了容易混淆的 0、O、I 和小写 l<a class="ref" href="#s26">[26]</a>，所以大写的“IRGC”写不进地址，口号里用的是“iRGC”和“NoBiTEX”。EVM 地址是 40 位十六进制，只有 0 到 9 和 a 到 f，写不出这句口号；EVM 链上的资产被转到一个几乎全是 f、以“Dead”结尾的地址，Hacken 把 EVM 上的收款地址称为“干净的销毁地址”<a class="ref" href="#s9">[9]</a>。</p>
+        <div class="note doubt">
+          <span class="h">稳定币是个例外</span>
+          <p>Elliptic 指出，被“烧毁”的美元稳定币背后的美元并没有消失，仍在发行方手里<a class="ref" href="#s1">[1]</a>。Hacken 的研究员在事发当天说，唯一可能部分挽回的情况，是 Tether 为被盗的约 5,500 万美元 USDT 重新发行<a class="ref" href="#s9">[9]</a>。这取决于 Tether 是否愿意为一家处于制裁之下的伊朗交易所这样做。本站没有找到 Tether 冻结或重发这部分资金的公开报道。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击者没有公开过技术细节。下面第 1 到 3 步只有 Nobitex 2026 年报告这一个来源<a class="ref" href="#s6">[6]</a>，第 4 步以后来自分析公司的观察和各方的公开声明。</p>
+        <ol class="steps">
+          <li><b>准备</b>Nobitex 称，攻击是数月计划的结果，软件和硬件手段并用。攻击者的基础设施分层部署：一部分服务器在伊朗境内，负责监视和执行命令；另一部分在境外，负责管理和下发破坏性指令。</li>
+          <li><b>取得深层访问</b>攻击者利用服务器管理技术和 IPMI 配置中的零日漏洞，进入系统的深层。</li>
+          <li><b>切断运维，接管热钱包系统</b>攻击者修改服务器和管理配置，切断了 Nobitex 基础设施团队对部分系统的访问，随后攻击热钱包管理系统，开始未经授权的转账。</li>
+          <li><b>多链同时转出</b>德黑兰时间 6 月 18 日约 06:00 起，资产开始流出<a class="ref" href="#s2">[2]</a>。据 Cointelegraph 援引的 ZachXBT 统计和 Tronscan 数据，第一批约 4,900 万美元经 Tron 转入 <span class="addr">TKFuckiRGCTerroristsNoBiTEXy2r7mNX</span>，EVM 链上的资产转入 <span class="addr">0xffFFfFFffFFffFfFffFFfFfFfFFFFfFfFFFFDead</span><a class="ref" href="#s9">[9]</a>；TRM 观察到 Tron 上的转账是分组、结构化进行的<a class="ref" href="#s2">[2]</a>。比特币、狗狗币、XRP、Solana、TON 上的资产也被转走<a class="ref" href="#s3">[3]</a><a class="ref" href="#s10">[10]</a>。</li>
+          <li><b>宣布负责并预告泄密</b>Predatory Sparrow 在 X 上发帖，称攻击是因为 Nobitex 是“政权资助恐怖主义和违反制裁的关键工具”，24 小时后将公开源代码和内网资料<a class="ref" href="#s12">[12]</a>。</li>
+          <li><b>公开源代码</b>6 月 19 日，该组织发帖称“时间到了，完整源代码见下方链接”。CoinDesk 报道，泄露内容包括区块链脚本、内部隐私设置和服务器清单<a class="ref" href="#s10">[10]</a>。TRM 6 月 30 日的文章说泄露发生在攻击<span class="dispute">两天后</span><a class="ref" href="#s14">[14]</a>，与当时的报道相差一天，本站以 CoinDesk 当天的报道为准。</li>
+        </ol>
+        <div class="compare">
+          <div>
+            <h4>Predatory Sparrow 的说法</h4>
+            <p>Nobitex 是伊朗政权资助恐怖主义、违反制裁的工具；“在 Nobitex 工作可以抵兵役”，说明政权依赖它。它警告用户“在为时已晚之前采取行动”<a class="ref" href="#s9">[9]</a>。此前对 Bank Sepah 的攻击，理由也是该行规避国际制裁、为政权的代理人和导弹、核项目提供资金<a class="ref" href="#s13">[13]</a>。</p>
+          </div>
+          <div>
+            <h4>Nobitex 的说法</h4>
+            <p>被盗资产被转进“用于烧毁和销毁用户资产”的地址，黑客的目的是“以虚假的借口”损害伊朗民众的安宁和财产；员工构成和多年的经营方式，证明它是不依附于任何一方的独立私营企业<a class="ref" href="#s4">[4]</a>。一年后它把攻击放在以伊冲突的背景下，认为对方还想制造公众不满<a class="ref" href="#s6">[6]</a>。</p>
+          </div>
+        </div>
+        <p>Nobitex 发现入侵后断开了全部服务器，并把剩余热钱包的余额转走<a class="ref" href="#s4">[4]</a>。公开材料没有说明从攻击开始到服务器断网之间隔了多久，也没有说明这段时间里有多少资产已经流出、有多少被抢先转移。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>被转走的总额有几种口径：ZachXBT 早期统计至少 8,170 万美元，只算了 Tron 和 EVM 链<a class="ref" href="#s9">[9]</a>；Elliptic、Chainalysis 说超过 9,000 万美元，TRM 说接近 9,000 万美元<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>；Nobitex 自己的估计是<span class="dispute">约 1 亿美元</span><a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>。美国财政部 2026 年的公告用的是 9,000 万美元<a class="ref" href="#s23">[23]</a>。差别主要来自统计时点、覆盖的链和计价时间，没有一方公布过逐笔明细。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>链</th><th>收款地址（来源中的写法）</th><th>报道的金额</th></tr></thead>
+            <tbody>
+              <tr><td>Tron</td><td><span class="addr">TKFuckiRGCTerroristsNoBiTEXy2r7mNX</span></td><td>第一批约 4,900 万美元<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>EVM 链</td><td><span class="addr">0xffFFfFFffFFffFfFffFFfFfFfFFFFfFfFFFFDead</span></td><td>20 多种代币，金额未单列<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>Bitcoin</td><td><span class="addr">1FuckiRGCTerroristsNoBiTEXXXaovLX</span></td><td>未见公开金额<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>Dogecoin</td><td><span class="addr">DFuckiRGCTerroristsNoBiTEXXXWLW65t</span></td><td>未见公开金额<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>XRP、Solana、TON</td><td>来源没有给出地址</td><td>列在 Chainalysis 的受影响资产中<a class="ref" href="#s3">[3]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>被盗资产里约有 5,500 万美元是 USDT<a class="ref" href="#s9">[9]</a>。事发当天，Cyvers 和 TRM 都报告资金停在最初的收款地址上，没有移动<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。本站没有做链上核对。</p>
+        <h3>三条路径</h3>
+        <ol class="flow">
+          <li class="atk"><b>热钱包管理系统</b>被攻击者控制，覆盖 20 多种代币和多条链</li>
+          <li class="atk"><b>转入写出来的地址</b>Tron、EVM、BTC、DOGE 等</li>
+          <li class="atk"><b>资产留在原地</b>人人可见，无人可用</li>
+        </ol>
+        <ol class="flow">
+          <li class="def"><b>断开全部服务器</b>阻止进一步访问</li>
+          <li class="def"><b>清空剩余热钱包</b>转入新的冷钱包，旧地址全部作废</li>
+          <li class="def"><b>原冷钱包也搬家</b>转入另一套独立的冷钱包结构</li>
+        </ol>
+        <ol class="flow">
+          <li class="def"><b>储备基金</b>Nobitex 称由储备基金和自有资源承担损失</li>
+          <li class="def"><b>BTC 储备</b>手续费换成的比特币和休眠矿池钱包里的资金</li>
+          <li class="ok"><b>用户余额</b>Nobitex 称按记录的余额恢复</li>
+        </ol>
+        <h3>Nobitex 剩下的资产</h3>
+        <p>Arkham 的数据显示，标记为 Nobitex 的钱包总值从 6 月 16 日的 18 亿美元以上降到 6 月 18 日的 9,600 万美元。Cyvers 提醒，Nobitex 经常更换热钱包，有时每周一次，这个数字不等于实际损失<a class="ref" href="#s9">[9]</a>。Nobitex 当天的公告也说，链上余额大幅下降是自己的团队清空热钱包造成的<a class="ref" href="#s4">[4]</a>。按它 2026 年的说法，原本放在冷钱包里的资产虽然没受影响，也被转进另一套独立的冷钱包结构，以防攻击者留有后门<a class="ref" href="#s6">[6]</a>。Chainalysis 当时就观察到大量 BTC 转入新建的冷钱包<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>损失由谁承担</h3>
+        <p>Nobitex 当天表示用户不承担损失，由储备基金承担；Cointelegraph 转引的 X 帖子写的是“保险基金和 Nobitex 的资源”<a class="ref" href="#s4">[4]</a><a class="ref" href="#s9">[9]</a>。TRM 认为它能较快恢复，是因为它习惯把手续费换成比特币作为储备<a class="ref" href="#s15">[15]</a>。TRM 还发现，100 多个在 2021 至 2022 年接收 EMCD、ViaBTC 矿池收益、此前从未动过的钱包，在事发后 10 天内把约 270 万美元归集到 Nobitex 新建的热钱包<a class="ref" href="#s16">[16]</a>。2026 年 Nobitex 称 1 亿美元的损失已经补足，用户资产按账户记录的余额恢复<a class="ref" href="#s6">[6]</a>。补偿资金的来源和明细没有经过独立审计。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>第一次大规模的“销毁式”攻击</h3>
+        <p>Chainalysis 称，这是第一起达到这一规模、完全出于地缘政治目的的攻击<a class="ref" href="#s3">[3]</a>。Elliptic 的 Tom Robinson 说，他不知道此前有比这更大的伊朗交易所被盗案<a class="ref" href="#s12">[12]</a>。此前链上的大额盗窃，包括被官方认定为国家行为的 <a href="2025-bybit.html">Bybit</a> 和 <a href="2022-ronin-bridge.html">Ronin</a>，攻击者都要这笔钱，必须洗钱、变现，防守方因此有追踪、冻结、联系交易所的余地。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th></th><th>以牟利为目的的盗窃</th><th>本案</th></tr></thead>
+            <tbody>
+              <tr><td>资金去向</td><td>拆分、跨链、经混币器和交易所变现</td><td>转入无人掌握私钥的地址，不再移动</td></tr>
+              <tr><td>追踪与冻结</td><td>有机会追回一部分</td><td>没有可追的资金流，只有稳定币发行方理论上能处理</td></tr>
+              <tr><td>损失何时确定</td><td>洗钱完成之前仍有变数</td><td>转账确认的那一刻</td></tr>
+              <tr><td>防守的重点</td><td>事后追踪与事前防护并重</td><td>只能靠事前限额和隔离控制单次损失</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>口号写进了地址，地址和余额永久留在链上，任何人都能在区块浏览器里看到。Elliptic 认为攻击者烧掉资金是为了“向 Nobitex 传递政治信息”<a class="ref" href="#s1">[1]</a>，TRM 的形容是这些钱包“人人可见，无人可用”<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>对普通用户</h3>
+        <p>提现停了近两周，全部交易约三周后才恢复。TRM 记录到，有用户称丢失了资产或至今无法登录账户，也有人抱怨恢复太慢；7 月初流入 Nobitex 的交易量同比下降 70% 以上，流出增加 31%<a class="ref" href="#s15">[15]</a>。TRM 认为这次行动很可能有破坏性目的，限制数百万依赖 Nobitex 的普通伊朗人使用数字金融服务<a class="ref" href="#s15">[15]</a>。事后伊朗央行据报禁止国内交易所在晚 8 点到早 10 点之间交易，TRM 认为这扰乱了市场，加剧了 USDT 价格的波动<a class="ref" href="#s3">[3]</a><a class="ref" href="#s15">[15]</a>。Nobitex 自己的数据是：事发后市场份额短暂下滑，周交易量与币安的比值一度降到零，不到 20 周回到事发前水平，到 2025 年底主要业务指标恢复了 80% 以上<a class="ref" href="#s7">[7]</a>。这些是企业自报的数字。</p>
+        <h3>泄露的代码成了情报</h3>
+        <p>TRM 等分析公司依据泄露的代码得出了几点结论<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>：Nobitex 支持 25 条以上的链；代码里硬编码了 Shetab、PAY.IR、Vandar、IDPay 等伊朗国内支付平台的在用 API 凭据；有 owshen、zpk、incentivized_mixer 等反追踪模块，是否在生产环境启用不清楚；一份题为“Nobitex Privacy”的内部文件写明要规避 FinCEN 和美国链上分析公司的识别。TRM 还称代码里硬编码了给“国家相关实体”的无限制访问权限，相当于允许无令状监控，并且为高价值或有政治背景的用户设了单独的处理逻辑。美国财政部 2026 年的制裁公告也说 Nobitex“据报道”使政府能够无令状监控平民<a class="ref" href="#s23">[23]</a>。</p>
+        <p>这些结论都来自攻击者公布的材料和分析公司的解读，材料的真实性和完整性无法独立核实。Nobitex 在公告中强调自己是独立的私营企业<a class="ref" href="#s4">[4]</a>，本站没有找到它对上述代码分析的逐条回应。</p>
+        <h3>制裁</h3>
+        <p>2026 年 6 月之前，伊朗的加密交易所没有被单独列入 SDN 名单，但按 E.O. 13902 等规定，美国人本来就不能和它们往来<a class="ref" href="#s24">[24]</a>。2026 年 6 月 2 日，OFAC 依据反恐的 E.O. 13224 和针对伊朗金融业的 E.O. 13902 点名 Nobitex，另外三家交易所只依据 E.O. 13902；同时点名的还有董事长 Amir Hossein Rad、现任 CEO Seyed Ali Khoee 和两名出身 Kharrazi 家族的联合创始人<a class="ref" href="#s23">[23]</a>。公告特别提到 Rad 在 2025 年 6 月 18 日的 9,000 万美元被盗事件后帮助 Nobitex 重建运营<a class="ref" href="#s23">[23]</a>。Elliptic 认为，点名之后，继续与这些实体往来的外国金融机构、VASP 和稳定币发行方都面临二级制裁风险<a class="ref" href="#s24">[24]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>当天的止损</h3>
+        <p>按 Nobitex 当天的公告，它做了这些事：数据中心里所有相关服务器断网；全部热钱包余额转到新的安全地址；用户账户数据保存在备份服务器上，恢复后余额不变；从事发最初几分钟起与伊朗网警（FATA）和主管部门保持联系<a class="ref" href="#s4">[4]</a>。它当天发了四份公告，承认责任，承诺全额补偿；据它统计，最初几份公告 48 小时内被浏览 300 多万次<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>分步恢复</h3>
+        <p>Nobitex 说，第一周它按“系统可能大面积被污染”的假设重建：被感染的系统隔离分析，在沙箱里研究攻击者的行为，100% 的硬件换成新设备，服务器架构重新设计；6 月 19 日起在总部开设线下客服，持续 40 多天<a class="ref" href="#s6">[6]</a>。恢复按“先验证、再访问、先提现、后交易”的顺序进行，市场先对部分用户预开盘，以防价格剧烈波动<a class="ref" href="#s5">[5]</a>。TRM 的统计与公告一致：6 月 25 日起分步恢复，7 月 9 日恢复全部交易<a class="ref" href="#s15">[15]</a>。</p>
+        <p>旧的充值地址全部作废。Nobitex 多次提醒，往旧地址充值可能永久丢失，接了矿机或设置了自动提现的用户要立即换地址<a class="ref" href="#s5">[5]</a>。杠杆仓位按 6 月 18 日德黑兰时间零点的指数价格自动平仓，零点之后的成交全部取消；未还的分期免收滞纳金；质押、流动性挖矿和参与池最后一期因服务突然中断没有结算，收益不再发放<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>重建</h3>
+        <p>按 Nobitex 2026 年的报告，事后它部署了 SIEM、EDR 和 SOC，开发流程引入 SecDevOps，地址管理迁到冷钱包基础设施上，热钱包里的资产比例降到 5% 以下，并请外部安全公司做咨询和渗透测试<a class="ref" href="#s6">[6]</a>。它还请一组司法鉴定专家做了储备证明：里亚尔现金是里亚尔负债的 148%，冷热钱包里的加密资产是加密负债的 112%<a class="ref" href="#s7">[7]</a>。报告没有写鉴定日期、方法和负债是否完整，不能等同于独立审计。</p>
+        <h3>归因与法律追究</h3>
+        <p>Predatory Sparrow 自称负责。伊朗方面和以色列媒体都把它与以色列联系在一起，但没有官方确认<a class="ref" href="#s11">[11]</a><a class="ref" href="#s22">[22]</a>。本站没有找到截至 2026 年 10 月与本案有关的逮捕、起诉或法院程序。被转走的资金按事发时 Cyvers 和 TRM 的报告停在收款地址上<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>；按上文的地址构造方式，这些资金被普遍认为永久无法动用。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <p>Nobitex 没有公布技术细节，下图左栏只能依据它自己的说法和 TRM 对泄露材料的分析，右栏是业内通行的做法，不代表 Nobitex 当时一定没有这些措施。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 482" role="img" aria-labelledby="nbx-chain-t nbx-chain-d">
+            <title id="nbx-chain-t">攻击链与本可以拦截的位置</title>
+            <desc id="nbx-chain-d">左栏五步：进入服务器管理层，切断运维并横向移动，接管热钱包管理系统，多链同时转向写出来的地址，次日公开源代码。右栏对应五个拦截点：隔离管理面，网段隔离与最小权限，签名放进独立信任域，流出熔断，密钥不进代码库。</desc>
+            <defs>
+              <marker id="nbx2-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="nbx2-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t b" x="20" y="30">攻击链（据 Nobitex 与 TRM 的说法）</text>
+            <text class="d-t b" x="440" y="30">本可以拦截的位置</text>
+            <rect class="d-box atk" x="20" y="46" width="340" height="70" rx="4"/>
+            <text class="d-t b" x="36" y="74">① 进入服务器管理层</text>
+            <text class="d-t s" x="36" y="98">Nobitex 称：IPMI 零日漏洞，事前准备数月</text>
+            <rect class="d-box def" x="440" y="46" width="320" height="70" rx="4"/>
+            <text class="d-t b" x="456" y="74">隔离管理面</text>
+            <text class="d-t s" x="456" y="98">IPMI/BMC 只接专用管理网，固件及时更新</text>
+            <rect class="d-box atk" x="20" y="134" width="340" height="70" rx="4"/>
+            <text class="d-t b" x="36" y="162">② 切断运维、横向移动</text>
+            <text class="d-t s" x="36" y="186">TRM：内部按 IP 路由，进入后可能在环境间移动</text>
+            <rect class="d-box def" x="440" y="134" width="320" height="70" rx="4"/>
+            <text class="d-t b" x="456" y="162">网段隔离与最小权限</text>
+            <text class="d-t s" x="456" y="186">服务之间也要认证，管理操作异常即告警</text>
+            <rect class="d-box atk" x="20" y="222" width="340" height="70" rx="4"/>
+            <text class="d-t b" x="36" y="250">③ 接管热钱包管理系统</text>
+            <text class="d-t s" x="36" y="274">TRM：开发分支把主加密密钥放在环境变量里</text>
+            <rect class="d-box def" x="440" y="222" width="320" height="70" rx="4"/>
+            <text class="d-t b" x="456" y="250">签名放进独立信任域</text>
+            <text class="d-t s" x="456" y="274">HSM 或 MPC 协签方自己执行限额与白名单</text>
+            <rect class="d-box atk" x="20" y="310" width="340" height="70" rx="4"/>
+            <text class="d-t b" x="36" y="338">④ 多链同时转向写出来的地址</text>
+            <text class="d-t s" x="36" y="362">Tron、EVM、BTC、DOGE 等多条链同时流出</text>
+            <rect class="d-box def" x="440" y="310" width="320" height="70" rx="4"/>
+            <text class="d-t b" x="456" y="338">流出熔断</text>
+            <text class="d-t s" x="456" y="362">陌生地址延迟放行，流出超阈值自动暂停</text>
+            <rect class="d-box atk" x="20" y="398" width="340" height="70" rx="4"/>
+            <text class="d-t b" x="36" y="426">⑤ 次日公开源代码与内部资料</text>
+            <text class="d-t s" x="36" y="450">代码里的凭据与逻辑变成公开情报</text>
+            <rect class="d-box def" x="440" y="398" width="320" height="70" rx="4"/>
+            <text class="d-t b" x="456" y="426">密钥不进代码库</text>
+            <text class="d-t s" x="456" y="450">出事后轮换全部凭据、作废旧地址</text>
+            <line class="d-line atk" x1="190" y1="116" x2="190" y2="132" marker-end="url(#nbx2-ah-atk)"/>
+            <line class="d-line atk" x1="190" y1="204" x2="190" y2="220" marker-end="url(#nbx2-ah-atk)"/>
+            <line class="d-line atk" x1="190" y1="292" x2="190" y2="308" marker-end="url(#nbx2-ah-atk)"/>
+            <line class="d-line atk" x1="190" y1="380" x2="190" y2="396" marker-end="url(#nbx2-ah-atk)"/>
+            <line class="d-line def dash" x1="360" y1="81" x2="438" y2="81" marker-end="url(#nbx2-ah-def)"/>
+            <line class="d-line def dash" x1="360" y1="169" x2="438" y2="169" marker-end="url(#nbx2-ah-def)"/>
+            <line class="d-line def dash" x1="360" y1="257" x2="438" y2="257" marker-end="url(#nbx2-ah-def)"/>
+            <line class="d-line def dash" x1="360" y1="345" x2="438" y2="345" marker-end="url(#nbx2-ah-def)"/>
+            <line class="d-line def dash" x1="360" y1="433" x2="438" y2="433" marker-end="url(#nbx2-ah-def)"/>
+          </svg>
+          </div>
+          <figcaption>图 2：攻击链与对应的拦截点。第 ① 步只有 Nobitex 自己的说法，第 ②③ 步来自 TRM 对泄露材料的分析。右栏任何一项生效，都能挡住攻击、压低损失或减轻泄密的后果。</figcaption>
+        </figure>
+        <div class="note lesson">
+          <span class="h">给交易所和托管平台</span>
+          <ul>
+            <li>把服务器管理面（IPMI/BMC）当作最高等级的资产：不接公网，只对专用管理 IP 和独立网段开放，固件和口令定期更新<a class="ref" href="#s27">[27]</a>。</li>
+            <li>热钱包只放够用的钱，比例要事前定死。Nobitex 是出事以后才把热钱包比例降到 5% 以下的<a class="ref" href="#s6">[6]</a>。</li>
+            <li>签名权放在独立的信任域里，由 HSM 或 MPC 协签方执行限额、白名单和陌生地址延迟，让“服务器失守”不自动等于“资产失守”。</li>
+            <li>密钥和凭据不进代码库，也不放环境变量，用专门的密钥管理系统。TRM 在泄露的代码里看到的恰恰是这些问题<a class="ref" href="#s14">[14]</a>。</li>
+            <li>出事后假设一切都已被污染：换硬件、作废旧地址、轮换全部凭据、重新验证用户。代价很高，Nobitex 在这一步上的做法是对的。</li>
+            <li>有服务器权限的员工，他们的电脑也要纳入管控。窃密木马可以在几年里悄悄收集企业凭据<a class="ref" href="#s18">[18]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给做威胁建模的人</span>
+          <ul>
+            <li>攻击者不一定要钱。身处冲突地区或政治敏感位置的平台，要考虑以销毁和曝光为目的的对手。对这类对手，追踪、冻结、谈判都不起作用，只能事前限制单次最大损失。</li>
+            <li>泄密是第二次打击。源代码、内部文档和用户数据一旦公开，里面的任何秘密都可能被所有人利用，所以要尽量少存数据，并为“假设已泄露”的情况做好准备。</li>
+            <li>一家交易所的用户里往往既有普通居民，也有受制裁的实体，打击平台的后果会同时落到两类人身上。面向用户的应急预案（分步恢复、主动通报、线下客服）和技术恢复同样重要。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Elliptic，《Iranian crypto exchange Nobitex hacked for over $90 million by pro-Israel group》，2025-06-18。<a href="https://www.elliptic.co/blog/iranian-crypto-exchange-nobitex-hacked-for-over-90-million-by-pro-israel-group">elliptic.co</a></li>
+          <li id="s2">TRM Labs，《Iran’s Largest Crypto Exchange Targeted in $90M Hack》，2025-06-18。<a href="https://www.trmlabs.com/resources/blog/irans-largest-crypto-exchange-targeted-in-90m-hack">trmlabs.com</a></li>
+          <li id="s3">Chainalysis，《Nobitex, Sanctions, and The $90 Million Exploit: A Window into Iran’s Largest Crypto Exchange》，2025-06-18。<a href="https://www.chainalysis.com/blog/nobitex-iranian-exchange-exploit-june-2025/">chainalysis.com</a></li>
+          <li id="s4">Nobitex，关于安全事件的第 2 号、第 4 号、第 5 号公告（波斯语），2025-06-18 至 06-19。<a href="https://nobitex.ir/mag/incident-statement-2/">第 2 号</a>　<a href="https://nobitex.ir/mag/incident-statement-4/">第 4 号</a>　<a href="https://nobitex.ir/mag/incident-statement-5/">第 5 号</a></li>
+          <li id="s5">Nobitex，关于恢复服务的第 6 至第 10 号公告（波斯语），2025-06-24 至 07-20。<a href="https://nobitex.ir/mag/incident-statement-6/">第 6 号</a>　<a href="https://nobitex.ir/mag/incident-statement-7/">第 7 号</a>　<a href="https://nobitex.ir/mag/incident-statement-8/">第 8 号</a>　<a href="https://nobitex.ir/mag/incident-statement-9/">第 9 号</a>　<a href="https://nobitex.ir/mag/incident-statement/">第 10 号</a></li>
+          <li id="s6">Nobitex 杂志，《Nobitex 关于 1 亿美元被盗与用户赔偿的最新说明》（波斯语，摘自其 2024–2025 两年报告），2026-07-27。<a href="https://nobitex.ir/mag/nobitex-hack-report-24-25/">nobitex.ir</a></li>
+          <li id="s7">Nobitex 杂志，《Nobitex 重建信任的进展与未来目标》（波斯语，摘自同一报告），2026-07-30。<a href="https://nobitex.ir/mag/rebuilding-trust-in-nobitex-24-25-report/">nobitex.ir</a></li>
+          <li id="s8">Lawrence Abrams，《Pro-Israel hackers hit Iran's Nobitex exchange, burn $90M in crypto》，BleepingComputer，2025-06-18。<a href="https://www.bleepingcomputer.com/news/security/pro-israel-hackers-hit-irans-nobitex-exchange-burn-90m-in-crypto/">bleepingcomputer.com</a></li>
+          <li id="s9">Zoltan Vardai，《Iranian exchange Nobitex hacked for over $81M by Israel-linked hackers》，Cointelegraph，2025-06-18（含 ZachXBT、Cyvers、Hacken 的说法）。<a href="https://cointelegraph.com/news/iranian-crypto-exchange-nobitex-exploited-for-73m-zachxbt">cointelegraph.com</a></li>
+          <li id="s10">Shaurya Malwa，《Iran's Nobitex Source Code Exposed Day After Hackers Steal Tokens Across Bitcoin, EVM, Ripple Networks》，CoinDesk，2025-06-19。<a href="https://www.coindesk.com/markets/2025/06/19/nobitexs-source-code-released-a-day-after-hackers-steal-tokens-across-bitcoin-evm-ripple-networks">coindesk.com</a></li>
+          <li id="s11">Dan Milmo，《Israel-linked group hacks Iranian cryptocurrency exchange in $90m heist》，The Guardian，2025-06-18。<a href="https://www.theguardian.com/technology/2025/jun/18/israel-linked-group-hacks-iranian-cryptocurrency-exchange-in-90m-heist">theguardian.com</a></li>
+          <li id="s12">Matt Kapko，《Iran’s financial sector takes another hit as largest crypto exchange is targeted》，CyberScoop，2025-06-18。<a href="https://cyberscoop.com/iran-nobitex-cyberattack-predatory-sparrow/">cyberscoop.com</a></li>
+          <li id="s13">Matt Kapko，《Iran’s Bank Sepah disrupted by cyberattack claimed by pro-Israel hacktivist group》，CyberScoop，2025-06-17。<a href="https://cyberscoop.com/iran-bank-sepah-cyberattack/">cyberscoop.com</a></li>
+          <li id="s14">TRM Labs，《Inside the Nobitex Breach: What the Leaked Source Code Reveals About Iran’s Crypto Infrastructure》，2025-06-30。<a href="https://www.trmlabs.com/resources/blog/inside-the-nobitex-breach-what-the-leaked-source-code-reveals-about-irans-crypto-infrastructure">trmlabs.com</a></li>
+          <li id="s15">TRM Labs，《Inside the Nobitex Hack: How the Iran-Israel Conflict Exposed Tehran's Grip on Its Crypto Services》，2025-07-17。<a href="https://www.trmlabs.com/resources/blog/inside-the-nobitex-hack-how-the-iran-israel-conflict-exposed-tehrans-grip-on-its-crypto-services">trmlabs.com</a></li>
+          <li id="s16">TRM Labs，《Understanding Nobitex: Iran’s Largest Crypto Exchange》，2026-03-03。<a href="https://www.trmlabs.com/resources/blog/understanding-nobitex-irans-largest-crypto-exchange">trmlabs.com</a></li>
+          <li id="s17">Elliptic，《Inside Nobitex: How Iran’s largest crypto exchange fuels sanctions evasion and illicit finance》，2025-06-30。<a href="https://www.elliptic.co/blog/inside-nobitex-how-irans-largest-crypto-exchange-fuels-sanctions-evasion-and-illicit-finance">elliptic.co</a></li>
+          <li id="s18">Hudson Rock（InfoStealers），《Nobitex Breach: Infostealers Expose Critical Employee Credentials in Latest Crypto Exchange Hack》，2025-06-18。<a href="https://www.infostealers.com/article/nobitex-breach-infostealers-expose-critical-employee-credentials-in-latest-crypto-exchange-hack/">infostealers.com</a></li>
+          <li id="s19">Rob Behnke，《Explained: The Nobitex Hack (June 2025)》，Halborn，2025-06-23。<a href="https://www.halborn.com/blog/post/explained-the-nobitex-hack-june-2025">halborn.com</a></li>
+          <li id="s20">Joe Tidy，《Predatory Sparrow: Who are the hackers who say they started a fire in Iran?》，BBC，2022-07-11。<a href="https://www.bbc.co.uk/news/technology-62072480">bbc.co.uk</a></li>
+          <li id="s21">Check Point Research，《Indra — Hackers Behind Recent Attacks on Iran》，2021-08-14。<a href="https://research.checkpoint.com/2021/indra-hackers-behind-recent-attacks-on-iran/">research.checkpoint.com</a></li>
+          <li id="s22">Al Jazeera，《Iran points at Israeli-linked group as cyberattack disrupts fuel network》，2023-12-18。<a href="https://www.aljazeera.com/news/2023/12/18/iran-says-cyberattack-disrupts-petrol-stations-across-country">aljazeera.com</a></li>
+          <li id="s23">美国财政部，《Economic Fury Targets Iran’s Largest Digital Asset Exchange for Terror Finance and Sanctions Evasion》（sb0519），2026-06-02。<a href="https://home.treasury.gov/news/press-releases/sb0519">home.treasury.gov</a></li>
+          <li id="s24">Elliptic，《OFAC sanctions Nobitex and three other Iranian cryptoasset exchanges》，2026-06-03。<a href="https://www.elliptic.co/insights/ofac-sanctions-nobitex-and-three-other-iranian-cryptoasset-exchanges/">elliptic.co</a></li>
+          <li id="s25">TRON 开发者文档，《Account》（地址格式与密钥对）。<a href="https://developers.tron.network/docs/account">developers.tron.network</a></li>
+          <li id="s26">Bitcoin Wiki，《Base58Check encoding》与《Vanitygen》（难度与速度表）。<a href="https://en.bitcoin.it/wiki/Base58Check_encoding">Base58Check</a>　<a href="https://en.bitcoin.it/wiki/Vanitygen">Vanitygen</a></li>
+          <li id="s27">美国 CISA，《Risks of Using the Intelligent Platform Management Interface (IPMI)》（TA13-207A），2013-07-26。<a href="https://www.cisa.gov/news-events/alerts/2013/07/26/risks-using-intelligent-platform-management-interface-ipmi">cisa.gov</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

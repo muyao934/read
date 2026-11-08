@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shapella：以太坊开放质押提款｜区块链大事记</title>
+<meta name="description" content="2023 年 4 月以太坊 Shapella 升级开放质押提款的经过：提款为什么没有和合并一起上线，0x00 提款凭证的一次性改动，共识层算出、执行层记账的推送式提款，退出队列的限速，开放前的抛售担忧和实际结果，以及对 stETH 等流动性质押的影响。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-shapella">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Shapella：以太坊开放质押提款</h1>
+    <p class="lede">2023 年 4 月 12 日，以太坊的 Shapella 升级生效，Beacon Chain 上质押的 ETH 第一次可以取出。提款不用发交易：共识层每个区块挑出一批验证者，执行层直接给他们的地址加余额；全额退出要按协议的上限排队。开放前，市场担心大量 ETH 被取出抛售；开放后排队提款的 ETH 有四成多属于被迫关停美国质押业务的 Kraken，不到一个月，新存入质押的 ETH 就第一次超过了取出的。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Shapella 是执行层升级 Shanghai 和共识层升级 Capella 的合称，2023 年 4 月 12 日 22:27:35 UTC 在 epoch 194048 同时激活<a class="ref" href="#s1">[1]</a><a class="ref" href="#s14">[14]</a>。核心是 EIP-4895：提款由共识层算出，作为“系统级操作”放进执行层的区块，只给收款地址加余额，不花 gas<a class="ref" href="#s6">[6]</a>。余额超过 32 ETH 的部分被自动扫出，叫部分提款；验证者退出后取回全部余额，叫全额提款。早期用 BLS 凭证存款的验证者，要先签一条 BLSToExecutionChange 消息，把凭证改成执行层地址<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>退出要排队。按当时约 56.7 万个验证者算，每个 epoch 最多退出 8 个，每天约 1,800 个、57,600 ETH<a class="ref" href="#s12">[12]</a><a class="ref" href="#s26">[26]</a><a class="ref" href="#s31">[31]</a>。升级前质押的 ETH 超过 1,800 万枚，有分析师预计会出现抛售<a class="ref" href="#s28">[28]</a>。开放后不到五天，累计提款超过 100 万 ETH；退出队列最长排到约 17 天，Nansen 统计排队的 ETH 约 43% 属于 Kraken；同期 ETH 自 2022 年 8 月以来第一次升过 2,000 美元<a class="ref" href="#s26">[26]</a><a class="ref" href="#s32">[32]</a><a class="ref" href="#s33">[33]</a><a class="ref" href="#s35">[35]</a>。</p>
+        <p>5 月 9 日，CoinDesk 引述 Nansen 的数据说，Shapella 以来新存入的质押第一次超过提款<a class="ref" href="#s37">[37]</a>。5 月 15 日 Lido V2 上线，stETH 可以在协议里按 1:1 换回 ETH<a class="ref" href="#s24">[24]</a>；在此之前它只能在二级市场交易，2022 年 6 月一度跌到 0.92 ETH<a class="ref" href="#s23">[23]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>只进不出的两年多</h3>
+        <p>Beacon Chain 2020 年 12 月 1 日开始出块<a class="ref" href="#s14">[14]</a>。此后两年多，存进去的 ETH 和共识层发的奖励都取不出来；ethereum.org 写道，Shanghai/Capella 升级之前，质押的 ETH 不能使用，也不能取回<a class="ref" href="#s15">[15]</a>。2022 年 9 月合并以后，验证者出块收到的优先费和 MEV 打到自己指定的收款地址，马上可以用，协议发的奖励仍锁在 Beacon Chain 上<a class="ref" href="#s16">[16]</a>。合并本身的经过见 <a href="2022-the-merge.html">The Merge</a>。</p>
+        <p>每个验证者有一个提款凭证字段，第一个字节是前缀，当时只有 0x00 和 0x01 两种，由存款工具在存款时写入<a class="ref" href="#s5">[5]</a>。0x00 后面是一个 BLS 公钥的哈希，0x01 后面是一个执行层地址<a class="ref" href="#s12">[12]</a>。存款时用 --eth1_withdrawal_address 填了地址的，一开始就是 0x01；没填的是 0x00，要等升级后再改<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>为什么没有和合并一起上线</h3>
+        <p>ethereum.org 的说法是，为了简化合并、集中精力完成向权益证明的切换，合并没有带上提款等功能，提款留给 Shanghai/Capella<a class="ref" href="#s16">[16]</a>。执行层的提款规范 EIP-4895 由 Alex Stokes 和 Danny Ryan 在 2022 年 3 月提出，比合并早半年<a class="ref" href="#s6">[6]</a>。</p>
+        <p>合并之后，核心开发者在 All Core Devs 会议上讨论下一次升级带什么。2022 年 11 月 24 日的会议纪要写道，大家有强烈（也许是一致）的共识：提款要尽快上线，如果再加别的东西，对 Shanghai 的拖延要尽量小，3 月带着提款分叉是可行的<a class="ref" href="#s17">[17]</a>。12 月 8 日定下范围：提款、PUSH0、Warm COINBASE、限制和计量 initcode，另加 5 个 EOF 相关的 EIP，前提是不明显拖慢提款；为此在 2023 年 1 月 5 日和 19 日设两道关口，赶不上就把 EOF 移出<a class="ref" href="#s18">[18]</a>。1 月 5 日，客户端团队同意 EOF 不进 Shanghai，保持范围精简，以免推迟提款<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>锁定期里的折价</h3>
+        <p>想要流动性的人可以通过 Lido 这类服务质押，换到一个可以交易的凭证，例如 stETH。CNBC 2022 年 6 月写道，stETH 更像一张借条：要等升级完成才能按 1:1 换回 ETH，在那之前价格由二级市场决定。<a href="2022-terra-ust.html">Terra 崩盘</a>后 stETH 开始低于 ETH，一个月后 Celsius 暂停提款，折价进一步扩大；6 月 17 日 stETH 最低跌到 0.92 ETH，折价 8%。当时 CNBC 估计，合并之后还要 6 到 12 个月才能赎回<a class="ref" href="#s23">[23]</a>。</p>
+        <p>CNBC 同时报道，Celsius 持有超过 4 亿美元的 stETH，链上记录显示三箭资本在卖出手里的 stETH<a class="ref" href="#s23">[23]</a>。两家后来的经过见 <a href="2022-celsius.html">Celsius 冻结提款与破产</a>和<a href="2022-three-arrows.html">三箭资本破产（含 Voyager）</a>。</p>
+        <h3>Kraken 的和解</h3>
+        <p>2023 年 2 月 9 日，Kraken 的两家子公司与 SEC 和解<a class="ref" href="#s21">[21]</a>。SEC 宣布，它们支付 3,000 万美元，并立即停止通过质押服务或质押计划发售证券；SEC 称 Kraken 宣传的年化回报最高 21%<a class="ref" href="#s20">[20]</a>。CNBC 引述 SEC 的数字说，超过 13.5 万名美国用户注册了 Kraken 的质押平台<a class="ref" href="#s22">[22]</a>。Kraken 当天宣布为美国客户自动解除质押，ETH 例外，要等 Shanghai 升级之后才能解除<a class="ref" href="#s21">[21]</a>。也就是说，提款一开放，这部分 ETH 就要从 Beacon Chain 退出。</p>
+        <h3>开放前的预期</h3>
+        <p>升级当天，路透社引述 Dune Analytics 的数据说，质押的 ETH 约占总量的 15%，价值约 310 亿美元；德意志银行的分析师写道，这笔此前无法变现的投资如果被立即卖出，可能带来很大的下跌压力<a class="ref" href="#s25">[25]</a>。CoinDesk 采访的分析师看法不一：Wave Digital Assets 的 Henry Elder 预计提款队列会立刻排满、持续几周，市场可能下跌；FundStrat 的 Sean Farrell 则认为，市场对提款带来的供给压力过于悲观<a class="ref" href="#s28">[28]</a>。Nansen 给出的数字小得多：升级前已经退出、等着提款的验证者约 4,000 个，共 141,499 ETH，不到验证者和质押总量的 1%，最大的一家是 Huobi，约 4 万 ETH<a class="ref" href="#s29">[29]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="def">监管与执法</span><span>协议与其他事件（粗体为主网的关键节点）</span></p>
+        <ol class="timeline">
+          <li><time>2020-12-01</time><div class="ev">Beacon Chain 开始出块，质押的 ETH 只能存不能取<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2022-03-10</time><div class="ev">EIP-4895《Beacon chain push withdrawals as operations》提出<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2022-06-17</time><div class="ev">stETH 最低跌到 0.92 ETH，对 ETH 折价 8%<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="key"><time>2022-09-15</time><div class="ev">合并完成，提款留给下一次升级<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2022-11-24</time><div class="ev">All Core Devs 会议：提款要尽快上线<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2022-12-08</time><div class="ev">定下 Shanghai 的范围，给 EOF 设两道关口<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2023-01-05</time><div class="ev">EOF 移出 Shanghai<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2023-02-09</time><div class="ev">Kraken 与 SEC 和解，停止为美国客户提供质押<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2023-02-10</time><div class="ev">以太坊基金会宣布 Zhejiang 测试网已上线，可以测试提款<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2023-02-28</time><div class="ev">Sepolia 在 epoch 56832 激活 Shapella<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2023-03-14</time><div class="ev">Goerli 在 epoch 162304 激活 Shapella，这是主网之前最后一个测试网<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2023-03-28</time><div class="ev">以太坊基金会公布主网的 epoch 和客户端版本<a class="ref" href="#s1">[1]</a>；Lido 公布用 NFT 表示提款申请的设计<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li class="key"><time>2023-04-12</time><div class="ev">主网在 epoch 194048 激活 Shapella，约 15 分钟后最终确认<a class="ref" href="#s1">[1]</a><a class="ref" href="#s30">[30]</a>。</div></li>
+          <li><time>2023-04-13</time><div class="ev">ETH 自 2022 年 8 月以来第一次升过 2,000 美元；Nansen 称约 14 亿美元的 ETH 在提款队列里<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li><time>2023-04-16</time><div class="ev">累计提款超过 100 万 ETH<a class="ref" href="#s32">[32]</a>。</div></li>
+          <li><time>2023-04-18</time><div class="ev">28,436 个验证者排队退出，要等 17 天以上，约 43% 的 ETH 属于 Kraken<a class="ref" href="#s33">[33]</a>。</div></li>
+          <li><time>2023-05-03</time><div class="ev">退出队列缩短到约 9 天<a class="ref" href="#s35">[35]</a>。</div></li>
+          <li><time>2023-05-09</time><div class="ev">Shapella 以来新存入的质押第一次超过提款，质押总量超过 1,900 万 ETH<a class="ref" href="#s37">[37]</a>。</div></li>
+          <li><time>2023-05-15</time><div class="ev">Lido V2 上线，stETH 可以按 1:1 换回 ETH<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="key"><time>2024-03-13</time><div class="ev">Dencun 升级，EIP-7514 把每个 epoch 新激活的验证者限制在 8 个<a class="ref" href="#s9">[9]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="key"><time>2025-05-07</time><div class="ev">Pectra 升级，最大有效余额提高到 2,048 ETH，执行层地址可以发起退出<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-10-02</time><div class="ev">MetaMask 撤出验证者后，退出队列达到约 85.1 万 ETH<a class="ref" href="#s41">[41]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>Shapella 同时改了两层。执行层的 Shanghai 包括 EIP-3651、EIP-3855、EIP-3860、EIP-4895 和 EIP-6049；共识层的 Capella 加入全额和部分提款、BLSToExecutionChange 消息，并把原来单一的历史根换成独立的状态和区块历史累加器；两层之间的 Engine API 新增 WithdrawalV1 结构<a class="ref" href="#s1">[1]</a>。下面先讲提款，其余改动放在本节最后。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 460" role="img" aria-labelledby="shap-flow-t shap-flow-d">
+            <title id="shap-flow-t">一笔提款怎样从共识层到执行层</title>
+            <desc id="shap-flow-d">提款凭证前缀为 0x00 的验证者，凭证里是 BLS 公钥的哈希，要先签一次 BLSToExecutionChange，改成 0x01 的执行层地址。之后共识层在每个区块里从上次停下的位置往后检查验证者，最多查 16,384 个：有效余额已满 32 ETH 且余额超出的，取走超出部分，是部分提款；已到可提款 epoch 的，取走全部余额，是全额提款。每个区块最多 16 笔，写进执行层区块的 withdrawals 列表，执行层直接给地址加余额，不花 gas，不执行合约代码。提议者放进区块的列表必须和每个节点自己算出的完全一致。</desc>
+            <defs>
+              <marker id="shap-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box" x="40" y="20" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="200" y="44" text-anchor="middle">0x00：BLS 公钥的哈希</text>
+            <text class="d-t s" x="200" y="65" text-anchor="middle">签一次 BLSToExecutionChange</text>
+            <rect class="d-box" x="420" y="20" width="320" height="58" rx="3"/>
+            <text class="d-t b" x="580" y="44" text-anchor="middle">0x01：执行层地址</text>
+            <text class="d-t s" x="580" y="65" text-anchor="middle">以后的提款都打到这个地址</text>
+            <rect class="d-box" x="190" y="128" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="152" text-anchor="middle">共识层：每个区块扫一段验证者</text>
+            <text class="d-t s" x="380" y="173" text-anchor="middle">从上次停下的位置往后，最多查 16,384 个</text>
+            <rect class="d-box" x="40" y="236" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="210" y="260" text-anchor="middle">部分提款：余额超过 32 ETH</text>
+            <text class="d-t s" x="210" y="281" text-anchor="middle">有效余额已满 32 ETH，取走超出的部分</text>
+            <rect class="d-box" x="400" y="236" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="260" text-anchor="middle">全额提款：已到可提款的 epoch</text>
+            <text class="d-t s" x="570" y="281" text-anchor="middle">验证者已退出，取走全部余额</text>
+            <rect class="d-box" x="190" y="344" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="368" text-anchor="middle">执行层：区块里的 withdrawals 列表</text>
+            <text class="d-t s" x="380" y="389" text-anchor="middle">每块最多 16 笔，以 Gwei 计，直接加余额，不花 gas</text>
+            <text class="d-t s" x="380" y="440" text-anchor="middle">提议者放进区块的列表必须和每个节点自己算出的完全一致，否则区块无效</text>
+            <line class="d-line" x1="362" y1="49" x2="416" y2="49" marker-end="url(#shap-ah)"/>
+            <line class="d-line" x1="535" y1="78" x2="440" y2="124" marker-end="url(#shap-ah)"/>
+            <line class="d-line" x1="320" y1="186" x2="225" y2="232" marker-end="url(#shap-ah)"/>
+            <line class="d-line" x1="440" y1="186" x2="535" y2="232" marker-end="url(#shap-ah)"/>
+            <line class="d-line" x1="225" y1="294" x2="320" y2="340" marker-end="url(#shap-ah)"/>
+            <line class="d-line" x1="535" y1="294" x2="440" y2="340" marker-end="url(#shap-ah)"/>
+          </svg>
+          </div>
+          <figcaption>提款的路径。凭证前缀据提款 FAQ 和 Capella 规范<a class="ref" href="#s5">[5]</a><a class="ref" href="#s12">[12]</a>，扫描规则和上限据 consensus-specs v1.3.0-rc.5<a class="ref" href="#s12">[12]</a>，执行层的处理据 EIP-4895<a class="ref" href="#s6">[6]</a>。</figcaption>
+        </figure>
+        <h3>第一步：把 0x00 改成 0x01</h3>
+        <p>Capella 只给凭证前缀为 0x01 的验证者提款。凭证还是 0x00 的验证者，要用当初的 BLS 提款密钥签一条 BLSToExecutionChange 消息，广播到共识层<a class="ref" href="#s5">[5]</a>。共识层处理这条消息时核对三件事：凭证前缀确实是 0x00，消息里 BLS 公钥的哈希和凭证对得上，签名有效；然后把凭证改写成 0x01 加 11 个零字节再加新地址<a class="ref" href="#s12">[12]</a>：</p>
+<pre class="code"><code><span class="c"># specs/capella/beacon-chain.md，process_bls_to_execution_change（节选）</span>
+    validator = state.validators[address_change.validator_index]
+
+    assert validator.withdrawal_credentials[:1] == BLS_WITHDRAWAL_PREFIX
+    assert validator.withdrawal_credentials[1:] == hash(address_change.from_bls_pubkey)[1:]
+    <span class="c"># ……用 from_bls_pubkey 核对消息的签名（略）</span>
+
+    validator.withdrawal_credentials = (
+        ETH1_ADDRESS_WITHDRAWAL_PREFIX
+        + b'\x00' * 11
+        + address_change.to_execution_address
+    )</code></pre>
+        <p class="code-cap">出处：ethereum/consensus-specs v1.3.0-rc.5（以太坊基金会主网公告列出的版本；specs/capella/beacon-chain.md 与 2023 年 4 月 18 日发布的 v1.3.0 相同），节选<a class="ref" href="#s12">[12]</a>。英文为原文，中文注释为本站所加。</p>
+        <p>前缀改成 0x01 以后，第一条断言再也通不过，所以这个改动只能做一次，也撤不回。提款 FAQ 提醒，这是一次性的操作，要极其小心<a class="ref" href="#s5">[5]</a>。每个区块最多放 16 条这类消息<a class="ref" href="#s12">[12]</a>，按每天 7,200 个区块算，全网每天最多约 11.5 万个验证者能改完。CoinDesk 自己 2020 年起运行的验证者“Zelda”当时还没有设提款地址：升级两天后，工程主管用官方的 staking deposit CLI 生成这条消息并广播；他按以太坊基金会 FAQ 的说法预计要两三天，实际一小时就生效了<a class="ref" href="#s34">[34]</a>。</p>
+        <h3>第二步：共识层算出，执行层记账</h3>
+        <p>EIP-4895 把提款设计成“推送”式：提款从共识层的队列里取出后，执行层必须在同一个区块里处理，不需要用户发交易<a class="ref" href="#s6">[6]</a>。每笔提款是一个新类型的“操作”，只有四个字段：全局递增的序号、验证者编号、收款地址和以 Gwei 计的金额；区块头新增 withdrawals_root，承诺这份列表。执行层处理完区块里的用户交易后，按列表给地址加余额。这个变化无条件发生，不能失败，也没有 gas 成本<a class="ref" href="#s6">[6]</a>。</p>
+        <p>EIP 的理由部分解释了这几个选择。提款由系统发起，单独成一类对象，和一般的 EVM 执行隔开，测试和安全审查都更简单。不收 gas，是因为共识层限制了每个区块的提款数量，额外开销很小，载荷约增加 1%。只改余额、不执行合约代码，是因为更一般的处理会带来失败的风险，让 Beacon Chain 的记账变复杂。EIP 也写明，从共识层向执行层转 ETH 在 EVM 里没有先例，需要非常严格的安全审查<a class="ref" href="#s6">[6]</a>。客户端里的实现很短：</p>
+<pre class="code"><code><span class="c">// consensus/beacon/consensus.go，Finalize（节选）</span>
+<span class="c">// Withdrawals processing.</span>
+for _, w := range withdrawals {
+    <span class="c">// Convert amount from gwei to wei.</span>
+    amount := new(big.Int).SetUint64(w.Amount)
+    amount = amount.Mul(amount, big.NewInt(params.GWei))
+    state.AddBalance(w.Address, amount)
+}
+<span class="c">// No block reward which is issued by consensus layer instead.</span></code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.11.5（2023 年 3 月 21 日发布，以太坊基金会主网公告列出的版本），consensus/beacon/consensus.go，节选<a class="ref" href="#s13">[13]</a>。除第一行外，注释为原文。</p>
+        <p>这里只调用 AddBalance，收款地址即使是合约，也不会执行它的代码。提款 FAQ 的说法是，提款到账算余额增加，不算交易<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>扫谁、扫多少</h3>
+        <p>提哪些验证者、提多少，完全由共识层决定。每个区块的提议者从上一个区块停下的位置往后逐个检查验证者<a class="ref" href="#s12">[12]</a>，查到最后一个再回到 0 号，不跳过任何人<a class="ref" href="#s15">[15]</a>。被检查的验证者凭证必须是 0x01，然后分两种情况：已到可提款的 epoch，取走全部余额，是全额提款；有效余额已满 32 ETH、实际余额超过 32 ETH，只取走超出的部分，是部分提款<a class="ref" href="#s12">[12]</a>：</p>
+<pre class="code"><code><span class="c"># specs/capella/beacon-chain.md（节选）</span>
+<span class="c"># is_fully_withdrawable_validator：全额提款的条件</span>
+    return (
+        has_eth1_withdrawal_credential(validator)
+        and validator.withdrawable_epoch &lt;= epoch
+        and balance &gt; 0
+    )
+
+<span class="c"># is_partially_withdrawable_validator：部分提款的条件</span>
+    has_max_effective_balance = validator.effective_balance == MAX_EFFECTIVE_BALANCE
+    has_excess_balance = balance &gt; MAX_EFFECTIVE_BALANCE
+    return (has_eth1_withdrawal_credential(validator)
+            and has_max_effective_balance and has_excess_balance)
+
+<span class="c"># get_expected_withdrawals：从上次停下的位置往后扫（节选）</span>
+    validator_index = state.next_withdrawal_validator_index
+    bound = min(len(state.validators), MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP)
+    for _ in range(bound):
+        <span class="c"># ……符合上面条件的，加入一笔全额或部分提款</span>
+        if len(withdrawals) == MAX_WITHDRAWALS_PER_PAYLOAD:
+            break
+        validator_index = ValidatorIndex((validator_index + 1) % len(state.validators))
+
+<span class="c"># process_withdrawals：区块里的提款必须和算出的逐笔相同</span>
+    for expected_withdrawal, withdrawal in zip(expected_withdrawals, payload.withdrawals):
+        assert withdrawal == expected_withdrawal
+        decrease_balance(state, withdrawal.validator_index, withdrawal.amount)
+
+<span class="c"># presets/mainnet/capella.yaml</span>
+MAX_WITHDRAWALS_PER_PAYLOAD: 16
+MAX_VALIDATORS_PER_WITHDRAWALS_SWEEP: 16384</code></pre>
+        <p class="code-cap">出处：ethereum/consensus-specs v1.3.0-rc.5，specs/capella/beacon-chain.md、presets/mainnet/capella.yaml，节选<a class="ref" href="#s12">[12]</a>。英文为原文，中文注释为本站所加；is_partially_withdrawable_validator 的 return 原文是一行，这里折成两行。</p>
+        <p>所以一个区块最多 16 笔提款，最多查 16,384 个验证者。提议者放进区块的列表必须和每个节点自己算出的逐笔相同，否则区块无效<a class="ref" href="#s12">[12]</a>。部分提款因此是全自动的，凭证改成 0x01 以后，奖励会被定期扫出；全额提款不会自动发生，验证者要先用签名密钥发出退出消息，进入退出队列<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>退出要排队</h3>
+        <p>退出和进场受同一个上限约束：每个 epoch 能退出的验证者数，取 4 和活跃验证者数除以 65,536 两者中较大的一个<a class="ref" href="#s9">[9]</a><a class="ref" href="#s12">[12]</a>。2023 年 4 月约有 56.7 万个验证者<a class="ref" href="#s31">[31]</a>，上限是每个 epoch 8 个。Nansen 的分析师 Martin Lee 对路透社说，这相当于每天约 1,800 个验证者、57,600 ETH，当时约 1.15 亿美元；限速出于安全考虑，如果没有上限、大多数验证者同时退出，网络会容易受到攻击<a class="ref" href="#s26">[26]</a>。ethereum.org 的说法是，每天最多约 0.33% 的质押 ETH 能退出，这既防止集体出逃，也防止攻击者在协议执行罚没之前把犯规验证者的余额退出取走<a class="ref" href="#s16">[16]</a>。</p>
+        <p>从决定退出到拿回全部余额，要经过几段等待<a class="ref" href="#s12">[12]</a>：</p>
+        <ol class="steps">
+          <li><b>激活满 256 个 epoch</b>验证者激活后至少要过 256 个 epoch（约 27 小时）才能发出退出消息。</li>
+          <li><b>排进退出队列</b>退出的 epoch 至少是当前 epoch 加 5；每个 epoch 的名额排满了就往后顺延。2023 年 4 月中旬，这一段要等两周以上<a class="ref" href="#s31">[31]</a><a class="ref" href="#s33">[33]</a>。</li>
+          <li><b>再等 256 个 epoch</b>退出之后，还要过 256 个 epoch（约 27 小时）才到可提款的 epoch。</li>
+          <li><b>等扫描轮到自己</b>到了可提款的 epoch，下一次扫描经过这个验证者时，全部余额打到 0x01 地址。</li>
+        </ol>
+        <p>Zelda 走完了这几段。CoinDesk 记录：发出退出请求时是 epoch 194,506，Lighthouse 显示退出 epoch 是 196,690，可提款 epoch 是 196,946，两者正好相差 256；从请求到退出约 9.7 天<a class="ref" href="#s34">[34]</a>。据 beaconcha.in，Zelda 4 月 24 日退出，25 日可以提款<a class="ref" href="#s35">[35]</a>。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>限制</th><th>主网取值</th><th>按 2023 年 4 月约 56.7 万个验证者推算</th></tr></thead>
+          <tbody>
+            <tr><td>每个区块的提款</td><td>最多 16 笔，最多查 16,384 个验证者</td><td>每天最多约 11.5 万笔</td></tr>
+            <tr><td>每个区块的凭证改动消息</td><td>最多 16 条</td><td>每天最多约 11.5 万个验证者</td></tr>
+            <tr><td>每个 epoch 退出的验证者</td><td>4 和活跃验证者数 ÷ 65,536 取大</td><td>8 个；每天约 1,800 个、57,600 ETH</td></tr>
+            <tr><td>激活到可以退出</td><td>256 个 epoch</td><td>约 27 小时</td></tr>
+            <tr><td>退出到可以提款</td><td>256 个 epoch</td><td>约 27 小时</td></tr>
+          </tbody>
+        </table></div>
+        <p class="code-cap">取值据 consensus-specs v1.3.0-rc.5 的主网预设和配置<a class="ref" href="#s12">[12]</a>；第三列按每天 7,200 个 slot、225 个 epoch 推算，每天约 1,800 个验证者与 Nansen 的说法一致<a class="ref" href="#s26">[26]</a>。</p>
+        <div class="note doubt"><span class="h">扫一轮要几天</span><p>以太坊基金会的提款 FAQ 写道，按当时的设计，部分提款平均每周扫一轮<a class="ref" href="#s5">[5]</a>；ethereum.org 现在的写法是每隔几天<a class="ref" href="#s15">[15]</a>。按规范推算：每个 slot 都出块、每块凑满 16 笔时，每天约 11.5 万笔，56.7 万个验证者都符合条件的话，扫一轮约 4.9 天。不符合条件的验证者会被跳过、不占名额，符合条件的越少，一轮越快；漏块越多，一轮越慢。这是本站的推算，本页没有找到可以引用的链上统计。</p></div>
+        <h3>同一次升级里的其他改动</h3>
+        <p>Shanghai 另外四项改动都很小<a class="ref" href="#s1">[1]</a>。EIP-3651 让 COINBASE 地址在交易开始时就是“热”的<a class="ref" href="#s14">[14]</a>；EIP-3855 新增 PUSH0（0x5f），把常数 0 压栈<a class="ref" href="#s7">[7]</a>；EIP-3860 给 initcode 设了 49,152 字节的上限，每 32 字节收 2 gas<a class="ref" href="#s8">[8]</a>；EIP-6049 只是宣布弃用 SELFDESTRUCT，这次升级里它的行为没有变<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>三个测试网</h3>
+        <p>2023 年 2 月 10 日，以太坊基金会的 Danny Ryan 写道，Shapella 进入上线前的最后阶段：Zhejiang 测试网已经上线，质押者和用户可以先在上面测试；长期运行的公共测试网里，Sepolia 第一个升级<a class="ref" href="#s4">[4]</a>。提款 FAQ 写道，公共测试网升级之前，还会先跑开发网和主网的影子分叉<a class="ref" href="#s5">[5]</a>。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>网络</th><th>激活时间（UTC）</th><th>epoch</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>Sepolia</td><td>2023 年 2 月 28 日 04:04:48</td><td>56832</td><td>第一个升级的长期公共测试网<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a></td></tr>
+            <tr><td>Goerli</td><td>2023 年 3 月 14 日 22:25:36</td><td>162304</td><td>公告称 Sepolia 过渡顺利，Goerli 预计是主网之前最后一个测试网<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>主网</td><td>2023 年 4 月 12 日 22:27:35</td><td>194048</td><td>公告称 Goerli 过渡顺利<a class="ref" href="#s1">[1]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p class="code-cap">三个时间与 go-ethereum v1.11.5 里各网络的 ShanghaiTime 一致<a class="ref" href="#s13">[13]</a>。</p>
+        <p>3 月 28 日的主网公告列出了各客户端可以用于升级的版本，提醒 Erigon v2.41.0 有问题、不能用于这次升级，并宣布 4 月 5 日之前针对 Shapella 的漏洞赏金翻倍。公告也写明，通过交易所、钱包或硬件钱包持有 ETH 的普通用户什么都不用做<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>激活当晚</h3>
+        <p>4 月 12 日 22:27:35 UTC，Capella 和 Shanghai 同时激活，对应区块 17,034,870、slot 6,209,536，当时 ETH 约 1,917 美元<a class="ref" href="#s14">[14]</a>。CoinDesk 报道，升级约在 22:42 UTC 被最终确认；激活约半小时后，已经处理了约 285 笔提款，共约 5,413 ETH<a class="ref" href="#s30">[30]</a>。Binance 发推说升级已经完成，ETH 等代币的充提恢复<a class="ref" href="#s25">[25]</a>。</p>
+        <h3>退出队列越排越长</h3>
+        <p>4 月 13 日，CoinDesk 引述 Rated 的数据：约 1.7 万个验证者在等全额提款，约 28.5 万个在等部分提款；全网约 56.7 万个验证者，等全额提款的约占 4%。提款处理只用到了容量的 55.4%，退出要等约 14 天，比升级前不少分析师估计的“几小时到几天”长得多<a class="ref" href="#s31">[31]</a>。同一天，路透社引述 Nansen 说，约 14 亿美元的 ETH 卡在提款队列里，积压可能要几周才能清完<a class="ref" href="#s26">[26]</a>。</p>
+        <p>4 月 18 日，Nansen 统计排队退出的验证者有 28,436 个，占全部 575,359 个的约 5%，要等 17 天以上<a class="ref" href="#s33">[33]</a>。此后队列逐渐缩短。5 月 3 日，CoinDesk 报道提款队列约 9 天，最长时是 17 天<a class="ref" href="#s35">[35]</a>。</p>
+        <div class="note doubt"><span class="h">几处数字对不上</span><p>同一天的排队规模，各家说法不同：4 月 13 日，Rated 和以太坊基金会资助的 Metrika 都说约 1.7 万个验证者在等全额提款，Nansen 说约 2.2 万个<a class="ref" href="#s31">[31]</a>；有的按验证者个数统计，有的按金额，不能互相换算。升级当天 CoinDesk 的同一篇文章写质押的 ETH 超过 1,800 万枚，又写约 300 亿美元，按文中约 1,875 美元的价格，1,800 万枚超过 330 亿美元<a class="ref" href="#s28">[28]</a>；路透社引述 Dune Analytics 写约 310 亿美元<a class="ref" href="#s25">[25]</a>。CoinDesk 的两篇文章对 Zelda 发出请求的日期也有两种写法，一篇写升级两天后的 4 月 14 日，另一篇写 4 月 13 日上午<a class="ref" href="#s34">[34]</a><a class="ref" href="#s35">[35]</a>。本页照原文分别列出。</p></div>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>交易所</h3>
+        <p>Kraken 按和解的安排为美国客户解除 ETH 质押<a class="ref" href="#s21">[21]</a>。4 月 18 日，Nansen 统计排队退出的 ETH 约 43% 属于 Kraken<a class="ref" href="#s33">[33]</a>。Binance 宣布 4 月 19 日起用户可以取回质押产品里的 ETH，处理可能要“15 天到几周”；它说因为以太坊网络的处理能力有限，会给每个用户设每日赎回额度<a class="ref" href="#s26">[26]</a>。</p>
+        <h3>Lido：申请和领取两步</h3>
+        <p>按锁仓总值计最大的 DeFi 协议 Lido 在 3 月 28 日公布了提款的设计：分申请和领取两步，用户申请后得到一个代表这笔申请的 NFT，领取 ETH 时 NFT 被销毁；这个 NFT 可以转让，在二级市场出售时 Lido 不收版税<a class="ref" href="#s27">[27]</a>。5 月 15 日，链上投票通过后 Lido V2 在主网上线，用户可以销毁 stETH，按 1:1 退出；上线前做过 Sigma Prime、ChainSecurity 等多家机构的审计<a class="ref" href="#s24">[24]</a>。拿到 ETH 要多久，取决于 Beacon Chain 的退出队列：CoinDesk 引述 Lido 的博文说，队列为空时大多数用户约一天能拿到，当时 Rated 的数据显示，验证者退出加提款最长要 5 天 14 小时<a class="ref" href="#s39">[39]</a>。</p>
+        <h3>较小的质押服务</h3>
+        <p>DL News 引述 DefiLlama 的数据：到 5 月 19 日为止的一个月里，经 Rocket Pool 和 Frax Ether 质押的 ETH 各增加约 38%，Lido 只增加约 5%；按金额算，Lido 这一个月的新增存款仍超过 6 亿美元，多于 Rocket Pool 的 4.6 亿美元和 Frax Ether 的 1.4 亿美元，Lido 约占全部质押 ETH 的 30%。Rocket Pool 把增长归功于 Atlas 升级：运营者只拿出 8 ETH 就能运行一个验证者，其余 24 ETH 由协议补足。以太坊基金会的研究员 Domothy 对 DL News 说，希望 Lido 开放提款后，用户分散到其他质押池或自己质押<a class="ref" href="#s40">[40]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>价格没有按担心的方向走</h3>
+        <p>4 月 13 日，ETH 自 2022 年 8 月以来第一次升过 2,000 美元<a class="ref" href="#s26">[26]</a>。4 月 16 日晚，累计提款超过 100 万 ETH，分成约 47.8 万笔，同一时间 ETH 升到 11 个月来的高点。CoinDesk 写道，这让 Shapella 成为利空事件的担心落空；此前 JP Morgan 曾预计，“陷入困境的机构”会卖出质押的 ETH<a class="ref" href="#s32">[32]</a>。价格同时受整个市场影响，本页没有找到把这段涨幅和提款直接联系起来的研究，只记录时间上的先后。</p>
+        <h3>存款反超提款</h3>
+        <p>5 月 9 日，CoinDesk 引述 Nansen 的数据说，这一周存入质押的 ETH 超过 20 万枚，是 Shapella 以来存款第一次超过提款，质押总量超过 1,900 万枚，约占流通量的 15%<a class="ref" href="#s37">[37]</a>。进场队列随之拉长：5 月 15 日，近 5 万个验证者排队等待激活，要等约 640 小时，约 26 天；退出却只要不到一分钟。CoinDesk 认为，需求可能主要来自不想卖出 ETH、想拿约 5% 年化收益的大户<a class="ref" href="#s38">[38]</a>。</p>
+        <h3>质押从交易所流向去中心化协议</h3>
+        <p>升级前，Henry Elder 预计提款主要来自两类人：早期自己质押、想换成流动性质押的人，以及早期用大服务商、想换到小服务商以促进去中心化的人<a class="ref" href="#s28">[28]</a>。开放后头三周的数据和这个方向一致：CoinDesk 引述 Dune Analytics 的看板，自 4 月 12 日起，Coinbase 的质押平台净流出约 3.67 亿美元的 ETH，Binance 约 3.4 亿美元，存款增加最多的是 Frax Finance 和 Rocket Pool<a class="ref" href="#s36">[36]</a>。</p>
+        <h3>流动性质押有了兑付通道</h3>
+        <p>开放提款之前，stETH 换回 ETH 只能靠二级市场，2022 年 6 月折价一度到 8%<a class="ref" href="#s23">[23]</a>。Lido V2 以后，stETH 可以在协议里按 1:1 赎回，等待时间取决于 Beacon Chain 的退出队列；Lido 称这次升级让它在以太坊上的功能完整了<a class="ref" href="#s24">[24]</a><a class="ref" href="#s39">[39]</a>。</p>
+        <div class="note doubt"><span class="h">折价收窄了多少</span><p>常见的说法是，开放提款后 stETH 的折价明显收窄。本页读到的资料只能证实兑付通道已经开通，没有找到注明来源和日期的折价数据，所以不写具体数字。</p></div>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>EIP-7514：给进场限速</h3>
+        <p>Shapella 之后，进场和退出仍共用同一个随验证者总数增长的上限。2023 年 9 月提出的 EIP-7514 写道，如果进场队列一直排满，质押的 ETH 到 2024 年 5 月会占总供应量的 50%；它把每个 epoch 最多激活的验证者固定为 8 个，让验证者集合从指数增长变成线性增长。EIP 也承认，这打破了进场和退出两个队列的对称：进场有了固定上限，退出没有<a class="ref" href="#s9">[9]</a>。这项改动随 2024 年 3 月 13 日的 Dencun 升级上线<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>Pectra：验证者可以更大，执行层可以发起退出</h3>
+        <p>2025 年 5 月 7 日的 Pectra 升级又改了两处<a class="ref" href="#s14">[14]</a>。EIP-7251 把单个验证者的最大有效余额从 32 ETH 提高到 2,048 ETH，最低仍是 32 ETH，大的节点运营者可以把多个验证者合并，自己质押的人可以让奖励复利；进场和退出的上限也改成按余额计算，不再按验证者个数<a class="ref" href="#s10">[10]</a>。ethereum.org 现在把验证者分成两类：传统型自动扫出超过 32 ETH 的部分，复利型只自动扫出超过 2,048 ETH 的部分，低于这个数的要从执行层手动发起，并且要付 gas<a class="ref" href="#s15">[15]</a>。</p>
+        <p>EIP-7002 补上了 Shapella 留下的另一个缺口。验证者有两把钥匙：签名密钥一直在线，做日常的验证工作；提款凭证可以离线保管，它才是质押的 ETH 真正的主人。原来只有签名密钥能发起退出，签名密钥和提款凭证分属两方时，资金的主人不能自己决定退出<a class="ref" href="#s11">[11]</a>。Pectra 以后，0x01 凭证对应的执行层地址也能发起退出和部分提款<a class="ref" href="#s11">[11]</a><a class="ref" href="#s14">[14]</a>。</p>
+        <h3>队列仍会排长</h3>
+        <p>退出限速一直在起作用。CoinDesk 报道，2026 年 9 月底，MetaMask 在一次安全事件后开始撤出验证者，等待退出的 ETH 三天里涨了五倍多，10 月 2 日约 85.1 万 ETH，约占 4,360 万质押 ETH 的 2%；10 月 5 日仍有约 78.6 万 ETH 在排队，预计要等近 14 天。MetaMask 称没有发现钱包或客户资金受到影响<a class="ref" href="#s41">[41]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>大升级只带必须的东西。合并没有捎上提款<a class="ref" href="#s16">[16]</a>；为了不推迟提款，核心开发者又把 EOF 移出了 Shanghai<a class="ref" href="#s19">[19]</a>。</li>
+            <li>系统发起的资金变动和用户交易分开。EIP-4895 的提款只改余额、不执行代码、不会失败，测试和审查都更简单<a class="ref" href="#s6">[6]</a>。</li>
+            <li>出口要限速。退出上限防止集体出逃，也给罚没留出执行的时间<a class="ref" href="#s16">[16]</a>；进场的固定上限是后来用 EIP-7514 补上的<a class="ref" href="#s9">[9]</a>。</li>
+            <li>不可逆的操作先演练。BLSToExecutionChange 只能做一次<a class="ref" href="#s12">[12]</a>，Zhejiang、Sepolia、Goerli 都给了质押者先试的机会<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给质押者和质押服务商</span>
+          <ul>
+            <li>改凭证前核对地址。改成 0x01 以后，以后的提款都打到这个地址，撤不回<a class="ref" href="#s5">[5]</a><a class="ref" href="#s12">[12]</a>。</li>
+            <li>“可以提款”不等于马上到账。2023 年 4 月退出最长要排约 17 天<a class="ref" href="#s35">[35]</a>，2026 年 10 月又要排近两周<a class="ref" href="#s41">[41]</a>。</li>
+            <li>托管关系里要想清楚谁能发起退出。EIP-7002 之前，只有签名密钥能退出，持有提款凭证的人做不了主<a class="ref" href="#s11">[11]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给持有流动性质押凭证的人</span>
+          <ul>
+            <li>没有兑付通道时，凭证的价格全靠二级市场。2022 年 6 月 stETH 一度只值 0.92 ETH<a class="ref" href="#s23">[23]</a>。</li>
+            <li>有了兑付通道，速度仍受 Beacon Chain 退出队列的限制<a class="ref" href="#s39">[39]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">以太坊基金会博客（Protocol Support Team），《Mainnet Shapella Announcement》，2023-03-28。<a href="https://blog.ethereum.org/2023/03/28/shapella-mainnet-announcement">blog.ethereum.org</a></li>
+          <li id="s2">以太坊基金会博客（Protocol Support Team），《Sepolia Shapella Announcement》，2023-02-21。<a href="https://blog.ethereum.org/2023/02/21/sepolia-shapella-announcement">blog.ethereum.org</a></li>
+          <li id="s3">以太坊基金会博客（Protocol Support Team），《Goerli Shapella Announcement》，2023-03-08。<a href="https://blog.ethereum.org/2023/03/08/goerli-shapella-announcement">blog.ethereum.org</a></li>
+          <li id="s4">以太坊基金会博客（Danny Ryan），《Finalized no. 38》，2023-02-10。<a href="https://blog.ethereum.org/2023/02/10/finalized-no-38">blog.ethereum.org</a></li>
+          <li id="s5">Ethereum Staking Launchpad，《ETH Withdrawals FAQ》，2026 年 11 月查阅。<a href="https://notes.ethereum.org/@launchpad/withdrawals-faq">notes.ethereum.org</a></li>
+          <li id="s6">Alex Stokes、Danny Ryan，EIP-4895《Beacon chain push withdrawals as operations》，2022-03-10 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-4895">eips.ethereum.org</a></li>
+          <li id="s7">Alex Beregszaszi、Hugo De la cruz、Paweł Bylica，EIP-3855《PUSH0 instruction》，2021-02-19 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-3855">eips.ethereum.org</a></li>
+          <li id="s8">Martin Holst Swende、Paweł Bylica、Alex Beregszaszi 等，EIP-3860《Limit and meter initcode》，2021-07-16 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-3860">eips.ethereum.org</a></li>
+          <li id="s9">dapplion、Tim Beiko，EIP-7514《Add Max Epoch Churn Limit》，2023-09-07 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-7514">eips.ethereum.org</a></li>
+          <li id="s10">mike（michaelneuder）、Francesco（fradamt）、dapplion、Mikhail（mkalinin）等，EIP-7251《Increase the MAX_EFFECTIVE_BALANCE》，2023-06-28 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-7251">eips.ethereum.org</a></li>
+          <li id="s11">Danny Ryan、Mikhail Kalinin、Ansgar Dietrichs 等，EIP-7002《Execution layer triggerable withdrawals》，2023-05-09 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-7002">eips.ethereum.org</a></li>
+          <li id="s12">ethereum/consensus-specs，v1.3.0-rc.5（2023-03-20 发布），specs/capella/beacon-chain.md、specs/phase0/beacon-chain.md、presets/mainnet/capella.yaml、configs/mainnet.yaml。<a href="https://github.com/ethereum/consensus-specs/blob/v1.3.0-rc.5/specs/capella/beacon-chain.md">github.com</a></li>
+          <li id="s13">ethereum/go-ethereum，v1.11.5（2023-03-21 发布），consensus/beacon/consensus.go、params/config.go。<a href="https://github.com/ethereum/go-ethereum/blob/v1.11.5/consensus/beacon/consensus.go">github.com</a></li>
+          <li id="s14">ethereum.org，《Timeline of all Ethereum forks (2014 to present)》，2026 年 11 月查阅。<a href="https://ethereum.org/en/history/">ethereum.org</a></li>
+          <li id="s15">ethereum.org，《Staking withdrawals》，页面更新于 2026-08-17。<a href="https://ethereum.org/en/staking/withdrawals/">ethereum.org</a></li>
+          <li id="s16">ethereum.org，《The Merge》，2026 年 11 月查阅。<a href="https://ethereum.org/en/roadmap/merge/">ethereum.org</a></li>
+          <li id="s17">ethereum/pm，《Ethereum Core Devs Meeting #150 Notes》，2022-11-24。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%20150.md">github.com</a></li>
+          <li id="s18">ethereum/pm，《Ethereum Core Devs Meeting #151》，2022-12-08。纪要标题写 2022 年 11 月 10 日，但前一次会议 #150 在 11 月 24 日，所附 Tim Beiko 决定记录的时间是 12 月 8 日。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%20151.md">github.com</a></li>
+          <li id="s19">ethereum/pm，《Ethereum Core Devs Meeting #152》，2023-01-05。<a href="https://github.com/ethereum/pm/blob/master/AllCoreDevs-EL-Meetings/Meeting%20152.md">github.com</a></li>
+          <li id="s20">美国 SEC，《Kraken to Discontinue Unregistered Offer and Sale of Crypto Asset Staking-As-A-Service Program and Pay $30 Million to Settle SEC Charges》，新闻稿 2023-25，2023-02-09。<a href="https://www.sec.gov/news/press-release/2023-25">sec.gov</a></li>
+          <li id="s21">Kraken 博客，《Kraken to end on-chain staking services for U.S. clients》，2023-02-09。<a href="https://blog.kraken.com/news/settlement">blog.kraken.com</a></li>
+          <li id="s22">CNBC，《Crypto exchange Kraken settles with SEC for $30 million, will close U.S. staking operation》，2023-02-09。<a href="https://www.cnbc.com/2023/02/09/crypto-exchange-kraken-settles-with-sec-over-us-staking-operation.html">cnbc.com</a></li>
+          <li id="s23">CNBC，《What you need to know about staked ether, the token at the center of crypto’s liquidity crisis》，2022-06-20。<a href="https://www.cnbc.com/2022/06/20/what-is-staked-ether-steth-and-why-is-it-causing-havoc-in-crypto.html">cnbc.com</a></li>
+          <li id="s24">Lido 博客，《Lido V2 Mainnet Launch》，2023-05-15。<a href="https://blog.lido.fi/lido-v2-launch/">blog.lido.fi</a></li>
+          <li id="s25">路透社（Tom Wilson、Shivani Tanna），《Ethereum's first major upgrade since Merge is complete- Binance》，2023-04-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20230515040446/https://www.reuters.com/technology/ethereum-upgrade-unlock-over-30-billion-crypto-tokens-2023-04-12/">web.archive.org</a></li>
+          <li id="s26">路透社（Elizabeth Howcroft），《Crypto investors face delays in withdrawing funds after Ethereum upgrade》，2023-04-13（Internet Archive 存档）。<a href="https://web.archive.org/web/20230501231801/https://www.reuters.com/technology/crypto-investors-face-delays-withdrawing-funds-after-ethereum-upgrade-2023-04-13/">web.archive.org</a></li>
+          <li id="s27">CoinDesk，《Ethereum Staking Provider Lido to Incorporate NFTs Into Unstaking Process》，2023-03-28（Internet Archive 存档）。<a href="https://web.archive.org/web/20231206054257/https://www.coindesk.com/tech/2023/03/28/ethereum-staking-provider-lido-to-incorporate-nfts-into-unstaking-process/">web.archive.org</a></li>
+          <li id="s28">CoinDesk，《Crypto Analysts Split on Ether Market Trends After Ethereum’s Shanghai Upgrade》，2023-04-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20231001185033/https://www.coindesk.com/markets/2023/04/12/crypto-analysts-split-on-ether-market-trends-after-ethereums-shanghai-upgrade/">web.archive.org</a></li>
+          <li id="s29">CoinDesk，《Only a Tiny Amount of ETH Is Poised to Be Withdrawn After Ethereum Shanghai Upgrade, Nansen Says》，2023-04-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20231001125432/https://www.coindesk.com/tech/2023/04/12/only-a-tiny-amount-of-eth-is-poised-to-be-withdrawn-after-ethereum-shanghai-upgrade-nansen-says/">web.archive.org</a></li>
+          <li id="s30">CoinDesk，《Ethereum’s Shanghai Upgrade Is Complete, Starting New Era of Staking Withdrawals》，2023-04-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20240105185433/https://www.coindesk.com/tech/2023/04/12/ethereums-shanghai-upgrade-activates-starting-new-era-of-staking-withdrawals/">web.archive.org</a></li>
+          <li id="s31">CoinDesk，《Ethereum Unstaking Requests Pile Up After Shanghai Upgrade, Now at 2-Week Wait》，2023-04-13（Internet Archive 存档）。<a href="https://web.archive.org/web/20231001195626/https://www.coindesk.com/tech/2023/04/13/ethereum-unstaking-requests-pile-up-after-shanghai-upgrade-now-at-2-week-wait/">web.archive.org</a></li>
+          <li id="s32">CoinDesk，《Over 1M Ether Withdrawn After Shapella Fails to Dent Risk Appetite》，2023-04-17（Internet Archive 存档）。<a href="https://web.archive.org/web/20230926134539/https://www.coindesk.com/tech/2023/04/17/over-1m-ether-withdrawn-after-shapella-fails-to-dent-risk-appetite/">web.archive.org</a></li>
+          <li id="s33">CoinDesk，《Ethereum Unstaking Requests Now Face About a 17-Day Wait After Shanghai Upgrade》，2023-04-18（Internet Archive 存档）。<a href="https://web.archive.org/web/20240105185412/https://www.coindesk.com/tech/2023/04/18/ethereum-unstaking-requests-now-face-about-a-17-day-wait/">web.archive.org</a></li>
+          <li id="s34">CoinDesk，《CoinDesk Winds Down Ethereum Validator ‘Zelda,’ and We Now Wait to Get Money Back》，2023-04-19（Internet Archive 存档）。<a href="https://web.archive.org/web/20240224014510/https://www.coindesk.com/tech/2023/04/19/coindesk-winds-down-validator-zelda-as-ethereum-enables-staking-withdrawals/">web.archive.org</a></li>
+          <li id="s35">CoinDesk，《CoinDesk Validator ‘Zelda’ Successfully Exits Ethereum Blockchain as Staked ETH Withdrawal Queue Shrinks to 9 Days》，2023-05-03（Internet Archive 存档）。<a href="https://web.archive.org/web/20240622103359/https://www.coindesk.com/tech/2023/05/03/coindesk-validator-zelda-successfully-exits-ethereum-as-withdrawal-queue-shrinks-to-9-days/">web.archive.org</a></li>
+          <li id="s36">CoinDesk，《Ether (ETH) Stakers Flee Crypto Exchanges Binance, Coinbase as Rocket Pool, Frax Finance Gain Deposits》，2023-05-03（Internet Archive 存档）。<a href="https://web.archive.org/web/20231201044243/https://www.coindesk.com/markets/2023/05/03/binance-coinbase-endure-700m-in-staked-ether-outflows-as-decentralized-liquid-staking-protocols-gain/">web.archive.org</a></li>
+          <li id="s37">CoinDesk，《ETH Staking Deposits Outpace Withdrawals for First Time Since Shanghai Upgrade》，2023-05-09（Internet Archive 存档）。<a href="https://web.archive.org/web/20240225110054/https://www.coindesk.com/tech/2023/05/09/ether-staking-deposits-top-withdrawals-for-first-time-since-shapella-upgrade/">web.archive.org</a></li>
+          <li id="s38">CoinDesk，《Strong Demand for ETH Staking Leads to Near Month Long Wait for Yield Hunters》，2023-05-15（Internet Archive 存档）。<a href="https://web.archive.org/web/20231209105230/https://www.coindesk.com/tech/2023/05/15/ether-holders-embrace-near-month-long-wait-for-staking-eth/">web.archive.org</a></li>
+          <li id="s39">CoinDesk，《Liquid Staking Leader Lido Upgrades to Second Version on Ethereum》，2023-05-15（Internet Archive 存档）。<a href="https://web.archive.org/web/20230926132707/https://www.coindesk.com/tech/2023/05/15/liquid-staking-leader-lido-upgrades-to-second-version-on-ethereum/">web.archive.org</a></li>
+          <li id="s40">DL News（Tim Craig），《Ether staking surge helps small players chip at Lido’s dominance: ‘A good thing’ for DeFi》，2023-05-19。<a href="https://www.dlnews.com/articles/defi/rocket-pool-frax-ether-outpace-lido-since-shapella/">dlnews.com</a></li>
+          <li id="s41">CoinDesk（Shaurya Malwa），《Ethereum staking exit queue jumps fivefold as holders face a two-week wait》，2026-10-05（Internet Archive 存档）。<a href="https://web.archive.org/web/20261012092541/https://www.coindesk.com/tech/2026/10/05/ethereum-has-a-25-day-wait-to-start-staking-with-nearly-1-5-million-eth-in-line">web.archive.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

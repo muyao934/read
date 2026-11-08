@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drift Protocol 被盗 2.85 亿美元｜区块链被盗事件编年史</title>
+<meta name="description" content="2026 年 Solana 永续合约交易所 Drift 被盗的完整经过：半年线下社会工程、durable nonce 预签名、零时间锁多签、伪造抵押品 CVT，以及 Circle 冻结之争、Tether 救助和 DFX 恢复代币。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2026-drift-protocol">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2026 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Drift Protocol 被盗 2.85 亿美元</h1>
+    <p class="lede">2026 年 4 月 1 日，两笔相隔一秒的预签名交易把 Drift Protocol 的管理员权限交给了攻击者。攻击者随即把自己发行、几乎没有流动性的代币设成抵押品，借空了金库里约 2.85 亿美元的真实资产。程序没有漏洞，签名也是安全委员会成员亲手签的：攻击者冒充一家量化交易公司，在多国行业会议上和 Drift 贡献者当面往来了近半年。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Drift 是 Solana 上最大的去中心化永续合约交易所，协议的管理权限由一个“安全委员会”（Security Council）多签掌握。攻击者没有偷私钥，也没有找代码漏洞，而是让多签成员在看似例行的交易上签了字。这些交易用 Solana 的 durable nonce 机制构造，签名不会过期；里面藏着转移管理员权限的授权。被盗前几天，Drift 刚把安全委员会迁移到 5 人中任 2 人即可执行、没有时间锁的新多签。</p>
+        <p>4 月 1 日 16:05:18（UTC），攻击者提交第一笔预签名交易，提议把管理员权限转给自己的地址；一秒后第二笔交易完成批准和执行<a class="ref" href="#s11">[11]</a>。拿到权限后，攻击者把 3 月 12 日部署、靠自买自卖做出约 1 美元“价格”的 CVT 代币设为抵押品，放开提现限额，存入约 5 亿枚 CVT，借走 JLP、USDC、SOL、cbBTC 等 19 种真实资产<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。TRM 统计其中 31 笔提现在约 12 分钟内完成<a class="ref" href="#s8">[8]</a>。</p>
+        <p>赃款被换成 USDC，经 Circle 的跨链协议 CCTP 转到以太坊，再换成约 13 万枚 ETH。Circle 在这几个小时里没有冻结，因此遭到批评并被用户起诉<a class="ref" href="#s21">[21]</a><a class="ref" href="#s23">[23]</a>。Drift 援引 Mandiant 的取证，把攻击归于朝鲜组织 UNC6862<a class="ref" href="#s3">[3]</a>。Tether 承诺最多出资 1.275 亿美元、其他伙伴最多 2,000 万美元，帮助 Drift 重启，结算资产从 USDC 换成 USDT<a class="ref" href="#s1">[1]</a><a class="ref" href="#s25">[25]</a>；7 月 Drift 改名为 Velocity<a class="ref" href="#s34">[34]</a>。10 月 1 日开放的恢复代币 DFX 首日只能兑回约 1% 的损失；同月，攻击者把 4 万多枚 ETH 转进了 Tornado Cash<a class="ref" href="#s4">[4]</a><a class="ref" href="#s32">[32]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <h3>Solana 上的永续合约交易所</h3>
+        <p>Drift 成立于 2021 年，提供永续合约、现货、借贷和金库（vault）产品，联合创始人 Cindy Leow 曾说想把它做成“加密世界的 Robinhood”<a class="ref" href="#s12">[12]</a>。到 2024 年底，Drift 自称有 20 万名交易者、累计交易量超过 550 亿美元<a class="ref" href="#s14">[14]</a>。被盗前它的锁仓量约 5.5 亿美元<a class="ref" href="#s10">[10]</a><a class="ref" href="#s35">[35]</a>。</p>
+        <p>Drift 的所有借贷市场共用一个流动性池，存款人和借款人的资金在同一个池子里<a class="ref" href="#s2">[2]</a>。不少 Solana 协议又把用户资金存进 Drift 的金库做杠杆收益或做市，Drift 因此成了它们的底层依赖。用假抵押品借走的，是所有存款人的钱。</p>
+        <h3>谁握着管理权限</h3>
+        <p>Drift 主程序里有一个全局 State 账户，其中的 <code>admin</code> 字段决定谁能上架新市场、更换预言机、调整风险参数和提现限额。这项权限由安全委员会多签掌握<a class="ref" href="#s11">[11]</a><a class="ref" href="#s14">[14]</a>。2026 年 3 月下旬，Drift 把安全委员会迁移到一套新配置：5 名签名人中任意 2 人同意即可执行，时间锁为零。迁移日期 TRM 记为 3 月 27 日，Chainalysis 记为 3 月 26 日<span class="dispute">（两家记录相差一天）</span><a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。公开材料没有说明为什么在这时迁移，也没有给出旧配置的门限和延迟。</p>
+        <h3>朝鲜盗币的又一种打法</h3>
+        <p>据 Elliptic 统计，近年朝鲜相关黑客盗取的加密资产已超过 65 亿美元<a class="ref" href="#s10">[10]</a>，单笔最大的是 2025 年 2 月的 <a href="2025-bybit.html">Bybit</a>（14.6 亿美元）。以往这些团伙主要在线上接近目标：视频通话、远程工作岗位、假招聘面试<a class="ref" href="#s22">[22]</a>。Drift 一案不同，攻击者安排的中间人在多个国家的行业会议上和 Drift 贡献者当面交往了约半年。TRM 认为，这在朝鲜漫长的盗币行动中可能是第一次<a class="ref" href="#s9">[9]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与相关方行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2025 年秋</time><div class="ev">自称量化交易公司的一伙人在一场大型加密会议上接触 Drift 贡献者，提出合作，此后在 Telegram 上持续沟通<a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="atk"><time>2025-12 至 2026-01</time><div class="ev">对方接入一个 Ecosystem Vault，存入超过 100 万美元自有资金<a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="atk"><time>2026-02 至 03</time><div class="ev">集成讨论继续，Drift 贡献者在多国行业会议上与对方再次见面<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk"><time>2026-03-11</time><div class="ev">链上准备开始：攻击者从 Tornado Cash 取出 10 ETH。这笔钱在 3 月 12 日 0 点（GMT，即平壤时间上午 9 点）前后开始移动，随后用于部署 CVT<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2026-03-12</time><div class="ev">攻击者部署 CarbonVote Token（CVT），总量 7.5 亿枚，在 Raydium 放入少量流动性，自买自卖把价格维持在约 1 美元<a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2026-03-23 至 30</time><div class="ev">攻击者创建多个 durable nonce 账户，诱导安全委员会成员预签看似例行、实际暗藏管理员授权的交易<a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="key"><time>2026-03-26/27</time><div class="ev">Drift 把安全委员会迁移到 2/5 门限、零时间锁的新多签。据 Chainalysis，攻击者随后又拿到了新多签签名人的签名，重新凑齐 2/5<a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2026-03 下旬</time><div class="ev">攻击用钱包创建（攻击前约 8 天），并从一个 Drift 金库收到一笔小额测试转账<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk key"><time>2026-04-01 16:05 UTC</time><div class="ev">16:05:18，第一笔预签名交易上链，提议把管理员权限转给攻击者地址；16:05:19，第二笔交易批准并执行<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2026-04-01 接管后</time><div class="ev">攻击者把 CVT 设为抵押品，放开提现限额，存入约 5 亿枚 CVT，借走 JLP、USDC 等资产。TRM 统计 31 笔提现在约 12 分钟内完成<a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2026-04-01</time><div class="ev">接管约 23 分钟后，第一笔跨链资金到达以太坊<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2026-04-01</time><div class="ev">Drift 公告协议“正在遭受攻击”，暂停存取款，并称“这不是愚人节玩笑”<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2026-04-01 18:31 UTC</time><div class="ev">18:31:47，协议全部功能暂停，这一刻后来被定为用户仓位的快照时间。Chainalysis 记录的最后一笔提取也在 18:31<a class="ref" href="#s2">[2]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2026-04-01 至 02</time><div class="ev">赃款换成 USDC 后经 Circle 的 CCTP 分批跨到以太坊，再换成 ETH。诉状称这一过程持续约 8 小时，Circle 没有冻结。ZachXBT 等人公开批评<a class="ref" href="#s21">[21]</a><a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="def"><time>2026-04-02</time><div class="ev">Drift 发布初步说明：程序和合约没有漏洞，问题出在事先取得的“未经授权或被误导的交易批准”。Elliptic、TRM 指出攻击带有朝鲜团伙的特征<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2026-04-03</time><div class="ev">Drift 向持有赃款的 4 个以太坊钱包发送链上消息：“我们准备好谈了。”<a class="ref" href="#s16">[16]</a></div></li>
+          <li class="def key"><time>2026-04-05</time><div class="ev">Drift 公布调查：这是一次为期六个月的情报行动，以“中高置信度”归于朝鲜组织 UNC4736<a class="ref" href="#s15">[15]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2026-04-10</time><div class="ev">Circle 发文解释：只有在法律要求时才会冻结 USDC<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def"><time>2026-04-14/15</time><div class="ev">一名 Drift 用户在马萨诸塞州联邦法院对 Circle 提起集体诉讼<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def key"><time>2026-04-16</time><div class="ev">Drift 公布恢复框架：Tether 最多出资 1.275 亿美元，其他伙伴最多 2,000 万美元；重启后结算资产由 USDC 改为 USDT<a class="ref" href="#s1">[1]</a><a class="ref" href="#s25">[25]</a>。</div></li>
+          <li><time>2026-04-18</time><div class="ev"><a href="2026-kelpdao.html">KelpDAO</a> 被盗约 2.92 亿美元，同样被归于朝鲜<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2026-04-30</time><div class="ev">Solana 收益协议 Carrot 宣布关停，是第一个因 Drift 事件倒下的下游协议<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li class="def"><time>2026-05-05</time><div class="ev">Drift 公布用户恢复计划：按核定损失发放恢复代币，用交易所收入、Tether 配套资金和伙伴资金逐步填充恢复池；另设 10% 的追回赏金<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2026-06-03</time><div class="ev">Drift 称 Mandiant 的取证把攻击归于朝鲜组织 UNC6862<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2026-06-15</time><div class="ev">支付平台 Pyra 因 Drift 相关损失宣布关停<a class="ref" href="#s28">[28]</a>。</div></li>
+          <li class="def"><time>2026-07-02</time><div class="ev">Drift 宣布更名为 Velocity，准备私测<a class="ref" href="#s34">[34]</a>。</div></li>
+          <li class="atk"><time>2026-07-23</time><div class="ev">一个攻击者钱包开始把约 23,095 枚 ETH 转入 Tornado Cash。此前以太坊上的赃款从未动过<a class="ref" href="#s28">[28]</a><a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="def"><time>2026-09-30</time><div class="ev">Drift Foundation 称已冻结约 920 万美元，另外 3 个攻击者钱包中的 107,165 枚 ETH 仍未移动<a class="ref" href="#s29">[29]</a><a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="def key"><time>2026-10-01</time><div class="ev">DFX 开放领取和赎回。首日每枚 DFX 约兑 0.0104 USDT，即损失的约 1%<a class="ref" href="#s4">[4]</a><a class="ref" href="#s29">[29]</a>。</div></li>
+          <li class="atk"><time>2026-10-20 至 21</time><div class="ev">攻击者钱包两天内把约 44,510 枚 ETH（约 1.09 亿美元）转入 Tornado Cash<a class="ref" href="#s32">[32]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>Drift 反复强调，攻击者没有利用程序或合约的漏洞，也没有助记词泄露<a class="ref" href="#s14">[14]</a>。攻击用到的每条指令都是程序允许的管理员操作，每个签名都来自真实的签名人。攻击能成功，是因为四层控制同时失效，而每一层都默认上一层已经把过关：签名人没看懂自己签的是什么；durable nonce 让签名一直有效；多签只要两个签名，而且没有等待期；程序只检查签名者是不是 admin，不管 admin 要做什么。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 580" role="img" aria-labelledby="drift-chain-t drift-chain-d">
+            <title id="drift-chain-t">Drift 被盗的授权链与本可拦截的位置</title>
+            <desc id="drift-chain-d">左列是实际发生的六步：签名设备被入侵；用 durable nonce 骗取预签名；2/5 零时间锁多签；state.admin 在一秒内被改写；上架 CVT 并放开提现限额；借走 19 种真实资产。右列是每一步对应的防线：签名与开发环境分开；在独立设备核对交易内容；关键操作设时间锁；管理员转移分两步；新抵押品设程序门槛；不受 admin 控制的提现熔断。</desc>
+            <defs>
+              <marker id="drift-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+              <marker id="drift-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b atk" x="190" y="24" text-anchor="middle">实际发生的攻击链</text>
+            <text class="d-t b def" x="580" y="24" text-anchor="middle">本可以拦住的地方</text>
+            <rect class="d-box atk" x="20" y="40" width="340" height="62" rx="4"/>
+            <text class="d-t b" x="190" y="66" text-anchor="middle">① 签名设备被入侵</text>
+            <text class="d-t s" x="190" y="87" text-anchor="middle">可能的途径：恶意代码仓库、TestFlight 测试版应用</text>
+            <rect class="d-box atk" x="20" y="132" width="340" height="62" rx="4"/>
+            <text class="d-t b" x="190" y="158" text-anchor="middle">② 骗取预签名（durable nonce）</text>
+            <text class="d-t s" x="190" y="179" text-anchor="middle">交易里藏着转移管理员的授权，签名不会过期</text>
+            <rect class="d-box atk" x="20" y="224" width="340" height="62" rx="4"/>
+            <text class="d-t b" x="190" y="250" text-anchor="middle">③ 2/5 多签，零时间锁</text>
+            <text class="d-t s" x="190" y="271" text-anchor="middle">迁移到新多签后，攻击者又凑齐了 2 个签名</text>
+            <rect class="d-box atk" x="20" y="316" width="340" height="62" rx="4"/>
+            <text class="d-t b" x="190" y="342" text-anchor="middle">④ <tspan class="m">state.admin</tspan> 被改写</text>
+            <text class="d-t s" x="190" y="363" text-anchor="middle">提议、批准、执行压在相隔 1 秒的两笔交易里</text>
+            <rect class="d-box atk" x="20" y="408" width="340" height="62" rx="4"/>
+            <text class="d-t b" x="190" y="434" text-anchor="middle">⑤ 上架 CVT，放开提现限额</text>
+            <text class="d-t s" x="190" y="455" text-anchor="middle">20 天前才部署的代币，被当作约 5 亿美元的抵押品</text>
+            <rect class="d-box atk" x="20" y="500" width="340" height="62" rx="4"/>
+            <text class="d-t b" x="190" y="526" text-anchor="middle">⑥ 借走 19 种真实资产</text>
+            <text class="d-t s" x="190" y="547" text-anchor="middle">按 Drift 统计约 2.957 亿美元，金库被清空</text>
+            <line class="d-line atk" x1="190" y1="102" x2="190" y2="130" marker-end="url(#drift-ah-atk)"/>
+            <line class="d-line atk" x1="190" y1="194" x2="190" y2="222" marker-end="url(#drift-ah-atk)"/>
+            <line class="d-line atk" x1="190" y1="286" x2="190" y2="314" marker-end="url(#drift-ah-atk)"/>
+            <line class="d-line atk" x1="190" y1="378" x2="190" y2="406" marker-end="url(#drift-ah-atk)"/>
+            <line class="d-line atk" x1="190" y1="470" x2="190" y2="498" marker-end="url(#drift-ah-atk)"/>
+            <rect class="d-box def" x="420" y="40" width="320" height="62" rx="4"/>
+            <text class="d-t b" x="580" y="66" text-anchor="middle">签名环境与开发环境分开</text>
+            <text class="d-t s" x="580" y="87" text-anchor="middle">不在签名设备上打开陌生仓库、装测试版应用</text>
+            <rect class="d-box def" x="420" y="132" width="320" height="62" rx="4"/>
+            <text class="d-t b" x="580" y="158" text-anchor="middle">在独立设备上核对交易内容</text>
+            <text class="d-t s" x="580" y="179" text-anchor="middle">首条指令是 <tspan class="m">AdvanceNonceAccount</tspan> 时格外警惕</text>
+            <rect class="d-box def" x="420" y="224" width="320" height="62" rx="4"/>
+            <text class="d-t b" x="580" y="250" text-anchor="middle">关键操作设时间锁并实时告警</text>
+            <text class="d-t s" x="580" y="271" text-anchor="middle">批准与执行之间留出公开的等待期</text>
+            <rect class="d-box def" x="420" y="316" width="320" height="62" rx="4"/>
+            <text class="d-t b" x="580" y="342" text-anchor="middle">管理员转移分两步</text>
+            <text class="d-t s" x="580" y="363" text-anchor="middle">新地址须主动接受，中间有等待期</text>
+            <rect class="d-box def" x="420" y="408" width="320" height="62" rx="4"/>
+            <text class="d-t b" x="580" y="434" text-anchor="middle">新抵押品上架设程序门槛</text>
+            <text class="d-t s" x="580" y="455" text-anchor="middle">最低流动性、最短上线时长、初始权重为 0</text>
+            <rect class="d-box def" x="420" y="500" width="320" height="62" rx="4"/>
+            <text class="d-t b" x="580" y="526" text-anchor="middle">不受 admin 控制的提现熔断</text>
+            <text class="d-t s" x="580" y="547" text-anchor="middle">多个金库短时大额流出时自动暂停</text>
+            <line class="d-line def dash" x1="360" y1="71" x2="418" y2="71" marker-end="url(#drift-ah)"/>
+            <line class="d-line def dash" x1="360" y1="163" x2="418" y2="163" marker-end="url(#drift-ah)"/>
+            <line class="d-line def dash" x1="360" y1="255" x2="418" y2="255" marker-end="url(#drift-ah)"/>
+            <line class="d-line def dash" x1="360" y1="347" x2="418" y2="347" marker-end="url(#drift-ah)"/>
+            <line class="d-line def dash" x1="360" y1="439" x2="418" y2="439" marker-end="url(#drift-ah)"/>
+            <line class="d-line def dash" x1="360" y1="531" x2="418" y2="531" marker-end="url(#drift-ah)"/>
+          </svg>
+          </div>
+          <figcaption>图 1：从签名设备到金库的六步，任何一步被拦下，后面的都不会发生。左列按 Drift 的调查和 TRM、Chainalysis 的链上还原整理<a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a><a class="ref" href="#s14">[14]</a>；右列防线是本站归纳，其中几项已写进 Drift 重启后的整改<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</figcaption>
+        </figure>
+        <h3>admin 能做什么</h3>
+        <p>Drift 程序里大部分“仅限管理员”的指令，账户约束都写成同一个样子：签名者必须等于 State 账户里记录的 <code>admin</code>（少数指令另外接受一把单独的热钱包密钥，例如创建暂不启用的新市场）。转移管理员的指令只是把这个字段改成新值：</p>
+<pre class="code"><code><span class="c">// programs/drift/src/instructions/admin.rs（v2.161.0）</span>
+#[derive(Accounts)]
+pub struct AdminUpdateState&lt;'info&gt; {
+    pub admin: Signer&lt;'info&gt;,
+    #[account(
+        mut,
+        has_one = admin          <span class="c">// 唯一的检查：签名者 == state.admin</span>
+    )]
+    pub state: Box&lt;Account&lt;'info, State&gt;&gt;,
+}
+
+pub fn handle_update_admin(ctx: Context&lt;AdminUpdateState&gt;, admin: Pubkey) -&gt; Result&lt;()&gt; {
+    msg!("admin: {:?} -&gt; {:?}", ctx.accounts.state.admin, admin);
+<span class="bad">    ctx.accounts.state.admin = admin;   <span class="c">// 立即生效：新地址不用确认，没有等待期</span></span>
+    Ok(())
+}</code></pre>
+        <p class="code-cap">来源：velocity-exchange/protocol-v2 仓库（原 drift-labs/protocol-v2）v2.161.0 标签，admin.rs 第 5732–5740 行、第 4425–4429 行<a class="ref" href="#s5">[5]</a>。v2.161.0 发布于 2026-03-30，是被盗前最后一个版本；链上实际部署的版本未经本站核对。</p>
+        <p>这几行本身没有错，权限检查写得很清楚。问题在于程序把所有防护都交给了 admin 背后的那一层：如果 admin 是多签，多签的门限和时间锁就是这些操作前唯一的关口，程序自己不提供任何延迟。按 Chainalysis 的还原，攻击者从提交“把管理员转给新地址”的提案到它被批准执行，只隔了一秒<a class="ref" href="#s11">[11]</a>。公开报告没有逐条列出攻击者调用的指令，上面的代码用来说明这项权限有多大，不是对链上交易的还原。</p>
+        <h3>提现限额是怎么被放开的</h3>
+        <p>Drift 的每个现货市场有一个提现保护阈值 <code>withdraw_guard_threshold</code>。它和市场存款余额的时间加权平均值一起，决定一笔提现之后市场里至少要剩多少存款。这个值同样由 admin 用一条指令直接改写：</p>
+<pre class="code"><code><span class="c">// programs/drift/src/instructions/admin.rs（v2.161.0）</span>
+pub fn handle_update_withdraw_guard_threshold(
+    ctx: Context&lt;AdminUpdateSpotMarket&gt;,   <span class="c">// 同样只要求签名者 == state.admin</span>
+    withdraw_guard_threshold: u64,
+) -&gt; Result&lt;()&gt; {
+    let spot_market = &amp;mut load_mut!(ctx.accounts.spot_market)?;
+    <span class="c">// ……（两行日志输出从略）……</span>
+<span class="bad">    spot_market.withdraw_guard_threshold = withdraw_guard_threshold;   <span class="c">// 立即生效</span></span>
+    Ok(())
+}
+
+<span class="c">// programs/drift/src/math/spot_withdraw.rs（v2.161.0）</span>
+pub fn calculate_min_deposit_token_amount(
+    deposit_token_twap: u128,
+    withdraw_guard_threshold: u128,
+) -&gt; DriftResult&lt;u128&gt; {
+    // minimum required deposit amount after withdrawal
+    // minimum deposit amount lower of 75% of TWAP or withdrawal guard threshold below TWAP
+    // for high withdrawal guard threshold, minimum deposit amount is 0
+    let min_deposit_token = deposit_token_twap.safe_sub(
+        (deposit_token_twap / 4)
+            .max(withdraw_guard_threshold.min(deposit_token_twap)),
+    )?;
+    <span class="c">// 阈值 ≥ 存款均值时，下限变成 0</span>
+    Ok(min_deposit_token)
+}</code></pre>
+        <p class="code-cap">来源：同上，admin.rs 第 2943–2960 行，spot_withdraw.rs 第 14–26 行<a class="ref" href="#s5">[5]</a>。英文注释是原有的，中文注释是本站加的；省略了 <code>access_control</code> 属性和日志输出，过长的一行做了换行。</p>
+        <p>阈值小于存款均值的四分之一时，提现后的存款不能低于均值的 75%，也就是一段时间里最多只能取走约四分之一，相当于一道防挤兑的限速。阈值越大，这条下限越低；阈值大于等于存款均值时，下限变成 0，限速就没有了。借款上限的计算（<code>calculate_max_borrow_token_amount</code>）同样以这个阈值为下限。TRM 说攻击者把提现限额“调到极端水平”，BleepingComputer 转述 Drift 的说法是“移除了预设的提现限额”<a class="ref" href="#s8">[8]</a><a class="ref" href="#s14">[14]</a>，指的都是这一类参数。具体改了哪些市场、改成多少，公开材料没有列出。</p>
+        <h3>新抵押品的上架门槛</h3>
+        <p>Drift 用 <code>initialize_spot_market</code> 指令创建新的现货市场，预言机来源、抵押权重、资产分级、提现保护阈值都在这一条指令里设定。程序只检查参数是否自洽：预言机能不能读出价格，资产权重是否不超过 100%（也就是最高可以和 USDC 一样按面值计入抵押），代币精度是否不低于 5 位<a class="ref" href="#s5">[5]</a>。它不判断这个代币有没有真实流动性、存在了多久、值不值得当抵押品，这些都由 admin 决定。所以拿到 admin，就能把任何能读出价格的代币变成抵押品。</p>
+        <p>CVT 就是为此准备的。它在 3 月 12 日部署，总量 7.5 亿枚，攻击者控制约 80%。Raydium 池子里的真实流动性，Chainalysis 说只有约 500 美元，TRM 说是“几千美元”<span class="dispute">（两家说法不同）</span>。攻击者在自己的钱包之间来回交易，做出一段约 1 美元的价格历史<a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。上架时，CVT 只存在了 20 天<a class="ref" href="#s11">[11]</a>。</p>
+        <div class="note doubt">
+          <span class="h">CVT 的价格从哪来，说法不一</span>
+          <p>TRM 说是 Drift 的预言机“读到了”这段人造的价格信号<a class="ref" href="#s8">[8]</a>；Chainalysis 说给 Drift 报价的预言机本身就由攻击者控制<a class="ref" href="#s11">[11]</a>。两种说法的区别在于预言机账户是不是攻击者部署的。Drift 支持 Pyth、Switchboard On-Demand 等多种预言机来源<a class="ref" href="#s5">[5]</a>，公开材料没有说明 CVT 市场配置的是哪一个。</p>
+        </div>
+        <h3>durable nonce：不会过期的签名</h3>
+        <p>Solana 交易里有一个 <code>recent_blockhash</code> 字段，用来防止重放。它引用的区块哈希太旧（Anza 的文档写的是约 2 分钟），网络就拒收这笔交易<a class="ref" href="#s7">[7]</a>，所以普通签名很快就会作废。离线签名、托管机构这类需要更长时间的场景，用的是 durable nonce：先建一个 nonce 账户存一个值，交易把这个值填进 <code>recent_blockhash</code>，并把 <code>AdvanceNonceAccount</code> 作为第一条指令。运行时只检查这个值和账户里存的是否一致，不看时间<a class="ref" href="#s7">[7]</a>。</p>
+<pre class="code"><code><span class="c">// 示意：两种交易的区别在 recent_blockhash 和第一条指令</span>
+普通交易
+  recent_blockhash = 最近的区块哈希        <span class="c">// 约 2 分钟后过期，签名随之作废</span>
+  指令 1..n        = 要做的事
+
+durable nonce 交易
+  recent_blockhash = nonce 账户里存的值    <span class="c">// 只要这个值没被推进，就一直有效</span>
+  指令 0           = AdvanceNonceAccount   <span class="c">// 必须放在第一条</span>
+<span class="bad">  指令 1..n        = 要做的事              <span class="c">// 签完之后，何时提交由持有签名的人决定</span></span></code></pre>
+        <p class="code-cap">示意代码，依据 Anza 文档《Durable Transaction Nonces》的规则<a class="ref" href="#s7">[7]</a>，不是攻击交易本身。</p>
+        <p>这改变了“签名”的含义。普通签名两分钟就失效，签名人即使签错了，攻击者也只能当场用掉。durable nonce 签名只要 nonce 没被推进，几天、几周后照样能提交，像一张不写日期的支票。Chainalysis 的还原是：3 月 23 日，攻击者创建了几个 durable nonce 账户，其中一些和真实的安全委员会成员相关；至少两名成员签下了自己没有完全看懂的交易，也就是盲签（blind signing）。迁移产生了新的多签账户，链上记录显示攻击者又拿到了新多签签名人的签名，重新凑齐了管理员操作需要的 2/5<a class="ref" href="#s11">[11]</a>。</p>
+        <p>签名具体是怎么拿到的，各家的说法有不同侧重。CoinDesk 转述 Drift：设备被入侵后，攻击者就有了拿到两份多签批准所需的东西<a class="ref" href="#s15">[15]</a>。TRM 的说法是用社会工程诱导签名人预签“看似例行”的交易<a class="ref" href="#s8">[8]</a>。签名人看到的界面是否被篡改，还是被骗签了别的东西，公开材料没有讲清楚。</p>
+        <h3>零时间锁</h3>
+        <p>多签加时间锁，本意是在“批准”和“执行”之间留一段公开可见的时间，让其他签名人和监控系统有机会发现并叫停。迁移后的新多签没有这段时间，两个签名凑齐就立刻执行。再加上 durable nonce 让签名可以事先攒好，攻击者得以把提案、批准、执行压进相隔一秒的两笔交易。TRM 认为，3 月 27 日去掉时间锁，正好抹掉了本可用来发现和干预的窗口<a class="ref" href="#s8">[8]</a>。Drift 事后的整改措施之一，就是给所有关键管理操作加上时间锁和实时告警<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>社会工程部分来自 Drift 自己的调查。Chainalysis 发文时特别注明，这部分当时还没有经过第三方调查独立核实<a class="ref" href="#s11">[11]</a>。链上部分来自 TRM 和 Chainalysis 的还原。</p>
+        <ol class="steps">
+          <li><b>建立信任（2025 年秋至 2026 年 3 月）</b>一伙自称量化交易公司的人在大型加密会议上接触 Drift 贡献者，之后在 Telegram 上讨论交易策略和金库集成，又在多国会议上多次见面。他们按 Drift 的流程填写了多份策略表格，接入一个 Ecosystem Vault，存入超过 100 万美元自有资金<a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a>。Drift 说，到攻击时这段关系已近半年，“这些人不是陌生人”；当面见到的人并非朝鲜人，而是朝鲜方面安排的第三方中间人<a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>入侵设备</b>Drift 列出几种可能的途径。一名贡献者克隆了对方分享的代码仓库，可能触发了 VSCode 和 Cursor 的一个已知漏洞：只要在编辑器里打开文件或文件夹，就会静默执行任意代码。另一名贡献者被劝说安装了一个 TestFlight 测试版应用，它可能带有恶意代码<a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a><a class="ref" href="#s19">[19]</a>。攻击发生后，对方把和 Drift 的 Telegram 聊天记录全部删除<a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>准备资金和假代币（3 月 11 日至 12 日）</b>从 Tornado Cash 取出 10 ETH 作为启动资金，部署 CVT 并制造价格历史<a class="ref" href="#s8">[8]</a>。</li>
+          <li><b>攒签名（3 月 23 日至 30 日）</b>创建 durable nonce 账户，让安全委员会成员预签暗藏授权的交易；多签迁移后，再拿到新签名人的签名<a class="ref" href="#s8">[8]</a><a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>接管（4 月 1 日 16:05:18 至 19，UTC）</b>Drift 的描述是攻击者先发了一笔正常交易，紧接着执行预签名的恶意交易<a class="ref" href="#s14">[14]</a>。Chainalysis 记录的第一笔交易提议把管理员转给 <span class="addr">H7PiGqqUaanBovwKgEtreJbKmQe6dbq6VTrw6guy7ZgL</span>，一秒后第二笔交易批准并执行<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>改参数，存假抵押品</b>把 CVT 设为可用的抵押品，把借款上限设得极高，放宽风险参数，再存入 5 亿枚 CVT。按人造的 1 美元价格，系统认为这笔抵押品值约 5 亿美元<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>提走真实资产</b>被提空的包括 JLP Delta Neutral、SOL Super Staking、BTC Super Staking 等金库，单笔最大的是约 4,170 万枚 JLP，约 1.55 亿美元<a class="ref" href="#s10">[10]</a>。TRM 统计 31 笔提现在约 12 分钟内完成<a class="ref" href="#s8">[8]</a>；Chainalysis 说最大的几笔集中在最初几分钟，此后断断续续持续约 2.5 小时，最后一笔在 18:31<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>边偷边洗</b>提取还没结束，攻击者已经开始用 Jupiter 把代币换成 USDC 并跨链，第一笔资金在接管约 23 分钟后到达以太坊<a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。</li>
+        </ol>
+        <p>关于“多快”，各家说法差得很远：CoinDesk 写“不到一分钟”<a class="ref" href="#s15">[15]</a>，TRM 写“约 12 分钟”<a class="ref" href="#s8">[8]</a>，Chainalysis 写“约 2.5 小时”<a class="ref" href="#s11">[11]</a>。三者说的是不同阶段：接管本身用了 1 秒，大额提现集中在几分钟内，协议直到 18:31 才完全停下。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <h3>被提走了什么</h3>
+        <p>Drift 在 4 月 16 日公布了被提走的 19 种资产，合计 295,706,374.93 美元（按当时价格）<a class="ref" href="#s1">[1]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>资产</th><th class="n">数量</th><th class="n">价值（万美元）</th></tr></thead>
+            <tbody>
+              <tr><td>JLP</td><td class="n">42,721,062</td><td class="n">15,933</td></tr>
+              <tr><td>USDC</td><td class="n">71,415,649</td><td class="n">7,142</td></tr>
+              <tr><td>cbBTC</td><td class="n">164.35</td><td class="n">1,132</td></tr>
+              <tr><td>SOL</td><td class="n">125,000</td><td class="n">1,043</td></tr>
+              <tr><td>USDT</td><td class="n">5,648,410</td><td class="n">565</td></tr>
+              <tr><td>USDS</td><td class="n">5,254,017</td><td class="n">525</td></tr>
+              <tr><td>WETH</td><td class="n">2,200.59</td><td class="n">468</td></tr>
+              <tr><td>dSOL</td><td class="n">45,292.21</td><td class="n">447</td></tr>
+              <tr><td>WBTC</td><td class="n">63.47</td><td class="n">436</td></tr>
+              <tr><td>其余 10 种</td><td class="n">—</td><td class="n">1,880</td></tr>
+              <tr><td><strong>合计</strong></td><td class="n">—</td><td class="n"><strong>29,571</strong></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>其余 10 种是 Fartcoin、jitoSOL、syrupUSDC、INF、mSOL、bSOL、EURC、zBTC、USDY 和 JUP，单项都在 415 万美元以下。</p>
+        <h3>金额为什么有好几个</h3>
+        <p>TRM 和 Chainalysis 给出的总额是约 2.85 亿美元，PeckShield 当天的统计也是 2.85 亿美元；Elliptic 算出 2.86 亿美元<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a><a class="ref" href="#s14">[14]</a>。Drift 最初的估计是约 2.8 亿美元<a class="ref" href="#s14">[14]</a>，CoinDesk 4 月 5 日的标题用的是 2.7 亿美元<a class="ref" href="#s15">[15]</a>。Drift 自己后来的数字又有三个：4 月 16 日资产表合计约 2.957 亿美元；5 月 5 日方案的恢复目标是 295,426,725.97 美元；10 月发行的 DFX 总量是 299,500,810.998 枚，每枚对应 1 USDT 的核定损失<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。第三方和 Drift 的差别主要来自估值时点和统计范围<a class="ref" href="#s31">[31]</a>；DFX 总量比 5 月的目标多出约 400 万，Drift 没有解释原因<span class="dispute">（本站未找到说明）</span>。本页标题沿用多数第三方使用的 2.85 亿美元。</p>
+        <h3>从 Solana 到以太坊</h3>
+        <p>攻击者主要通过 Jupiter 把各种代币换成 USDC，再用 Circle 的跨链协议 CCTP 转到以太坊，换成 ETH<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。诉状称约 2.3 亿美元 USDC 经 CCTP 跨链，用了约 8 小时<a class="ref" href="#s23">[23]</a>；Cointelegraph 援引 Elliptic 称，攻击者在美国工作时间里通过 Circle 的跨链技术做了 100 多笔交易<a class="ref" href="#s24">[24]</a>。到 5 月初，约 130,259 枚 ETH（约 2.93 亿美元）集中在 4 个以太坊钱包里<a class="ref" href="#s2">[2]</a>。</p>
+        <p>被拦下的只有很少一部分。经 CCTP 的 3 笔转账被冻结，合计约 336 万 USDC，Drift 正在申请扣押令，以便销毁后重新发给协议。经 Wormhole 的 2 笔转账（约 59.37 枚 WBTC、约 557.90 枚 WETH）被 Wormhole 的限流机制 Governor 延迟到 7 月下旬<a class="ref" href="#s2">[2]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 770 430" role="img" aria-labelledby="drift-flow-t drift-flow-d">
+            <title id="drift-flow-t">Drift 赃款的跨链路径与被拦截的部分</title>
+            <desc id="drift-flow-d">资金从 Drift 金库借出，经 Jupiter 换成 USDC，再经 Circle CCTP 跨到以太坊，换成约 130,259 枚 ETH 存在 4 个钱包。CCTP 上有 3 笔约 336 万 USDC 被冻结，Wormhole Governor 延迟了 2 笔 WBTC 和 WETH 转账。ETH 从 7 月起分批转入 Tornado Cash，9 月 30 日时 3 个钱包里的 107,165 枚 ETH 尚未移动。</desc>
+            <defs>
+              <marker id="drift-fl-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="drift-fl-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="drift-fl-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <line class="d-line dash" x1="200" y1="60" x2="550" y2="60"/>
+            <text class="d-t s halo" x="375" y="56" text-anchor="middle">可冻结阶段（USDC，诉状称约 8 小时）</text>
+            <text class="d-t s" x="662" y="56" text-anchor="middle">不可冻结（ETH）</text>
+            <rect class="d-box atk" x="20" y="72" width="150" height="76" rx="4"/>
+            <text class="d-t b" x="95" y="100" text-anchor="middle">Drift 金库</text>
+            <text class="d-t s" x="95" y="120" text-anchor="middle">借出 19 种资产</text>
+            <text class="d-t s" x="95" y="138" text-anchor="middle">约 2.957 亿美元</text>
+            <rect class="d-box atk" x="210" y="72" width="150" height="76" rx="4"/>
+            <text class="d-t b" x="285" y="100" text-anchor="middle">Solana 上的 USDC</text>
+            <text class="d-t s" x="285" y="120" text-anchor="middle">主要经 Jupiter 兑换</text>
+            <text class="d-t s" x="285" y="138" text-anchor="middle">4 月 1 日起</text>
+            <rect class="d-box atk" x="400" y="72" width="150" height="76" rx="4"/>
+            <text class="d-t b" x="475" y="100" text-anchor="middle">Circle CCTP</text>
+            <text class="d-t s" x="475" y="120" text-anchor="middle">跨到以太坊</text>
+            <text class="d-t s" x="475" y="138" text-anchor="middle">约 2.3 亿美元 USDC</text>
+            <rect class="d-box atk" x="590" y="72" width="160" height="76" rx="4"/>
+            <text class="d-t b" x="670" y="100" text-anchor="middle">以太坊 4 个钱包</text>
+            <text class="d-t s" x="670" y="120" text-anchor="middle">换成约 130,259 ETH</text>
+            <text class="d-t s" x="670" y="138" text-anchor="middle">5 月初数据</text>
+            <line class="d-line atk" x1="170" y1="110" x2="208" y2="110" marker-end="url(#drift-fl-atk)"/>
+            <line class="d-line atk" x1="360" y1="110" x2="398" y2="110" marker-end="url(#drift-fl-atk)"/>
+            <line class="d-line atk" x1="550" y1="110" x2="588" y2="110" marker-end="url(#drift-fl-atk)"/>
+            <rect class="d-box ok" x="380" y="230" width="190" height="62" rx="4"/>
+            <text class="d-t b" x="475" y="256" text-anchor="middle">Circle 冻结 3 笔</text>
+            <text class="d-t s" x="475" y="277" text-anchor="middle">约 336 万 USDC</text>
+            <rect class="d-box ok" x="20" y="230" width="230" height="62" rx="4"/>
+            <text class="d-t b" x="135" y="256" text-anchor="middle">Wormhole Governor 延迟 2 笔</text>
+            <text class="d-t s" x="135" y="277" text-anchor="middle">约 59.37 WBTC、557.90 WETH</text>
+            <line class="d-line def dash" x1="475" y1="148" x2="475" y2="228" marker-end="url(#drift-fl-def)"/>
+            <line class="d-line def dash" x1="95" y1="148" x2="95" y2="228" marker-end="url(#drift-fl-def)"/>
+            <rect class="d-box atk" x="590" y="230" width="160" height="62" rx="4"/>
+            <text class="d-t b" x="670" y="256" text-anchor="middle">Tornado Cash</text>
+            <text class="d-t s" x="670" y="277" text-anchor="middle">7 月、10 月分批转入</text>
+            <rect class="d-box doubt" x="570" y="340" width="196" height="62" rx="4"/>
+            <text class="d-t b" x="670" y="366" text-anchor="middle">3 个钱包未动</text>
+            <text class="d-t s" x="670" y="387" text-anchor="middle">107,165 ETH（9 月 30 日）</text>
+            <line class="d-line atk" x1="670" y1="148" x2="670" y2="228" marker-end="url(#drift-fl-atk)"/>
+            <line class="d-line dash" x1="670" y1="292" x2="670" y2="338" marker-end="url(#drift-fl-ah)"/>
+          </svg>
+          </div>
+          <figcaption>图 2：赃款的主路径（红色）和被拦截或延迟的部分（绿色）。数据来自 Drift 的 5 月 5 日方案和 Drift Foundation 9 月 30 日的更新<a class="ref" href="#s2">[2]</a><a class="ref" href="#s30">[30]</a>。10 月转入 Tornado Cash 后的余额，各监控账户的数字不一致，见下表。</figcaption>
+        </figure>
+        <h3>洗钱的节奏</h3>
+        <p>TRM 判断，这个团伙和 TraderTraitor（Lazarus）不是同一支。它的习惯是先把赃款放上几个月甚至几年，再分阶段兑现<a class="ref" href="#s9">[9]</a>。以太坊上的 ETH 从 4 月到 7 月下旬确实没有动过。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th>事件</th><th>数据来源</th></tr></thead>
+            <tbody>
+              <tr><td>4 月初</td><td>约 130,259 枚 ETH 分散在 4 个钱包</td><td>Drift<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>7 月 23 日起</td><td>其中 1 个钱包把约 23,095 枚 ETH（约 4,440 万美元）转入 Tornado Cash</td><td>PeckShield 等<a class="ref" href="#s28">[28]</a><a class="ref" href="#s30">[30]</a></td></tr>
+              <tr><td>9 月 30 日</td><td>另外 3 个钱包的 107,165 枚 ETH 仍未移动；约 920 万美元被冻结</td><td>Drift Foundation<a class="ref" href="#s29">[29]</a><a class="ref" href="#s30">[30]</a></td></tr>
+              <tr><td>10 月 20 日</td><td>约 25,700 枚 ETH 进入 Tornado Cash，余 81,864 枚</td><td>Lookonchain<a class="ref" href="#s31">[31]</a></td></tr>
+              <tr><td>10 月 20 至 21 日</td><td>两天合计约 44,510 枚 ETH（约 1.09 亿美元），余约 56,569 枚</td><td>Onchain Lens<a class="ref" href="#s32">[32]</a></td></tr>
+              <tr><td>10 月 20 至 21 日</td><td>520 多笔转账，约 1.223 亿美元</td><td>Arkham<a class="ref" href="#s33">[33]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>各监控账户的数字对不上，统计的钱包范围和时点不同。转入 Tornado Cash 也不等于已经卖出或兑现<a class="ref" href="#s31">[31]</a>。</p>
+        <div class="note doubt">
+          <span class="h">那 920 万美元是怎么冻结的</span>
+          <p>Coin Edition 转述 Drift Foundation 的说法：被冻结的约 920 万美元，是攻击者 8 月经 Tornado Cash 转出的资金，由哪个机构冻结没有说明。Drift Foundation 只说这笔钱要走执法程序才能释放，需要时间<a class="ref" href="#s30">[30]</a>。它和 5 月提到的 336 万 USDC、Wormhole 延迟的两笔转账是什么关系，本站没有找到说明。</p>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>Drift 自身</h3>
+        <p>Drift 的锁仓量从约 5.5 亿美元跌到 2.5 亿美元以下，DRIFT 代币跌了 40% 以上<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>。借贷存款、金库存款和交易保证金都受影响，协议的全部功能被冻结；保险基金的资产没有受损<a class="ref" href="#s14">[14]</a>。按 Elliptic 和 TRM 的统计，这是 2026 年到当时为止最大的 DeFi 被盗案，在 Solana 历史上仅次于 2022 年 3.26 亿美元的 <a href="2022-wormhole.html">Wormhole</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <h3>沿着依赖关系扩散</h3>
+        <p>Chainalysis 统计，至少 20 个依赖 Drift 流动性、金库或策略的协议报告了中断、暂停或损失<a class="ref" href="#s11">[11]</a>。收益协议 Carrot 通过 Drift 的金库和流动性仓位持有大量敞口，事发后暂停了铸造和赎回，约一半锁仓处于风险中，损失估计超过 800 万美元。4 月 30 日 Carrot 宣布关停，给用户留到 5 月 14 日自行提款<a class="ref" href="#s27">[27]</a>。6 月 15 日，支付平台 Pyra 也因 Drift 相关损失宣布关停，注销了已发出的支付卡<a class="ref" href="#s28">[28]</a>。Solana 整体的 DeFi 锁仓量在事发后出现两位数百分比的下跌，到 9 月底才回到 65 亿美元以上，其中有 SOL 价格上涨的因素<a class="ref" href="#s35">[35]</a>。</p>
+        <h3>朝鲜的 2026 年</h3>
+        <p>17 天后，<a href="2026-kelpdao.html">KelpDAO</a> 又被盗约 2.92 亿美元，同样被归于朝鲜。TRM 统计，这两起合计约 5.77 亿美元，占 2026 年前 4 个月加密货币黑客攻击损失的 76%<a class="ref" href="#s9">[9]</a>。到 6 月底，朝鲜相关的盗窃约 6.43 亿美元，占上半年的 66%；针对基础设施和操作流程的入侵只占事件数的约 15%，却造成了约 76% 的损失<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>冻结还是不冻结</h3>
+        <p>Circle 成了争议的中心。攻击者花了几个小时把赃款换成 USDC 再跨链，ZachXBT 等人认为 Circle 至少有 6 小时可以冻结却没有动作<a class="ref" href="#s21">[21]</a>，诉状的说法是约 8 小时<a class="ref" href="#s23">[23]</a>。批评者拿 Circle 以前冻结过的钱包作对比；原告律师指出，Drift 事件前约一周，Circle 刚因一起密封审理的民事案件冻结了 16 个 USDC 钱包<a class="ref" href="#s24">[24]</a>。</p>
+        <p>Circle 的立场分两层。CEO Jeremy Allaire 说，冻结应当在收到法院命令后进行，不能由公司自行决定：“一个会因为推特上的压力而冻结的稳定币，就是谁嗓门大谁就能触发冻结的稳定币。”<a class="ref" href="#s23">[23]</a>首席战略官 Dante Disparte 在公司博客里写道，冻结是合规义务，“只在有权机关通过合法程序要求时”才执行；他同时承认，更快干预的技术工具已经存在，缺的是授权这种干预的法律框架，Circle 正在推动“安全港”规则<a class="ref" href="#s20">[20]</a>。ARK Invest 的 Lorenzo Valente 支持 Circle 的做法，理由是没有法律命令就冻结，“以后每一次冻结都是主观判断，每一次不冻结都是政治表态”<a class="ref" href="#s24">[24]</a>。</p>
+        <p>Tether 随后以救助者的身份出现，条件之一是 Drift 改用 USDT<a class="ref" href="#s23">[23]</a><a class="ref" href="#s25">[25]</a>。</p>
+        <h3>同一类攻击</h3>
+        <p>Drift 不是第一个“签名人被骗签”的案子。下表列出本站收录的几起，共同点是私钥没有直接被盗，签名人签下的东西和他们以为的不一样。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th class="n">损失</th><th>签名人实际签下的</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2024-wazirx.html">WazirX</a></td><td>2024-07</td><td class="n">约 2.35 亿美元</td><td>界面显示正常转账，实际是把 Safe 多签升级为攻击者合约</td></tr>
+              <tr><td><a href="2025-bybit.html">Bybit</a></td><td>2025-02</td><td class="n">约 14.6 亿美元</td><td>Safe{Wallet} 前端被篡改，实际是替换冷钱包逻辑的 delegatecall</td></tr>
+              <tr><td>Drift</td><td>2026-04</td><td class="n">约 2.85 亿美元</td><td>不会过期的预签名交易，暗含转移管理员的授权，几天后才被提交</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <blockquote>
+          <p>Drift 和 Bybit 是同一种模式：签名人在协议层面并没有被攻破，他们是被骗去批准了恶意交易。核心问题不在签名人的数量，而在于没人看懂交易的意图。</p>
+          <cite>Michael Pearl，区块链安全公司 Cyvers 战略副总裁，接受 Decrypt 采访<a class="ref" href="#s19">[19]</a></cite>
+        </blockquote>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>暂停与快照</h3>
+        <p>Drift 在攻击当天暂停存取款。协议在 18:31:47（UTC）完全暂停，这一刻被定为用户仓位的快照时间，以便把攻击窗口内非攻击者地址借款提走的部分也算进去。名义价值按 16:06:00 的预言机价格计算，因为之后的市场价格已被攻击扭曲<a class="ref" href="#s2">[2]</a>。剩余资产没有直接退给存款人：所有借贷市场共用一个资金池，在借款还清之前先把存款退给存款人，会抽走其他账户依赖的流动性<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>喊话与赏金</h3>
+        <p>4 月 3 日，Drift 从以太坊地址 <span class="addr">0x0934faC45f2883dd5906d09aCfFdb5D18aAdC105</span> 向持有赃款的 4 个钱包发出链上消息，称已查明“与攻击有关的各方的关键信息”，并表示“我们准备好谈了”<a class="ref" href="#s16">[16]</a>。Curve 创始人 Michael Egorov 对 Decrypt 说，如果是朝鲜所为，追回的概率是零<a class="ref" href="#s16">[16]</a>。5 月，Drift 和 Bybit 等伙伴推出公开赏金：成功追回的资产，给 10%<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>归因经过了几次修正</h3>
+        <p>4 月 2 日，Elliptic 和 TRM 根据链上行为、洗钱手法和网络层面的迹象指向朝鲜<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>，列出的迹象包括使用 Tornado Cash、部署时间落在平壤时间上午、跨链速度和规模与 Bybit 案相似<a class="ref" href="#s14">[14]</a>。4 月 5 日，Drift 依据 SEAL 911 等的调查，以“中高置信度”认定攻击者与 2024 年 10 月 Radiant Capital 被盗约 5,000 万美元的是同一伙人，即 Mandiant 追踪的 UNC4736（又称 AppleJeus、Citrine Sleet），依据是资金流向和人设的重合；当时 Mandiant 尚未确认<a class="ref" href="#s10">[10]</a><a class="ref" href="#s13">[13]</a><a class="ref" href="#s19">[19]</a>。TRM 4 月底的判断是：这是一个不同于 TraderTraitor 的朝鲜团伙，具体分支仍在调查<a class="ref" href="#s9">[9]</a>。6 月 3 日，Drift 公布 Mandiant 的取证结论：攻击者是朝鲜组织 UNC6862，与在其他平台发动类似攻击的国家支持团伙“有直接关联”<a class="ref" href="#s3">[3]</a>。</p>
+        <p>这些都是受害方和安全公司的判断。截至 2026 年 10 月，本站没有找到美国政府机构就此案公开发布的归因。曾在 Mandiant 调查团队工作多年、现任 DTEX 国家级威胁情报负责人的 Michael Barnhart 对 Recorded Future News 说，据接近调查的人士判断，当面接触 Drift 的三人中，两人可能并不知情，另一人很可能是故意的，因为他事后清空了自己的 Telegram 账号<a class="ref" href="#s13">[13]</a>。这是他个人的说法，Drift 没有公开证实。</p>
+        <h3>Tether 牵头的救助</h3>
+        <p>4 月 16 日，Drift 宣布与 Tether 等伙伴合作：Tether 拟出资最多 1.275 亿美元，其他伙伴拟出资 2,000 万美元，形式包括一笔 1 亿美元的收入挂钩信贷额度、生态拨款和给做市商的贷款<a class="ref" href="#s1">[1]</a>。Tether 说资金将“按平台表现分阶段投入”<a class="ref" href="#s25">[25]</a>；5 月的方案进一步写明，Tether 的配套资金按交易所上一季度的收入投放<a class="ref" href="#s2">[2]</a>。作为重启的一部分，Drift 把结算资产从 USDC 换成 USDT，涉及超过 12.8 万名用户和 35 个以上的生态团队<a class="ref" href="#s25">[25]</a>；Tether 另外提供一笔 2,000 万美元的做市资金<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>恢复代币 DFX</h3>
+        <p>5 月 5 日的方案定下了基本框架：每个受影响的钱包按核定损失 1:1 领取恢复代币，与 DRIFT 治理代币分开；恢复池先用协议剩余资产启动（当时约 380 万美元），再靠交易所收入、Tether 配套资金和伙伴资金逐步补充，直到覆盖全部损失，届时未赎回的代币可以按面值兑付<a class="ref" href="#s2">[2]</a>。</p>
+        <p>10 月 1 日，DFX 开放领取和赎回，领取截止 2028 年 1 月 1 日，逾期未领的销毁。赎回价等于恢复池余额除以流通量，赎回即销毁。每天 0 点（UTC），重启后交易所的净协议收入按阶梯比例注入恢复池：3 万 USDT 以内 60%，3 万到 10 万 70%，超过 10 万 90%<a class="ref" href="#s4">[4]</a>。开放当天池子里约 311 万 USDT，每枚 DFX 约兑 0.0104 USDT，即损失的约 1%<a class="ref" href="#s4">[4]</a><a class="ref" href="#s29">[29]</a>。The Cryptonomist 报道，首日收入只给池子带来约 31 USDT，Tether 和伙伴承诺的资金还没有出现在仪表盘上；当时已有 216,480 枚 DFX 被赎回，换得约 2,250 USDT<a class="ref" href="#s29">[29]</a>。CryptoSlate 提醒，承诺的是资金上限，不是已经存入池子的现金<a class="ref" href="#s36">[36]</a>。</p>
+        <p>和 5 月的方案相比，10 月的规则有几处变化：5 月写的是恢复池超过 500 万美元才开放赎回，10 月开放时池子约 311 万；收入注入从每季度改为每天；恢复目标从 295,426,725.97 美元变成约 2.995 亿枚 DFX<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。保险基金没有拿来赔这次的损失，Drift 的解释是它只覆盖交易穿仓，不覆盖攻击损失；保险基金的存款从 7 月 7 日起可以提取<a class="ref" href="#s28">[28]</a>。</p>
+        <h3>改名 Velocity 重启</h3>
+        <p>4 月起，Drift 把重建的重点放在安全上：OtterSec 负责代码重构和全面审计，Asymmetric 负责运营安全；新程序部署在全新地址，所有密钥轮换，升级到 Anchor 1.0 并删去不用的代码；Isolated Markets、Amplify 等收益产品下线，交易所收缩到永续合约<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。安全委员会换成由 Solana 基础设施、DeFi、安全、流动性等领域人士和生态贡献者组成的新多签；签名人必须用专用签名设备，在签名界面之外独立核对交易内容；所有关键管理操作加时间锁和实时告警；所有签名人禁用 durable nonce<a class="ref" href="#s1">[1]</a>。6 月，前 Helium 协议工程负责人 Noah Prince 加入主持重建，Gauntlet 的前成员参与风险参数设计<a class="ref" href="#s3">[3]</a>。</p>
+        <p>7 月 2 日，Drift 宣布更名为 Velocity<a class="ref" href="#s34">[34]</a>。本站 10 月访问时，原来的 docs.drift.trade 已跳转到 Velocity 的文档，GitHub 上的 protocol-v2 仓库也已迁到 velocity-exchange 名下并归档<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。Velocity 的文档按后果把管理权限分成三层：冷钥匙是根权限，留给可能削弱其他安全措施的改动，例如更换预言机；温钥匙负责日常参数调整，带时间锁；热钥匙一个角色一种权限，只能做一件事。另有一把单独的暂停钥匙，没有时间锁，但只能加暂停、不能解除，被盗了最多造成拒绝服务，不会变成盗窃<a class="ref" href="#s6">[6]</a>。文档同时写明，冷钥匙层的改动没有时间锁；程序代码要等分叉后的审计报告定稿后才开源<a class="ref" href="#s6">[6]</a>。到 10 月 1 日，Velocity 已在运行，并开始按天把收入存进恢复池<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>诉讼</h3>
+        <p>起诉 Circle 的是密苏里州居民 Joshua McCollum，他在 Drift 上有约 2.35 万美元的资产。他代表 Drift 投资者在马萨诸塞州联邦法院提起集体诉讼，指控 Circle 协助侵占和过失：Circle 有能力冻结，却“在数小时内明知地放任攻击者使用其技术和服务”；CCTP 唯一的用途是资金转移，按《银行保密法》本应监控可疑活动<a class="ref" href="#s23">[23]</a>。提交日期，Decrypt 写的是 4 月 14 日<a class="ref" href="#s26">[26]</a>，Cointelegraph 写的是“周三”，即 4 月 15 日<a class="ref" href="#s24">[24]</a>。Circle 的回应是，公司受监管，遵守制裁、执法命令和法院要求<a class="ref" href="#s26">[26]</a>。截至 2026 年 10 月，本站没有查到这起诉讼的实质性裁决。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>按后果给权限分级。日常运行用的钥匙不该能转移管理员或更换预言机。Velocity 重建后的冷、温、热三层加单独暂停钥匙，是一种可参考的做法。</li>
+            <li>危险操作在程序层面就要有延迟或两步确认。转移管理员应当是“提议”加“新地址接受”两步，中间留出等待期，不要一条指令直接改写。</li>
+            <li>时间锁本身也要受保护。Drift 被盗前几天刚迁移到零时间锁的多签。降低门限、缩短延迟的操作，应当和它保护的操作一样难做、一样公开。</li>
+            <li>新抵押品上架要有程序强制的门槛：最低流动性、最短上线时长、时间加权价格、初始抵押权重为 0、存款上限。CVT 上架时只存在了 20 天，池子里的真实流动性只有几百到几千美元。</li>
+            <li>提现熔断不能只由 admin 一把钥匙控制。Drift 的金库被连续提取两个多小时，没有任何自动机制叫停<a class="ref" href="#s11">[11]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给多签签名人</span>
+          <ul>
+            <li>在独立的设备上核对交易的实际内容，不要只信签名界面上的文字。Drift 重启后要求签名人用专用设备，并在签名界面之外单独核对。</li>
+            <li>遇到 durable nonce 交易（第一条指令是 <code>AdvanceNonceAccount</code>）要格外警惕。这种签名不会过期，可能在任何时候被提交，没有必要就不签。</li>
+            <li>签名设备不做开发，也不试用新软件。按 Drift 的调查，打开一个陌生的代码仓库、装一个测试版应用，就可能让设备被控制。</li>
+            <li>见过面、合作过几个月，不等于可信。Drift 被盗前，双方已经往来近半年，对方还存入了 100 万美元。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给整个行业</span>
+          <ul>
+            <li>赃款停留在可冻结资产里的时间，就是行业的响应窗口。这一次窗口只有几个小时，大部分资金随后变成了没人能冻结的 ETH。要让冻结更快，需要事先约定好的法律程序和授权渠道，事后的舆论压力替代不了它们。</li>
+            <li>多签被骗签的事件一再发生，说明增加签名人数解决不了“签名人不知道自己在签什么”的问题。签名前对交易做独立的模拟和意图校验，比多加一个签名人更有用。</li>
+            <li>DeFi 协议互相嵌套会放大损失。把资金存进别的协议时，要把对方的管理权限和时间锁当作自己的风险来评估。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Drift Protocol，《Incident Recovery Update – April 16, 2026》，2026-04-16（含被盗资产明细表）。<a href="https://www.drift.trade/updates/incident-recovery-update-april-16-2026-now">drift.trade</a></li>
+          <li id="s2">Drift Protocol，《Recovery Plan for Affected Users》，2026-05-05。<a href="https://www.drift.trade/updates/recovery-plan-for-affected-users">drift.trade</a></li>
+          <li id="s3">Drift Protocol，《Drift Recovery Update – June 3, 2026》，2026-06-04。<a href="https://www.drift.trade/updates/drift-recovery-update-june-3-2026">drift.trade</a></li>
+          <li id="s4">Drift Protocol，《DFX Claims and Redemptions are now open》，2026-10-01。<a href="https://www.drift.trade/updates/dfx-claim-and-redemptions">drift.trade</a></li>
+          <li id="s5">Drift 程序源码，velocity-exchange/protocol-v2 仓库（原 drift-labs/protocol-v2）v2.161.0 标签：instructions/admin.rs、math/spot_withdraw.rs、validation/margin.rs、state/oracle.rs。<a href="https://github.com/velocity-exchange/protocol-v2/tree/v2.161.0">github.com</a></li>
+          <li id="s6">Velocity 文档，《Admin keys and upgrade authority》，2026-10 查阅。<a href="https://docs.velocity.exchange/protocol/risk-and-safety/admin-keys">docs.velocity.exchange</a></li>
+          <li id="s7">Anza，《Durable Transaction Nonces》，Agave 文档。<a href="https://docs.anza.xyz/implemented-proposals/durable-tx-nonces">docs.anza.xyz</a></li>
+          <li id="s8">TRM Labs，《North Korean Hackers Attack Drift Protocol In USD 285 Million Heist》，2026-04-02。<a href="https://www.trmlabs.com/resources/blog/north-korean-hackers-attack-drift-protocol-in-285-million-heist">trmlabs.com</a></li>
+          <li id="s9">TRM Labs，《North Korea Stole 76% of All Crypto Hack Value in 2026 — With Just Two Attacks》，2026-04-30。<a href="https://www.trmlabs.com/resources/blog/north-korea-stole-76-of-all-crypto-hack-value-in-2026-with-just-two-attacks">trmlabs.com</a></li>
+          <li id="s10">Elliptic，《Drift Protocol exploited for $286 million in suspected DPRK-linked attack》，2026-04-02，04-07 更新。<a href="https://www.elliptic.co/blog/drift-protocol-exploited-for-286-million-in-suspected-dprk-linked-attack">elliptic.co</a></li>
+          <li id="s11">Chainalysis，《The Drift Protocol Hack: How Privileged Access Led to a $285 Million Loss》，2026-04-09。<a href="https://www.chainalysis.com/blog/lessons-from-the-drift-hack/">chainalysis.com</a></li>
+          <li id="s12">Jonathan Greig，《Crypto platform Drift suspends services after millions stolen in security incident》，The Record，2026-04-01。<a href="https://therecord.media/drift-crypto-heist-solana-hacker">therecord.media</a></li>
+          <li id="s13">Jonathan Greig，《‘It reads like a spy novel’: $280 million theft from Drift involved North Korean fake companies, cutouts》，The Record，2026-04-10。<a href="https://therecord.media/drift-crypto-theft-post-mortem-north-korea">therecord.media</a></li>
+          <li id="s14">Bill Toulas，《Drift loses $280 million as North Korean hackers seize Security Council powers》，BleepingComputer，2026-04-02。<a href="https://www.bleepingcomputer.com/news/security/drift-loses-280-million-north-korean-hackers-seize-security-council-powers/">bleepingcomputer.com</a></li>
+          <li id="s15">Shaurya Malwa，《Drift says $270 million exploit was a six-month North Korean intelligence operation》，CoinDesk，2026-04-05。<a href="https://www.coindesk.com/markets/2026/04/05/drift-says-usd270-million-exploit-was-a-six-month-north-korean-intelligence-operation">coindesk.com</a></li>
+          <li id="s16">André Beganski，《'We Are Ready to Speak': Drift Beckons North Korea-Linked Hackers Following $285M Exploit》，Decrypt，2026-04-03。<a href="https://decrypt.co/363260/we-are-ready-to-speak-drift-beckons-north-korea-linked-hackers-following-285m-exploit">decrypt.co</a></li>
+          <li id="s17">Jonathan Greig，《Drift crypto platform confirms $280 million stolen in hack as researchers point finger at North Korea》，The Record，2026-04-02。<a href="https://therecord.media/drift-crypto-confirms-280-million-stolen-north-korea">therecord.media</a></li>
+          <li id="s18">TRM Labs，《H1 2026 Crypto Hacks Reach Record High as Losses Fall Below USD 1 Billion》，2026-07-01。<a href="https://www.trmlabs.com/resources/blog/h1-2026-crypto-hacks-reach-record-high-as-losses-fall-below-usd-1-billion">trmlabs.com</a></li>
+          <li id="s19">Vismaya V，《North Korean Hackers Spent Six Months Infiltrating Drift Before $285M Exploit》，Decrypt，2026-04-06。<a href="https://decrypt.co/363364/north-korean-hackers-spent-six-months-infiltrating-drift-before-285m-exploit">decrypt.co</a></li>
+          <li id="s20">Dante Disparte，《When Open Systems Are Tested: Accountability, Rule of Law, and the Work Ahead》，Circle 博客，2026-04-10。<a href="https://www.circle.com/blog/when-open-systems-are-tested-accountability-rule-of-law-and-the-work-ahead">circle.com</a></li>
+          <li id="s21">Helen Partz，《Drift explains $280M exploit as critics question Circle over USDC freeze》，Cointelegraph，2026-04-02。<a href="https://cointelegraph.com/news/drift-280-million-hack-questions-circle-response">cointelegraph.com</a></li>
+          <li id="s22">Yohan Yun，《North Korean cyber spies are no longer just remote threats》，Cointelegraph Magazine，2026-04-09。<a href="https://cointelegraph.com/magazine/north-korean-cyber-spies-not-just-remote-threats">cointelegraph.com</a></li>
+          <li id="s23">Aleks Gilbert、Mathew Di Salvo，《Drift degen sues Circle, alleging stablecoin giant ‘did nothing’ during $295m hack》，DL News，2026-04-18（本站阅读的是 Yahoo Finance 转载版）。<a href="https://www.dlnews.com/articles/regulation/drift-user-sues-circle-for-inaction-in-biggest-hack-of-2026/">dlnews.com</a> / <a href="https://finance.yahoo.com/markets/crypto/articles/drift-degen-sues-circle-alleging-154202900.html">finance.yahoo.com</a></li>
+          <li id="s24">Brayden Lindrea，《Stablecoin issuer Circle faces lawsuit over $280M Drift Protocol hack》，Cointelegraph，2026-04-17。<a href="https://cointelegraph.com/news/circle-faces-class-action-lawsuit-after-drift-protocol-hack">cointelegraph.com</a></li>
+          <li id="s25">Tether，《Tether Leads Support to the $150M Drift Recovery Plan, Stabilizes Relaunch as Drift Plans to Expand USD₮ Usage on Solana》，2026-04-16。<a href="https://tether.io/news/tether-leads-support-to-the-150m-drift-recovery-plan-stabilizes-relaunch-as-drift-plans-to-expand-usdt-usage-on-solana/">tether.io</a></li>
+          <li id="s26">Decrypt，《Circle Hit With Class Action Lawsuit Over $285M Drift Protocol Hack》，2026-04-17（Yahoo Finance 转载）。<a href="https://finance.yahoo.com/markets/crypto/articles/circle-hit-class-action-lawsuit-111035999.html">finance.yahoo.com</a></li>
+          <li id="s27">Bitcoin.com News，《Solana Yield Protocol Carrot Shuts Down After Drift Exploit Drains $8M in TVL》，2026-04-30。<a href="https://news.bitcoin.com/solana-yield-protocol-carrot-shuts-down-after-drift-exploit-drains-8m-in-tvl/">news.bitcoin.com</a></li>
+          <li id="s28">Lawrence Mondal，《Drift opens DFX recovery claims with initial payouts near 1% of losses》，crypto.news，2026-10-01。<a href="https://crypto.news/drift-opens-dfx-recovery-claims-with-initial-payouts/">crypto.news</a></li>
+          <li id="s29">The Cryptonomist，《Drift Velocity exploit recovery pays victims just 1 cent on the dollar》，2026-10-03。<a href="https://en.cryptonomist.ch/2026/10/03/drift-velocity-exploit-recovery/">cryptonomist.ch</a></li>
+          <li id="s30">Ikemefula Aruogu，《Drift Foundation Updates Users on April 1 Hack Recovery Efforts》，Coin Edition，2026-10-01。<a href="https://coinedition.com/drift-foundation-updates-users-on-april-1-hack-recovery-efforts/">coinedition.com</a></li>
+          <li id="s31">Olivia Stephanie，《Drift exploiter resurfaces after 2 months, moves $61.6M in ETH to Tornado Cash》，crypto.news，2026-10-20。<a href="https://crypto.news/drift-exploiter-tornado-cash-eth/">crypto.news</a></li>
+          <li id="s32">Crypto Economy，《Drift Protocol Exploiter Transfers $109 Million in Ether to Tornado Cash Over Two Days》，2026-10-21（引 Onchain Lens 数据）。<a href="https://crypto-economy.com/drift-protocol-exploiter-transfers-109m-in-eth/">crypto-economy.com</a></li>
+          <li id="s33">Cointribune，《Crypto: The Drift Protocol Hacker Uses Tornado Cash to Launder $122 Million》，2026-10-22（引 Arkham 数据）。<a href="https://www.cointribune.com/en/crypto-the-drift-protocol-hacker-uses-tornado-cash-to-launder-122-million/">cointribune.com</a></li>
+          <li id="s34">渡邉洋輔，《ソラナの無期限先物DEX「ドリフト」が「ベロシティ」へリブランディング、プライベートβ開始へ》，あたらしい経済，2026-07-03（Yahoo!ニュース转载）。<a href="https://news.yahoo.co.jp/articles/2276020dd6db2bfba685d547b51716f8a087b1ec">news.yahoo.co.jp</a></li>
+          <li id="s35">Estefano Gomez，《Solana’s DeFi TVL recovers above $6.5B after Drift hack wiped $285M》，Crypto Briefing，2026-09-30。<a href="https://cryptobriefing.com/solana-defi-tvl-recovers-drift-hack/">cryptobriefing.com</a></li>
+          <li id="s36">Liam ‘Akiba’ Wright，《Drift hack recovery opened near one cent per dollar lost》，CryptoSlate，2026-10-04。<a href="https://cryptoslate.com/drift-hack-recovery-opened-near-one-cent-per-dollar-lost/">cryptoslate.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

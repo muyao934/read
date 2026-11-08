@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balancer V2 舍入误差攻击｜区块链被盗事件编年史</title>
+<meta name="description" content="2025 年 11 月 Balancer V2 的 Composable Stable Pool 因“精确输出”兑换的舍入方向错误被掏空：漏洞代码、攻击步骤、多条链的停链冻结与硬分叉追款，以及一年后 BAL 持有人投票关停协议。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2025-balancer-v2">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2025 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Balancer V2 舍入误差攻击</h1>
+    <p class="lede">2025 年 11 月 3 日，攻击者利用 Balancer V2 稳定池在“精确输出”兑换中把金额向下取整的问题，在一笔交易里先把池子抽到只剩几 wei，再用几十次小额兑换放大舍入误差、压低 BPT 价格，然后低价补回 BPT，带走池中资产。同样的操作在半小时内复制到了多条链和多个分叉协议上。这段代码已运行四年、经过多家公司审计；事后 Berachain、Gnosis Chain 和 Sonic 分别动用了停链、硬分叉和地址冻结，Balancer 自己也在一年内走向关停。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Balancer V2 的所有池子共用一个 Vault 托管资产，池子合约只负责定价。Composable Stable Pool（下文简称 CSP）用于价格相近的资产，例如 WETH 和 wstETH、osETH 这类流动性质押代币。它把自己的 LP 代币 BPT 也登记为池中代币，让加入和退出流动性可以写成普通的兑换。池子计算前，要把余额和兑换金额乘上“缩放因子”，即精度换算再乘以代币汇率，这一步一律向下取整。在“精确输出”（GIVEN_OUT）兑换里，被向下取整的恰好是池子要付出去的数量，池子因此会少算调用者应付的数量<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>这个误差平时不到 1 wei，可以忽略。攻击者在同一笔 <code>batchSwap</code> 里先用并不持有的 BPT 换走池中几乎全部代币，把余额压到个位数 wei，这时一次截断就相当于金额的 5% 到 10%。接着是几十次算好数量的小额兑换，每次都少付一点，池子的不变量 D 越来越小，BPT 的价格随之下降。最后攻击者按压低后的价格买回 BPT 还清欠款，多出的代币记在自己的 Vault 内部余额里，再用另一笔交易提走<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</p>
+        <p>按 Balancer 官方统计，自家部署的池子被转走约 1.21 亿美元，扣除 StakeWise 和白帽追回的约 2,650 万美元，攻击者实际拿走约 9,490 万美元；另有约 1,940 万美元因池子及时暂停而保住，约 710 万美元在 Gnosis Chain 上被验证者冻结<a class="ref" href="#s1">[1]</a>。常被引用的 <span class="dispute" title="PeckShield 的统计，可能包含分叉协议；Balancer 官方统计的被转出金额为 1.2116 亿美元">1.28 亿美元</span>来自安全公司 PeckShield，统计口径不同，“资金去向”一节有对照<a class="ref" href="#s15">[15]</a>。攻击者至今没有被任何执法机构或安全公司公开认定。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Balancer 是以太坊上历史最久的 AMM 之一<a class="ref" href="#s14">[14]</a>。V2 的核心设计是把所有池子的资产集中放在一个 Vault 合约里，池子合约只提供定价逻辑。Vault 支持 <code>batchSwap</code>：一笔交易可以串联多次兑换，中途每个代币的进出只记账，最后才按净额结算。用户还可以把资产留在 Vault 里作为“内部余额”，省去反复转账<a class="ref" href="#s1">[1]</a>。这次被攻击的代码在 V2 上运行了四年多<a class="ref" href="#s29">[29]</a>。</p>
+        <p>稳定池使用 Curve 的 StableSwap 不变量 D，适合价格接近 1:1 的资产。CSP 在普通稳定池上加了两样东西。一是 rate provider：wstETH、osETH、rETH 这类收益型代币相对 ETH 的汇率会慢慢上涨，池子计算前要先把它们折算成底层资产的数量。二是“可组合”：池子预铸大量自己的 BPT 并把它登记为池中代币，用代币换 BPT 就等于单币加入流动性（joinSwap），用 BPT 换代币就等于单币退出（exitSwap），两者都能放进 <code>batchSwap</code><a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。Balancer 事后的分析指出，正是这两个特性让一个原本可以忽略的舍入问题变得可以利用。</p>
+        <p>Balancer V2 被 OpenZeppelin、Trail of Bits、Certora 和 ABDK 四家公司审计过 11 次<a class="ref" href="#s17">[17]</a>。OpenZeppelin 事后追溯，带汇率的缩放因子是 2021 年 7 月 16 日先加进 MetaStablePool，9 月 1 日加进 Linear Pool，9 月 20 日加进 StablePhantomPool，也就是后来的 ComposableStablePool；它当年的两轮审计都不包括这些池子<a class="ref" href="#s5">[5]</a>。Trail of Bits 在 2021 年 10 月的 Linear Pool 审查中报告过同类问题，编号 TOB-BALANCER-004，当时无法证明可以获利，严重性记为“未确定”；2022 年 9 月它审查 CSP 时，StableMath 库不在范围内<a class="ref" href="#s4">[4]</a>。</p>
+        <p>CSP 的工厂合约带“暂停窗口”：窗口期内，获授权的地址可以暂停池子；窗口一过，池子就永远不能暂停。2024 年 2 月部署的 v6 工厂与 2023 年 7 月的 v5 功能相同，只是把暂停窗口延长到 4 年、缓冲期 6 个月<a class="ref" href="#s7">[7]</a>。事发时，v6 池子仍在窗口期内，v5 池子的窗口已经过期<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <p>这也不是 Balancer V2 第一次因为池子出问题。Balancer 后来说，团队是在 Linear Pool 漏洞之后决定不再逐步修补 V2、改为重写 V3 的<a class="ref" href="#s31">[31]</a>。V3 于 2024 年 12 月上线，架构和代码完全不同，这次没有受到影响<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-07 至 09</time><div class="ev">带汇率的缩放因子先后加入 MetaStablePool、Linear Pool 和 StablePhantomPool（后改名 ComposableStablePool），这些池子不在 OpenZeppelin 当年两轮审计的范围内<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2021-10</time><div class="ev">Trail of Bits 在 Linear Pool 审查中报告 StableMath 的舍入问题 TOB-BALANCER-004，严重性“未确定”<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2023-07 / 2024-02</time><div class="ev">CSP v5、v6 工厂先后部署。v6 功能不变，暂停窗口延长到 4 年<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="atk key"><time>2025-11-03</time><div class="ev">07:46（UTC）攻击开始。以太坊区块 23,717,397，攻击者部署攻击合约，构造函数里的 <code>batchSwap</code> 掏空 osETH/WETH 和 wstETH/WETH 两个池子；Arbitrum、Base、Optimism、Polygon 上几乎同时出现同类交易<a class="ref" href="#s1">[1]</a><a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2025-11-03</time><div class="ev">07:46，MEV 机器人 Bitfinding 在以太坊上抢跑攻击者，截下约 96.4 万美元<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2025-11-03</time><div class="ev">07:48，攻击者用第二笔交易把攻击合约在 Vault 里的内部余额转到另一个地址<a class="ref" href="#s6">[6]</a><a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2025-11-03</time><div class="ev">07:52，Hypernative 的监控报警，Balancer 建立应急作战室。08:07，仍在暂停窗口内的 CSP v6 池子被暂停，保住约 1,930 万美元<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2025-11-03</time><div class="ev">08:14，SEAL 911 主动联系 Balancer；08:29，各链攻击者地址标记完毕，交易所和其他协议据此拦截<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2025-11-03</time><div class="ev">08:39，第一笔模仿攻击出现，距首次攻击 53 分钟<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2025-11-03</time><div class="ev">攻击开始约 90 分钟后，StakeWise 用紧急多签销毁攻击者手里的 osETH 和 osGNO，在 DAO 地址重铸等量代币，追回约 5,041 枚 osETH 和 13,495 枚 osGNO<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2025-11-03</time><div class="ev">09:50，Balancer 在 X 上首次公开确认事件；11:01，受影响池子开启 Recovery Mode，LP 可以按比例取回剩余资产<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2025-11-03</time><div class="ev">Berachain 验证者协调停链，准备紧急硬分叉<a class="ref" href="#s16">[16]</a>；Sonic Labs 冻结攻击者在 Sonic 上的地址<a class="ref" href="#s15">[15]</a>；Gnosis 跨链桥暂停出金，Monerium 冻结被盗的 EURe<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2025-11 上旬</time><div class="ev">Balancer 公开提出：48 小时内全额归还可得 20% 白帽赏金，否则交由链上取证和执法部门处理<a class="ref" href="#s17">[17]</a>。攻击者没有回应<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2025-11-04</time><div class="ev">Emergency SubDAO 关停受影响池子的 gauge，停止 BAL 激励。StakeWise 提出 SWIP-37，放弃对 osETH、osGNO 合约的所有权<a class="ref" href="#s1">[1]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2025-11-05</time><div class="ev">各链 CSP v6 工厂被禁用。Gnosis Chain 过半验证者部署软分叉，拒绝打包攻击者的交易；当天发现问题，11 月 7 日重新部署<a class="ref" href="#s1">[1]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="atk"><time>2025-11-07 至 15</time><div class="ev">攻击者把 21,000 ETH 分三批转到三个新地址；另一个中转地址分 40 次向 Tornado Cash 存入约 3,700 ETH<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2025-11-18</time><div class="ev">Balancer 发布正式 post-mortem。BIP-887 通过，V2 所有可禁用的池子工厂停用，新流动性只走 V3<a class="ref" href="#s1">[1]</a><a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="def"><time>2025-12-16</time><div class="ev">BIP-892 通过：白帽按 SEAL 安全港协议领 10% 赏金，追回资金按池子、按攻击前的 BPT 持仓原样退给 LP<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def key"><time>2025-12-22</time><div class="ev">16:11:40（UTC），Gnosis Chain 硬分叉生效，攻击者账户的代码被替换成只听 DAO 多签指挥的转发合约，约 940 万美元被盗资产重回 DAO 控制<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2026-02-10</time><div class="ev">BIP-908 通过：归还资产或提供线索促成追回者，可得追回额的 10%<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2026-03-23</time><div class="ev">联合创始人 Fernando Martinelli 宣布关闭 Balancer Labs，协议转由更精简的 OpCo 运营<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="atk"><time>2026-04-24 至 25</time><div class="ev">沉寂五个多月的 21,000 ETH 经两个中转地址分 35 笔存入 THORChain Router，换成比特币<a class="ref" href="#s26">[26]</a><a class="ref" href="#s27">[27]</a>。</div></li>
+          <li class="def"><time>2026-08-25</time><div class="ev">BIP-923 通过，追回资金的领取期从 6 个月延长到 12 个月<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2026-08-31</time><div class="ev">Balancer V1 的一个池子被同类手法攻击，损失约 23.4 万美元<a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="key"><time>2026-09-29</time><div class="ev">BAL 持有人以 99.2% 的赞成票通过 BIP-928，协议有序关停、国库按比例分给 BAL 持有人；另立分叉延续协议的 BIP-929 被否决<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li><time>2026-10-30</time><div class="ev">可暂停的池子转为只能提款，所有池子的漏洞赏金同日结束；申请延期的 V3 池子保留到 11 月 30 日<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li><time>2027-05 底（计划）</time><div class="ev">BAL 赎回开放：持有人销毁 BAL，按比例领取国库资产<a class="ref" href="#s24">[24]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>Balancer V2 的兑换有两种：GIVEN_IN 指定付出多少、求能换到多少；GIVEN_OUT 指定要拿走多少（amountOut），求要付多少（amountIn）。池子内部的数学一律按 18 位精度计算，所以进入公式之前，余额和金额都要乘上每个代币的缩放因子。CSP 的缩放因子等于精度换算乘以代币汇率<a class="ref" href="#s2">[2]</a>。WETH 的汇率是 1，缩放因子是整数倍，乘完不丢精度；osETH、wstETH 的汇率略大于 1，缩放因子是一个不整齐的 18 位小数，乘完必须取整，取整的方向就成了问题。下面是 GIVEN_OUT 兑换的处理函数。CSP 重写了它，但只是把涉及 BPT 的兑换分流出去，普通代币之间的兑换仍然调用这段父类代码：</p>
+<pre class="code"><code><span class="c">// BaseGeneralPool.sol，GIVEN_OUT 兑换（CSP 中非 BPT 代币之间的兑换走这里）</span>
+function _swapGivenOut(
+    SwapRequest memory swapRequest,
+    uint256[] memory balances,
+    uint256 indexIn,
+    uint256 indexOut,
+    uint256[] memory scalingFactors
+) internal virtual returns (uint256) {
+    _upscaleArray(balances, scalingFactors);
+    <span class="c">// 此时 swapRequest.amount 是调用者要拿走的 amountOut，被 _upscale 向下取整</span>
+<span class="bad">    swapRequest.amount = _upscale(swapRequest.amount, scalingFactors[indexOut]);</span>
+
+    uint256 amountIn = _onSwapGivenOut(swapRequest, balances, indexIn, indexOut);
+
+    // amountIn tokens are entering the Pool, so we round up.
+    amountIn = _downscaleUp(amountIn, scalingFactors[indexIn]);
+
+    // Fees are added after scaling happens, to reduce the complexity of the
+    // rounding direction analysis.
+    return _addSwapFeeAmount(amountIn);
+}</code></pre>
+        <p class="code-cap">来源：balancer/balancer-v2-monorepo，pkg/pool-utils/contracts/BaseGeneralPool.sol 第 68–85 行（去掉一层缩进，长注释折行）；CSP 的分流逻辑见 pkg/pool-stable/contracts/ComposableStablePool.sol 第 218–235 行。</p>
+<pre class="code"><code><span class="c">// ScalingHelpers.sol</span>
+function _upscale(uint256 amount, uint256 scalingFactor) pure returns (uint256) {
+    // Upscale rounding wouldn't necessarily always go in the same direction: in a swap for
+    // example the balance of token in should be rounded up, and that of token out rounded
+    // down. This is the only place where we round in the same direction for all amounts,
+    // as the impact of this rounding is expected to be minimal.
+<span class="bad">    return FixedPoint.mulDown(amount, scalingFactor);   <span class="c">// 一律向下取整</span></span>
+}
+
+<span class="c">// ComposableStablePoolRates.sol：缩放因子 = 精度换算 × 代币汇率，本身也是向下取整</span>
+function _scalingFactors() internal view virtual override returns (uint256[] memory) {
+    <span class="c">// ……</span>
+    for (uint256 i = 0; i &lt; totalTokens; ++i) {
+        scalingFactors[i] = _getScalingFactor(i).mulDown(_getTokenRate(i));
+    }
+    <span class="c">// ……</span>
+}</code></pre>
+        <p class="code-cap">来源：同上，pkg/solidity-utils/contracts/helpers/ScalingHelpers.sol 第 35–40 行（长注释折行）；pkg/pool-stable/contracts/ComposableStablePoolRates.sol 第 270–280 行（中间从略）。</p>
+        <p>amountOut 是池子要付出去的数量。按“取整要对池子有利”的原则，它应该向上取整。<code>_upscale</code> 的注释写得很清楚：这是全库唯一一处不分方向的取整，作者认为影响很小。Certora 指出，向下取整让 amountOut 被少算，StableMath 据此算出的应付数量也跟着偏少<a class="ref" href="#s3">[3]</a>。后面的代码确实在往“多收”的方向取整：<code>_downscaleUp</code> 向上取整，StableMath 在结果上再加 1。Balancer 的 post-mortem 说，由于 StableMath 的计算方式，amountIn 最终同样被向下取整，调用者为同样的 amountOut 付得太少<a class="ref" href="#s1">[1]</a>。</p>
+<pre class="code"><code><span class="c">// StableMath.sol，_calcInGivenOut 的主体（参数从略）</span>
+// Amount in, so we round up overall.
+balances[tokenIndexOut] = balances[tokenIndexOut].sub(tokenAmountOut);
+<span class="c">// tokenAmountOut 已经是被向下取整过的 amountOut</span>
+
+uint256 finalBalanceIn = _getTokenBalanceGivenInvariantAndAllOtherBalances(
+    amplificationParameter, balances, invariant, tokenIndexIn
+);
+
+balances[tokenIndexOut] = balances[tokenIndexOut] + tokenAmountOut;
+
+<span class="good">return finalBalanceIn.sub(balances[tokenIndexIn]).add(1);   <span class="c">// 结果再加 1，往“多收”方向修正</span></span></code></pre>
+        <p class="code-cap">来源：同上，pkg/pool-stable/contracts/StableMath.sol 第 184–198 行（省略中间一段英文注释，参数合并为一行）。</p>
+        <p>开发者处处留意了 amountIn 的取整方向，漏掉的是 amountOut 在进入公式之前就已经少算了这一步。被截掉的部分不到 1 wei，余额正常时 Certora 称之为可以忽略的“差一”误差<a class="ref" href="#s3">[3]</a>。OpenZeppelin 给了一个例子：amountOut 为 17、缩放因子为 1.058132408689971699 时，精确值约为 17.988，<code>mulDown</code> 之后只剩 17，少计了约 5.5%<a class="ref" href="#s5">[5]</a>。Check Point 的分析指出，当代币余额落在 8 到 9 wei 时，一次缩放最多会损失约 10% 的相对精度；余额同样经过向下取整的 <code>_upscaleArray</code>，误差会一路传进不变量 D，让 D 被低估<a class="ref" href="#s6">[6]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 340" role="img" aria-labelledby="bal-r-t bal-r-d">
+            <title id="bal-r-t">GIVEN_OUT 兑换的取整路径</title>
+            <desc id="bal-r-d">调用者给出 amountOut。第一步 _upscale 把它乘以缩放因子并向下取整；第二步 StableMath 按不变量 D 算出应付数量并加 1；第三步 _downscaleUp 换回原始精度并向上取整，再加手续费。问题出在第一步。以 OpenZeppelin 的例子，17 乘以 1.058 的精确值是 17.988，取整后只剩 17，少计约 5.5%。余额正常时这点误差可以忽略，余额被压到个位数 wei 时就变成了金额的百分之几到十。</desc>
+            <defs>
+              <marker id="bal-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bal-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="18" y="14" width="165" height="72" rx="4"/>
+            <text class="d-t b" x="100" y="40" text-anchor="middle">调用者指定</text>
+            <text class="d-t s m" x="100" y="62" text-anchor="middle">amountOut</text>
+            <rect class="d-box atk" x="208" y="14" width="165" height="72" rx="4"/>
+            <text class="d-t b" x="290" y="40" text-anchor="middle">① <tspan class="m">_upscale()</tspan></text>
+            <text class="d-t s atk" x="290" y="62" text-anchor="middle">乘缩放因子，向下取整</text>
+            <rect class="d-box" x="398" y="14" width="165" height="72" rx="4"/>
+            <text class="d-t b" x="480" y="40" text-anchor="middle">② StableMath</text>
+            <text class="d-t s" x="480" y="62" text-anchor="middle">按 D 算应付数量，+1</text>
+            <rect class="d-box" x="588" y="14" width="165" height="72" rx="4"/>
+            <text class="d-t b" x="670" y="40" text-anchor="middle">③ <tspan class="m">_downscaleUp()</tspan></text>
+            <text class="d-t s" x="670" y="62" text-anchor="middle">换回原精度，向上取整</text>
+            <line class="d-line atk" x1="183" y1="50" x2="206" y2="50" marker-end="url(#bal-ah-atk)"/>
+            <line class="d-line atk" x1="373" y1="50" x2="396" y2="50" marker-end="url(#bal-ah-atk)"/>
+            <line class="d-line" x1="563" y1="50" x2="586" y2="50" marker-end="url(#bal-ah)"/>
+            <text class="d-t s" x="20" y="124">例：osETH 的缩放因子约为 <tspan class="m">1.058132408689971699</tspan>，amountOut = 17</text>
+            <text class="d-t s" x="20" y="164">应计入</text>
+            <rect class="d-box soft" x="80" y="148" width="400" height="22" rx="2"/>
+            <text class="d-t s m" x="492" y="164">17.988（精确值）</text>
+            <text class="d-t s" x="20" y="206">实际计入</text>
+            <rect class="d-box atk" x="80" y="190" width="378" height="22" rx="2"/>
+            <path class="d-line atk dash" d="M458,190 h22 v22 h-22 z"/>
+            <text class="d-t s m atk" x="492" y="206">17（取整后），少计约 5.5%</text>
+            <rect class="d-box soft" x="18" y="238" width="724" height="88" rx="4"/>
+            <text class="d-t s" x="36" y="268">余额正常时（以 10¹⁸ 为单位计数），这个截断不到 1 wei，可以忽略</text>
+            <text class="d-t s" x="36" y="294">攻击者先把余额压到个位数 wei，同样的截断就变成金额的百分之几到十</text>
+            <text class="d-t s atk" x="36" y="314">在一笔 batchSwap 里重复几十次，D 和 BPT 价格就被一点点压低</text>
+          </svg>
+          </div>
+          <figcaption>图 1：GIVEN_OUT 兑换的计算顺序。红色是出问题的一步：池子要付出的数量在进入公式之前被向下取整。数值例子来自 OpenZeppelin 的分析<a class="ref" href="#s5">[5]</a>。</figcaption>
+        </figure>
+        <h3>三个前提</h3>
+        <p>Balancer 的 post-mortem 列出了利用这个漏洞的三个前提：GIVEN_OUT 兑换的取整错误；rate provider 带来不整齐的缩放因子；池子处于极低流动性状态，把误差放大到可以获利。只有同时用了 rate provider 和池内 BPT 的 CSP 三条都满足，少数没有用收益型代币的 CSP 也不受影响<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>池子类型</th><th>前提是否满足</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td>Composable Stable Pool（带 rate provider）</td><td>三条都满足</td><td>被攻击。v6 池子被及时暂停，v5 池子已过暂停窗口</td></tr>
+              <tr><td>普通 Stable Pool</td><td>没有 rate provider</td><td>未受影响</td></tr>
+              <tr><td>MetaStable Pool</td><td>有 rate provider，但不满足低流动性条件</td><td>这条路径不受影响。事后 Certora 等发现了另一条提取路径，约 410 万美元被抢先转移保护</td></tr>
+              <tr><td>Weighted Pool</td><td>没有 rate provider，数学完全不同</td><td>未受影响。幂函数误差大，代码本身带有更大的补偿，单个 wei 的误差被淹没</td></tr>
+              <tr><td>Gyro Pool</td><td>使用虚拟余额</td><td>未受影响。真实余额的微小变化不影响结果</td></tr>
+              <tr><td>Balancer V3</td><td>精度换算由 Vault 统一处理，每步运算都规定取整方向</td><td>未受影响</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>把 BPT 放进池子</h3>
+        <p>第三个前提最关键。V2 的 Vault 不可重入，原本没法在同一笔交易里既加入或退出流动性、又做兑换。CSP 把自己的 BPT 当成池中代币，加入和退出就变成了兑换，可以和其他兑换一起写进 <code>batchSwap</code><a class="ref" href="#s1">[1]</a>。<code>batchSwap</code> 只在最后核对净额，中途允许出现欠款，用 Certora 的话说，用户可以暂时欠 Vault 一笔 BPT<a class="ref" href="#s3">[3]</a>。攻击者因此能在交易中途“借”来任意数量的 BPT，用它换空池子，在极低的余额下反复利用取整误差，最后再把 BPT 补上。</p>
+        <p>修法是对池子要付出的数量向上取整。下面是示意，不是 Balancer 发布的补丁。V2 的池子合约不可升级，事后能做的只有暂停、开启 Recovery Mode、禁用工厂和引导 LP 迁移到 V3<a class="ref" href="#s1">[1]</a>：</p>
+<pre class="code"><code><span class="c">// 示意：GIVEN_OUT 路径按资金流向分别取整</span>
+_upscaleArray(balances, scalingFactors);
+<span class="c">// 池子要付出的 amountOut 向上取整，据此算出的 amountIn 只会偏多</span>
+<span class="good">swapRequest.amount = FixedPoint.mulUp(swapRequest.amount, scalingFactors[indexOut]);</span>
+uint256 amountIn = _onSwapGivenOut(swapRequest, balances, indexIn, indexOut);
+amountIn = _downscaleUp(amountIn, scalingFactors[indexIn]);</code></pre>
+        <p class="code-cap">示意代码。V3 的做法是让池子数学本身按正确方向取整，ExactOut 兑换的 amountIn 取整已经改正，计算时还把 tokenIn 的余额向上取整；此外给每个代币设了最低余额，让池子无法被压到极低状态<a class="ref" href="#s29">[29]</a>。</p>
+        <div class="note">
+          <span class="h">为什么四年没人发现</span>
+          <p>Trail of Bits 事后写道，模糊测试第一次找到“方向错了的 1 wei 精度损失”时，它看起来无关紧要；只有在低流动性、特定参数的池子里，这点损失才可能大到有利可图<a class="ref" href="#s4">[4]</a>。Certora 2022 年对 V2 稳定池的形式化验证证明了总体偿付能力，例如 BPT 余额不超过总量、不存入资产就不能铸出 BPT，但这些性质不约束单次兑换的取整。它事后列出两条本可以抓住这个漏洞的性质：往返兑换不能获利；任何操作都不能让单个 BPT 的价值下降<a class="ref" href="#s3">[3]</a>。</p>
+        </div>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以太坊上的主攻击由两笔交易完成。下面的步骤综合了 Check Point 对交易的还原、OpenZeppelin 的分析和 Balancer 的 post-mortem<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</p>
+        <ol class="steps">
+          <li><b>准备</b>攻击地址 <span class="addr">0x506D1f9EFe24f0d47853aDca907EB8d89AE03207</span> 的启动资金经 Tornado Cash 转入<a class="ref" href="#s14">[14]</a><a class="ref" href="#s18">[18]</a>。rekt.news 发现，攻击者事先在链上部署了一个“数学辅助”合约，专门计算每一步兑换的最佳数量<a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>部署即攻击</b>07:46:47（UTC），区块 23,717,397，攻击者部署攻击合约 <span class="addr">0x54B53503c0e2173Df29f8da735fBd45Ee8aBa30d</span>。合约的构造函数直接对 osETH/WETH 和 wstETH/WETH 两个 CSP 执行 <code>batchSwap</code>，部署完成时盗窃已经完成<a class="ref" href="#s6">[6]</a><a class="ref" href="#s26">[26]</a>。</li>
+          <li><b>第一阶段：用借来的 BPT 抽空池子</b>攻击者用 exitSwap 把池中几乎全部 WETH 和 osETH 换走。这些 BPT 攻击者并不持有，<code>batchSwap</code> 允许先欠后还<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>第二阶段：几十次小额兑换</b>余额只剩几 wei 后，攻击者按事先算好的数量做 GIVEN_OUT 兑换。Check Point 在这一次部署中数出 65 轮：先用较大的兑换把某个代币的余额推到 8 到 9 wei 的临界点，再用小额兑换触发取整损失。每轮付给协议费用收集合约的 osETH 从约 0.414 枚降到接近 0，说明池子一轮比一轮小<a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>第三阶段：低价补回 BPT</b>不变量 D 被压低，BPT 价格随之下降。攻击者用 joinSwap 存入少量代币，换回 BPT 还清第一阶段的欠款。Vault 只核对净额，多出来的代币记在攻击合约的内部余额里。两个池子合计为 6,586 WETH、6,851 osETH 和 4,259 wstETH<a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>提走</b>07:48:11，区块 23,717,404，攻击者调用合约的 <code>0x8a4f75d6</code> 函数，由它调用 Vault 的 <code>manageUserBalance</code>，把内部余额转到外部地址 <span class="addr">0xAa760D53541d8390074c61DEFeaba314675b8e3f</span><a class="ref" href="#s6">[6]</a><a class="ref" href="#s26">[26]</a>。</li>
+          <li><b>多链复制</b>同样的操作几乎同时出现在 Arbitrum、Base、Optimism 和 Polygon 上<a class="ref" href="#s1">[1]</a>。数学辅助合约的源码在链上可读，rekt.news 的说法是“改掉池子地址和收款地址，部署，获利”。27 个 V2 分叉继承了这段代码，一周后仍有模仿攻击<a class="ref" href="#s15">[15]</a>。</li>
+        </ol>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 330" role="img" aria-labelledby="bal-p-t bal-p-d">
+            <title id="bal-p-t">一笔 batchSwap 中的三个攻击阶段</title>
+            <desc id="bal-p-d">示意图。横轴是同一笔交易里的执行顺序。第一阶段用借来的 BPT 做 exitSwap，池中代币余额骤降到几 wei，BPT 价格不变。第二阶段做几十次 GIVEN_OUT 小额兑换，每次少付一点，BPT 价格一级级下降。第三阶段用 joinSwap 按低价补回 BPT，池中余额回升但低于攻击前，差额记入攻击者的 Vault 内部余额。</desc>
+            <defs>
+              <marker id="bal-ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box atk" x="18" y="12" width="206" height="62" rx="4"/>
+            <text class="d-t b" x="121" y="37" text-anchor="middle">① exitSwap</text>
+            <text class="d-t s" x="121" y="59" text-anchor="middle">借 BPT 换走几乎全部代币</text>
+            <rect class="d-box atk" x="246" y="12" width="278" height="62" rx="4"/>
+            <text class="d-t b" x="385" y="37" text-anchor="middle">② 几十次 GIVEN_OUT 小额兑换</text>
+            <text class="d-t s" x="385" y="59" text-anchor="middle">每次少付一点，D 一级级变小</text>
+            <rect class="d-box atk" x="546" y="12" width="196" height="62" rx="4"/>
+            <text class="d-t b" x="644" y="37" text-anchor="middle">③ joinSwap</text>
+            <text class="d-t s" x="644" y="59" text-anchor="middle">低价补回 BPT，差额留下</text>
+            <line class="d-line dash" x1="235" y1="84" x2="235" y2="294"/>
+            <line class="d-line dash" x1="535" y1="84" x2="535" y2="294"/>
+            <text class="d-t s" x="24" y="104">BPT 价格（约等于 D ÷ BPT 总量）</text>
+            <line class="d-line dash" x1="535" y1="118" x2="742" y2="118"/>
+            <path class="d-line atk" d="M24,118 H262 V124 H284 V131 H306 V138 H328 V145 H350 V152 H372 V159 H394 V165 H416 V171 H438 V176 H460 V181 H482 V185 H504 V188 H535 H742"/>
+            <text class="d-t s atk halo" x="640" y="160" text-anchor="middle">BPT 贬值</text>
+            <text class="d-t s" x="24" y="214">池中代币余额</text>
+            <line class="d-line dash" x1="535" y1="226" x2="742" y2="226"/>
+            <path class="d-line" d="M24,226 H112 L150,276 H560 L600,250 H742"/>
+            <text class="d-t s halo" x="385" y="266" text-anchor="middle">余额只剩几 wei</text>
+            <text class="d-t s halo" x="672" y="242" text-anchor="middle">池子净流出</text>
+            <line class="d-line" x1="24" y1="304" x2="740" y2="304" marker-end="url(#bal-ah2)"/>
+            <text class="d-t s" x="24" y="322">同一笔交易内的执行顺序（交易结束时 Vault 只核对净额）</text>
+          </svg>
+          </div>
+          <figcaption>图 2：一次攻击交易里的三个阶段（示意，比例不代表真实数值）。上面的红线是 BPT 价格，下面是池中代币余额，虚线是攻击前的水平。第一、三阶段按当时价格退出和加入，本身不改变 BPT 价格；价格是在第二阶段被取整误差一点点压下去的。</figcaption>
+        </figure>
+        <div class="note doubt">
+          <span class="h">早期的误判</span>
+          <p>事发当天，Halborn、Nansen 的分析师和多家媒体把原因归于 <code>manageUserBalance</code> 的权限检查有误，因为资金是通过这个函数提走的<a class="ref" href="#s16">[16]</a><a class="ref" href="#s17">[17]</a><a class="ref" href="#s18">[18]</a><a class="ref" href="#s28">[28]</a>。Balancer 的 post-mortem 明确说，内部余额功能本身与漏洞无关，攻击者只是把赃款暂存在那里<a class="ref" href="#s1">[1]</a>。</p>
+        </div>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>Balancer 的 post-mortem 用一张资金流向图交代了自家部署的池子：有风险的资金约 1.478 亿美元，分布在 9 条链上<a class="ref" href="#s1">[1]</a>。它只统计 Balancer 部署的池子，不包括 Berachain、Sonic 等链上的分叉协议。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">金额（美元）</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>有风险的资金</td><td class="n">147,848,472</td><td>以太坊 1.109 亿，Gnosis 1,662 万，Arbitrum 1,009 万，Base 413 万，Polygon 376 万，Optimism 163 万，Mode、Avalanche、Polygon zkEVM 合计约 73 万</td></tr>
+              <tr><td>暂停保住</td><td class="n">19,387,725</td><td>Hypernative 触发暂停的 CSP v6 池子</td></tr>
+              <tr><td>Gnosis Chain 冻结</td><td class="n">7,106,884</td><td>验证者软分叉冻结，后经硬分叉收回</td></tr>
+              <tr><td>被转出</td><td class="n">121,162,158</td><td>去向见下面三行。三行合计多出约 19 万美元，官方图中这部分从“有风险的资金”直接计入了“攻击者拿走”</td></tr>
+              <tr><td>　StakeWise 追回</td><td class="n">21,802,804</td><td>5,041 枚 osETH 和 13,495 枚 osGNO</td></tr>
+              <tr><td>　白帽追回</td><td class="n">4,674,466</td><td>Bitfinding、Polygon 和 Base 上的匿名白帽等；BIP-892 逐笔列出的合计为 3,855,452 美元<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>　攻击者拿走</td><td class="n">94,876,593</td><td>按事发时价格</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>“被转出”加上“Gnosis Chain 冻结”约为 1.283 亿美元，与外界常说的 1.28 亿美元接近。PeckShield 统计为 1.2864 亿美元<a class="ref" href="#s15">[15]</a>。Gnosis 方面说本链被转走约 940 万美元，其中 Monerium 冻结 EURe、StakeWise 冻结 osGNO 合计保护了超过 300 万欧元，口径与上表不完全一致<a class="ref" href="#s12">[12]</a><a class="ref" href="#s14">[14]</a>。Balancer 和 Certora 还在 MetaStable 池子上抢先转移了约 410 万美元，这笔钱没有被盗，不在上表内<a class="ref" href="#s8">[8]</a>。</p>
+        <p>分叉协议的损失另算。据 rekt.news 统计，Berachain 上的 BEX 被盗约 1,286 万美元，经停链和硬分叉追回；Sonic 上的 Beets 损失约 344 万美元，Sonic Labs 在攻击进行中上线了新的冻结机制，但攻击者抢先用 <code>permit()</code> 和 <code>transferFrom()</code> 转走约 1,950 万枚 stS（约 300 万美元），换成 WBTC 后经 LayerZero 跨链转出<a class="ref" href="#s15">[15]</a>。Sonic 这部分细节只找到 rekt.news 一个来源。</p>
+        <h3>以太坊上的主路径</h3>
+        <ol class="flow">
+          <li class="atk"><b>攻击合约内部余额</b>11 月 3 日 07:48 提到 <span class="addr">0xAa76…8e3f</span></li>
+          <li class="atk"><b>分三批转出</b>11 月 7 日两批、14 日一批，每批 7,000 ETH，转到三个新地址</li>
+          <li class="doubt"><b>沉寂五个多月</b>三个地址没有任何转出</li>
+          <li class="atk"><b>THORChain</b>2026 年 4 月 24 至 25 日，经两个中转地址分 35 笔存入 THORChain Router，合计约 21,057 ETH</li>
+        </ol>
+        <p>以上数据来自 Blockscout 的链上记录。这些存款的 memo 以 <code>=:b:</code> 开头，表示兑换成 BTC 并发往指定的比特币地址<a class="ref" href="#s26">[26]</a>。一家自称区块链取证机构的 CyberLeakWatch 在 Balancer 论坛发帖说，35 笔兑换的目标是三个比特币地址，合计约 617 枚 BTC，此后没有移动<a class="ref" href="#s27">[27]</a>。本站抽查的一笔与它列出的地址一致，总数未能独立核实。另外，一个中转地址在 11 月 14 日至 15 日分 40 次向 Tornado Cash 存入约 3,700 ETH，它的资金主要来自两个攻击地址（约 2,750 ETH）<a class="ref" href="#s26">[26]</a>。Ethena 和 ShapeShift 后来把攻击者在它们协议里的部分资产退给了 Balancer DAO，合计 12,518 USDe 和 133,905 USDC<a class="ref" href="#s22">[22]</a>。</p>
+        <p>没有执法机构或安全公司公开认定攻击者身份。Balancer 说它的法务团队在与多个司法辖区的执法部门合作<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>Balancer 本身</h3>
+        <p>事发当天，BAL 一小时内下跌约 8%<a class="ref" href="#s16">[16]</a>；Balancer 的 TVL 在 24 小时内从 6.26 亿美元降到 3.38 亿美元，借贷协议 Venus 暂停了 BAL 借款并把它的抵押率设为零<a class="ref" href="#s15">[15]</a>。此后几个月，团队人数从约 25 人减到 12.5 个全职岗位，年度预算降到 190 万美元；而 DAO 每年分到的协议收入只有约 29 万美元<a class="ref" href="#s21">[21]</a>。2026 年 3 月，联合创始人 Fernando Martinelli 宣布关闭 Balancer Labs，说这家公司“已经成了协议的负担而不是资产”，当时 Balancer 的 TVL 约 1.57 亿美元，比 2021 年底的峰值低 95%<a class="ref" href="#s20">[20]</a>。据 DefiLlama 的数据，2025 年 9 月 28 日到 2026 年 9 月 29 日，Balancer 的 TVL 下降了 93.6%<a class="ref" href="#s32">[32]</a>。</p>
+        <p>提出关停的 BIP-928 并没有把原因全算在这次攻击上。它给出的核心理由是收入：每月成本约 15 万美元，2026 年 8 月的协议收入约 3 万美元，大部分收入仍来自 V2，V3 的收入没有增长到能接替它<a class="ref" href="#s24">[24]</a><a class="ref" href="#s25">[25]</a>。提案这样描述攻击的作用：</p>
+        <blockquote>
+          <p>2025 年 11 月的攻击打在旧的 V2 池子上。V3 是另一套架构，但这件事从此跟着 Balancer 这个名字出现在每一次谈话里，让增长更难。它是 4 月的计划比看上去更难的原因之一，但不是这份提案的依据。</p>
+          <cite>Marcus Hardt，BIP-928 提案正文，2026 年 9 月（本站译）<a class="ref" href="#s24">[24]</a></cite>
+        </blockquote>
+        <h3>分叉和下游协议</h3>
+        <p>Balancer V2 的代码被大量复制。rekt.news 统计有 27 个 V2 分叉继承了这段代码，损失最大的是 Berachain 上的 BEX 和 Sonic 上的 Beets<a class="ref" href="#s15">[15]</a>。Beefy、Aura 等建立在 Balancer 池子之上的协议也在事发后紧急排查敞口<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>链级干预之争</h3>
+        <p>这次事件里，至少三条链和两家代币发行方直接改写或冻结了攻击者的资产：Berachain 停链并硬分叉，Gnosis Chain 先软分叉后硬分叉，Sonic 冻结地址；StakeWise 销毁并重铸 osETH 和 osGNO，Monerium 冻结 EURe<a class="ref" href="#s9">[9]</a><a class="ref" href="#s12">[12]</a><a class="ref" href="#s15">[15]</a>。rekt.news 还称 Polygon 的验证者直接审查了攻击者的交易<a class="ref" href="#s15">[15]</a>。</p>
+        <div class="compare">
+          <div>
+            <h4>支持干预</h4>
+            <p>Gnosis 联合创始人 Martin Köppelmann 说，推动软分叉的动因是保护用户：Gnosis 对普通人推广“低风险 DeFi”，出了事就不能什么都不做。Gnosis 方面强调，本链有 344 个钱包受影响；受影响资金的大头属于 GnosisDAO 自己，但不到其国库的 2%，出手主要是为了散户。Rotki 创始人 Lefteris Karapetsas 认为，链有能力纠正时选择不作为“并不是中立”<a class="ref" href="#s14">[14]</a>。</p>
+          </div>
+          <div>
+            <h4>反对或担忧</h4>
+            <p>RealT 团队的成员担心开先例，以后每次被盗都可能被要求分叉。有人估计，号称约 34 万个验证者，真正独立的运营者可能只有 100 到 300 个；也有人说，不到 60 个人达成一致就能改写链上状态。还有人指出双重标准：同一个 EURe/sDAI 池子此前因预言机配置错误让 LP 损失了数十万欧元，当时没有人干预<a class="ref" href="#s14">[14]</a>。</p>
+          </div>
+        </div>
+        <p>Gnosis 事后达成的原则是：默认不干预，例外必须对照事先商定的标准，长期目标是让干预越来越难、最终不可能<a class="ref" href="#s14">[14]</a>。rekt.news 的评论更直接：代码就是法律，直到它让用户损失九位数，每条链突然都想起自己有管理员钥匙<a class="ref" href="#s15">[15]</a>。类似的选择在这次事件前后都出现过。此前有 2016 年 <a href="2016-the-dao.html">The DAO</a> 之后的以太坊硬分叉，2025 年 5 月 <a href="2025-cetus.html">Cetus</a> 被盗后 Sui 验证者冻结攻击者地址；此后有 2026 年 8 月 Cronos 为 <a href="2026-tectonic.html">Tectonic</a> 被操纵一事回滚约两小时的链状态。</p>
+        <h3>审计说明了什么</h3>
+        <p>Balancer 事发当天强调自己“经过顶级公司的大量审计，漏洞赏金也运行了很久”。TAC 区块链的开发者关系负责人 Suhail Kakar 的回应是，Vault 被三家公司审计过，仍然丢了约 1.1 亿美元，“由某某审计”几乎说明不了什么<a class="ref" href="#s17">[17]</a>。审计方的回应集中在范围上：OpenZeppelin 说出问题的代码是在它的审计结束后才加进来的<a class="ref" href="#s17">[17]</a>；Certora 事后承认，偿付能力证明不够，余额总体守恒并不意味着取整安全<a class="ref" href="#s15">[15]</a>。</p>
+        <p>舍入误差也不是新的攻击类别。Trail of Bits 提到，2023 年的 Hundred Finance 和 2024 年的 Sonne Finance 都是被类似的舍入问题掏空的<a class="ref" href="#s4">[4]</a>。2026 年 8 月 31 日，Balancer V1 的一个池子又被同类手法攻击：SlowMist 分析，攻击者把 WBTC 储备压到接近零，再利用 18 位定点数反推输入数量时的误差，损失约 23.4 万美元<a class="ref" href="#s30">[30]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>当天的止损</h3>
+        <p>Hypernative 07:52 报警，约 15 分钟后仍在暂停窗口内的 CSP v6 池子全部暂停，保住约 1,930 万美元，Crypto.com、Ether.fi 等大 LP 随后安全撤出；受影响池子开启 Recovery Mode，11 月 4 日关停 gauge，11 月 5 日禁用工厂。Certora 和 Trail of Bits 进入作战室做紧急复审，发现了 MetaStable 池子上的另一条提取路径，Balancer 与 Certora、SEAL 911 此后抢先把约 410 万美元转进受控地址<a class="ref" href="#s1">[1]</a>。v5 池子的暂停窗口已过，只能任由攻击者或白帽先动手。</p>
+        <h3>赏金与退款</h3>
+        <p>Balancer DAO 此前通过 BIP-726 采纳了 SEAL 安全港协议：白帽抢救资金后须交还 DAO，另领 10% 的赏金，单次上限 100 万美元，须提供真实姓名并通过 KYC 和制裁名单筛查。BIP-892 据此结算：Polygon 上的匿名白帽追回约 268 万美元，以太坊上的 Bitfinding 约 96.4 万美元，Base 上的匿名白帽约 16.1 万美元；Arbitrum 上的三笔因白帽不表明身份或拒绝 KYC，视为放弃赏金<a class="ref" href="#s8">[8]</a>。</p>
+        <p>退款不做社会化分摊：每个池子追回的钱只退给这个池子的 LP，按攻击前最后一个区块的 BPT 持仓比例，用追回的原币支付，通过 Merkle 合约领取，领取期 180 天。领取时须签署条款，免除 Balancer Labs、DAO、基金会及服务商与此次攻击相关的责任。Certora 参与的内部抢救不付赏金，全额退给 LP<a class="ref" href="#s8">[8]</a>。没有追回资金的池子，即攻击者拿走的约 9,490 万美元，没有补偿方案，Balancer 只承诺继续走执法和法律途径<a class="ref" href="#s1">[1]</a>。到 2026 年 7 月仍有约 92 万美元（约 500 ETH）无人领取，BIP-923 把领取期延长到 12 个月<a class="ref" href="#s22">[22]</a>。</p>
+        <p>对攻击者本人，Balancer 最初提出 48 小时内归还可得 20% 赏金，无人接受<a class="ref" href="#s14">[14]</a><a class="ref" href="#s17">[17]</a>。2026 年 2 月的 BIP-908 改为：归还资产或提供线索促成追回的人，可得追回额最多 10%，归还者免于被 DAO 起诉<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>StakeWise 的销毁与重铸</h3>
+        <p>osETH 和 osGNO 的代币合约由 StakeWise DAO 所有，合约里的“控制者”可以在任意地址铸造或销毁代币。StakeWise 的 7 人紧急多签临时把控制者权限授予 DAO 地址，销毁攻击者钱包里的 osETH 和 osGNO，在 DAO 地址铸出等量代币，最后一笔交易撤销权限<a class="ref" href="#s11">[11]</a>。被盗的 6,851 枚 osETH 追回 5,041 枚，13,495 枚 osGNO 全部追回，按攻击前的 LP 持仓比例经 Merkle 分发<a class="ref" href="#s9">[9]</a>。StakeWise 说，这是紧急多签的权力第一次被动用，也应该是最后一次；它随即提出 SWIP-37，放弃 DAO 对这两个代币合约的所有权，因为这项权力本身就是中心化的攻击面<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。</p>
+        <h3>Gnosis Chain 的硬分叉</h3>
+        <p>软分叉只能让攻击者的资金动不了，而且很脆弱：验证者一升级客户端，冻结就可能失效，钱也没法退给用户。Gnosis 花了约六周，让四个执行层客户端一起实现了一次“非常规状态转换”：在指定时间之后的第一个区块，把攻击者账户的代码换成一个只听救援地址指挥的转发合约<a class="ref" href="#s14">[14]</a>。</p>
+<pre class="code"><code><span class="c"># Gnosis Chain 规范中的参考实现（伪代码）</span>
+def process_block(parent_header, block, state):
+    if (
+        parent_header.timestamp &lt; BALANCER_HARDFORK_TIMESTAMP
+        and block.header.timestamp &gt;= BALANCER_HARDFORK_TIMESTAMP
+    ):
+<span class="good">        state.account(BALANCER_ATTACKER_ADDRESS).bytecode = BALANCER_RESCUE_BYTECODE</span>
+    # ... continue with regular block processing, including EIP-4788 and EIP-2935.
+
+<span class="c">// 注入攻击者账户的合约（节选）</span>
+contract HardcodedForwarder {
+    /// BALANCER_RESCUE_ADDRESS
+    address public constant owner = 0x7Be579238a6a621601Eae2c346cDA54d68F7dfee;
+    <span class="c">// execute(target, value, data)：只有 owner 能调用，只能调用合约地址</span>
+    <span class="c">// ……</span>
+}</code></pre>
+        <p class="code-cap">来源：Gnosis 论坛《Balancer hack: claim process》转引的 gnosischain/specs 规范 execution/balancer_recovery.md。BALANCER_HARDFORK_TIMESTAMP 为 1766419900，即 2025-12-22 16:11:40（UTC）；BALANCER_ATTACKER_ADDRESS 为 0x506d…3207。</p>
+        <p>账户一旦有了代码，EIP-3607 就禁止它发起交易，攻击者手里的私钥因此作废；救援地址是一个 DAO 多签，可以以这个账户的身份调用 Balancer Vault 取回资产。余额、nonce 和存储都没有被改动，历史区块也没有被重写。这次硬分叉推迟了 Gnosis Chain 的 Fusaka 升级<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。2026 年 2 月 26 日，Gnosis 公布了受影响地址和可领数量，随后通过 Merkl 开放领取；领取页面附带一个默认 5% 的可选捐赠，捐给参与救援的团队<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>Berachain 和 Sonic</h3>
+        <p>Berachain 的验证者协调停链。基金会说，网络会在追回全部受影响资金后恢复；联合创始人 Smokey The Bera 估计约 1,200 万美元用户资金面临风险。由于被盗的不只是原生代币，简单回滚区块行不通，分叉可能涉及回滚或“前滚”<a class="ref" href="#s16">[16]</a>。rekt.news 称白帽救下了约 1,286 万美元，资金后来追回；Sonic Labs 则在攻击进行中上线了冻结机制<a class="ref" href="#s15">[15]</a>。本站没有找到两家的正式 post-mortem，Berachain 恢复出块的确切时间和 Sonic 冻结的金额都未能核实。</p>
+        <h3>Balancer 的结局</h3>
+        <p>2026 年 3 月 Balancer Labs 宣布关闭，必要的员工转入 OpCo<a class="ref" href="#s20">[20]</a>。4 月，运营重组的 BIP-918 和代币模型改革的 BIP-919 在 Snapshot 上勉强通过，赞成票只比反对票多 34 万到 41 万：团队减半，BAL 增发停止，协议费全部归 DAO<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a><a class="ref" href="#s23">[23]</a>。</p>
+        <p>9 月 14 日，前 Balancer Labs CEO Marcus Hardt 在论坛提出 BIP-928，主张有序关停协议，把国库按比例分给 BAL 持有人，并取消 BIP-919 承诺的回购<a class="ref" href="#s24">[24]</a><a class="ref" href="#s25">[25]</a>。Snapshot 投票于 9 月 25 日至 29 日（UTC）进行：42 个地址投票，两个赞成选项合计约 1,709 万 BAL，反对约 14 万 BAL，法定人数为 500 万 BAL；同期由 MAXYZ 团队提出、要用国库 BAL 资助一个官方分叉的 BIP-929 以约 1,211 万对 521 万被否决<a class="ref" href="#s23">[23]</a><a class="ref" href="#s32">[32]</a>。10 月，不要国库资助、只请求 DAO 认可分叉的 BIP-932 通过；列出关停链上操作的 BIP-936 于 10 月 27 日通过：禁用 V2 和 V3 的池子工厂，10 月 30 日把 V2 的协议费默认值调为零，暂停仍在窗口期内的池子<a class="ref" href="#s23">[23]</a>。</p>
+        <p>按 BIP-928，可暂停的池子 10 月 30 日起只能提款，不能暂停的池子继续运行；2027 年 5 月底 veBAL 锁仓全部到期后，持有人销毁 BAL，按比例领取国库中的非 BAL 资产，分两轮，最后再清扫一次。关停预算为 2027 年 5 月前 15 万美元、此后 3 万美元，另有 22 万美元备用金<a class="ref" href="#s24">[24]</a>。</p>
+        <div class="note doubt">
+          <span class="h">“每枚 BAL 约 0.158 美元”从哪来</span>
+          <p>这个数字出自 Hardt 2026 年 9 月 20 日在提案讨论帖里的测算：按 9 月 18 日的链上余额和当天价格，可分配的非 BAL 资产为 9,959,416 美元，可赎回的 BAL 为 63,068,821 枚，每枚约 0.1579 美元。他特别注明这是自己的测量，没有经过审计<a class="ref" href="#s24">[24]</a>。提案正文只说国库“至少 900 万美元”，最终数额要在第一轮开放的区块上重新测量并审计，会随代币价格变化<a class="ref" href="#s24">[24]</a><a class="ref" href="#s25">[25]</a>。</p>
+        </div>
+        <p>截至 2026 年 10 月底，Balancer 的池子已转为只能提款，攻击者拿走的约 21,000 ETH 已换成比特币，没有被追回，攻击者身份仍未公开。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>取整方向逐处判断，让每一步的误差都落在对池子有利的一边。“这里影响很小，统一向下”正是这次的漏洞来源。Trail of Bits 提醒，“取整要对协议有利”这句话本身不足以覆盖边界情况，应当把每一处精度损失和取整方向写下来并给出推理<a class="ref" href="#s4">[4]</a>。</li>
+            <li>在极端状态下测试：余额只剩几 wei、汇率不是 1、金额很小。正常状态下 1 wei 的误差可以忽略，极端状态下它可能是金额的 10%。</li>
+            <li>把“往返兑换不能获利”“任何操作都不能让单个份额贬值”写成性质，交给模糊测试和形式化验证。只证明总体偿付能力不够。</li>
+            <li>不要让单笔交易能把池子推到退化状态。V3 加了最低余额，也可以在每步之后检查不变量的变化。</li>
+            <li>新池子类型、新的缩放因子都是新代码，要有新的审计范围。这次出问题的代码是在审计结束后才加进来的。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议和链的运营方</span>
+          <ul>
+            <li>暂停窗口是双刃剑。v6 池子还能暂停，保住了约 1,930 万美元；v5 池子的窗口已过，只能看着被掏空。到期即失效的保护，要在到期前想好替代方案。</li>
+            <li>监控和安全港协议在这次事件中起了作用：报警在 6 分钟内发出，白帽在事先约定的法律框架下合法截下了数百万美元。</li>
+            <li>代币合约里的紧急权力能追回资金，也是一个中心化的攻击面。StakeWise 用完就提议放弃，是一个可以参考的做法。</li>
+            <li>链级干预的规则要事先定好。Gnosis 是在出事之后才开始讨论框架的，结论是默认不干预、例外须符合事先商定的标准。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Balancer，《Nov 3 Exploit Post-Mortem》，Balancer Protocol（Medium），2025-11-18。<a href="https://medium.com/balancer-protocol/nov-3-exploit-post-mortem-51dcbeb6b020">medium.com</a></li>
+          <li id="s2">Balancer V2 源码，balancer/balancer-v2-monorepo 仓库 master 分支（BaseGeneralPool.sol、ScalingHelpers.sol、ComposableStablePool.sol、ComposableStablePoolRates.sol、StableMath.sol、FixedPoint.sol），2026-10-31 获取。<a href="https://github.com/balancer/balancer-v2-monorepo">github.com</a></li>
+          <li id="s3">Certora，《Breaking Down the Balancer Hack》，2025-11。<a href="https://www.certora.com/blog/breaking-down-the-balancer-hack">certora.com</a></li>
+          <li id="s4">Jim Miller、Benjamin Samuels、Anish Naik，《Balancer hack analysis and guidance for the DeFi ecosystem》，Trail of Bits，2025-11-07。<a href="https://blog.trailofbits.com/2025/11/07/balancer-hack-analysis-and-guidance-for-the-defi-ecosystem/">blog.trailofbits.com</a></li>
+          <li id="s5">OpenZeppelin，《Understanding the Balancer v2 Exploit: Technical Analysis and Lessons for the Blockchain Industry》，2025-11。<a href="https://www.openzeppelin.com/news/understanding-the-balancer-v2-exploit">openzeppelin.com</a></li>
+          <li id="s6">Check Point Research，《How an Attacker Drained $128M from Balancer Through Rounding Error Exploitation》，2025-11-05。<a href="https://research.checkpoint.com/2025/how-an-attacker-drained-128m-from-balancer-through-rounding-error-exploitation/">research.checkpoint.com</a></li>
+          <li id="s7">balancer/balancer-deployments 仓库，《2024-02-23 - Composable Stable Pool V6》与《2023-07-11 - Composable Stable Pool V5》部署说明。<a href="https://github.com/balancer/balancer-deployments/tree/master/v2/deprecated/20240223-composable-stable-pool-v6">github.com</a></li>
+          <li id="s8">Xeonus、0xDanko，《[BIP-892] Distribution of Rescued Funds from Balancer v2 November 3rd 2025 Attacks》，Balancer 治理论坛，2025-11-27。<a href="https://forum.balancer.fi/t/bip-892-distribution-of-rescued-funds-from-balancer-v2-november-3rd-2025-attacks/6883">forum.balancer.fi</a></li>
+          <li id="s9">StakeWise，《Proposal: Approve Distribution Of Recovered Funds To LPs Affected By Balancer V2 Exploit》，StakeWise 治理论坛，2025-11-25。<a href="https://forum.stakewise.io/t/proposal-approve-distribution-of-recovered-funds-to-lps-affected-by-balancer-v2-exploit/1996">forum.stakewise.io</a></li>
+          <li id="s10">StakeWise，《[SWIP-37] Renounce osETH &amp; osGNO Token Contract Ownership From the DAO Address》，StakeWise 治理论坛，2025-11-04。<a href="https://forum.stakewise.io/t/swip-37-renounce-oseth-osgno-token-contract-ownership-from-the-dao-address/1990">forum.stakewise.io</a></li>
+          <li id="s11">Tim Craig，《Balancer hacker loses $20m after StakeWise uses loophole to take back funds》，DL News（Yahoo Finance 转载），2025-11-05。<a href="https://finance.yahoo.com/news/balancer-hacker-loses-20m-stakewise-202227096.html">finance.yahoo.com</a></li>
+          <li id="s12">Gnosis，《Balancer hack: Update》（2025-11-05）与《Balancer hack: second update》（2025-11-07），Gnosis 论坛。<a href="https://forum.gnosis.io/t/balancer-hack-update/11759">forum.gnosis.io</a></li>
+          <li id="s13">Gnosis，《Balancer hack: hard fork》，Gnosis 论坛，2025-12-12。<a href="https://forum.gnosis.io/t/balancer-hack-hard-fork/11884">forum.gnosis.io</a></li>
+          <li id="s14">Gnosis，《Recovering $9.4M From the Balancer Exploit: How Gnosis Chain Hard-Forked and How to Claim Your Funds》（论坛帖《Balancer hack: claim process》），2026-02-26。<a href="https://forum.gnosis.io/t/balancer-hack-claim-process/12149">forum.gnosis.io</a></li>
+          <li id="s15">rekt.news，《Balancer - Rekt II》，2025-11-14。<a href="https://rekt.news/balancer-rekt2">rekt.news</a></li>
+          <li id="s16">CoinDesk，《Berachain Halts Network to Contain Balancer-Linked Exploit, Conduct ‘Emergency Hard Fork’》，2025-11-03。<a href="https://www.coindesk.com/markets/2025/11/03/berachain-halts-network-to-contain-balancer-linked-exploit-to-conduct-emergency-hard-fork">coindesk.com</a></li>
+          <li id="s17">Cointelegraph，《Balancer audits under scrutiny after $100M+ exploit》，2025-11-03（11-10 更新，加入 OpenZeppelin 的回应）。<a href="https://cointelegraph.com/news/balancer-finance-audits-exploit-security">cointelegraph.com</a></li>
+          <li id="s18">Halborn，《Explained: The Balancer Hack (November 2025)》，2025-11-05。<a href="https://www.halborn.com/blog/post/explained-the-balancer-hack-november-2025">halborn.com</a></li>
+          <li id="s19">0xDanko，《[BIP-908] Bounty for Information and Recovery of Stolen Funds》，Balancer 治理论坛，2026-01-30。<a href="https://forum.balancer.fi/t/bip-908-bounty-for-information-and-recovery-of-stolen-funds/6958">forum.balancer.fi</a></li>
+          <li id="s20">CoinDesk，《Balancer Labs will shut down as corporate entity became “a liability” after $110 million exploit》，2026-03-24。<a href="https://www.coindesk.com/tech/2026/03/24/balancer-labs-will-shut-down-as-corporate-entity-became-a-liability-after-usd110-million-exploit">coindesk.com</a></li>
+          <li id="s21">danielmk、0xDanko、Xeonus 等，《[BIP-918] Operational Restructuring for Balancer》，Balancer 治理论坛，2026-03-23。<a href="https://forum.balancer.fi/t/bip-918-operational-restructuring-for-balancer/7000">forum.balancer.fi</a></li>
+          <li id="s22">0xDanko，《[BIP-923] Next Phase Decision for Rescued Funds Distribution from Balancer v2 November 2025 Attacks》，Balancer 治理论坛，2026-07-23。<a href="https://forum.balancer.fi/t/bip-923-next-phase-decision-for-rescued-funds-distribution-from-balancer-v2-november-2025-attacks/7091">forum.balancer.fi</a></li>
+          <li id="s23">Snapshot，balancer.eth 空间的投票记录（BIP-887、892、908、918、919、923、928、929、932、936），2026-10-31 查询。<a href="https://snapshot.box/#/s:balancer.eth">snapshot.box</a></li>
+          <li id="s24">Marcus Hardt，《[BIP-928] Orderly Winddown of Balancer and Distribution of the Treasury》，Balancer 治理论坛及 Snapshot 提案正文，2026-09-14 起；每枚 BAL 的测算见 2026-09-20 的第 13 楼。<a href="https://forum.balancer.fi/t/bip-928-orderly-winddown-of-balancer-and-distribution-of-the-treasury/7107">forum.balancer.fi</a></li>
+          <li id="s25">Unchained，《Balancer Is Shutting Down, With Payouts Estimated at About 16 Cents per BAL》（Yahoo Finance 转载），2026-09-29。<a href="https://finance.yahoo.com/markets/crypto/articles/balancer-shutting-down-payouts-estimated-230514407.html">finance.yahoo.com</a></li>
+          <li id="s26">Blockscout 以太坊浏览器：交易 0x6ed07db1…9742、0xd1552072…8569、0x746ac3a8…cfa2，地址 0x506D…3207、0xAa76…8e3f 及其下游地址的交易记录，2026-10-31 查询。<a href="https://eth.blockscout.com/tx/0x6ed07db1a9fe5c0794d44cd36081d6a6df103fab868cdd75d581e3bd23bc9742">eth.blockscout.com</a></li>
+          <li id="s27">CyberLeakWatch Investigations，《Recovery Assistance Offer — 21,000 ETH Dormant Balancer V2 Exploit Wallets (BIP-908)》，Balancer 治理论坛，2026-03-30（2026-05-02 更新）。<a href="https://forum.balancer.fi/t/recovery-assistance-offer-21-000-eth-dormant-balancer-v2-exploit-wallets-bip-908/7010">forum.balancer.fi</a></li>
+          <li id="s28">The Record，《More than $100 million stolen in exploit of Balancer DeFi protocol》，2025-11-03。<a href="https://therecord.media/crypto-heist-balancer-exploit">therecord.media</a></li>
+          <li id="s29">Balancer，《Balancer x Certora: Future-Proofing Protocol Security》，Balancer Protocol（Medium），2026-02-23。<a href="https://medium.com/balancer-protocol/balancer-x-certora-future-proofing-protocol-security-d5dfd33e4474">medium.com</a></li>
+          <li id="s30">cryptonews.net，《Balancer Gives Hacker Sept. 8 Deadline to Return Funds or Face Action》（Balancer V1 被攻击），2026-09-05。<a href="https://cryptonews.net/news/security/33399733/">cryptonews.net</a></li>
+          <li id="s31">Balancer，《Balancer V3: Why It Is Here To Stay》，Balancer Protocol（Medium），2025-12-18。<a href="https://medium.com/balancer-protocol/balancer-v3-here-to-stay-9ec37439b4be">medium.com</a></li>
+          <li id="s32">The Defiant，《Balancer Holders Approve Wind-Down, Reject Official Fork》（cryptonews.net 转载），2026-09-29。<a href="https://cryptonews.net/news/defi/33515903/">cryptonews.net</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bZx 闪电贷攻击｜区块链被盗事件编年史</title>
+<meta name="description" content="2020 年 2 月 bZx 四天内两次被闪电贷攻击的完整经过：第一次绕过抵押检查推高 Uniswap 上的 WBTC 价格，第二次操纵 Kyber 上的 sUSD 报价。含漏洞代码、攻击步骤、损失核算与改用 Chainlink 的后续。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2020-bzx-flash-loan">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2020 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>bZx 闪电贷攻击</h1>
+    <p class="lede">2020 年 2 月，攻击者两次用闪电贷在一笔交易里借来 7,500 至 10,000 枚 ETH，攻击借贷协议 bZx。第一次利用 bZx 保证金交易中一处被跳过的检查，把 Uniswap 上的 WBTC 价格推高约 3 倍；第二次操纵 bZx 赖以定价的 Kyber sUSD 报价，用被高估的抵押品多借出 ETH。这是最早被广泛报道的闪电贷攻击之一，它说明协议一旦依赖可以被瞬间推动的价格，攻击者连本金都不需要。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">bZx 是以太坊上的保证金交易与借贷协议。用户在它的 Fulcrum 产品里开杠杆仓位时，协议从 iETH 借贷池借出 ETH，经 Kyber 换成目标资产，最后检查仓位的抵押是否仍然充足。2020 年 2 月 15 日的第一次攻击中，这道最终检查被一个为“无兑换贷款”设计的捷径条件跳过了，保证金交易恰好也满足这个条件，于是一笔滑点约 200% 的兑换照样成交<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <p>攻击者先从 dYdX 闪电贷借来 1 万枚 ETH，借 bZx 的仓位把 Uniswap 池里的 WBTC 价格推高约 3 倍，再把事先从 Compound 借到的 WBTC 高价卖回这个池子<a class="ref" href="#s1">[1]</a>。约三天后的 2 月 18 日，第二次攻击不依赖代码漏洞：bZx 用 Kyber 的实时报价给抵押品定价，而 sUSD 在 Kyber 上的报价只来自两个 AMM 型储备。攻击者用 900 ETH 把 sUSD 的价格推高约 2.5 倍，再以约 110 万枚 sUSD 作抵押从 bZx 借出 6,796 枚 ETH<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>两次的闪电贷都在同一笔交易里还清，损失落在 bZx 的 iETH 借贷池，留下两笔抵押严重不足的贷款。bZx 两次都靠下架“预言机白名单”上的代币来暂停协议，这个白名单不受时间锁约束。事后公司和协议利益相关方承担了损失，并改用 Chainlink 作为参考价格<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。攻击者身份至今不明，两次攻击是否出自同一人也没有公开结论。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>bZx 由 Tom Bean 和 Kyle Kistner 创办，运营公司是 bZeroX, LLC。协议 2018 年上线以太坊主网，2019 年 6 月推出借贷与代币化保证金交易产品 Fulcrum<a class="ref" href="#s5">[5]</a><a class="ref" href="#s16">[16]</a>。在 Fulcrum 上，出借人把资产存进借贷池，换得生息的 iToken，ETH 池对应的就是 iETH；交易者买入 pToken 开杠杆仓位，例如 sETHwBTC5x 代表以 WBTC 计价、5 倍杠杆做空 ETH。开仓时协议从对应的 iToken 池借钱，再通过 Kyber Network 兑换。据 The Block 2020 年 2 月 17 日的报道，bZx 当时锁仓约 1,550 万美元，在 DeFi 协议中排第七<a class="ref" href="#s11">[11]</a>。</p>
+        <p>bZx 没有单独的价格预言机，价格直接取自 Kyber 的报价。Kyber 是一个流动性聚合器，每笔兑换会被路由到报价最好的储备（reserve），bZx 只采用其中“许可储备”的价格。bZx 在 2020 年 3 月的复盘《Mea Culpa》里承认，2017 年白皮书设想的是取三个链上价格源的中位数，但足够可靠的链上价格源一直没有出现，于是选了 Kyber。Kyber 的开发者文档也写明，把它当链上价格源“容易被恶意方操纵价格”<a class="ref" href="#s5">[5]</a>。</p>
+        <p>bZx 认为这个风险可控，前提是每种资产在 Kyber 上至少有一个 Fed Price Reserve（FPR）。这类储备由做市商设定基准价和报价曲线，有人对着一个储备砸价时，其他储备会报出更有竞争力的价格，把操纵抵消掉。安全研究员 samczsun 此前报告过可以把套利价格“推进”价格源的问题，bZx 因此加了一道“价差检查”，同时比较买入和卖出两个方向的报价<a class="ref" href="#s5">[5]</a>。</p>
+        <p>闪电贷在当时也刚出现。按 arXiv 上 Qin 等人的论文，这个概念最早由 Marble Protocol 提出，dYdX 支持一种没有写进文档的闪电借款方式，Aave 从 2020 年 1 月起大力推广这项功能<a class="ref" href="#s1">[1]</a>。bZx 自己在 1 月初也加了一个闪电贷函数，共 40 行代码，未经审计就上线了。另一个团队发现它允许任意调用，先在主网上验证了漏洞，再告知 bZx；bZx 悄悄打了补丁，计划 2 月底再公开<a class="ref" href="#s5">[5]</a>。</p>
+        <p>此外，bZx 绝大多数改变状态的功能都放在 12 小时时间锁之后，由管理员密钥控制，但预言机代币注册表不在时间锁的保护范围内<a class="ref" href="#s4">[4]</a>。这个缺口后来成了 bZx 的暂停按钮。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <p>bZx 复盘里的时刻用的是美国山地时间（MST，UTC−7），下面统一换算成 UTC。</p>
+        <ol class="timeline">
+          <li><time>2020-01 初</time><div class="ev">bZx 未经审计上线闪电贷函数，函数允许任意调用。另一团队在主网验证漏洞后告知 bZx，bZx 悄悄修补<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2020-01-14</time><div class="ev">sUSD 在 Fulcrum 和 Torque 上线借贷（日期据 bZx 博客文章列表）<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="atk key"><time>2020-02-15 01:38</time><div class="ev">第一次攻击交易在区块 9,484,688 上链，正值 ETHDenver 期间。攻击者用 dYdX 闪电贷和 bZx 保证金交易推高 Uniswap 上的 WBTC 价格，交易内直接获利 71.41 ETH，另留下一个 Compound 仓位<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2020-02-15 04:28</time><div class="ev">Lev Livnev 提醒 bZx 团队有可疑交易。bZx 下架预言机代币注册表里的代币，暂停交易和借款，出借与赎回不受影响<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2020-02-15 05:59</time><div class="ev">bZx 加入与 samczsun、Lev Livnev、palkeo 等白帽的群聊，随后联系 WBTC 商户减少交易所流动性，让攻击者难以变现<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2020-02-15 15:30</time><div class="ev">团队确认一道安全检查被绕过：把贷款标记为“超额抵押”的逻辑有错，导致检查没有触发。16:33 修复进入 12 小时时间锁<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk"><time>2020-02-15 至 17</time><div class="ev">攻击者在约两天里分 74 笔交易，在 Kyber 和 Uniswap 上用 4,377.72 ETH 陆续买回 112 WBTC，偿还 Compound 借款，取回 5,500 ETH 抵押品<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2020-02-16 06:22</time><div class="ev">协议解除暂停<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2020-02-17</time><div class="ev">bZx 发布 post-mortem；PeckShield 发布完整分析，指出 <code>takeOrderFromiToken</code> 在特定条件下跳过了 <code>shouldLiquidate</code><a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk key"><time>2020-02-18 03:13</time><div class="ev">第二次攻击在区块 9,504,627 上链。攻击者从 bZx 的 iETH 池闪电借款 7,500 ETH，在 Kyber 上推高 sUSD 价格，以约 110 万 sUSD 作抵押借出 6,796 ETH，一笔交易获利约 2,378 ETH<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2020-02-18 03:58</time><div class="ev">Tom Bean 发现 sUSD 锁仓和 ETH 借款激增，同时收到 sUSD 价格上涨 150% 的提醒<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2020-02-18 04:23</time><div class="ev">bZx 下架预言机白名单上的全部代币，协议再次暂停<a class="ref" href="#s5">[5]</a>。CoinDesk 报道的暂停时间是 04:38<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2020-03-09</time><div class="ev">bZx 发布《Mea Culpa》，披露 1 月的闪电贷漏洞和预言机设计的来龙去脉，宣布改用 Chainlink 作参考价格，承诺由公司和协议利益相关方承担损失<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2020-09-02</time><div class="ev">Fulcrum 2.0 上线，开仓、清算和奖励发放都改用 Chainlink 价格，保证金交易单笔上限 1,500 ETH<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2020-09-15</time><div class="ev">bZx 宣布追回 iToken 自我转账复制漏洞涉及的全部资产，rekt.news 估计该事件涉及约 800 万美元<a class="ref" href="#s8">[8]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="atk"><time>2021-11-05</time><div class="ev">一名开发者被带宏病毒的 Word 文档钓鱼，助记词失窃，攻击者借此控制 BSC 和 Polygon 部署的管理密钥，按 SlowMist 统计损失约 5,500 万美元；以太坊部署已由 DAO 治理，未受影响<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2022-09-22</time><div class="ev">美国 CFTC 认定 bZeroX 及两名创始人违法提供杠杆交易、未执行客户身份识别，罚款 25 万美元，并起诉继任的 Ooki DAO<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2023-06</time><div class="ev">法院对 Ooki DAO 作出缺席判决，认定 DAO 属于《商品交易法》下的“人”，判处 643,542 美元民事罚款并责令关闭网站<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">截至本页核对时，本站没有查到两次攻击的攻击者被公开识别、起诉或资金被追回的记录。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>两次攻击的根源不同。第一次是合约实现上的错误，一道该做的检查没有执行；第二次的代码按设计运行，问题出在设计本身：抵押品的价格取自一个可以在同一笔交易里被推动的报价。</p>
+        <h3>第一次：抵押检查被捷径条件跳过</h3>
+        <p>在 Fulcrum 开一个 5 倍仓位，调用会经过几层合约：用户调用 pToken 的 <code>mintWithEther</code>，pToken 调用 iETH 的 <code>marginTradeFromDeposit</code> 从借贷池借出 ETH，再交给 bZx 核心合约的 <code>takeOrderFromiToken</code> 去 Kyber 兑换<a class="ref" href="#s2">[2]</a>。</p>
+        <ol class="flow">
+          <li><b>pToken 开仓</b>攻击者存入 1,300 ETH，开 5 倍做空</li>
+          <li><b>iETH 借出</b>借出 4,337.62 ETH，提取额被设成等于借款额</li>
+          <li class="atk"><b>bZx 兑换</b>经 Kyber 卖出 5,637.62 ETH，滑点约 200%</li>
+          <li class="atk"><b>最终检查</b>捷径条件成立，抵押检查没有执行</li>
+        </ol>
+        <p>兑换完成后，<code>takeOrderFromiToken</code> 本应确认仓位的保证金仍高于维持保证金。负责判断的是 BZxOracle 的 <code>shouldLiquidate</code>，它比较当前保证金和 <code>maintenanceMarginAmount</code>。修复前，这道检查是这样写的（英文注释是原有的，中文注释是本站加的）：</p>
+<pre class="code"><code><span class="c">// iTokens_loanOpeningFunctions.sol，takeOrderFromiToken 末尾（修复前）</span>
+_handleTransfersAndSwaps(...);   <span class="c">// 转账和 Kyber 兑换在这里完成，参数从略</span>
+
+require ((
+<span class="c">        // 左边成立时整个条件为真，|| 右边的 shouldLiquidate 不会被调用</span>
+<span class="bad">        loanDataBytes.length == 0 &amp;&amp; // Kyber only</span>
+<span class="bad">        sentAmounts[6] == sentAmounts[1]) || // newLoanAmount</span>
+    !OracleInterface(oracle).shouldLiquidate(
+        loanOrder,
+        loanPosition
+    ),
+    "unhealthy position"
+);</code></pre>
+        <p class="code-cap">来源：bZx-monorepo 镜像，提交 ce858d0（修复提交 cb54efa 的父提交），iTokens_loanOpeningFunctions.sol 第 145–153 行，去掉了两层缩进<a class="ref" href="#s9">[9]</a>。<code>sentAmounts[1]</code> 是新借款额，<code>sentAmounts[6]</code> 是实际提取给借款人的金额。</p>
+        <p><code>||</code> 左边是一个捷径：没有 <code>loanDataBytes</code>，并且提取额等于新借款额时，直接放行。按 bZx 事后的说法，这个分支本是给“超额抵押贷款”准备的，借款人整笔取走借款、中间不发生兑换，所以不需要最后的滑点检查<a class="ref" href="#s4">[4]</a>。</p>
+        <p>问题是保证金交易也满足这两个条件。iETH 在 <code>_borrowTokenAndUse</code> 里按存款额算出借款额以后，顺手把提取额设成同一个值；走 Kyber 的保证金交易又不带 <code>loanDataBytes</code>：</p>
+<pre class="code"><code><span class="c">// LoanTokenLogicV4.sol，_borrowTokenAndUse（修复前）</span>
+if (amountIsADeposit) {   <span class="c">// marginTradeFromDeposit 传入 true</span>
+    (sentAmounts[1], sentAmounts[0]) = _getBorrowAmountAndRate( // borrowAmount, interestRate
+        loanOrderHash,
+        sentAmounts[1], // amount
+        useFixedInterestModel
+    );
+
+    // update for borrowAmount
+<span class="bad">    sentAmounts[6] = sentAmounts[1]; // borrowAmount   <span class="c">// 提取额 = 借款额</span></span>
+}</code></pre>
+        <p class="code-cap">来源：同上，LoanTokenLogicV4.sol 第 944–953 行，去掉了两层缩进<a class="ref" href="#s9">[9]</a>。</p>
+        <p>结果是一笔刚刚以约 200% 滑点完成兑换的保证金交易，被代码当成了“没有兑换的超额抵押贷款”，最终检查被跳过。PeckShield 的分析确认，攻击触发的正是 <code>loanDataBytes.length == 0 &amp;&amp; sentAmounts[6] == sentAmounts[1]</code> 这个条件<a class="ref" href="#s2">[2]</a>。这里的毛病在于：安全检查执行与否，取决于输入参数的表面特征，与交易实际做了什么无关。“提取额等于借款额”被默认为只有无兑换的贷款才会出现，另一条代码路径恰好也算出了同一个等式。</p>
+        <p>修复提交 cb54efa 删掉了左边的捷径，让 <code>shouldLiquidate</code> 在每次开仓时都执行；同一提交还给预言机合约加了单笔交易规模上限：</p>
+<pre class="code"><code><span class="c">// 修复提交 cb54efa 的 diff 节选</span>
+<span class="c">// iTokens_loanOpeningFunctions.sol</span>
+<span class="bad">-   require ((</span>
+<span class="bad">-           loanDataBytes.length == 0 &amp;&amp; // Kyber only</span>
+<span class="bad">-           sentAmounts[6] == sentAmounts[1]) || // newLoanAmount</span>
+<span class="good">+   require (</span>
+        !OracleInterface(oracle).shouldLiquidate(
+
+<span class="c">// BZxOracle.sol，新增的 _checkTradeSize（节选）</span>
+<span class="good">+   if (tokenAddress == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2) { // WETH</span>
+<span class="good">+       maxAmount = 1250 ether; // 270</span>
+<span class="good">+   } else if (tokenAddress == 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599) { // WBTC</span>
+<span class="good">+       maxAmount = 25 * 10**8; // 10,000</span>
+<span class="c">    // ……LINK、ZRX、KNC、DAI、USDC、REP 各有上限……</span>
+<span class="good">+   require(amount &lt;= maxAmount, "trade too large");</span></code></pre>
+        <p class="code-cap">来源：bZx-monorepo 镜像，提交 cb54efa（作者时间 2020-02-18 01:09 UTC），去掉了部分缩进<a class="ref" href="#s9">[9]</a>。按 bZx 的说法，修复在 2 月 15 日就已经通过时间锁上链，提交时间只代表公开仓库的更新时间<a class="ref" href="#s4">[4]</a>。</p>
+        <p>bZx 在 post-mortem 里列了三项升级：检查对超额抵押贷款同样执行；把 ETHBTC 保证金代币从预言机注册表下架；限制单笔交易规模。它写道，单是第一项就足以保证同样的事件不再发生<a class="ref" href="#s4">[4]</a>。</p>
+
+        <h3>第二次：预言机读的是可以被推动的即时报价</h3>
+        <p>bZx 计算所需抵押品时，<code>_getRequiredCollateral</code> 调用预言机的 <code>getTradeData</code>，后者通过 <code>_querySaneRate</code> 向 Kyber 查询两个方向的 <code>getExpectedRate</code>，价差在 <code>maxSpreadPercentage</code>（3%）以内才取平均值使用：</p>
+<pre class="code"><code><span class="c">// BZxOracle.sol（修复前），_getExpectedRateCall：直接读 Kyber 的即时报价</span>
+(bool result, bytes memory data) = kyberContract.staticcall(
+    abi.encodeWithSignature(
+        "getExpectedRate(address,address,uint256)",
+        sourceTokenAddress,
+        destTokenAddress,
+<span class="c">        // 只查询许可储备</span>
+        requirePermissionedReserveForQuery ? sourceTokenAmount.add(2**255) : sourceTokenAmount
+    )
+);
+
+<span class="c">// _querySaneRate：比较正反两个方向的报价</span>
+uint256 reversedRateModified = SafeMath.div(10**36, reversedRate);
+uint256 maxSpread = maxSpreadPercentage;   <span class="c">// 3 * 10**18，即 3%</span>
+if (maxSpread != 0 &amp;&amp; reversedRateModified &lt; expectedRate) {
+    uint256 spreadPercentage = expectedRate
+        .sub(reversedRateModified);
+    spreadPercentage = spreadPercentage
+        .mul(10**20);
+    spreadPercentage = spreadPercentage
+        .div(expectedRate);
+<span class="bad">    require(                              <span class="c">// 只拦得住正反报价差距过大的情况</span></span>
+<span class="bad">        spreadPercentage &lt;= maxSpread,</span>
+<span class="bad">        "bad price"</span>
+<span class="bad">    );</span>
+}
+saneRate = expectedRate
+    .add(reversedRateModified)
+    .div(2);</code></pre>
+        <p class="code-cap">来源：bZx-monorepo 镜像，提交 ce858d0，BZxOracle.sol 第 1406–1413 行与第 1356–1375 行，去掉了两至三层缩进<a class="ref" href="#s9">[9]</a>。两次攻击之间的修复提交没有改动 <code>_querySaneRate</code> 和 <code>getTradeData</code>。</p>
+        <p><code>getExpectedRate</code> 返回的只是此刻报价最好的储备给出的价格，没有时间维度，也没有外部参照。Kyber 永远选报价最好的储备，如果能抵消操纵的 FPR 被耗尽或者根本不存在，报价就只反映 AMM 型储备的当前状态。AMM 按自己的库存计算价格，谁在同一笔交易里先做一笔大额兑换，谁就直接改变了这个价格。</p>
+        <p>价差检查也拦不住这种情况。AMM 被推向一边以后，它的买入报价和卖出报价一起移动，两者之差只剩手续费和少量滑点，远低于 3%。这道检查原本针对的是“买入比卖出还便宜”的套利价格，它判断不了整体价格是否已经偏离市场。</p>
+        <p>bZx 事后的复盘印证了这一点：sUSD 在 Kyber 上有两个类似 Uniswap 的储备，攻击者操纵价格时因此通过了价差检查<a class="ref" href="#s5">[5]</a>。按 arXiv 论文附录的建模，这两个储备一个是 Uniswap 储备，一个是自动价格储备（APR），都按库存定价<a class="ref" href="#s1">[1]</a>。samczsun 随后又演示，只要储备池里存在 Uniswap 或 APR 储备，攻击者就可以反复与 FPR 交易，直到它停止报价，再随意操纵剩下的 AMM 储备。bZx 写道，到这时才确认继续用 Kyber 作价格源已经站不住<a class="ref" href="#s5">[5]</a>。</p>
+        <p>差距有多大，用数字看得最清楚。bZx 对 sUSD 抵押借 ETH 要求 150% 的抵押率。arXiv 按被操纵后的价格 108.44 sUSD/ETH 计算，有效借款比率是 162.66 sUSD 换 1 ETH<a class="ref" href="#s1">[1]</a>。按操纵前的公允价 268.30 sUSD/ETH，1,099,841 枚 sUSD 只值约 4,099 ETH，最多能借约 2,733 ETH；攻击者实际借走了 6,796 ETH，约为上限的 2.5 倍。bZx 后来清算这笔抵押品，换得 4,099.31 ETH，与按公允价的估算一致<a class="ref" href="#s5">[5]</a>。</p>
+        <div class="note">
+          <span class="h">为什么一个算漏洞、一个算设计缺陷</span>
+          <p>bZx 在《Mea Culpa》的根因分析里，把第一次攻击的直接原因定为“导致最终抵押检查被绕过的 bug”，把第二次定为“协议的根本设计缺陷”，并认为经济审计比代码审计更有可能提前发现后者<a class="ref" href="#s5">[5]</a>。第一次攻击依赖一个实现错误；第二次只依赖一个设计假设：DEX 的实时报价可以当价格源。即使代码一行不错，只要有人能在一笔交易里推动价格，这个假设就会失效，而闪电贷让推动价格所需的资金几乎没有成本。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <h3>第一次攻击：2020-02-15</h3>
+        <p>下面按 arXiv 论文、PeckShield 和 bZx 的复盘转述攻击的结构和关键数字<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>，重点是 bZx 一侧哪一步没有拦住。</p>
+        <ol class="steps">
+          <li><b>闪电贷拿到本金</b>攻击者从 dYdX 闪电贷借出 10,000 ETH，整笔借款要在同一笔交易结束前归还。</li>
+          <li><b>先在别处借好 WBTC</b>用其中一部分 ETH 在 Compound 抵押借出 112 WBTC。这笔借款留到交易之外，攻击者要承担被清算的风险。</li>
+          <li><b>让 bZx 用借贷池的钱高价买入</b>攻击者在 bZx 的 Fulcrum 开了一个 5 倍杠杆的 ETH/WBTC 空单。bZx 从 iETH 借贷池借出约 4,338 ETH，连同保证金一起经 Kyber 卖进 Uniswap 的 WBTC/ETH 池。这个池子很浅，这笔交易的平均成交价约是市价的 3 倍，滑点超过 200%。正常情况下，仓位检查会让交易回滚，但上一节说的检查被跳过了。</li>
+          <li><b>在被抬高的池子里卖出</b>攻击者把事先借来的 112 WBTC 卖进同一个池子，换回的 ETH 足够归还闪电贷，交易内还剩约 71 ETH。</li>
+          <li><b>事后收尾</b>此后约两天，攻击者分批按接近市价的价格买回 WBTC，还清 Compound 的借款，取回抵押的 ETH。</li>
+        </ol>
+        <p>arXiv 论文统计的合计获利约 1,193.69 ETH<a class="ref" href="#s1">[1]</a>，bZx 的 post-mortem 给出的也是约 1,193 ETH<a class="ref" href="#s4">[4]</a>。PeckShield 按 38.5 ETH/WBTC 的市价和约 4,300 ETH 的买回成本粗算，得出约 1,271 ETH<a class="ref" href="#s2">[2]</a>，这是估算口径的差别。真正的损失落在 bZx 的 iETH 借贷池上：仓位里只剩约 51 WBTC，对应的却是约 4,338 ETH 的借款。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>Uniswap WBTC/ETH 池</th><th class="n">ETH</th><th class="n">WBTC</th><th class="n">1 WBTC 合多少 ETH</th></tr></thead>
+            <tbody>
+              <tr><td>攻击前（区块 9,484,688 开始时）</td><td class="n">2,817.77</td><td class="n">77.09</td><td class="n">36.55</td></tr>
+              <tr><td>bZx 买入 51.35 WBTC 之后</td><td class="n">8,455.40</td><td class="n">25.74</td><td class="n">约 328</td></tr>
+              <tr><td>攻击者卖出 112 WBTC 之后</td><td class="n">1,583.98</td><td class="n">137.74</td><td class="n">11.50</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>表中数字来自 arXiv 论文图 3，最右一列按池内余额相除。正文里的 109.79 和 61.35 是整笔兑换的平均成交价，不是池子的边际价格。攻击结束后池里的 WBTC 被严重低估，arXiv 估计把价格拉回来的套利空间约 26.89 WBTC，约合 28.6 万美元<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 800 560" role="img" aria-labelledby="bzx-f1-t bzx-f1-d">
+            <title id="bzx-f1-t">第一次攻击的调用顺序</title>
+            <desc id="bzx-f1-d">攻击合约从 dYdX 闪电贷借出 10,000 ETH，向 Compound 存入 5,500 ETH 借出 112 WBTC，向 bZx 存入 1,300 ETH 开 5 倍做空。bZx 经 Kyber 把 5,637.62 ETH 卖进 Uniswap 池，只换回 51.35 WBTC，shouldLiquidate 检查被跳过。攻击合约把 112 WBTC 卖进被抬高的池子换回 6,871.41 ETH，归还闪电贷后净得 71.41 ETH，bZx 留下一个借出 4,337.62 ETH、只有 51.35 WBTC 的仓位。</desc>
+            <defs>
+              <marker id="bzx-ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bzx-ah1-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="80" y1="66" x2="80" y2="470"/>
+            <line class="d-line dash" x1="235" y1="66" x2="235" y2="470"/>
+            <line class="d-line dash" x1="390" y1="66" x2="390" y2="470"/>
+            <line class="d-line dash" x1="545" y1="66" x2="545" y2="470"/>
+            <line class="d-line dash" x1="715" y1="66" x2="715" y2="470"/>
+            <rect class="d-box atk" x="10" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="80" y="35" text-anchor="middle">攻击合约</text>
+            <text class="d-t s" x="80" y="55" text-anchor="middle">一笔交易内完成</text>
+            <rect class="d-box" x="165" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="235" y="35" text-anchor="middle">dYdX</text>
+            <text class="d-t s" x="235" y="55" text-anchor="middle">闪电贷</text>
+            <rect class="d-box" x="320" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="390" y="35" text-anchor="middle">Compound</text>
+            <text class="d-t s" x="390" y="55" text-anchor="middle">借贷协议</text>
+            <rect class="d-box" x="475" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="545" y="35" text-anchor="middle">bZx（Fulcrum）</text>
+            <text class="d-t s m" x="545" y="55" text-anchor="middle">sETHwBTC5x</text>
+            <rect class="d-box" x="645" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="715" y="35" text-anchor="middle">Uniswap</text>
+            <text class="d-t s" x="715" y="55" text-anchor="middle">WBTC/ETH 池</text>
+            <line class="d-line" x1="235" y1="108" x2="82" y2="108" marker-end="url(#bzx-ah1)"/>
+            <text class="d-t halo" x="157" y="100" text-anchor="middle">① 借出 10,000 ETH</text>
+            <line class="d-line" x1="80" y1="148" x2="388" y2="148" marker-end="url(#bzx-ah1)"/>
+            <text class="d-t halo" x="235" y="140" text-anchor="middle">② 存入 5,500 ETH</text>
+            <line class="d-line" x1="390" y1="183" x2="82" y2="183" marker-end="url(#bzx-ah1)"/>
+            <text class="d-t halo" x="235" y="175" text-anchor="middle">借出 112 WBTC</text>
+            <line class="d-line" x1="80" y1="223" x2="543" y2="223" marker-end="url(#bzx-ah1)"/>
+            <text class="d-t halo" x="312" y="215" text-anchor="middle">③ 存入 1,300 ETH，开 5 倍做空</text>
+            <line class="d-line atk" x1="545" y1="263" x2="713" y2="263" marker-end="url(#bzx-ah1-atk)"/>
+            <text class="d-t atk halo" x="630" y="255" text-anchor="middle">④ 卖出 5,637.62 ETH</text>
+            <line class="d-line atk" x1="715" y1="298" x2="547" y2="298" marker-end="url(#bzx-ah1-atk)"/>
+            <text class="d-t atk halo" x="630" y="290" text-anchor="middle">换回 51.35 WBTC</text>
+            <rect class="d-box atk" x="420" y="316" width="250" height="36" rx="4"/>
+            <text class="d-t s atk b" x="545" y="339" text-anchor="middle">shouldLiquidate 被跳过，交易不回滚</text>
+            <line class="d-line atk" x1="80" y1="388" x2="713" y2="388" marker-end="url(#bzx-ah1-atk)"/>
+            <text class="d-t atk halo" x="397" y="380" text-anchor="middle">⑤ 卖出从 Compound 借来的 112 WBTC</text>
+            <line class="d-line atk" x1="715" y1="423" x2="82" y2="423" marker-end="url(#bzx-ah1-atk)"/>
+            <text class="d-t atk halo" x="397" y="415" text-anchor="middle">换回 6,871.41 ETH</text>
+            <line class="d-line" x1="80" y1="458" x2="233" y2="458" marker-end="url(#bzx-ah1)"/>
+            <text class="d-t halo" x="157" y="450" text-anchor="middle">⑥ 归还 10,000 ETH</text>
+            <rect class="d-box atk" x="20" y="484" width="370" height="62" rx="4"/>
+            <text class="d-t b" x="205" y="509" text-anchor="middle">攻击者交易内净得 71.41 ETH</text>
+            <text class="d-t s" x="205" y="531" text-anchor="middle">另有 Compound 仓位：抵押 5,500 ETH，欠 112 WBTC</text>
+            <rect class="d-box soft" x="410" y="484" width="370" height="62" rx="4"/>
+            <text class="d-t b" x="595" y="509" text-anchor="middle">bZx 留下的仓位</text>
+            <text class="d-t s" x="595" y="531" text-anchor="middle">iETH 借出 4,337.62 ETH，仓位里只有 51.35 WBTC</text>
+          </svg>
+          </div>
+          <figcaption>图 1：第一次攻击中闪电贷那一笔交易的调用顺序。红色是被利用的步骤：bZx 用借贷池的钱以约 3 倍市价买入 WBTC，检查被跳过，攻击者随即把 WBTC 高价卖回同一个池子。bZx 实际经 Kyber 下单，Kyber 把订单路由到 Uniswap，图中省略了 Kyber 这一层。</figcaption>
+        </figure>
+        <h3>第二次攻击：2020-02-18</h3>
+        <p>第二次攻击在一笔交易里完成，没有利用代码漏洞，靠的是 bZx 把 Kyber 的即时报价当作抵押品价格<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <ol class="steps">
+          <li><b>从 bZx 自己的池子闪电借款</b>本金 7,500 ETH 来自 bZx 的 iETH 池，用的正是 bZx 1 月加上的闪电贷功能<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>在浅池里推高 sUSD</b>攻击者用不到 1,000 ETH 在 Kyber 路由的两个 AMM 型 sUSD 储备里买入 sUSD，把 sUSD 的 ETH 价格抬高约 2.5 倍<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>在别处按公允价囤 sUSD</b>攻击者另从 Synthetix Depot 按市价买入大量 sUSD，合计持有约 110 万 sUSD，PeckShield 估计约占当时 sUSD 总供应量的 20%<a class="ref" href="#s3">[3]</a>。这一步不受 Kyber 价格影响，作用是凑出足够多的抵押品。</li>
+          <li><b>以虚高的抵押品借款</b>攻击者把这些 sUSD 存进 bZx 作抵押。bZx 的预言机读到被操纵的 Kyber 报价，按约 2.5 倍的价格给 sUSD 估值，允许借出 <span class="dispute">6,796 ETH</span>。</li>
+          <li><b>还款离场</b>归还 7,500 ETH 闪电贷后，攻击者净得约 2,378 ETH<a class="ref" href="#s1">[1]</a>。bZx 留下一笔抵押不足的贷款。</li>
+        </ol>
+        <p>借款额和获利的数字在来源之间差约 3 ETH：arXiv 记为借出 6,799.27 ETH、获利 2,381.41 ETH<a class="ref" href="#s1">[1]</a>；PeckShield、bZx 和 CoinDesk 记为 6,796 ETH 和约 2,378 ETH<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s10">[10]</a>。来源没有解释差异的原因。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 800 552" role="img" aria-labelledby="bzx-f2-t bzx-f2-d">
+            <title id="bzx-f2-t">第二次攻击的资金流向</title>
+            <desc id="bzx-f2-d">攻击合约从 bZx iETH 池闪电借款 7,500 ETH，用 900 ETH 在 Kyber 上买入 sUSD 推高价格，用 6,000 ETH 在 Synthetix Depot 按市价买入 943,838 sUSD 并退回 2,482 ETH。随后把约 110 万 sUSD 抵押给 bZx，bZx 查询 Kyber 报价时 sUSD 被高估约 2.5 倍，借出 6,796 ETH。攻击者归还 7,500 ETH，净得约 2,378 ETH。</desc>
+            <defs>
+              <marker id="bzx-ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bzx-ah2-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="80" y1="66" x2="80" y2="466"/>
+            <line class="d-line dash" x1="300" y1="66" x2="300" y2="466"/>
+            <line class="d-line dash" x1="520" y1="66" x2="520" y2="466"/>
+            <line class="d-line dash" x1="715" y1="66" x2="715" y2="466"/>
+            <rect class="d-box atk" x="10" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="80" y="35" text-anchor="middle">攻击合约</text>
+            <text class="d-t s" x="80" y="55" text-anchor="middle">一笔交易内完成</text>
+            <rect class="d-box" x="230" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="300" y="35" text-anchor="middle">bZx iETH 池</text>
+            <text class="d-t s" x="300" y="55" text-anchor="middle">闪电贷与抵押借款</text>
+            <rect class="d-box" x="450" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="520" y="35" text-anchor="middle">Kyber sUSD 报价</text>
+            <text class="d-t s" x="520" y="55" text-anchor="middle">两个 AMM 型储备</text>
+            <rect class="d-box" x="645" y="12" width="140" height="54" rx="4"/>
+            <text class="d-t b" x="715" y="35" text-anchor="middle">Synthetix Depot</text>
+            <text class="d-t s" x="715" y="55" text-anchor="middle">按市价出售 sUSD</text>
+            <line class="d-line" x1="300" y1="108" x2="82" y2="108" marker-end="url(#bzx-ah2)"/>
+            <text class="d-t halo" x="190" y="100" text-anchor="middle">① 闪电贷 7,500 ETH</text>
+            <line class="d-line atk" x1="80" y1="148" x2="518" y2="148" marker-end="url(#bzx-ah2-atk)"/>
+            <text class="d-t atk halo" x="300" y="140" text-anchor="middle">② 用 900 ETH 买入 sUSD</text>
+            <line class="d-line" x1="520" y1="183" x2="82" y2="183" marker-end="url(#bzx-ah2)"/>
+            <text class="d-t halo" x="300" y="175" text-anchor="middle">约 15.6 万 sUSD，报价被推高</text>
+            <line class="d-line" x1="80" y1="223" x2="713" y2="223" marker-end="url(#bzx-ah2)"/>
+            <text class="d-t halo" x="397" y="215" text-anchor="middle">③ 6,000 ETH 按市价买 sUSD</text>
+            <line class="d-line" x1="715" y1="258" x2="82" y2="258" marker-end="url(#bzx-ah2)"/>
+            <text class="d-t halo" x="397" y="250" text-anchor="middle">943,838 sUSD，退回 2,482 ETH</text>
+            <line class="d-line" x1="80" y1="298" x2="298" y2="298" marker-end="url(#bzx-ah2)"/>
+            <text class="d-t halo" x="190" y="290" text-anchor="middle">④ 抵押约 110 万 sUSD</text>
+            <line class="d-line atk dash" x1="300" y1="338" x2="518" y2="338" marker-end="url(#bzx-ah2-atk)"/>
+            <text class="d-t atk halo" x="410" y="330" text-anchor="middle">⑤ 查询 Kyber 报价</text>
+            <line class="d-line atk dash" x1="520" y1="373" x2="302" y2="373" marker-end="url(#bzx-ah2-atk)"/>
+            <text class="d-t atk halo" x="410" y="365" text-anchor="middle">sUSD 被高估约 2.5 倍</text>
+            <line class="d-line atk" x1="300" y1="413" x2="82" y2="413" marker-end="url(#bzx-ah2-atk)"/>
+            <text class="d-t atk halo" x="190" y="405" text-anchor="middle">⑥ 借出 6,796 ETH</text>
+            <line class="d-line" x1="80" y1="451" x2="298" y2="451" marker-end="url(#bzx-ah2)"/>
+            <text class="d-t halo" x="190" y="443" text-anchor="middle">⑦ 归还 7,500 ETH</text>
+            <rect class="d-box atk" x="20" y="478" width="370" height="62" rx="4"/>
+            <text class="d-t b" x="205" y="503" text-anchor="middle">攻击者净得约 2,378 ETH</text>
+            <text class="d-t s" x="205" y="525" text-anchor="middle">一笔交易完成，手续费约 0.42 ETH</text>
+            <rect class="d-box soft" x="410" y="478" width="370" height="62" rx="4"/>
+            <text class="d-t b" x="595" y="503" text-anchor="middle">bZx 留下的借款</text>
+            <text class="d-t s" x="595" y="525" text-anchor="middle">借出 6,796 ETH，抵押品按公允价只值约 4,099 ETH</text>
+          </svg>
+          </div>
+          <figcaption>图 2：第二次攻击的资金流向。红色实线是推动价格和超额借款，红色虚线是 bZx 预言机读取被操纵的报价。Depot 那一步买到的 sUSD 价格公道，它的作用是让攻击者手里有足够多、按虚高价计值的抵押品。</figcaption>
+        </figure>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <h3>攻击者拿走了什么</h3>
+        <p>第一次攻击者在闪电贷交易里得到 71.41 ETH 和一个 Compound 仓位，随后两天花 4,377.72 ETH 买回 WBTC 还清 Compound，取回 5,500 ETH 抵押品，合计净得约 1,193 ETH<a class="ref" href="#s1">[1]</a>。第二次攻击者在一笔交易里拿走约 2,378 ETH。两次攻击的获利都是普通 ETH，没有可以冻结的中心化稳定币。</p>
+        <p>本页没有找到这些 ETH 后续流向的公开追踪记录，bZx、PeckShield 和 arXiv 都没有提到冻结或追回。bZx 在第一次 post-mortem 里写道，如果没有 Tornado Cash 和闪电贷，攻击者很难同时获得这样的匿名性和资金规模，但没有具体说明攻击者如何使用了 Tornado Cash<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>bZx 留下了什么</h3>
+        <p>两次攻击都给 iETH 池留下了抵押严重不足的贷款。第一次的仓位里有 51.35 WBTC，bZx 撰文时它可兑换约 1,902.26 ETH，而仓位剩余本金为 4,698.02 ETH<a class="ref" href="#s4">[4]</a>。第二次留下的 1,099,841 sUSD 被清算成 4,099.31 ETH，作为利息流回 iETH 池。截至 3 月 9 日，两笔贷款的未偿本金合计 11,497.29 ETH，可用于支付利息的资金为 6,095.57 ETH<a class="ref" href="#s5">[5]</a>。bZx 没有马上确认这笔损失，后续处理见下文“后续处置”。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th>第一次（02-15）</th><th>第二次（02-18）</th></tr></thead>
+            <tbody>
+              <tr><td>闪电贷</td><td>dYdX，10,000 ETH</td><td>bZx iETH，7,500 ETH</td></tr>
+              <tr><td>被操纵的价格</td><td>Uniswap WBTC/ETH 池</td><td>Kyber 上的 sUSD 报价</td></tr>
+              <tr><td>bZx 借出的 ETH</td><td>4,337.62（借给保证金仓位的部分）</td><td><span class="dispute">6,796</span>（arXiv 记为 6,799.27）</td></tr>
+              <tr><td>攻击者获利（ETH）</td><td><span class="dispute">1,193.69</span>（PeckShield 估约 1,271）</td><td><span class="dispute">约 2,378</span>（arXiv 记为 2,381.41）</td></tr>
+              <tr><td>出借人损失（ETH）</td><td>约 2,330.86</td><td>约 2,699.97</td></tr>
+              <tr><td>留下的抵押品</td><td>51.35 WBTC</td><td>1,099,841 sUSD，后来清算成 4,099.31 ETH</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>表中数字来自 arXiv<a class="ref" href="#s1">[1]</a>、PeckShield<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>和 bZx<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>；出借人损失是 arXiv 按当时市价的估算。两名攻击者合计拿走约 3,570 ETH，折合美元的数字随所用的 ETH 价格变化。CoinDesk 等媒体当时报道第一次超过 35 万美元、第二次约 63 万美元，Cointelegraph 合计为 95.4 万美元<a class="ref" href="#s10">[10]</a><a class="ref" href="#s12">[12]</a>；bZx 按 250 美元/ETH 把第一次折算为 298,250 美元<a class="ref" href="#s4">[4]</a>，rekt.news 后来采用 29.8 万和 64.5 万美元<a class="ref" href="#s14">[14]</a>。</p>
+        <p>出借人的损失大于攻击者的获利。第一次攻击里，iETH 池的 ETH 以约 3 倍的价格在 Uniswap 买入 WBTC，多付的部分有一块留在了池子的流动性提供者手里；攻击结束后池里的 WBTC 又被严重低估，留给后来者约 28.6 万美元的套利空间<a class="ref" href="#s1">[1]</a>。The Block 援引分析者 Korantin Auguste 的估算，第一次攻击造成协议权益损失约 62 万美元、攻击者获利约 35 万美元<a class="ref" href="#s11">[11]</a>，与 arXiv 的 ETH 数字按当时币价折算后大致吻合。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>闪电贷改变了攻击的成本</h3>
+        <p>arXiv 论文分析了这两次攻击，称它们的投资回报率都超过 500,000%。论文指出，交易是原子的，初始状态完全确定，攻击者可以事先精确计算每一步参数对结果的影响；作者用自己的优化框架算出，第一次攻击若参数最优可获利 82.95 万美元，是实际的 2.37 倍，第二次可获利 110 万美元，是实际的 1.73 倍<a class="ref" href="#s1">[1]</a>。</p>
+        <p>在这之前，协议评估价格操纵风险，多半默认攻击者要动用自有资金，还要跨多个区块承担风险。bZx 在《Mea Culpa》里写道，它把跨区块的价格操纵当作主要威胁，并用 <code>tx.origin == msg.sender</code> 的要求挡住了单笔交易内的清算攻击<a class="ref" href="#s5">[5]</a>。这两次攻击说明，资金可以由闪电贷临时提供，真正要问的是：把价格推动一个区块需要多少钱。</p>
+        <p>常说的“第一次闪电贷攻击”没有权威定义。可以确定的是：闪电贷在此前已经存在；bZx 1 月的闪电贷漏洞在主网上被验证过，但没有造成损失；arXiv 论文把 2020 年 2 月的这两起作为分析对象，称闪电贷带来的攻击可能性“部分已在 2020 年 2 月被利用”<a class="ref" href="#s1">[1]</a>；CertiK 把它列为价格操纵成为主要威胁的起点<a class="ref" href="#s18">[18]</a>。本页没有找到更早的、以闪电贷为资金来源并造成实际损失的公开案例。</p>
+        <h3>价格预言机成为攻击面</h3>
+        <p>CertiK 2025 年的回顾把 2020 年初的 bZx 攻击列为价格操纵成为 DeFi 主要威胁的起点<a class="ref" href="#s18">[18]</a>。此后越来越多的借贷协议改用时间加权平均价、链下聚合报价或多源交叉校验，bZx 自己走的也是这条路。后来的价格操纵不再局限于推动 DEX 现货价，被扭曲的对象换成了金库份额价格、治理票数和永续合约浮盈，底层问题相同：协议把一个能在一笔交易或很短时间内被扭曲的数值当成了可信价格。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>本站收录的后续事件</th><th>时间</th><th class="n">损失</th><th>被扭曲的数值</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2021-cream-finance.html">Cream Finance</a></td><td>2021-10</td><td class="n">约 1.3 亿美元</td><td>yUSD 金库每份额价格，被直接转入底层资产抬高</td></tr>
+              <tr><td><a href="2022-beanstalk.html">Beanstalk</a></td><td>2022-04</td><td class="n">约 1.81 亿美元</td><td>治理投票权，用闪电贷借来并在同一笔交易里通过提案</td></tr>
+              <tr><td><a href="2022-mango-markets.html">Mango Markets</a></td><td>2022-10</td><td class="n">约 1.15 亿美元</td><td>MNGO 现货价，永续合约浮盈被计作抵押品</td></tr>
+              <tr><td><a href="2026-tectonic.html">Tectonic</a></td><td>2026-08</td><td class="n">约 1.2 亿美元</td><td>借贷协议的抵押品估值，根因判定见该事件页</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>暂停按钮之争</h3>
+        <p>bZx 两次都用不受时间锁约束的管理员权限暂停了交易，止住了更大的损失，也引来了“这样还算不算去中心化”的质疑。bZx 在 post-mortem 里回应说，经过深思熟虑设计的升级和暂停功能，可以是去中心化协议工具箱的一部分，它所做的也是一个 DAO 同样会做的事<a class="ref" href="#s4">[4]</a>。四年前的 <a href="2016-the-dao.html">The DAO</a> 既不能暂停也不能升级，最后只能靠整条链硬分叉追回资金。协议该保留多少应急权力，这个问题此后一直没有统一答案；bZx 自己 2021 年的事故又说明，同一把钥匙也会成为攻击目标。</p>
+        <p>市场层面，The Block 指出 bZx 当时是锁仓量第七大的 DeFi 协议<a class="ref" href="#s11">[11]</a>。Cointelegraph 报道，DeFi 总锁仓价值从 2 月 18 日约 12 亿美元的高点回落了约 1.4 亿美元，锁仓的 ETH 减少约 20 万枚<a class="ref" href="#s12">[12]</a>。这是同期的市场数据，不能直接等同于攻击造成的损失。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>两次暂停，一次过快的重启</h3>
+        <p>从第一次攻击交易上链到协议重新开放约 29 小时；重新开放后约 45 小时，第二次攻击发生，协议再次暂停。bZx 事后解释，暂停交易的同时也停掉了所有仓位的追加保证金和清算，交易者被困在仓位里，出借人的资金也暴露在风险中，所以第一次之后急于恢复服务。它在重启前与 samczsun、Lev Livnev 等白帽一起检查过补丁，但第二次攻击属于另一类问题<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>不立即确认的坏账</h3>
+        <p>bZx 没有马上核销坏账，而是让两笔贷款继续存在，用剩下的抵押品慢慢支付利息。第一次攻击后，它按约 0.2% 的年利率测算，剩余的 WBTC 抵押品可以付约 202 年的利息<a class="ref" href="#s4">[4]</a>；第二次攻击留下的抵押品相对更多，这个期限反而延长到 265.14 年。公司和协议的现金流被导入保险基金，等这笔债在约公元 2285 年真正违约时再由基金覆盖。保险基金原本收取借款利息的 10%，bZx 计划再加上它作为 Kyber 联盟方的收入和协议的套利收入<a class="ref" href="#s5">[5]</a>。</p>
+        <p>bZx 表示用户不会承担这笔损失，只有 ETH 借贷池受到影响；CoinGeek 报道 Kistner 称损失由公司和利益相关方吸收<a class="ref" href="#s5">[5]</a><a class="ref" href="#s13">[13]</a>。bZx 还承诺补偿在暂停期间被困的交易者。本页没有找到 v1 iETH 池这笔坏账最终如何结清、是否在升级时迁入新版本的公开记录。</p>
+        <h3>换预言机</h3>
+        <p>《Mea Culpa》提出分三步更换预言机。第 0 阶段用 Chainlink 作参考价格，DEX 成交价与它偏离过大时交易回滚；第 1 阶段加入 Band Protocol；第 2 阶段再加上 Uniswap v2 的时间加权价格，三者取中位数。bZx 自己注明后两个阶段只是初步设想<a class="ref" href="#s5">[5]</a>。2020 年 9 月 2 日上线的 Fulcrum 2.0 在开仓、清算和发放奖励三处都使用 Chainlink 价格，保证金交易单笔上限暂定 1,500 ETH，理由是多数协议攻击都要靠闪电贷调动大额资金<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>流程上的承诺</h3>
+        <p>bZx 承诺以后不再部署任何未经审计的代码，提高漏洞赏金并交给独立小组评定，为每种上架资产发布风险报告，并做经济审计。它承认 1 月把闪电贷函数未经审计就推上主网是一种失职<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>协议后来的事故与监管</h3>
+        <p>重启后不到两周，iToken 的 <code>transferFrom</code> 被发现允许把代币转给自己并凭空增加余额，bZx 在 9 月 15 日宣布追回全部资金<a class="ref" href="#s8">[8]</a>。2021 年 11 月 5 日，一名开发者的私钥泄露导致 BSC 和 Polygon 部署被盗约 5,500 万美元<a class="ref" href="#s14">[14]</a>。以太坊部署已转为 DAO 治理，没有受影响；BSC 和 Polygon 部署的管理权还没有移交 DAO，开发者的私钥一失窃，攻击者就同时拿到了这两个部署的控制权<a class="ref" href="#s15">[15]</a>。2020 年 2 月帮助止损的管理员权限，在这次事故里成了单点。</p>
+        <p>监管方面，CFTC 2022 年与 bZeroX 及两名创始人和解，又在加州北区联邦地区法院起诉 Ooki DAO，2023 年 6 月由 William H. Orrick 法官作出缺席判决，罚款数额见时间线<a class="ref" href="#s16">[16]</a><a class="ref" href="#s17">[17]</a>。两案针对的是未注册经营杠杆交易和未做客户身份识别，与 2020 年 2 月的攻击无关。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>交易之后的健康检查不要设基于输入参数的捷径。某种情形确实不需要检查，就让它走单独的代码路径，而不是用一个条件把检查短路掉。</li>
+            <li>风险判断要看交易的实际结果：卖出了多少、换回了多少、仓位里现在有什么，而不是从参数的样子推断“这是哪种交易”。</li>
+            <li>单笔规模上限和滑点上限是对付未知漏洞的最后一道防线。bZx 在第一次修复和 9 月重启时都加上了这一条。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给预言机和抵押品设计者</span>
+          <ul>
+            <li>不要用能在同一笔交易里被推动的价格给抵押品定价，无论它来自 AMM 池的即时价还是聚合器的报价。优先用时间加权价格或外部聚合价格，最好多源比对，偏离过大时回滚。</li>
+            <li>买卖价差检查只能发现套利价格，发现不了整体价格被推走。</li>
+            <li>评估一种抵押资产，要看它流动性最薄的那个价格来源。sUSD 同时有深度足够的 Synthetix Depot 和很浅的链上储备，攻击者正是在前者按公允价买入、在后者推高价格。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议设计者</span>
+          <ul>
+            <li>假设攻击者能在一笔交易里零成本借到市场上可借的全部流动性，按这个前提做经济审计。bZx 自己的结论是，经济审计比代码审计更有可能提前发现第二次攻击。</li>
+            <li>再小的代码改动也要审计。bZx 1 月的闪电贷函数只有 40 行，未经审计上线，里面就有任意调用漏洞。</li>
+            <li>暂停和升级权限要公开写明范围；这些密钥本身要按金库级别保护，2021 年的事故说明它们同样会被盯上。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Kaihua Qin、Liyi Zhou、Benjamin Livshits、Arthur Gervais，《Attacking the DeFi Ecosystem with Flash Loans for Fun and Profit》，arXiv:2003.03810（v4，2021-03-20）。<a href="https://arxiv.org/abs/2003.03810">arxiv.org</a></li>
+          <li id="s2">PeckShield，《bZx Hack Full Disclosure (With Detailed Profit Analysis)》，2020-02-17。<a href="https://web.archive.org/web/20201101122228/https://medium.com/@peckshield/bzx-hack-full-disclosure-with-detailed-profit-analysis-e6b1fa9b18fc">medium.com（Web Archive 存档）</a></li>
+          <li id="s3">PeckShield，《bZx Hack II Full Disclosure (With Detailed Profit Analysis)》，2020-02-18。<a href="https://web.archive.org/web/20210123145721/https://peckshield.medium.com/bzx-hack-ii-full-disclosure-with-detailed-profit-analysis-8126eecc1360">medium.com（Web Archive 存档）</a></li>
+          <li id="s4">Kyle J Kistner，《Post-Mortem》，bZx 博客，2020-02-17。<a href="https://web.archive.org/web/20210119154644/https://bzx.network/blog/postmortem-ethdenver">bzx.network（Web Archive 存档）</a></li>
+          <li id="s5">Kyle J Kistner，《Mea Culpa: A New Beginning》，bZx 博客，2020-03-09。<a href="https://web.archive.org/web/20210119144240/https://bzx.network/blog/mea-culpa">bzx.network（Web Archive 存档）</a></li>
+          <li id="s6">Nick Sawinyh，《bZx Integrates with Chainlink to Prevent Future Price Oracle Exploits》，bZx 博客，2020-03-09。<a href="https://web.archive.org/web/20201123222627/https://bzx.network/blog/chainlink-oracles">bzx.network（Web Archive 存档）</a></li>
+          <li id="s7">Kyle J Kistner，《We Have Returned: bZx Is Back》，bZx 博客，2020-09-02。<a href="https://web.archive.org/web/20201123225707/https://bzx.network/blog/bzxisback">bzx.network（Web Archive 存档）</a></li>
+          <li id="s8">Kyle J Kistner，《iToken Duplication Incident Report》，bZx 博客，2020-09-15。<a href="https://web.archive.org/web/20201123215004/https://bzx.network/blog/incident">bzx.network（Web Archive 存档）</a></li>
+          <li id="s9">bZx-monorepo 源码镜像（原 bZxNetwork 仓库已不可访问），提交 ce858d0 与修复提交 cb54efa：iTokens_loanOpeningFunctions.sol、LoanTokenLogicV4.sol、BZxOracle.sol。<a href="https://github.com/zetorange1/bZx-monorepo/commit/cb54efaf6eecdb197bf3dbf84a6f58c6df74daf7">github.com</a></li>
+          <li id="s10">Paddy Baker，《DeFi Project bZx Exploited for Second Time in a Week, Loses $630K in Ether》，CoinDesk，2020-02-18（Yahoo Finance 转载）。<a href="https://finance.yahoo.com/news/defi-project-bzx-exploited-second-130458684.html">finance.yahoo.com</a></li>
+          <li id="s11">Yogita Khatri，《DeFi lending protocol bZx exploited, ‘a portion of ETH lost’》，The Block，2020-02-17（Yahoo Finance 转载）。<a href="https://finance.yahoo.com/news/defi-lending-protocol-bzx-exploited-133520566.html">finance.yahoo.com</a></li>
+          <li id="s12">Will Heasman，《Are the BZx Flash Loan Attacks Signaling the End of DeFi?》，Cointelegraph，2020-02-22。<a href="https://cointelegraph.com/news/are-the-bzx-flash-loan-attacks-signaling-the-end-of-defi">cointelegraph.com</a></li>
+          <li id="s13">Steve Kaaru，《DeFi platform bZx to compensate users after successive hacks》，CoinGeek，2020-03-13。<a href="https://coingeek.com/defi-platform-bzx-to-compensate-users-after-successive-hacks/">coingeek.com</a></li>
+          <li id="s14">rekt.news，《bZx - REKT》，2021-11-06。<a href="https://rekt.news/bzx-rekt/">rekt.news</a></li>
+          <li id="s15">bZx，《Preliminary Post Mortem》，bZx 博客，2021-11-05。<a href="https://web.archive.org/web/20211105225627/https://bzx.network/blog/prelminary-post-mortem">bzx.network（Web Archive 存档）</a></li>
+          <li id="s16">美国 CFTC，《CFTC Imposes $250,000 Penalty Against bZeroX, LLC and Its Founders and Charges Successor Ooki DAO…》，新闻稿 8590-22，2022-09-22。<a href="https://www.cftc.gov/PressRoom/PressReleases/8590-22">cftc.gov</a></li>
+          <li id="s17">美国 CFTC，《Statement of CFTC Division of Enforcement Director Ian McGinley on the Ooki DAO Litigation Victory》，2023-06-09。<a href="https://www.cftc.gov/PressRoom/PressReleases/8715-23">cftc.gov</a></li>
+          <li id="s18">CertiK，《Oracle Wars: The Rise of Price Manipulation Attacks》，2025-05-06。<a href="https://www.certik.com/resources/blog/oracle-wars-the-rise-of-price-manipulation-attacks">certik.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coincheck 被盗 5.23 亿枚 NEM｜区块链被盗事件编年史</title>
+<meta name="description" content="2018 年日本交易所 Coincheck 的 NEM 热钱包被转空的经过：单签热钱包、员工电脑中木马、NEM 基金会的 mosaic 标记追踪、暗网折价兑换、金融厅两次业务改善命令和每枚 88.549 日元的赔付。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2018-coincheck">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2018 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Coincheck 被盗 5.23 亿枚 NEM</h1>
+    <p class="lede">2018 年 1 月 26 日凌晨（日本时间），东京交易所 Coincheck 的 NEM 热钱包在 8 个半小时里被转走约 5.26 亿枚 XEM，按发现时的价格约合 580 亿日元。全部客户的 XEM 都放在一个常驻在线、没有多签的地址里，一台员工电脑中了木马，攻击者就拿到了这把唯一的私钥。日本现行法规要求交易所把至少 95% 的客户加密资产离线保管，这种管理方式已不被允许。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Coincheck 把客户的 NEM（代币单位 XEM）汇总在一个热钱包地址里。这个地址只由一把私钥控制，私钥放在一台为处理提币而一直联网的服务器上，没有启用 NEM 协议自带的多签功能。攻击者用邮件让多名员工的电脑感染了远程控制木马，再经内网进入 NEM 服务器取得私钥，用它签名转账。</p>
+        <p>转账从日本时间 1 月 26 日 00:02 开始，到 08:26 结束，共转走 526,300,010 XEM。最后一笔转出约 3 小时后，Coincheck 才发现余额异常<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。NEM 链本身没有出错，它只是按规则执行了每一笔签名正确的交易。</p>
+        <p>NEM 基金会随即给攻击者地址打上 mosaic 标记，主要交易所据此拒收。攻击者转而在暗网开设兑换网站，以低于市价的价格把 XEM 换成 BTC 和 LTC，到 3 月 22 日全部换完<a class="ref" href="#s12">[12]</a>。Coincheck 用自有资金按每枚 88.549 日元向约 26 万名客户赔付日元，3 月 12 日入账<a class="ref" href="#s9">[9]</a>。关东财务局两次发出业务改善命令，4 月 Monex 集团以 36 亿日元收购了 Coincheck<a class="ref" href="#s10">[10]</a>。警方后来立案了 31 名在暗网购买被盗 XEM 的人，盗币者本人至今没有查明<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>2017 年日本修订《资金结算法》，引入加密资产交换业登记制度。Coincheck 提交了登记申请但尚未获批，依据过渡条款以“视同业者”（みなし業者）的身份继续经营<a class="ref" href="#s2">[2]</a>。社长和田晃一良持有 45.2% 的股份，董事大塚雄介持有 5.5%<a class="ref" href="#s10">[10]</a>。事发前一个多月，Coincheck 还在电视上大量投放广告，事发当晚的记者会上，记者就此追问过它的安全投入<a class="ref" href="#s1">[1]</a>。</p>
+        <p>各币种怎样保管，是在 1 月 26 日的记者会上才对外说明的：BTC 放在冷钱包并使用多签，ETH 放在冷钱包但没有多签，NEM 则全部放在热钱包，也没有多签<a class="ref" href="#s1">[1]</a>。和田的解释是，BTC 在上线 NEM 之前就有冷钱包，NEM 是后来加的。被问到为什么 NEM 不离线保管，大塚的回答是“系统上难度非常高”，和田补充说原因是技术难度和人手不足。至于多签，大塚表示一直在路线图上，但“还有其他优先级更高的事项”，没有具体时间表。</p>
+        <p>NEM 协议原生支持多签账户：普通账户转成多签账户后，每笔转出交易都必须由事先指定的共同签名人分别签名。启用它不需要写智能合约。记者会上有记者提到，NEM 基金会曾建议交易所使用多签<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与监管行动</span><span>其他事件</span></p>
+        <p>日期和时刻均为日本时间（UTC+9）。1 月 26 日 00:02 对应 UTC 1 月 25 日 15:02。</p>
+        <ol class="timeline">
+          <li class="atk key"><time>2018-01-26 00:02</time><div class="ev">第一笔异常转账：10 XEM 从 Coincheck 的 NEM 地址转到攻击者地址。00:04:56 起，约 8 分钟内连续转出 5 笔各 1 亿 XEM 和数笔千万级转账<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>01-26 08:26</time><div class="ev">最后一笔转出 80 万 XEM。整个过程中没有任何一笔被拦下<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>01-26 11:25</time><div class="ev">Coincheck 发现 NEM 余额异常减少。11:58 停止 NEM 充提，12:52 停止 NEM 交易，16:33 停止包括日元在内的全部出金<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>01-26 23:30</time><div class="ev">记者会：确认约 5.23 亿 XEM 被转走，承认 NEM 放在热钱包、没有使用多签；NEM 基金会表示不会硬分叉<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>01-27</time><div class="ev">Coincheck 宣布用自有资金、按每枚 88.549 日元向约 26 万名持有人赔付日元<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def"><time>01-29</time><div class="ev">关东财务局发出第一次业务改善命令，限 2 月 13 日前书面报告<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>02-02</time><div class="ev">金融厅开始现场检查。2 月 13 日 Coincheck 提交报告，恢复日元出金<a class="ref" href="#s3">[3]</a><a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>02-06</time><div class="ev">韩国国家情报院向国会通报朝鲜持续窃取加密资产，媒体据此推测 Coincheck 案可能与朝鲜有关<a class="ref" href="#s17">[17]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="atk"><time>02-07 起</time><div class="ev">暗网上出现以折扣价出售被盗 XEM、收取 BTC 或 LTC 的网站。警方后来统计的 31 名买家的交易都发生在 2 月 7 日至 3 月 22 日之间<a class="ref" href="#s12">[12]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="atk"><time>02-22 起</time><div class="ev">被盗 XEM 经支付平台 CoinPayments 中转后流入日本交易所 Zaif，到 3 月 4 日累计约 2,260 万 XEM<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def key"><time>03-08</time><div class="ev">Coincheck 公布调查结论：员工电脑经邮件感染恶意软件，攻击者由此侵入内网、窃取私钥，被盗数量更正为 526,300,010 XEM。同日关东财务局发出第二次业务改善命令<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>03-12</time><div class="ev">赔付入账，部分币种恢复出金和卖出<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>03-18</time><div class="ev">NEM 基金会停用追踪用的 mosaic，3 月 20 日发表声明<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>03-22</time><div class="ev">暗网兑换站“售罄”，攻击者钱包余额归零。网站换上金正恩被钞票包围的拼贴图和“Thank you!!!”<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>04-06</time><div class="ev">Monex 集团宣布以 36 亿日元收购 Coincheck 全部股份，4 月 16 日起由 Monex 派出的胜屋敏彦任代表董事<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>10-17</time><div class="ev">Group-IB 发布报告，把 Coincheck 列为朝鲜 Lazarus 攻击过的交易所之一<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>10-30</time><div class="ev">恢复新开户和部分币种的买入、充值；卖出和出金已在 6 月恢复<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2019-01-11</time><div class="ev">Coincheck 完成加密资产交换业登记，此后所有币种改为冷钱包保管<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2019-06-17</time><div class="ev">《朝日新闻》报道：员工电脑上检出的木马是 Mokes 和 Netwire，前者最早在俄语地下论坛出售，朝鲜说受到质疑<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def"><time>2020-03-11</time><div class="ev">警视厅以涉嫌收受犯罪收益逮捕两名在暗网兑换被盗 XEM 的男子<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2021-01-22</time><div class="ev">警视厅公布共立案 31 人（逮捕 6 人、移送 25 人），兑换金额约 188 亿日元；盗币者仍未查明<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2022-04-27</time><div class="ev">东京地方法院判决 Coincheck 向 21 名原告返还 NEM，认为当年的日元赔付不能免除返还义务<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2024-07-16</time><div class="ev">最高法院驳回一名买家的上告，认定用盗来的私钥签名转账属于电子计算机使用诈骗罪中的“虚假信息”<a class="ref" href="#s15">[15]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起事件没有利用 NEM 协议或任何合约的漏洞。在 NEM 上，谁持有一个地址的私钥，谁就能签出这个地址的全部余额，链上节点只检查签名是否正确。所以问题集中在 Coincheck 怎样保管这把私钥，有三层因素叠加在一起。</p>
+        <p>第一，所有客户的 XEM 汇总在同一个地址里，一把私钥对应全部资产。第二，这把私钥放在一台为了随时处理提币而联网的服务器上，没有离线保管的部分。第三，地址没有转成 NEM 的多签账户，签名不需要第二个人或第二台机器参与。三者叠加的结果是，攻破一台服务器和转走全部 XEM 之间没有任何缓冲。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 360" role="img" aria-labelledby="cc-fig1-t cc-fig1-d">
+            <title id="cc-fig1-t">Coincheck 当时的 NEM 保管方式与现行规则要求的对比</title>
+            <desc id="cc-fig1-d">左侧是 Coincheck 当时的结构：员工电脑被植入木马，攻击者经内网到达 NEM 服务器，取得唯一的私钥，这把私钥控制着装有几乎全部客户 XEM 的热钱包。右侧是现行规则要求的结构：至少 95% 的客户资产放在私钥离线的冷钱包，热钱包不超过 5%，并加上多签和出金风控，单台机器失守时损失被限制在热钱包部分。</desc>
+            <defs>
+              <marker id="cc-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="cc-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="190" y="26" text-anchor="middle">Coincheck 当时的结构</text>
+            <text class="d-t b" x="570" y="26" text-anchor="middle">现行规则要求的结构</text>
+            <line class="d-line dash" x1="380" y1="14" x2="380" y2="346"/>
+            <rect class="d-box atk" x="40" y="44" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="190" y="67" text-anchor="middle">NEM 热钱包（1 个地址）</text>
+            <text class="d-t s" x="190" y="88" text-anchor="middle">几乎全部客户的 XEM</text>
+            <rect class="d-box" x="40" y="132" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="190" y="155" text-anchor="middle">NEM 服务器上的私钥</text>
+            <text class="d-t s" x="190" y="176" text-anchor="middle">只有 1 把，常驻在线，没有多签</text>
+            <rect class="d-box atk" x="40" y="220" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="190" y="243" text-anchor="middle">员工电脑中了远程控制木马</text>
+            <text class="d-t s" x="190" y="264" text-anchor="middle">攻击者以它为跳板进入内网</text>
+            <line class="d-line atk" x1="190" y1="220" x2="190" y2="190" marker-end="url(#cc-ah-atk)"/>
+            <text class="d-t atk halo" x="200" y="210">窃取私钥</text>
+            <line class="d-line atk" x1="190" y1="132" x2="190" y2="102" marker-end="url(#cc-ah-atk)"/>
+            <text class="d-t atk halo" x="200" y="122">签名转出</text>
+            <text class="d-t atk" x="190" y="310" text-anchor="middle">失守一处，8.5 小时转走 5.26 亿 XEM</text>
+            <text class="d-t s" x="190" y="332" text-anchor="middle">签名不需要第二人，转出没有限额</text>
+            <rect class="d-box def" x="420" y="44" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="570" y="67" text-anchor="middle">冷钱包：≥95% 客户资产</text>
+            <text class="d-t s" x="570" y="88" text-anchor="middle">私钥离线保存</text>
+            <rect class="d-box" x="420" y="132" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="570" y="155" text-anchor="middle">热钱包：≤5%</text>
+            <text class="d-t s" x="570" y="176" text-anchor="middle">多签共同签名，按额度和频率风控</text>
+            <rect class="d-box atk" x="420" y="220" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="570" y="243" text-anchor="middle">同样一台机器失守</text>
+            <text class="d-t s" x="570" y="264" text-anchor="middle">只能接触热钱包，还缺另一个签名</text>
+            <line class="d-line atk" x1="570" y1="220" x2="570" y2="190" marker-end="url(#cc-ah-atk)"/>
+            <line class="d-line dash" x1="570" y1="132" x2="570" y2="102"/>
+            <text class="d-t s halo" x="580" y="122">够不到</text>
+            <text class="d-t def" x="570" y="310" text-anchor="middle">损失上限是热钱包的那一小部分</text>
+            <text class="d-t s" x="570" y="332" text-anchor="middle">大额转出还要经过第二个签名人</text>
+          </svg>
+          </div>
+          <figcaption>图 1：同样是一台机器被攻破，两种保管结构的损失上限完全不同。左侧依据 Coincheck 记者会和 3 月 8 日的调查结论，右侧依据《加密资产交换业者内阁府令》第 27 条。</figcaption>
+        </figure>
+        <h3>现行规则怎样规定</h3>
+        <p>日本现行的《加密资产交换业者内阁府令》把“热钱包能放多少”写成了硬性上限。第 27 条第 2 款和第 3 款的大意如下（本站翻译，节选）<a class="ref" href="#s21">[21]</a>：</p>
+        <blockquote>
+          <p>不按离线方式管理的，只能是为保障用户便利和业务顺利进行所必需的最小限度的加密资产，其折合日元的金额不得超过所管理的用户加密资产总额的百分之五。</p>
+          <p>交易所自行管理时，应把转移用户加密资产所需的信息（即私钥）记录在不常时连接互联网的电子设备或记录媒体上管理，或采取与之同等的技术安全措施。</p>
+          <cite>《暗号資産交換業者に関する内閣府令》第 27 条第 2、3 款，e-Gov 法令检索</cite>
+        </blockquote>
+        <p>同一部内阁府令的第 29 条规定了“履约保证加密资产”的管理方式，同样要求离线保管<a class="ref" href="#s21">[21]</a>。这类资产是交易所按《资金结算法》为热钱包中的客户资产另行准备的同种资产，热钱包万一被转空，交易所手里有现成的币可以赔。</p>
+        <h3>私钥之外的控制点</h3>
+        <p>调查结论公布的第二天，曾任 Japan Digital Design CTO 的楠正憲撰文提出了几个疑问<a class="ref" href="#s5">[5]</a>：员工电脑感染木马，为什么就能进入生产系统；管理员权限有没有启用多因素认证；办公网和生产网有没有隔离；私钥为什么能被“截获”，它是否以明文文件存放在服务器上。他也指出，当时 AWS 的 CloudHSM 不支持 NEM 使用的 Ed25519 密钥，NEM 私钥没法放进 HSM，但至少可以用 HSM 中的密钥加密，只在内存中解密使用。</p>
+        <p>他还提到另一层控制：转出请求本应先经过风控引擎，异常金额和频率直接拦下，高额转出要有人工复核。下面的示意代码表示这一层通常放在签名服务里：</p>
+<pre class="code"><code><span class="c">// 示意：热钱包签名服务在签名前做的出金检查（不是 Coincheck 的代码）</span>
+function approveWithdrawal(req, wallet) {
+<span class="good">  if (req.amount &gt; wallet.perTxLimit) return hold(req, "单笔超限，转人工复核");</span>
+<span class="good">  if (wallet.outflowLastHour + req.amount &gt; wallet.hourlyLimit)</span>
+<span class="good">      return hold(req, "一小时累计超限");</span>
+<span class="good">  if (!req.to.seenBefore &amp;&amp; req.amount &gt; wallet.newAddressLimit)</span>
+<span class="good">      return hold(req, "大额转往新地址");</span>
+<span class="good">  if (wallet.balanceAfter(req) &lt; wallet.alertFloor) alertOnCall("热钱包余额异常下降");</span>
+  return sign(req);   <span class="c">// 私钥在 HSM 或 MPC 节点里，签名服务只能请求签名，拿不到私钥本身</span>
+}</code></pre>
+        <p class="code-cap">示意代码。这层检查只有在私钥无法被导出时才有意义：攻击者一旦拿到私钥原文，可以在任何一台电脑上自己签名，完全绕过签名服务。</p>
+        <div class="note">
+          <span class="h">多签为什么能拦住这次攻击</span>
+          <p>NEM 的多签账户由协议本身执行：转出交易发出后，必须再收到足够数量的共同签名人的签名才会生效。如果两把签名私钥分别放在两台互不相通的机器上，或由两名员工分别掌握，攻击者只攻破一台服务器，签出的交易就永远凑不齐签名。多签不能代替冷钱包，但能让“攻破一台机器”和“转走全部资产”之间多出一道必须单独攻破的关口。</p>
+        </div>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>Coincheck 与 5 家安全公司做了联合调查，3 月 8 日在记者会上公布了结论，但没有发布完整的技术报告<a class="ref" href="#s4">[4]</a>。下面的经过综合了这次记者会、事后报道和链上公开记录，攻击者一侧的细节以这些已发表的说法为准。</p>
+        <ol class="steps">
+          <li><b>邮件投递</b>外部攻击者给 Coincheck 的多名员工发邮件，员工按邮件指示在公司配发的电脑上安装了软件，电脑因此感染了恶意程序<a class="ref" href="#s4">[4]</a><a class="ref" href="#s20">[20]</a>。邮件从国内还是国外发出，Coincheck 以“正在侦查”为由没有回答。</li>
+          <li><b>远程控制与横向移动</b>据《朝日新闻》引述调查相关人士，员工电脑上检出 Mokes 和 Netwire 两种远程控制木马<a class="ref" href="#s20">[20]</a>。攻击者以被感染的电脑为跳板侵入公司内网，进而访问 NEM 服务器<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>取得私钥</b>官方的说法是，攻击者在 NEM 服务器上监听通信，窃取了私钥<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>签名转出</b>1 月 26 日 00:02:13 先转出 10 XEM，2 分 43 秒后开始以每笔 1 亿 XEM 的规模转出，约 8 分钟内转走大部分余额；之后转账金额变小、间隔拉长，最后一笔在 08:26:13<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>无人察觉</b>这期间没有任何拦截和告警。到 11:25 发现时，距离最后一笔转出已经过去约 3 小时<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">官方结论有未解开的疑点</span>
+          <p>楠正憲认为这个转账节奏与“私钥被盗”的结论不太吻合：拿到私钥的人完全可以一次转走全部余额，没必要先试 10 XEM，再按 1 亿一笔分批转。他提出另一种可能，攻击者也许是伪造了内部系统发给钱包服务器的出金 API 请求，并在试探风控是否存在<a class="ref" href="#s5">[5]</a>。Coincheck 没有公开足以排除任何一种解释的细节。两种情况的防御重点不同：前者要保护私钥本身，后者要保护内部 API 的认证和风控。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>Coincheck 的 NEM 地址是 <span class="addr">NC3BI3DNMR2PGEOOMP2NKXQGSAKMS7GYRKVA5CSZ</span>，被盗 XEM 进入 <span class="addr">NC4C6PSUW5CLTDT5SXAGJDQJGZNESKFK5MCN77OG</span>，随后被分到 9 个账户<a class="ref" href="#s6">[6]</a>。NEM 的交易记录全部公开，任何人都能在区块浏览器上看到这些地址的余额变化。</p>
+        <ol class="flow">
+          <li class="atk"><b>攻击者地址</b>收到 526,300,010 XEM，再分散到 9 个账户</li>
+          <li class="def"><b>mosaic 标记</b>NEM 基金会为相关地址打上标记，主要交易所拒收</li>
+          <li class="atk"><b>暗网兑换站</b>以低于市价出售 XEM，收取 BTC 或 LTC</li>
+          <li class="atk"><b>经支付平台洗掉标记</b>买家把 XEM 先转进 CoinPayments，再充值到 Zaif 等交易所</li>
+          <li class="doubt"><b>3 月 22 日售罄</b>攻击者钱包清零，身份不明</li>
+        </ol>
+        <h3>mosaic 标记为什么挡不住</h3>
+        <p>mosaic 是 NEM 上的自定义资产。日本开发者 @minarin_ 开发了一套系统，给攻击者地址发送一种专用 mosaic，这个地址再转出 XEM 时，收款地址也会收到同样的标记。NEM 基金会向各交易所说明了识别方法，请它们拒收带标记地址的充值<a class="ref" href="#s6">[6]</a>。</p>
+        <p>这套办法能让被盗 XEM 很难直接卖到交易所，所以攻击者在暗网开了自己的兑换站，用折扣吸引买家。买家买到的 XEM 仍带着标记，于是有人先把它们转进 CoinPayments。CoinPayments 是一个为商家收款的支付平台，汇集了大量用户的资金，XEM 从它的地址转出时就不再带标记。一名匿名追踪者发现，买家经 CoinPayments 把 XEM 充值到 Zaif 等多家交易所，其中流入 Zaif 的最多：2 月 22 日到 3 月 4 日累计约 2,260 万 XEM。他判断这些充值地址背后大致是两个团伙<a class="ref" href="#s7">[7]</a>。</p>
+        <p>NEM 基金会 3 月 18 日停用了这套追踪，声明称它“有效降低了黑客变现的能力，并为执法机构提供了可用的信息”，但没有说明停用的原因<a class="ref" href="#s8">[8]</a>。此后暗网兑换站的交易更加活跃，3 月 22 日存货卖完<a class="ref" href="#s12">[12]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量或金额</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>被盗 XEM</td><td class="n">526,300,010 XEM</td><td>3 月 8 日的更正值，最初公布为约 5.23 亿<a class="ref" href="#s12">[12]</a><a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td>发现时的价值</td><td class="n">约 580 亿日元</td><td>按 1 月 26 日检测时的价格<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>赔付单价</td><td class="n">88.549 日元/XEM</td><td>交易暂停期间的加权平均价<a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td>赔付总额</td><td class="n">约 463 亿至 466 亿日元</td><td>前者按 5.23 亿 XEM 计算，后者是 NEM 基金会引用的数字<a class="ref" href="#s8">[8]</a><a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td>赔付对象</td><td class="n">约 26 万人</td><td>以 1 月 26 日 23:59:59 的持有量为准<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>流入 Zaif</td><td class="n">约 2,260 万 XEM</td><td>2 月 22 日至 3 月 4 日，约合 8 亿日元<a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>31 名买家兑换额</td><td class="n">约 188 亿日元</td><td>2 月 7 日至 3 月 22 日，警视厅统计<a class="ref" href="#s14">[14]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>监管：从登记审查到经营体制</h3>
+        <p>1 月 29 日的第一次业务改善命令要求 Coincheck 查清事实和原因、妥善应对客户、明确责任并制定防止再次发生的措施<a class="ref" href="#s2">[2]</a>。3 月 8 日的第二次命令措辞严厉得多。关东财务局认定，Coincheck 没有适当评估所经营加密资产的风险，没有建立与洗钱和恐怖融资风险相应的内部管理；2017 年秋天以来业务急剧扩张，内部管理和内部审计却没有跟上。根源在于董事会没有把客户保护和风险管理当作最重要的经营课题，监事也没有发挥作用<a class="ref" href="#s3">[3]</a>。</p>
+        <p>命令要求从根本上改组经营体制，对每一种经营的加密资产重新梳理风险，并且在恢复交易和新开户之前先完成这些整改，每月报告进度<a class="ref" href="#s3">[3]</a>。这把监管的关注点从“钱包有没有离线”扩展到了董事会是否真正管风险。事件之后，日本的两个行业团体合并为新的自律组织<a class="ref" href="#s23">[23]</a>。现行内阁府令对热钱包设了 5% 的上限，并要求另备离线保管的履约保证资产<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>司法：用盗来的私钥签名算不算诈骗</h3>
+        <p>盗币者没有落网，但买家被起诉后，法院必须先回答一个前提问题：用盗来的私钥签名转账，本身是不是犯罪。2024 年 7 月，最高法院第三小法庭在驳回一名买家上告的判决中认定：在 NEM 网络中，只有用与地址对应的私钥签名才能交易；用非法取得的私钥签名并广播交易，等于向构成 NEM 网络的节点提供了“正当持有私钥的人在进行交易”这一虚假信息，构成《刑法》第 246 条之 2 的电子计算机使用诈骗<a class="ref" href="#s15">[15]</a>。被盗 XEM 由此被认定为犯罪收益，收受它的人适用《组织犯罪处罚法》。</p>
+        <h3>追踪：链上标记的早期尝试</h3>
+        <p>mosaic 标记是公链社区在没有回滚的情况下，用链上手段限制被盗资产流通的一次早期尝试。它确实让被盗 XEM 很难直接进入正规交易所，但只要经过一个汇集大量用户资金的中介，标记就断了。后来以太坊上的地址黑名单、交易所之间的被盗地址共享，面对的仍是同一个问题。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>赔付</h3>
+        <p>Coincheck 在事发次日宣布赔付方案：以 1 月 26 日 23:59:59 的持有量乘以 88.549 日元，计入客户在 Coincheck 账户里的日元余额，不直接汇款<a class="ref" href="#s9">[9]</a>。这个单价是交易暂停期间的加权平均价。到 3 月 NEM 基金会发声明时，市场价格已大幅下跌，基金会称按这个价格拿到的日元可以买回将近三倍于损失的 XEM<a class="ref" href="#s8">[8]</a>。</p>
+        <p>部分客户不接受日元赔付，起诉要求返还 NEM 本身。2022 年 4 月，东京地方法院判决 Coincheck 向 21 名原告返还按判决当日价格约合 174 万日元的 NEM，理由是当年的赔付“法律性质不明，属于单方面的给付”，剥夺了客户此后因价格上涨获利的机会<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>收购与恢复营业</h3>
+        <p>4 月 6 日，Monex 集团宣布以 36 亿日元收购 Coincheck 全部股份。4 月 16 日起，Monex 的胜屋敏彦出任代表董事，和田和大塚退出董事会，改任执行董事<a class="ref" href="#s10">[10]</a>。6 月恢复卖出和出金，10 月 30 日恢复新开户和部分币种的买入。2019 年 1 月 11 日，Coincheck 完成加密资产交换业登记，并说明此后所有加密资产都放在冷钱包中<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>追查买家</h3>
+        <p>暗网兑换站被认为是盗币者为洗钱开设的，以低于市价的价格出售被盗 XEM。警视厅 2020 年 3 月逮捕了两名大额兑换者，到 2021 年 1 月共立案 31 人，罪名是明知是被盗 NEM 仍兑换，涉嫌违反《组织犯罪处罚法》的收受犯罪收益罪<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。警方表示对买家的侦查到此为止，对盗币者本人则继续以电子计算机使用诈骗等嫌疑侦查。2024 年最高法院判决书中，盗币者仍被称为“姓名不详者”<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>攻击者是谁</h3>
+        <p>关于盗币者身份，有两种互相矛盾的公开说法，都没有经过司法认定。</p>
+        <div class="compare">
+          <div>
+            <h4>朝鲜说</h4>
+            <p>2018 年 2 月，韩国国家情报院向国会通报朝鲜在持续窃取加密资产，没有点名 Coincheck；《中央日报》据此写道朝鲜“也有可能”是幕后主使，《日本经济新闻》也报道了韩方的怀疑<a class="ref" href="#s17">[17]</a><a class="ref" href="#s18">[18]</a>。2018 年 10 月，安全公司 Group-IB 在年度报告中把 Coincheck 列为 Lazarus 攻击过的 5 家交易所之一，没有公开证据<a class="ref" href="#s19">[19]</a>。</p>
+          </div>
+          <div>
+            <h4>俄语黑客圈说</h4>
+            <p>2019 年 6 月，《朝日新闻》引述调查相关人士称，员工电脑上检出的 Mokes 于 2011 年在俄语地下论坛首次出售，在俄语系黑客中流行；另一种 Netwire 在 2012 年被发现。专家认为也可能是一个不为人知的黑客团伙所为<a class="ref" href="#s20">[20]</a>。暗网兑换站最后挂出金正恩拼贴图，在当时也被一些人看作“不是朝鲜”的迹象<a class="ref" href="#s12">[12]</a>。</p>
+          </div>
+        </div>
+        <p>两种说法都只说明了工具或手法与某个群体相似。常见的木马可以被任何人买到，挑衅图片也可以是故意误导，所以这两条都不足以确定攻击者。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>按“这把私钥丢了会损失多少”来设计钱包。任何一把在线私钥能动用的资产，都不应超过当天正常出金所需。</li>
+            <li>热钱包也要用多签或 MPC，让转账不能由一台机器或一个人单独完成。签名私钥放进不能导出密钥的 HSM，至少不要以明文文件的形式放在服务器上。</li>
+            <li>把员工电脑当作迟早会被攻破来设计：办公网和钱包服务器隔离，管理员访问强制多因素认证。</li>
+            <li>出金风控按金额、频率和累计量拦截，余额异常要实时告警。Coincheck 在最后一笔转出后约 3 小时才发现。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给追踪方和监管</span>
+          <ul>
+            <li>链上标记有用，但资金一旦经过汇集大量用户资金的中介就会断链。交易所之间需要共享被盗地址，对来自支付平台的大额充值做来源审查。</li>
+            <li>赔付方式会影响客户的法律权利。用法币按冻结时的价格赔付，在 2022 年的判决中没有被认定为可以免除返还原币的义务。</li>
+            <li>只监管“钱包怎么放”不够。第二次业务改善命令点出的是董事会不管风险、内部审计跟不上业务扩张，这些才是热钱包无人过问的原因。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Coincheck 记者会全文（共 4 篇），《仮想通貨取引所「コインチェック」売買停止トラブル 記者会見》，2018-01-26。<a href="https://revent.8card.net/columns/qp67gaqcq4">revent.8card.net</a>（第 2–4 篇：<a href="https://revent.8card.net/columns/e9jvxnn0hr">2</a>、<a href="https://revent.8card.net/columns/rwgdynsy1e">3</a>、<a href="https://revent.8card.net/columns/43xsgzs2nv">4</a>）</li>
+          <li id="s2">关东财务局，《コインチェック株式会社に対する行政処分について》，2018-01-29。<a href="https://lfb.mof.go.jp/kantou/rizai/pagekthp0130000001_00004.html">lfb.mof.go.jp</a></li>
+          <li id="s3">关东财务局，《コインチェック株式会社に対する行政処分について》，2018-03-08。<a href="https://lfb.mof.go.jp/kantou/rizai/pagekthp0130000001_00013.html">lfb.mof.go.jp</a></li>
+          <li id="s4">井上輝一，《コインチェック仮想通貨流出、原因は標的型攻撃か》，ITmedia NEWS，2018-03-08。<a href="https://www.itmedia.co.jp/news/article/1803/08/1180308143/">itmedia.co.jp</a></li>
+          <li id="s5">楠正憲，《コインチェックからのNEM流出 発表された調査結果の疑問点》，Yahoo!ニュース エキスパート，2018-03-09。<a href="https://news.yahoo.co.jp/expert/articles/a0b43a1f782851fd453aeac1db75bd17619ee496">news.yahoo.co.jp</a></li>
+          <li id="s6">岡田有花，《コインチェックから盗まれた「580億円分のNEM」今どこに？》，ITmedia NEWS，2018-01-29。<a href="https://www.itmedia.co.jp/news/article/1801/29/1180129079/">itmedia.co.jp</a></li>
+          <li id="s7">岡田有花，《コインチェック流出NEM、「Zaif」に大量流入 8億円分超》，ITmedia NEWS，2018-03-05。<a href="https://www.itmedia.co.jp/news/article/1803/05/1180305055/">itmedia.co.jp</a></li>
+          <li id="s8">Lon Wong（NEM.io Foundation），《Coincheck Hack Update: Removal of Mosaic Tagging System》，2018-03-20。<a href="https://medium.com/nemofficial/coincheck-hack-update-removal-of-mosaic-tagging-system-18b4157ff060">medium.com</a>（存档：<a href="http://web.archive.org/web/20220312155053/https://medium.com/nemofficial/coincheck-hack-update-removal-of-mosaic-tagging-system-18b4157ff060">web.archive.org</a>）</li>
+          <li id="s9">CNET Japan，《コインチェック、NEMの補償を開始--仮想通貨の出金・売却も一部再開》，2018-03-12。<a href="https://japan.cnet.com/article/35116012/">japan.cnet.com</a></li>
+          <li id="s10">CNET Japan，《マネックス、コインチェックを36億円で買収--現経営陣は執行役員に》，2018-04-06。<a href="https://japan.cnet.com/article/35117331/">japan.cnet.com</a></li>
+          <li id="s11">仮想通貨 Watch，《コインチェック社が仮想通貨交換業者の金融庁認定を受け会見》，2019-01-11。<a href="https://crypto.watch.impress.co.jp/docs/event/1164402.html">crypto.watch.impress.co.jp</a></li>
+          <li id="s12">ITmedia NEWS，《流出NEM「完売」 資金洗浄完了か 販売サイトに金正恩氏の写真と「Thank you!!!」》，2018-03-23。<a href="https://www.itmedia.co.jp/news/articles/1803/23/news068.html">itmedia.co.jp</a></li>
+          <li id="s13">产经新闻，《流出の仮想通貨「ネム」を不正に交換 容疑の男２人を逮捕》，2020-03-11。<a href="https://www.sankei.com/article/20200311-NWZFXEREMBKKJMZRR46WBGQEY4/">sankei.com</a></li>
+          <li id="s14">产经新闻，《流出の仮想通貨ネム交換で３１人を立件、１８８億円相当 警視庁》，2021-01-22。<a href="https://www.sankei.com/article/20210122-AP27DO7W7FMJDHXWGWU2JEXJYM/">sankei.com</a></li>
+          <li id="s15">日本最高法院第三小法庭，令和4(あ)1460 判决，2024-07-16，刑集 78 卷 3 号 113 页。<a href="https://www.courts.go.jp/hanrei/93213/detail2/index.html">courts.go.jp</a></li>
+          <li id="s16">朝日新闻，《コインチェックにNEM返還命令 東京地裁、当時の補償は「一方的」》，2022-04-28。<a href="https://www.asahi.com/articles/ASQ4W6H5SQ4WUTIL03H.html">asahi.com</a></li>
+          <li id="s17">Korea JoongAng Daily，《North Korea stealing cryptocurrency in South Korea, says NIS》，2018-02-06。<a href="https://www.koreajoongangdaily.com/korea/north-korea-stealing-cryptocurrency-in-south-korea-says-nis/11840632">koreajoongangdaily.com</a></li>
+          <li id="s18">日本经济新闻，《コインチェック流出、北朝鮮関与か 偽装メールで攻撃》，2018-02-06。<a href="https://www.nikkei.com/article/DGXMZO26592420W8A200C1EA1000/">nikkei.com</a></li>
+          <li id="s19">Group-IB，《14 cyber attacks on crypto exchanges resulted in a loss of $882 million》，2018-10-17。<a href="https://www.group-ib.com/media-center/press-releases/gib-crypto-summary/">group-ib.com</a></li>
+          <li id="s20">須藤龍也、藤原学思，《コインチェック事件、北朝鮮説に疑問符 ロシア系関与か》，朝日新闻，2019-06-17。<a href="https://www.asahi.com/articles/ASM6J4RNPM6JUTIL00G.html">asahi.com</a>（存档：<a href="http://web.archive.org/web/20240607134812/https://www.asahi.com/articles/ASM6J4RNPM6JUTIL00G.html">web.archive.org</a>）</li>
+          <li id="s21">《暗号資産交換業者に関する内閣府令》（平成二十九年内閣府令第七号）第 27、29 条，e-Gov 法令检索，2026-10 查阅。<a href="https://laws.e-gov.go.jp/law/429M60000002007">laws.e-gov.go.jp</a></li>
+          <li id="s22">维基百科（日文），《Coincheck》，NEM 流出事件一节。<a href="https://ja.wikipedia.org/wiki/Coincheck">ja.wikipedia.org</a></li>
+          <li id="s23">维基百科（英文），《Coincheck》。<a href="https://en.wikipedia.org/wiki/Coincheck">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

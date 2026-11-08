@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poly Network 跨链攻击｜区块链被盗事件编年史</title>
+<meta name="description" content="2021 年 Poly Network 在以太坊、BSC、Polygon 上被转走约 6.11 亿美元的完整经过：跨链管理合约的权限设计缺陷、函数选择器碰撞、Tether 冻结、攻击者链上问答与全额归还，以及 2023 年的第二次失守。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-poly-network">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Poly Network 跨链攻击</h1>
+    <p class="lede">2021 年 8 月 10 日，攻击者借 Poly Network 跨链管理合约之手调用了一个特权函数，把负责签名放行跨链提款的 keeper 换成了自己的地址，随后从以太坊、BSC 和 Polygon 的资产池转走约 6.11 亿美元，这是当时金额最大的 DeFi 盗窃案。攻击者此后在链上留言与项目方周旋，两周内交还了除被冻结的 USDT 之外的全部资产。一个能执行任意跨链消息、同时又握有特权的合约，从此成为跨链桥安全的反面教材。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Poly Network 是一个跨链协议：用户在一条链上把资产锁进 LockProxy 合约，另一条链上的 LockProxy 根据 keeper 签过名的跨链消息放出对应资产。keeper 的公钥存放在 EthCrossChainData（下文简称 ECCD）合约里，而 ECCD 的 owner 是负责验证并执行跨链消息的 EthCrossChainManager（简称 ECCM）。ECCM 执行跨链消息时只检查目标地址是不是合约，不限制调用哪个合约、哪个函数。</p>
+        <p>攻击者构造了一个方法名，让它和固定参数类型拼接后算出的 4 字节函数选择器，恰好等于 ECCD 中修改 keeper 公钥的函数 <code>putCurEpochConPubKeyBytes</code> 的选择器。这条跨链消息带着真实有效的签名和证明进入 ECCM，ECCM 以 owner 身份调用 ECCD，把 keeper 换成了攻击者的地址。此后攻击者可以自己给任意提款消息签名，在三条链上依次转走了资产池里的主要资产<a class="ref" href="#s12">[12]</a><a class="ref" href="#s15">[15]</a><a class="ref" href="#s22">[22]</a>。Poly Network 转发的 SlowMist 分析明确指出，这不是 keeper 私钥泄露<a class="ref" href="#s2">[2]</a>。</p>
+        <p>当天 13:40（UTC），Tether 冻结了攻击者以太坊地址上约 3,343 万枚 USDT<a class="ref" href="#s8">[8]</a>。第二天攻击者开始归还资产，并在链上自问自答，称攻击是“为了好玩”，想赶在内部人员之前暴露漏洞<a class="ref" href="#s27">[27]</a><a class="ref" href="#s30">[30]</a>。Poly Network 改称其为“白帽先生”（Mr. White Hat），提出 50 万美元赏金和“首席安全顾问”的邀请<a class="ref" href="#s5">[5]</a><a class="ref" href="#s29">[29]</a>。8 月 23 日攻击者交出共管多签钱包的最后一把私钥，8 月 25 日 Tether 把冻结的 USDT 重新发行给项目方，受影响资产全部收回<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。攻击者的身份至今没有公开。2023 年 7 月，Poly Network 再次失守，这一次是 4 个 keeper 中有 3 个对伪造的跨链证明签了名<a class="ref" href="#s34">[34]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Poly Network 于 2020 年 8 月 18 日上线，由 Neo、Ontology、Switcheo 等项目联合发起，目标是在比特币、以太坊、Neo、Ontology、Cosmos 这类架构不同的“异构链”之间转移资产和任意数据<a class="ref" href="#s11">[11]</a>。到 2021 年 8 月，它已接入比特币、以太坊、Neo、Ontology、BSC、Heco、OKExChain、Polygon、Elrond、Zilliqa 和 Cosmos-SDK 这 11 条链<a class="ref" href="#s26">[26]</a>。PeckShield 称它“按锁仓量和流动性算，可以说是最大的跨链协议之一”<a class="ref" href="#s18">[18]</a>。跨链兑换应用 O3 Swap 的跨链交易池也依赖 Poly Network，事后要等 Poly Network 清点完资产才能恢复<a class="ref" href="#s7">[7]</a>。</p>
+        <p>一次从源链到以太坊的跨链转账，大致经过以下几步<a class="ref" href="#s13">[13]</a><a class="ref" href="#s22">[22]</a>：</p>
+        <ol class="steps">
+          <li><b>源链发起</b>用户在源链把资产锁进 LockProxy，源链的跨链管理合约把目标链、目标合约、方法名和参数打包成一条跨链消息。</li>
+          <li><b>中继到 Poly 链</b>源链的 relayer 监听到这条消息，提交给 Poly 链。Poly 链是一条由共识节点维护的中继链，区块头里的 <code>crossStatesRoot</code> 是本区块所有跨链消息的默克尔根。</li>
+          <li><b>共识节点签名</b>Poly 链的共识节点对区块头签名。在以太坊这一侧，这些节点的公钥称为 keeper，存放在 ECCD 合约里。</li>
+          <li><b>提交到目标链</b>以太坊的 relayer 调用 ECCM 的 <code>verifyHeaderAndExecuteTx</code>，提交 Poly 链区块头、签名和默克尔证明。</li>
+          <li><b>验证并执行</b>ECCM 检查签名数是否达到门限、消息是否在默克尔树里、是否执行过，然后按消息里的目标合约和方法名发起调用。正常情况下调用的是 LockProxy 的 <code>unlock</code>，把资产放给收款人。</li>
+        </ol>
+        <p>以太坊一侧的三个合约各管一件事：ECCM 负责验证和执行，ECCD 存储 keeper 公钥和已执行消息的记录，LockProxy 托管资产。LockProxy 的 <code>unlock</code> 只接受 ECCM 的调用；ECCD 的写操作只接受 owner 的调用，而 ECCD 的 owner 就是 ECCM<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。这样安排的本意，是让 ECCM 在 Poly 链共识节点正常换届时，通过 <code>changeBookKeeper</code> 更新 ECCD 里的 keeper 公钥。</p>
+        <p>被攻击时，Poly Network 在以太坊上的合约没有在 Etherscan 上公开验证源码，安全研究者只能拿 GitHub 上发布的代码对照链上行为<a class="ref" href="#s16">[16]</a>。按仓库的提交记录，修复前的 EthCrossChainManager.sol 最后一次修改是在 2020 年 8 月 27 日，提交说明为“update based on audit review”，此后到事发再没有改动<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <p>以下时间均为 UTC。</p>
+        <ol class="timeline">
+          <li><time>2020-08-18</time><div class="ev">Poly Network 上线，由 Neo、Ontology、Switcheo 等项目联合发起<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2020-08-27</time><div class="ev">仓库中的 ECCM 源码最后一次修改，提交说明为“update based on audit review”，此后到攻击发生不再变动<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>2021-08-09</time><div class="ev">攻击者从 Hoo 交易所提出 0.47 ETH，用来支付攻击交易的 gas<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="atk key"><time>2021-08-10 约 10:00</time><div class="ev">攻击开始。攻击者在每条链上先把 ECCD 中的 keeper 换成自己的地址，再从 LockProxy 转走资产。Beosin 记录的转出顺序是以太坊、Polygon、BSC，开始时间依次相隔 9 分钟和 4 分钟<a class="ref" href="#s20">[20]</a>；Poly Network 转发的分析列出的 BSC 攻击交易在 10:08 至 10:10 之间<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2021-08-10</time><div class="ev">Poly Network 在 Twitter 发布公开信，要求攻击者联系项目方；公布攻击者的三个地址，请交易所和矿工拦截相关资金。币安、OKEx、火币表示会跟踪资金流向<a class="ref" href="#s1">[1]</a><a class="ref" href="#s24">[24]</a><a class="ref" href="#s27">[27]</a>。</div></li>
+          <li class="def"><time>2021-08-10 13:40</time><div class="ev">Poly Network 于 12:30 通知 Tether，Tether 在 13:40 冻结攻击者以太坊地址上的 USDT<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2021-08-10 17:04</time><div class="ev">BlockSec 发布初步分析，怀疑签名私钥泄露。几小时后 Kelvin Fichter 和 SlowMist 指出 keeper 已被替换，替换借助了函数选择器碰撞；SlowMist 的根因分析于 20:46 发布<a class="ref" href="#s14">[14]</a><a class="ref" href="#s16">[16]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2021-08-10 19:59</time><div class="ev">Poly Network 向 eth-contracts 仓库提交加入白名单的修复 PR #12<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk key"><time>2021-08-11</time><div class="ev">攻击者在交易附言中表示“准备归还”。08:43:57 起，Poly Network 指定的收款地址开始收到退回的资产<a class="ref" href="#s1">[1]</a><a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2021-08-11</time><div class="ev">Beosin 和 BlockSec 先后公布攻击源头是 Ontology 链上的一笔跨链交易<a class="ref" href="#s15">[15]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>2021-08-11 至 12</time><div class="ev">攻击者在链上发布多段自问自答，由 Elliptic 联合创始人 Tom Robinson 整理公开<a class="ref" href="#s24">[24]</a><a class="ref" href="#s27">[27]</a>。同一时期，SlowMist 称已掌握攻击者的邮箱、IP 和设备指纹<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="atk"><time>2021-08-12 至 13</time><div class="ev">除被冻结的 USDT 外，攻击者地址上的资产全部转出：一部分直接退给 Poly Network，约 2.35 亿美元转入双方共管的多签钱包<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def"><time>2021-08-13</time><div class="ev">Poly Network 称攻击者为“白帽先生”，确认提供 50 万美元赏金，称已收回约 3.4 亿美元<a class="ref" href="#s29">[29]</a>。</div></li>
+          <li class="def"><time>2021-08-14</time><div class="ev">Poly Network 发布恢复路线图：修复漏洞、主网升级、按项目恢复跨链、恢复资产、恢复服务<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2021-08-15</time><div class="ev">PeckShield 和 BlockSec 发布对补丁的非正式审查，认为白名单可以修复被利用的漏洞<a class="ref" href="#s17">[17]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2021-08-16</time><div class="ev">PR #12 合并，主网升级上线。Poly Bridge 下架全部资产，项目方重新申请并测试通过后逐个恢复跨链<a class="ref" href="#s4">[4]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2021-08-17</time><div class="ev">Poly Network 邀请攻击者担任“首席安全顾问”，重申不追究法律责任<a class="ref" href="#s5">[5]</a>。同一时期在 Immunefi 上线漏洞赏金计划，奖池 50 万美元，单个严重漏洞最高 10 万美元<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="atk"><time>2021-08-19</time><div class="ev">攻击者从多签钱包放行 96,942,063 枚 DAI。Poly Network 向攻击者公开的地址转入 160 ETH（约 50 万美元）作为赏金。多签钱包里还剩 28,953 枚 ETH 和 1,032 枚 WBTC<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk key"><time>2021-08-23 08:39</time><div class="ev">攻击者通过链上消息公开多签钱包的一把私钥，Poly Network 取回剩余约 1.41 亿美元资产<a class="ref" href="#s9">[9]</a>。攻击者还把捐款地址里的全部资金（含赏金）转回 Poly Network，要求分给受影响的用户<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def key"><time>2021-08-25</time><div class="ev">Tether 把冻结的 33,431,200 枚 USDT 重新发行到 Poly Network 指定的多签地址<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2021-08-26</time><div class="ev">Poly Network 宣布受影响的用户资产全部恢复，进入“恢复服务”阶段，Poly Bridge 已恢复 59 种资产的跨链<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2021-12-10</time><div class="ev">ECCM 按审计报告再次修改，白名单改为按合约逐一登记允许调用的方法<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk key"><time>2023-07-01 或 02</time><div class="ev">Poly Network 第二次被攻击。4 个 keeper 中有 3 个对伪造的跨链证明签了名，攻击者在 10 条链上提出 57 种资产，名义价值数百亿美元，实际变现约 440 万至 1,000 万美元。CertiK 记录的开始时间是 7 月 1 日 18:47，Dedaub 记为 7 月 2 日 18:47<a class="ref" href="#s32">[32]</a><a class="ref" href="#s33">[33]</a><a class="ref" href="#s34">[34]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">本页查阅的公开资料中仍没有 2021 年攻击者的身份，也没有已知的起诉或执法行动。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>这次攻击没有破解任何密码学，也没有用到被盗的 keeper 私钥。问题出在两处设计的叠加：ECCM 执行跨链消息时不限制目标，而 ECCD 把修改 keeper 的权力交给了 ECCM<a class="ref" href="#s13">[13]</a><a class="ref" href="#s19">[19]</a>。下面的代码均摘自 polynetwork/eth-contracts 仓库修复前的版本<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>ECCM：签名对了就执行，执行什么由消息决定</h3>
+        <p><code>verifyHeaderAndExecuteTx</code> 是公开函数，任何人都可以调用。它用 ECCD 里存的 keeper 公钥验证 Poly 链区块头的签名，用默克尔证明从区块头里取出跨链消息，然后把消息里的目标合约、方法名和参数交给内部函数 <code>_executeCrossChainTx</code>：</p>
+<pre class="code"><code><span class="c">// EthCrossChainManager.sol（修复前），verifyHeaderAndExecuteTx 节选</span>
+<span class="c">// 从 ECCD 读出当前的 keeper 列表</span>
+address[] memory polyChainBKs = ECCUtils.deserializeKeepers(eccd.getCurEpochConPubKeyBytes());
+uint256 curEpochStartHeight = eccd.getCurEpochStartHeight();
+
+uint n = polyChainBKs.length;
+if (header.height &gt;= curEpochStartHeight) {
+    // It's enough to verify rawHeader signature
+    <span class="c">// 门限 n - (n - 1) / 3：4 个 keeper 需要 3 个签名，只剩 1 个 keeper 时只需 1 个</span>
+    require(ECCUtils.verifySig(rawHeader, headerSig, polyChainBKs, n - ( n - 1) / 3),
+        "Verify poly chain header signature failed!");
+} else {
+    <span class="c">// ……（用当前纪元的区块头和 headerProof 验证较早的 rawHeader）……</span>
+}
+
+<span class="c">// ……（用 proof 取出跨链消息 toMerkleValue，并检查是否执行过）……</span>
+
+require(toMerkleValue.makeTxParam.toChainId == uint64(2),
+    "This Tx is not aiming at Ethereum network!");
+address toContract = Utils.bytesToAddress(toMerkleValue.makeTxParam.toContract);
+<span class="c">// 目标合约、方法名、参数都直接取自跨链消息，执行前没有任何限制</span>
+<span class="bad">require(_executeCrossChainTx(toContract, toMerkleValue.makeTxParam.method,</span>
+<span class="bad">    toMerkleValue.makeTxParam.args, toMerkleValue.makeTxParam.fromContract,</span>
+<span class="bad">    toMerkleValue.fromChainID), "Execute CrossChain Tx failed!");</span></code></pre>
+        <p class="code-cap">来源：polynetwork/eth-contracts 仓库 commit d16252b（PR #12 的基线），<code>contracts/core/cross_chain_manager/logic/EthCrossChainManager.sol</code> 第 133–166 行节选。去掉了一层缩进，长行按参数折行；英文注释是原有的，中文注释是本站加的。</p>
+        <p><code>_executeCrossChainTx</code> 只检查目标地址是不是合约，然后用方法名拼出函数选择器，直接发起调用：</p>
+<pre class="code"><code><span class="c">// EthCrossChainManager.sol（修复前）</span>
+function _executeCrossChainTx(address _toContract, bytes memory _method, bytes memory _args,
+    bytes memory _fromContractAddr, uint64 _fromChainId) internal returns (bool){
+    <span class="c">// 唯一的目标检查：是合约就行</span>
+    require(Utils.isContract(_toContract), "The passed in address is not a contract!");
+    bytes memory returnData;
+    bool success;
+
+    // The returnData will be bytes32, the last byte must be 01;
+    <span class="c">// 选择器 = keccak256(方法名 + "(bytes,bytes,uint64)") 的前 4 字节，方法名来自跨链消息</span>
+<span class="bad">    (success, returnData) = _toContract.call(abi.encodePacked(</span>
+<span class="bad">        bytes4(keccak256(abi.encodePacked(_method, "(bytes,bytes,uint64)"))),</span>
+<span class="bad">        abi.encode(_args, _fromContractAddr, _fromChainId)));</span>
+
+    // Ensure the executation is successful
+    require(success == true, "EthCrossChain call business contract failed");
+
+    // Ensure the returned value is true
+    require(returnData.length != 0, "No return value from business contract!");
+    (bool res,) = ZeroCopySource.NextBool(returnData, 31);
+    require(res == true, "EthCrossChain call business contract return is not true");
+
+    return true;
+}</code></pre>
+        <p class="code-cap">来源：同上，第 183–201 行。函数签名和 call 一行按参数折行；第一条英文注释过长，换成了中文注释，其余未改动。</p>
+        <p>按设计，跨链消息要调用的是 LockProxy 的 <code>unlock(bytes,bytes,uint64)</code> 这类专门接收跨链调用的函数，参数类型是固定的。代码似乎默认“参数类型固定，就只能调到这类函数”。Kraken Security Labs 在事后分析中指出，这个隐含假设并不成立<a class="ref" href="#s22">[22]</a>。</p>
+        <h3>ECCD：只认 owner，而 owner 正是 ECCM</h3>
+        <p>ECCD 中写入 keeper 公钥的函数是这样的：</p>
+<pre class="code"><code><span class="c">// EthCrossChainData.sol（修复前）</span>
+// Store Consensus book Keepers Public Key Bytes
+<span class="bad">function putCurEpochConPubKeyBytes(bytes memory curEpochPkBytes)</span>
+<span class="bad">    public whenNotPaused onlyOwner returns (bool) {</span>
+    ConKeepersPkBytes = curEpochPkBytes;   <span class="c">// 整个 keeper 列表被传入的字节覆盖</span>
+    return true;
+}
+
+<span class="c">// Ownable.sol（修复前），onlyOwner 只比较调用者地址</span>
+modifier onlyOwner() {
+    require(isOwner(), "Ownable: caller is not the owner");
+    _;
+}
+function isOwner() public view returns (bool) {
+    return _msgSender() == _owner;
+}</code></pre>
+        <p class="code-cap">来源：同一 commit，<code>contracts/core/cross_chain_manager/data/EthCrossChainData.sol</code> 第 44–48 行；<code>contracts/libs/ownership/Ownable.sol</code> 第 37–47 行节选。</p>
+        <p>ECCD 的 owner 是 ECCM，这是为了让 keeper 正常换届时，ECCM 的 <code>changeBookKeeper</code> 能调用 ECCD 写入新公钥。可是 ECCM 在执行任何一条跨链消息时，调用者也是它自己。从 ECCD 的角度看，“ECCM 在做 keeper 换届”和“ECCM 在转发一条跨链消息”是同一个 <code>msg.sender</code>，无从区分<a class="ref" href="#s13">[13]</a><a class="ref" href="#s22">[22]</a>。</p>
+        <div class="compare">
+          <div>
+            <h4>正规换届：changeBookKeeper</h4>
+            <p>要求区块头高度高于当前纪元起点，<code>nextBookkeeper</code> 字段非空；区块头要有当前 keeper 达到门限的签名；传入的新公钥列表算出的地址，必须等于区块头里承诺的 <code>nextBookkeeper</code>。全部通过后才写入 ECCD。</p>
+          </div>
+          <div>
+            <h4>被利用的路径：一条普通跨链消息</h4>
+            <p>只要求 Poly 链区块头签名有效、默克尔证明正确。消息里的参数原样传给 <code>putCurEpochConPubKeyBytes</code>，不和任何承诺比对，任意字节都能成为新的 keeper 列表。</p>
+          </div>
+        </div>
+        <h3>4 字节选择器碰撞</h3>
+        <p>Solidity 用“函数名(参数类型)”这个字符串的 keccak256 哈希的前 4 字节作为函数选择器。ECCD 写入函数的选择器来自 <code>putCurEpochConPubKeyBytes(bytes)</code>，而 ECCM 拼出的字符串总是“消息里的方法名”加上 <code>(bytes,bytes,uint64)</code>。表面上两者不可能相同。但方法名完全由消息发送者决定，攻击者只要不断换方法名，直到哈希的前 4 字节恰好等于目标选择器。4 字节只有约 43 亿种取值，普通计算机就能搜出来<a class="ref" href="#s13">[13]</a><a class="ref" href="#s22">[22]</a><a class="ref" href="#s28">[28]</a>。攻击者用的方法名是 <code>f1121318093</code><a class="ref" href="#s15">[15]</a><a class="ref" href="#s20">[20]</a>：</p>
+<pre class="code"><code><span class="c">// 示意：两个不同的签名字符串，keccak256 后前 4 字节相同（数值引自 Kraken 与 rekt.news 的分析）</span>
+bytes4(keccak256("putCurEpochConPubKeyBytes(bytes)"))     <span class="c">// = 0x41973cd9，ECCD 的写入函数</span>
+bytes4(keccak256("f1121318093(bytes,bytes,uint64)"))      <span class="c">// = 0x41973cd9，攻击者的“方法名”</span></code></pre>
+        <p class="code-cap">示意代码，选择器数值来源：Kraken Security Labs<a class="ref" href="#s22">[22]</a>、rekt.news（引用 Kelvin Fichter 的分析）<a class="ref" href="#s28">[28]</a>。</p>
+        <p>选择器对上以后，参数类型不同也不碍事。从代码看，ECCM 发出的调用数据是 <code>abi.encode(args, fromContract, fromChainId)</code>，ECCD 的函数只声明了一个 <code>bytes</code> 参数，按 ABI 规则只会读出第一个参数，也就是攻击者放进去的新 keeper 公钥，后面两个参数被忽略。函数返回 <code>true</code>，又恰好满足 <code>_executeCrossChainTx</code> 对返回值的检查。</p>
+        <h3>换掉 keeper 之后</h3>
+        <p>攻击者把 ECCD 里的公钥列表换成只含一个自己控制的地址 <span class="addr">0xA87fB85A93Ca072Cd4e5F0D4f178Bc831Df8a00B</span><a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a>。签名门限按 <code>n - (n - 1) / 3</code> 计算，4 个 keeper 时是 3，只剩 1 个 keeper 时变成 1。BlockSec 回放交易时也看到了这一点：替换 keeper 的那笔交易里还是 4 个合法 keeper，随后的提款交易里 keeper 只剩 1 个<a class="ref" href="#s16">[16]</a>。</p>
+        <p>此后攻击者可以自己构造一个 Poly 链区块头，在 <code>crossStatesRoot</code> 里放进任意解锁消息，用自己的私钥签名后提交。LockProxy 的 <code>unlock</code> 只检查调用者是不是 ECCM、消息声称的来源合约是不是登记过的 LockProxy<a class="ref" href="#s12">[12]</a>，伪造的消息两条都能满足。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 600" role="img" aria-labelledby="poly-seq-t poly-seq-d">
+            <title id="poly-seq-t">Poly Network 攻击路径（以太坊）</title>
+            <desc id="poly-seq-d">攻击者在 Ontology 发起一笔跨链交易，目标是 ECCD 合约，方法名是 f1121318093。Ontology relayer 没有检查目标，把它打包进 Poly 链。以太坊 relayer 发现目标不是 LockProxy，没有转发。攻击者自己调用 ECCM 的 verifyHeaderAndExecuteTx，附上 Poly 链上真实的区块头、签名和证明。ECCM 用选择器 0x41973cd9 调用 ECCD，实际执行的是 putCurEpochConPubKeyBytes，因为调用者是 owner，keeper 被换成攻击者的地址。之后攻击者用新 keeper 给伪造的区块头签名，再次调用 ECCM，ECCM 调用 LockProxy 的 unlock，资产转到攻击者地址。</desc>
+            <defs>
+              <marker id="poly-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="poly-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="80" y1="66" x2="80" y2="540"/>
+            <line class="d-line dash" x1="240" y1="66" x2="240" y2="540"/>
+            <line class="d-line dash" x1="400" y1="66" x2="400" y2="540"/>
+            <line class="d-line dash" x1="560" y1="66" x2="560" y2="540"/>
+            <line class="d-line dash" x1="710" y1="66" x2="710" y2="540"/>
+            <rect class="d-box atk" x="12" y="12" width="136" height="54" rx="4"/>
+            <text class="d-t b" x="80" y="35" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="80" y="55" text-anchor="middle">自备一把私钥</text>
+            <rect class="d-box" x="172" y="12" width="136" height="54" rx="4"/>
+            <text class="d-t b" x="240" y="35" text-anchor="middle">Ontology → Poly</text>
+            <text class="d-t s" x="240" y="55" text-anchor="middle">源链与中继链</text>
+            <rect class="d-box" x="332" y="12" width="136" height="54" rx="4"/>
+            <text class="d-t b" x="400" y="35" text-anchor="middle">ECCM</text>
+            <text class="d-t s" x="400" y="55" text-anchor="middle">验证并执行消息</text>
+            <rect class="d-box" x="492" y="12" width="136" height="54" rx="4"/>
+            <text class="d-t b" x="560" y="35" text-anchor="middle">ECCD</text>
+            <text class="d-t s" x="560" y="55" text-anchor="middle">存 keeper 公钥</text>
+            <rect class="d-box" x="644" y="12" width="132" height="54" rx="4"/>
+            <text class="d-t b" x="710" y="35" text-anchor="middle">LockProxy</text>
+            <text class="d-t s" x="710" y="55" text-anchor="middle">资产池</text>
+            <line class="d-line" x1="80" y1="112" x2="238" y2="112" marker-end="url(#poly-ah)"/>
+            <text class="d-t halo" x="160" y="104" text-anchor="middle">① 发起跨链交易</text>
+            <text class="d-t s halo" x="88" y="132">目标 ECCD，方法名 <tspan class="m">f1121318093</tspan></text>
+            <text class="d-t s halo" x="250" y="160">源链 relayer 不查目标</text>
+            <text class="d-t s halo" x="250" y="177">照常打包进 Poly 链</text>
+            <line class="d-line dash" x1="240" y1="214" x2="380" y2="214"/>
+            <text class="d-t b" x="392" y="219" text-anchor="middle">×</text>
+            <text class="d-t s halo" x="250" y="207">以太坊 relayer 拒绝转发</text>
+            <text class="d-t s halo" x="250" y="232">目标不是 LockProxy</text>
+            <line class="d-line" x1="80" y1="272" x2="398" y2="272" marker-end="url(#poly-ah)"/>
+            <text class="d-t halo" x="240" y="264" text-anchor="middle">② 自己调用 verifyHeaderAndExecuteTx</text>
+            <text class="d-t s halo" x="240" y="290" text-anchor="middle">附上 Poly 链上真实的区块头、签名和证明</text>
+            <line class="d-line atk" x1="400" y1="326" x2="558" y2="326" marker-end="url(#poly-ah-atk)"/>
+            <text class="d-t atk halo" x="480" y="318" text-anchor="middle">③ 选择器 0x41973cd9</text>
+            <rect class="d-box atk" x="412" y="338" width="288" height="70" rx="4"/>
+            <text class="d-t m b" x="556" y="358" text-anchor="middle">putCurEpochConPubKeyBytes</text>
+            <text class="d-t s" x="556" y="377" text-anchor="middle">onlyOwner 通过：调用者 ECCM 就是 owner</text>
+            <text class="d-t s" x="556" y="396" text-anchor="middle">4 个 keeper 被换成攻击者的 1 个地址</text>
+            <line class="d-line atk" x1="80" y1="446" x2="398" y2="446" marker-end="url(#poly-ah-atk)"/>
+            <text class="d-t atk halo" x="240" y="438" text-anchor="middle">④ 用新 keeper 签名伪造的区块头</text>
+            <text class="d-t s halo" x="240" y="464" text-anchor="middle">keeper 只剩 1 个，签名门限也降到 1</text>
+            <line class="d-line atk" x1="400" y1="488" x2="708" y2="488" marker-end="url(#poly-ah-atk)"/>
+            <text class="d-t atk halo" x="555" y="480" text-anchor="middle">⑤ 调用 unlock()</text>
+            <line class="d-line atk" x1="710" y1="526" x2="82" y2="526" marker-end="url(#poly-ah-atk)"/>
+            <text class="d-t atk halo" x="395" y="518" text-anchor="middle">⑥ 资产转到攻击者地址</text>
+            <rect class="d-box soft" x="150" y="550" width="480" height="34" rx="4"/>
+            <text class="d-t s" x="390" y="572" text-anchor="middle">BSC、Polygon 上过程相同，⑤ ⑥ 按资产逐笔重复</text>
+          </svg>
+          </div>
+          <figcaption>图 1：以太坊上的攻击路径，按 BlockSec 的还原绘制<a class="ref" href="#s15">[15]</a>。①② 用的是 Poly 链上真实的数据，所以能通过签名和默克尔证明校验；红色的 ③ 到 ⑥ 发生在 keeper 被替换之后，只需要攻击者自己的私钥。</figcaption>
+        </figure>
+        <h3>哪一环本可以拦住</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>环节</th><th>当时的检查</th><th>能否作为安全边界</th></tr></thead>
+            <tbody>
+              <tr><td>源链跨链合约</td><td>按用户传入的参数生成跨链消息，不限制目标合约和方法<a class="ref" href="#s13">[13]</a></td><td>可以设防，但每条接入链都要做到</td></tr>
+              <tr><td>Ontology relayer</td><td>只检查 RPC 是否成功、参数是否为空，不检查目标合约和方法名是否合理<a class="ref" href="#s15">[15]</a></td><td>不可靠，链下程序可被绕过或配置出错</td></tr>
+              <tr><td>Poly 链</td><td>对源链提交的跨链请求照单打包，恶意消息成了 Poly 链上一笔有效交易<a class="ref" href="#s15">[15]</a></td><td>BlockSec 认为在中继链上做策略检查“可能是更好的位置”<a class="ref" href="#s17">[17]</a></td></tr>
+              <tr><td>以太坊 relayer</td><td>只转发目标为 LockProxy 的消息，这次确实拒绝了<a class="ref" href="#s15">[15]</a></td><td>不能：<code>verifyHeaderAndExecuteTx</code> 谁都能调用</td></tr>
+              <tr><td>ECCM</td><td>只检查目标地址是合约</td><td>能，补丁就加在这里</td></tr>
+              <tr><td>ECCD</td><td>只检查调用者是 owner，owner 是通用执行器 ECCM</td><td>能：keeper 只应由 <code>changeBookKeeper</code> 写入</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>修复</h3>
+        <p>Poly Network 在事发当天提交补丁，8 月 16 日合并。补丁的核心是三张白名单：只有登记过的合约才能发起跨链；跨链消息只能调用登记过的目标合约和方法<a class="ref" href="#s12">[12]</a><a class="ref" href="#s18">[18]</a>。</p>
+<pre class="code"><code><span class="c">// EthCrossChainManager.sol（PR #12 合并后）</span>
+<span class="good">mapping(address =&gt; bool) public whiteListFromContract;</span>
+<span class="good">mapping(address =&gt; bool) public whiteListToContract;</span>
+<span class="good">mapping(bytes =&gt; bool) public whiteListMethod;</span>
+
+<span class="c">// crossChain()：只有白名单里的合约能发起跨链</span>
+<span class="good">require(whiteListFromContract[msg.sender],"Invalid from contract");</span>
+
+<span class="c">// verifyHeaderAndExecuteTx()：执行前检查目标合约和方法</span>
+// only invoke PreWhiteListed Contract and method For Now
+<span class="good">require(whiteListToContract[toContract],"Invalid to contract");</span>
+<span class="good">require(whiteListMethod[toMerkleValue.makeTxParam.method],"Invalid method");</span></code></pre>
+        <p class="code-cap">来源：polynetwork/eth-contracts 仓库 commit 2b1cbe0（PR #12 的合并提交），EthCrossChainManager.sol 第 15–17、123、198–200 行。</p>
+        <p>补丁还加了 <code>recoverEpochPk</code>：部署时登记一份正确的 keeper 公钥，合约暂停期间可以把它写回 ECCD，每份登记只能用一次。从代码看，这是为了把被攻击者改掉的 keeper 公钥改回来。发起方白名单是 PeckShield 审查时提出、团队采纳的建议。PeckShield 和 BlockSec 都认为白名单能修复这次被利用的漏洞，也都声明审查是非正式的，不保证系统没有其他问题<a class="ref" href="#s17">[17]</a><a class="ref" href="#s18">[18]</a>。2021 年 12 月，ECCM 按审计报告再次修改，把合约白名单和方法白名单合成一张表，按目标合约分别登记允许的方法，白名单里的方法只能在登记它的合约上调用<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面的步骤主要依据 BlockSec 对以太坊这一侧的还原<a class="ref" href="#s15">[15]</a>，BSC 和 Polygon 上的过程相同。第 4 步各家说法不一，见后文。</p>
+        <ol class="steps">
+          <li><b>准备资金</b>据 SlowMist 的追踪，攻击者最初的资金来自门罗币（XMR），在交易所换成 BNB、ETH、MATIC 后提到 3 个地址<a class="ref" href="#s13">[13]</a>。Chainalysis 发现，攻击前一天攻击者从 Hoo 交易所提出 0.47 ETH 支付 gas<a class="ref" href="#s23">[23]</a>。</li>
+          <li><b>在源链发出恶意消息</b>攻击者在 Ontology 链上发起一笔跨链交易，目标链是以太坊，目标合约是 ECCD，方法名是 <code>f1121318093</code>，参数是攻击者自己的公钥<a class="ref" href="#s15">[15]</a><a class="ref" href="#s22">[22]</a>。Beosin 认为，攻击者先在 Ontology 链上试验确认有效，才发出这笔批量修改多条链 keeper 的消息<a class="ref" href="#s21">[21]</a>。</li>
+          <li><b>被打包进 Poly 链</b>Ontology relayer 没有检查目标和方法名，把这笔交易提交给 Poly 链，它成了 Poly 链上一笔由共识节点正常签名的有效交易<a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>绕过以太坊 relayer，替换 keeper</b>以太坊 relayer 发现目标合约不是 LockProxy，没有转发。攻击者自己调用 ECCM 的 <code>verifyHeaderAndExecuteTx</code>，提交 Poly 链上真实的区块头、签名和默克尔证明，校验全部通过。ECCM 随即调用 ECCD，把原来的 4 个 keeper 换成攻击者控制的 1 个地址<a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>伪造提款</b>攻击者用自己的私钥给自制的区块头签名，再次调用 <code>verifyHeaderAndExecuteTx</code>，让 ECCM 调用 LockProxy 的 <code>unlock</code>，把资产转到自己的地址。在以太坊、BSC、Polygon 上分多笔交易执行<a class="ref" href="#s20">[20]</a>。</li>
+          <li><b>其他链与正常用户</b>PeckShield 指出，同样的手法在 Heco 上没有成功，因为那里的 relayer 行为与其他链不同<a class="ref" href="#s18">[18]</a>。keeper 被换掉之后，其他正常的跨链交易随之回滚<a class="ref" href="#s2">[2]</a>，直到修复上线后才陆续补发<a class="ref" href="#s6">[6]</a>。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">第 4 步的三种说法</span>
+          <p>BlockSec 认为以太坊 relayer 拒绝了这条消息，替换 keeper 的交易是攻击者自己提交的<a class="ref" href="#s15">[15]</a>。SlowMist 的描述是“在目标链使用官方 relayer 正常提交数据，替换 keeper”<a class="ref" href="#s13">[13]</a>。Beosin 则说 BSC 上是 relayer 先处理了这条跨链交易，攻击者再把 BSC 上用过的有效签名重放到以太坊和 Polygon<a class="ref" href="#s21">[21]</a>。三种说法在关键一点上一致：恶意消息来自 Ontology，经 Poly 链拿到了真实有效的签名。<code>verifyHeaderAndExecuteTx</code> 是谁都能调用的公开函数，所以不论哪种说法成立，relayer 一侧的检查都拦不住这次攻击。</p>
+        </div>
+        <h3>公开资料中的关键地址和交易</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>对象</th><th>地址或交易哈希</th><th>来源</th></tr></thead>
+            <tbody>
+              <tr><td>攻击者（以太坊）</td><td><span class="addr">0xC8a65Fadf0e0dDAf421F28FEAb69Bf6E2E589963</span></td><td><a class="ref" href="#s23">[23]</a><a class="ref" href="#s28">[28]</a></td></tr>
+              <tr><td>攻击者（BSC）</td><td><span class="addr">0x0D6e286A7cfD25E0c01fEe9756765D8033B32C71</span></td><td><a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>攻击者（Polygon）</td><td><span class="addr">0x5dc3603C9D42Ff184153a8a9094a73d461663214</span></td><td><a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>替换后的 keeper</td><td><span class="addr">0xA87fB85A93Ca072Cd4e5F0D4f178Bc831Df8a00B</span></td><td><a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>以太坊 ECCM / ECCD</td><td><span class="addr">0x838bf9e95cb12dd76a54c9f9d2e3082eaf928270</span> / <span class="addr">0xcf2afe102057ba5c16f899271045a0a37fcb10f2</span></td><td><a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>以太坊 LockProxy</td><td><span class="addr">0x250e76987d838a75310c34bf422ea9f1ac4cc906</span></td><td><a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>Ontology 源头交易</td><td><span class="addr">0xf771ba610625d5a37b67d30bf2f8829703540c86ad76542802567caaffff280c</span></td><td><a class="ref" href="#s15">[15]</a><a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td>以太坊替换 keeper 交易</td><td><span class="addr">0xb1f70464bd95b774c6ce60fc706eb5f9e35cb5f06e6cfe7c17dcda46ffd59581</span></td><td><a class="ref" href="#s2">[2]</a><a class="ref" href="#s15">[15]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <h3>被转走了什么</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>链</th><th>主要资产</th><th class="n">估值</th></tr></thead>
+            <tbody>
+              <tr><td>以太坊</td><td>96,389,444 USDC、33,431,197 USDT、1,032 WBTC、约 26,109 WETH 和 2,857 ETH，另有 DAI、UNI、SHIB、FEI、renBTC<a class="ref" href="#s23">[23]</a><a class="ref" href="#s28">[28]</a></td><td class="n">约 2.7 亿美元</td></tr>
+              <tr><td>BSC</td><td>约 8,760 万 USDC、26,629 枚 ETH，另有 BNB、BTCB、BUSD 等<a class="ref" href="#s20">[20]</a><a class="ref" href="#s13">[13]</a></td><td class="n">约 2.56 亿美元</td></tr>
+              <tr><td>Polygon</td><td>85,089,610 USDC<a class="ref" href="#s20">[20]</a><a class="ref" href="#s28">[28]</a></td><td class="n">约 0.85 亿美元</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>估值一列按 BBC 8 月 11 日报道中的已归还和未归还金额推算<a class="ref" href="#s27">[27]</a>。合计金额各方说法不一：Poly Network 称“超过 6.1 亿美元”<a class="ref" href="#s1">[1]</a>，rekt.news 和 Check Point 写约 6.11 亿美元<a class="ref" href="#s25">[25]</a><a class="ref" href="#s28">[28]</a>，Chainalysis 写 6.12 亿美元<a class="ref" href="#s23">[23]</a>，Halborn 写 6.003 亿美元<a class="ref" href="#s36">[36]</a>，差别主要来自计价时点。rekt.news 列出的 BSC 资产中 ETH 和 BTCB 的数量与 Beosin、SlowMist 的数字对不上，疑似标注有误，这里没有采用。</p>
+        <h3>转移路径</h3>
+        <p>在以太坊上，攻击者把 96,389,444 USDC 和 673,227 DAI 存进 Curve，换成 95,269,796 枚 3CRV，不到一小时后又赎回成 96,942,061 枚 DAI。Chainalysis 认为，这是为了把可以被发行方冻结的中心化稳定币换成去中心化的 DAI<a class="ref" href="#s23">[23]</a>。在 BSC 上，攻击者把约 3,210 万 BUSD 和 8,760 万 USDC 作为流动性存进 Curve 的分叉项目 Ellipsis Finance<a class="ref" href="#s13">[13]</a>。以太坊上的约 3,343 万 USDT 没来得及转走，被 Tether 整笔冻结<a class="ref" href="#s8">[8]</a>。</p>
+        <p>攻击者很快开始给自己发带附言的交易，公开喊话，其中一条写着“Wonder why Tornado? Will miners stop me? Teach me please”<a class="ref" href="#s28">[28]</a>。用户 hanashiro.eth 用交易附言提醒攻击者 USDT 已被冻结，攻击者回赠了 13.37 ETH<a class="ref" href="#s23">[23]</a><a class="ref" href="#s28">[28]</a>。</p>
+        <h3>归还</h3>
+        <ol class="flow">
+          <li class="atk"><b>8 月 10 日</b>三个攻击者地址收到约 6.1 亿美元资产</li>
+          <li class="def"><b>当天冻结</b>Tether 冻结以太坊地址上约 3,343 万 USDT</li>
+          <li class="doubt"><b>8 月 11 至 13 日</b>约 3.4 亿美元直接退回；其余约 2.35 亿美元转入共管多签，仍需攻击者的私钥</li>
+          <li class="ok"><b>8 月 19 至 25 日</b>放行 DAI、交出私钥、USDT 重新发行，全部收回</li>
+        </ol>
+        <p>8 月 11 日，攻击者宣布“准备归还”，Poly Network 给出三条链上各一个收款地址，BSC 和 Polygon 上的资产最先退回<a class="ref" href="#s24">[24]</a><a class="ref" href="#s27">[27]</a>。攻击者还要求 Poly Network 建一个多签钱包，用来接收剩余资产<a class="ref" href="#s23">[23]</a>。最后一批资产转进了这个需要双方密钥共同操作的以太坊多签钱包，Poly Network 称之为“3/4 多签钱包”<a class="ref" href="#s3">[3]</a>，公开资料没有说明各方各持几把密钥。攻击者表示会在“所有人都准备好”时交出最后一把密钥<a class="ref" href="#s24">[24]</a>。8 月 19 日，96,942,063 枚 DAI 被放行；8 月 23 日，攻击者公开了私钥，Poly Network 取回剩余的 28,953 枚 ETH 和 1,032 枚 WBTC<a class="ref" href="#s6">[6]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <p>被冻结的 USDT 由 Tether 按正式流程重新发行给 Poly Network：双方从 8 月 12 日开始商讨，8 月 19 日 Tether 请 Poly Network 确认收款的多签地址，8 月 25 日把 33,431,200 枚 USDT 发到这个地址<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>。退回的 96,942,063 枚 DAI 和 BSC 上的 87,557,051 枚 BUSD 都不是被盗时的原币种，Poly Network 在 8 月 23 日把它们换回 USDC，用于恢复用户的 USDC 余额，滑点和手续费由团队自己的资金补足<a class="ref" href="#s8">[8]</a>。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>当时最大的 DeFi 盗窃案</h3>
+        <p>按事发时的价格，这次转走的金额超过了 2018 年 <a href="2018-coincheck.html">Coincheck</a> 被盗的约 5.35 亿美元和 2014 年 <a href="2014-mt-gox.html">Mt.Gox</a> 丢失的约 4.5 亿美元比特币<a class="ref" href="#s31">[31]</a>，Chainalysis 称之为“史上最大的 DeFi 盗窃案”<a class="ref" href="#s23">[23]</a>。这个纪录保持了约 7 个月，2022 年 3 月被 <a href="2022-ronin-bridge.html">Ronin 跨链桥</a>的约 6.24 亿美元超过<a class="ref" href="#s32">[32]</a>。</p>
+        <h3>跨链桥接连失守</h3>
+        <p>Poly Network 之后，跨链桥接连出事。CertiK 统计，2022 年因跨链桥安全事件损失约 13 亿美元，全部来自 5 起事件，约占当年全部损失的 35%<a class="ref" href="#s33">[33]</a>。这些事件的手法各不相同，失守的都是“谁有权放行一笔提款”这一环：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th class="n">损失</th><th>失守的环节</th></tr></thead>
+            <tbody>
+              <tr><td>Poly Network</td><td>2021-08</td><td class="n">约 6.11 亿美元</td><td>跨链消息调用了修改 keeper 的特权函数</td></tr>
+              <tr><td><a href="2022-wormhole.html">Wormhole</a></td><td>2022-02</td><td class="n">约 3.26 亿美元</td><td>签名验证被伪造的系统账户绕过</td></tr>
+              <tr><td><a href="2022-ronin-bridge.html">Ronin</a></td><td>2022-03</td><td class="n">约 6.24 亿美元</td><td>9 个验证者中 5 个的签名权落入攻击者手中</td></tr>
+              <tr><td><a href="2022-nomad-bridge.html">Nomad</a></td><td>2022-08</td><td class="n">约 1.9 亿美元</td><td>可信根被初始化为 0，未经证明的消息也被视为有效</td></tr>
+              <tr><td><a href="2022-bnb-bridge.html">BNB Chain 跨链桥</a></td><td>2022-10</td><td class="n">实际转出约 1 亿美元</td><td>伪造的默克尔证明通过了校验</td></tr>
+              <tr><td>Poly Network 第二次</td><td>2023-07</td><td class="n">约 440 万至 1,000 万美元</td><td>4 个 keeper 中 3 个对伪造证明签了名</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>“白帽”之争</h3>
+        <p>Poly Network 在给攻击者的留言中写道“我们认为你的行为是白帽行为”，并承诺“你不会为这次事件承担责任”<a class="ref" href="#s27">[27]</a>。安全界有不少人反对这种说法。曼彻斯特城市大学讲师、白帽黑客 Katie Paxton-Fear 对 BBC 说，白帽测试要有授权范围、与团队配合、写专业报告、证明风险后就停手，把这次攻击称作白帽“非常令人失望”。前美国司法部和 FBI 官员 Charlie Steele 则指出，私人公司无权承诺免于刑事追诉<a class="ref" href="#s27">[27]</a>。</p>
+        <h3>冻结与链上透明</h3>
+        <p>公开资料中，这次被发行方冻结的只有 USDT。Tether 在接到通知约 70 分钟后冻结了攻击者的地址<a class="ref" href="#s8">[8]</a>。rekt.news 的评论是“他们的币，他们说了算”，提醒持有 USDT 的人记住这一点<a class="ref" href="#s28">[28]</a>。Chainalysis 推测，攻击者把以太坊上的 USDC 换成 DAI，就是为了避开这种风险<a class="ref" href="#s23">[23]</a>。</p>
+        <p>Elliptic 和 Chainalysis 都认为，这件事说明从加密资产盗窃中获利越来越难：攻击者的地址几分钟内就被公开，交易所、稳定币发行方、分析公司和社区实时盯着每一笔转账<a class="ref" href="#s23">[23]</a><a class="ref" href="#s24">[24]</a>。攻击者自称从一开始就打算归还；媒体和分析人士则推测，他可能发现这么大的金额根本无法洗白<a class="ref" href="#s29">[29]</a><a class="ref" href="#s31">[31]</a>。两种说法都无法证实。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>修复与分阶段恢复</h3>
+        <p>Poly Network 把恢复分成五个阶段：修复漏洞、主网升级、按项目恢复跨链、恢复资产、恢复服务<a class="ref" href="#s3">[3]</a>。补丁先交给 PeckShield、BlockSec 和 Beosin 审查，8 月 16 日随主网升级上线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。BlockSec 说明，它审查的只是以太坊和 BSC 的补丁，而且补丁没有在 Poly 链本身加安全策略<a class="ref" href="#s17">[17]</a>。升级后 Poly Bridge 下架了全部资产，项目方要重新申请、测试通过后才恢复跨链，到 8 月 26 日恢复了 59 种资产<a class="ref" href="#s10">[10]</a>。攻击期间卡住的正常跨链交易在之后几天陆续补发<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。依赖 Poly Network 资产池的 O3 Swap，要等 WBTC 和 ETH 归还、USDC 恢复、USDT 解冻之后才能恢复<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>赏金与“首席安全顾问”</h3>
+        <p>Poly Network 起初提出 50 万美元漏洞赏金，攻击者公开表示不要，说考虑把它交给为区块链安全做过贡献的技术社区<a class="ref" href="#s5">[5]</a><a class="ref" href="#s24">[24]</a>。8 月 17 日，Poly Network 邀请攻击者担任“首席安全顾问”，同时表示仍会把赏金转到攻击者认可的地址<a class="ref" href="#s5">[5]</a>。8 月 19 日，在“没有得到白帽先生积极回应”的情况下，Poly Network 向攻击者公开的捐款地址转入 160 ETH<a class="ref" href="#s6">[6]</a>。连同公众的捐款，这个地址共收到约 52.5 万美元的 ETH<a class="ref" href="#s24">[24]</a>。攻击者交出私钥时，把这个地址里的钱连同赏金全部转回 Poly Network，要求分给受影响的用户<a class="ref" href="#s24">[24]</a>。本页查阅的公开资料里，没有对方接受这个职位的记录：Poly Network 在 9 月的回顾文章里只写了“曾邀请”<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>攻击者是谁</h3>
+        <p>没有定论。据 Chainalysis 8 月 12 日的报道，SlowMist 称已掌握攻击者的邮箱、IP 地址和设备指纹，Chainalysis 表示无法证实<a class="ref" href="#s23">[23]</a>。SlowMist 追踪到攻击者的初始资金来自门罗币<a class="ref" href="#s13">[13]</a>，Chainalysis 发现支付 gas 的 ETH 提自 Hoo 交易所<a class="ref" href="#s23">[23]</a>，rekt.news 提到一笔交易的发送地址与 FTX、币安、OKEx 的账户有关联，质疑攻击者是否用错了地址<a class="ref" href="#s28">[28]</a>。这些线索都没有公开的后续。Poly Network 多次表示不追究攻击者的法律责任<a class="ref" href="#s5">[5]</a><a class="ref" href="#s27">[27]</a>。截至 2026 年 10 月，公开资料中没有与本案相关的起诉或执法记录。</p>
+        <blockquote>
+          <p>我相当确信他们有意愿、也有能力恢复并保护这个项目……我唯一的担心是，作为整个网络核心的 Poly 链不是很去中心化，而这一点我帮不上忙。也许是我错了。</p>
+          <cite>攻击者在链上的留言（中文为本站翻译），收录于 Poly Network 的事后回顾<a class="ref" href="#s1">[1]</a></cite>
+        </blockquote>
+        <h3>2023 年的第二次失守</h3>
+        <p>CertiK 记录的攻击开始时间是 2023 年 7 月 1 日 18:47（UTC），Dedaub 记的是 7 月 2 日 18:47，相差整一天，本页无法核实哪个正确<a class="ref" href="#s33">[33]</a><a class="ref" href="#s34">[34]</a>。攻击者在一条链上锁定少量代币，再在另一条链上用伪造的证明提出数量大得多的同种代币，对 57 种资产重复这个过程<a class="ref" href="#s32">[32]</a><a class="ref" href="#s33">[33]</a>。Poly Network 称受影响的是 10 条链，CertiK 写的是 11 条<a class="ref" href="#s32">[32]</a><a class="ref" href="#s33">[33]</a>。</p>
+        <p>攻击者地址上的账面价值高达数百亿美元，CertiK 写约 420 亿，Halborn 写约 430 亿<a class="ref" href="#s33">[33]</a><a class="ref" href="#s35">[35]</a>。但目标链上大多没有足够的流动性：Metis 上的 Poly 映射 BNB 和 BUSD 根本卖不出去，OpenOcean、StackOS、Revomon、NEST 等项目在事发后还撤走了流动性<a class="ref" href="#s33">[33]</a>。实际变现的金额，rekt.news 估计约 <span class="dispute">440 万美元</span>，CertiK 和 Halborn 估计约 <span class="dispute">1,000 万美元</span><a class="ref" href="#s32">[32]</a><a class="ref" href="#s33">[33]</a><a class="ref" href="#s35">[35]</a>。</p>
+        <p>据 Dedaub 的还原，这次没有利用任何合约逻辑漏洞：伪造的区块头上确实有 4 个 keeper 中 3 个的有效签名，满足门限，而这份 keeper 名单两年来没有变过。Dedaub 认为最可能是这 3 个 keeper 的私钥被盗或被滥用，但也不排除内部作恶，或者运行 keeper 的链下系统被攻破，三种情况的效果一样。Dedaub 还发现默克尔验证器接受路径为空的证明，只要叶子节点的哈希等于签过名的状态根即可。从攻击开始到 Poly Network 暂停多条链上的 ECCM 合约，用了约 7 个小时<a class="ref" href="#s34">[34]</a>。本页没有找到 Poly Network 发布的根因报告。</p>
+        <p>2021 年攻击者在留言里唯一的担心，是 Poly 链“不是很去中心化”。两年后失守的，正是放行跨链提款的签名权，据 Dedaub，它两年来一直握在同样 4 个外部账户手里。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给跨链桥和合约开发者</span>
+          <ul>
+            <li>通用的消息执行器不能同时握有特权。ECCM 既执行任意跨链消息，又是 ECCD 的 owner，一条消息就等于拿到了 owner 权限。修改签名者这类操作，应放在跨链消息到达不了的合约里，或者只留一个专用入口。</li>
+            <li>在目标链合约里限制跨链消息能调用的合约和方法，最好按合约逐一登记方法。不要依赖 relayer 过滤，任何人都能绕过 relayer 直接调用合约。</li>
+            <li>不要把“参数类型固定”当成访问控制。函数选择器只有 4 字节，方法名一旦来自外部输入，就能对上任意函数。</li>
+            <li>更换签名者集合是桥上最危险的操作，只应有一条路径，要求与旧签名者集合的承诺严格匹配，最好再加时间锁。</li>
+            <li>托管大额资产的合约要在区块浏览器上公开验证源码。Poly Network 被攻击时没有做到<a class="ref" href="#s16">[16]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议运营方和应急响应者</span>
+          <ul>
+            <li>桥的安全上限就是签名者集合。2023 年的事件中，4 个外部账户里的 3 个就能放出任意资产。签名者应分散在不同运营方，私钥放在 HSM 或 MPC 中，并定期轮换。</li>
+            <li>为 keeper 变更和大额解锁设置实时告警和暂停开关。2021 年 keeper 被换后，正常的跨链交易随即开始回滚，这本身就是可以捕捉的信号；2023 年从攻击开始到暂停合约用了约 7 个小时。</li>
+            <li>按资产设置提款限额和单位时间流出上限，让一次失守的损失有上限。2023 年铸出的资产名义价值数百亿美元，实际损失不大，主要是因为目标链上流动性不足。</li>
+            <li>事先和稳定币发行方、交易所建立联络渠道。2021 年 Tether 在接到通知约 70 分钟后完成冻结，但它只能冻结自己的币。</li>
+            <li>分析事故时先查关键状态有没有被改过。BlockSec 起初在提款交易里只看到 1 个 keeper，判断可能是私钥泄露或签名服务出错，没有去查 keeper 本身是否已被替换<a class="ref" href="#s16">[16]</a>。</li>
+            <li>和攻击者谈判可能换回资金，但私人公司无权承诺免于追诉，“白帽”的称呼也会被认为是在替犯罪行为洗白<a class="ref" href="#s27">[27]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <p>Medium 上的文章（Poly Network、SlowMist、BlockSec、PeckShield、Beosin、Immunefi）直接访问被拒，本页通过互联网档案馆的存档阅读；Reuters 的报道同样通过存档阅读。下列链接为原始地址。</p>
+        <ol class="sources">
+          <li id="s1">Poly Network，《Honour, Exploit, and Code: How we lost 610M dollar and got it back》，2021-09-02。<a href="https://medium.com/poly-network/honour-exploit-and-code-how-we-lost-610m-dollar-and-got-it-back-c4a7d0606267">medium.com</a></li>
+          <li id="s2">Poly Network，《The Root Cause Of Poly Network Being Hacked》（转发 SlowMist 的分析），2021-08-11。<a href="https://medium.com/poly-network/the-root-cause-of-poly-network-being-hacked-e30cf27468f0">medium.com</a></li>
+          <li id="s3">Poly Network，《Poly Network — Roadmap for the Next Phase》，2021-08-14。<a href="https://medium.com/poly-network/poly-network-roadmap-for-the-next-phase-9f84c03c2e53">medium.com</a></li>
+          <li id="s4">Poly Network，《Poly Network Mainnet Upgrade Goes Live》，2021-08-16。<a href="https://medium.com/poly-network/poly-network-mainnet-upgrade-goes-live-d708f4fa2cf1">medium.com</a></li>
+          <li id="s5">Poly Network，《Latest Updates (AUG 17)》，2021-08-17。<a href="https://medium.com/poly-network/latest-updates-aug-17-241398d64a40">medium.com</a></li>
+          <li id="s6">Poly Network，《Latest Updates (AUG 19)》，2021-08-19。<a href="https://medium.com/poly-network/latest-updates-aug-19-ed7ab8e5c2f0">medium.com</a></li>
+          <li id="s7">Poly Network，《Latest Updates (AUG 20)》，2021-08-20。<a href="https://medium.com/poly-network/latest-updates-aug-20-a12447c6d899">medium.com</a></li>
+          <li id="s8">Poly Network，《Latest Updates (AUG 23)》（含与 Tether 沟通的时间表），2021-08-23。<a href="https://medium.com/poly-network/latest-updates-aug-23-7f6cca47b574">medium.com</a></li>
+          <li id="s9">Poly Network，《Poly Network Commences Full Asset Restoration》，2021-08-23。<a href="https://medium.com/poly-network/poly-network-commences-full-asset-restoration-7f5c548423b9">medium.com</a></li>
+          <li id="s10">Poly Network，《Poly Network — Asset Recovery Complete》，2021-08-26。<a href="https://medium.com/poly-network/poly-network-asset-recovery-complete-a7ba33c2f2e4">medium.com</a></li>
+          <li id="s11">Poly Network，《Leading Blockchain Platforms Unleash Groundbreaking Interoperability Alliance》，2020-08-18。<a href="https://medium.com/poly-network/leading-blockchain-platforms-unleash-groundbreaking-interoperability-alliance-b4ee20e6bacc">medium.com</a></li>
+          <li id="s12">polynetwork/eth-contracts 仓库：修复前基线 commit d16252b、PR #12（2021-08-10 提交，2021-08-16 合并为 2b1cbe0）、PR #22（2021-12-10）及文件提交历史。<a href="https://github.com/polynetwork/eth-contracts/pull/12/files">github.com</a></li>
+          <li id="s13">SlowMist，《The Analysis and Q&amp;A Of Poly Network Being Hacked》，2021-08-11。<a href="https://slowmist.medium.com/the-analysis-and-q-a-of-poly-network-being-hacked-8112a35beb39">slowmist.medium.com</a></li>
+          <li id="s14">BlockSec，《The initial analysis of the PolyNetwork Hack》，2021-08-10。<a href="https://blocksecteam.medium.com/the-initial-analysis-of-the-polynetwork-hack-270ac6072e2a">blocksecteam.medium.com</a></li>
+          <li id="s15">BlockSec，《The Further Analysis of the Poly Network Attack》，2021-08-11。<a href="https://blocksecteam.medium.com/the-further-analysis-of-the-poly-network-attack-6c459199c057">blocksecteam.medium.com</a></li>
+          <li id="s16">BlockSec，《The Retrospection of the Poly Network Hack from a Security Researcher perspective》，2021-08-14。<a href="https://blocksecteam.medium.com/the-retrospection-of-the-poly-network-hack-from-a-security-researcher-perspective-7b9f5c6f06d1">blocksecteam.medium.com</a></li>
+          <li id="s17">BlockSec，《The informal security review of the patch to fix the vulnerability of the Poly Network hack》，2021-08-15。<a href="https://blocksecteam.medium.com/the-informal-security-review-of-the-patch-of-the-poly-network-1a0a532b731e">blocksecteam.medium.com</a></li>
+          <li id="s18">PeckShield，《PolyNetwork Bug Review And Patch Analysis》，2021-08-15。<a href="https://peckshield.medium.com/polynetwork-bug-review-and-patch-analysis-88bde8441297">peckshield.medium.com</a></li>
+          <li id="s19">SlowMist，《The Root Cause Of Poly Network Being Hacked》，2021-08-10。<a href="https://slowmist.medium.com/the-root-cause-of-poly-network-being-hacked-ec2ee1b0c68f">slowmist.medium.com</a></li>
+          <li id="s20">Beosin，《The biggest DeFi hack of the year! Beosin on the Poly Network Attack Full Explanation》，2021-08-11。<a href="https://beosin.medium.com/the-biggest-defi-hack-of-the-year-beosin-on-the-poly-network-attack-full-explanation-f216e621d08c">beosin.medium.com</a></li>
+          <li id="s21">Beosin，《The source of the biggest DeFi hack of the year, Poly Network, has been found》，2021-08-11。<a href="https://beosin.medium.com/the-source-of-the-biggest-defi-hack-of-the-year-poly-network-has-been-found-86a9517ba15">beosin.medium.com</a></li>
+          <li id="s22">Kraken Security Labs，《Abusing Smart Contracts to Steal $600 million: How the Poly Network Hack Actually Happened》，2021-09-22。<a href="https://blog.kraken.com/product/security/abusing-smart-contracts-to-steal-600-million-how-the-poly-network-hack-actually-happened">blog.kraken.com</a></li>
+          <li id="s23">Chainalysis，《Poly Network Attacker Returning Funds After Pulling Off Biggest DeFi Theft Ever》，2021-08-12。<a href="https://www.chainalysis.com/blog/poly-network-hack-august-2021/">chainalysis.com</a></li>
+          <li id="s24">Tom Robinson（Elliptic），《The Poly Network Hack: $600 Million in Crypto Stolen and Returned in 24 Hours》，2021-08-11（后续更新至归还完成）。<a href="https://www.elliptic.co/insights/the-poly-network-hack-600-million-in-crypto-stolen-and-returned-in-24-hours/">elliptic.co</a></li>
+          <li id="s25">Check Point Research，《16th August – Threat Intelligence Report》，2021-08-16。<a href="https://research.checkpoint.com/2021/16th-august-threat-intelligence-report/">research.checkpoint.com</a></li>
+          <li id="s26">Immunefi，《Poly Network Joins Immunefi With $100,000 Bug Bounty After Hack》，2021-08-17。<a href="https://medium.com/immunefi/poly-network-joins-immunefi-with-100-000-bug-bounty-after-hack-d349e1192853">medium.com</a></li>
+          <li id="s27">BBC：Mary-Ann Russon，《Cryptocurrency heist hacker returns $260m in funds》，2021-08-11；Joe Tidy，《Crypto hacker offered reward after $600m heist》，2021-08-12。<a href="https://www.bbc.com/news/business-58180692">bbc.com</a>、<a href="https://www.bbc.com/news/business-58193396">bbc.com</a></li>
+          <li id="s28">rekt.news，《Poly Network - REKT》，2021-08-11。<a href="https://rekt.news/polynetwork-rekt/">rekt.news</a></li>
+          <li id="s29">Alun John、Tom Westbrook，《Crypto platform Poly Network rewards hacker with $500,000 'bug bounty'》，Reuters，2021-08-13。<a href="https://www.reuters.com/technology/crypto-platform-poly-network-rewards-hacker-with-500000-bug-bounty-2021-08-13/">reuters.com</a></li>
+          <li id="s30">Miranda Bryant，《'White hat' hacker behind $610m crypto heist returns most of money》，The Guardian，2021-08-13。<a href="https://www.theguardian.com/technology/2021/aug/13/white-hat-hacker-behind-610m-crypto-heist-returns-most-of-money">theguardian.com</a></li>
+          <li id="s31">Ryan Browne，《Hacker behind $600 million crypto heist returns final slice of stolen funds》，CNBC，2021-08-23。<a href="https://www.cnbc.com/2021/08/23/poly-network-hacker-returns-remaining-cryptocurrency.html">cnbc.com</a></li>
+          <li id="s32">rekt.news，《Poly Network - REKT 2》，2023-07-03。<a href="https://rekt.news/poly-network-rekt2/">rekt.news</a></li>
+          <li id="s33">CertiK，《Poly Network Incident Analysis》，2023-07-03。<a href="https://www.certik.com/blog/poly-network-incident-analysis">certik.com</a></li>
+          <li id="s34">Dedaub，《Poly Network Hack Postmortem》，2023-07。<a href="https://dedaub.com/blog/poly-network-hack/">dedaub.com</a></li>
+          <li id="s35">Halborn，《Explained: The Poly Network Hack (July 2023)》，2023-07-04。<a href="https://www.halborn.com/blog/post/explained-the-poly-network-hack-july-2023">halborn.com</a></li>
+          <li id="s36">Halborn，《Explained: The Poly Network Hack (August 2021)》，2021-08-11。<a href="https://www.halborn.com/blog/post/explained-the-poly-network-hack-august-2021">halborn.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

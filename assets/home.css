@@ -1,0 +1,52 @@
+/* 根目录总览页（index.html）：在两站共用的样式（shared/base.css）之上追加的部分。
+   地震图、提示框、坐标轴复用 .seismo / .tip / .sz-grid / .sz-ax。
+   用色沿用两站约定：红色只表示损失，琥珀色表示金额未确认，其余用墨色和灰阶。
+   纸色（共用层的 --e1…--e6）只做装饰：顶栏纸边、入口卡片上沿、时间轴上半部分的时代底色；竖线和圆点不用纸色，仍是红色和灰色。 */
+
+/* ---------- 顶栏纸边：六色，宽度按被盗站六个时代的年数比例（时间轴上半部分的底色也按时代） ---------- */
+body.hm-home .topbar::after {
+  background: linear-gradient(90deg, var(--e1) 0 35.3%, var(--e2) 0 58.8%, var(--e3) 0 70.6%,
+    var(--e4) 0 76.5%, var(--e5) 0 88.2%, var(--e6) 0);
+}
+
+/* ---------- 四个板块的入口 ---------- */
+.hm-entries { list-style: none; margin: 28px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.hm-entries a {
+  display: grid; grid-template-rows: auto auto 1fr; gap: 4px; height: 100%; padding: 16px 18px;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); color: var(--ink); text-decoration: none;
+}
+.hm-entries a:hover { border-color: var(--ink-3); }
+.hm-entries a:hover b { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.hm-entries b { font-family: var(--serif); font-weight: 700; font-size: 18px; line-height: 1.4; }
+.hm-n { font-size: 14px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.hm-d { font-size: 14.5px; line-height: 1.65; color: var(--ink-2); margin-top: 4px; }
+/* 入口卡片上沿 4px：各板块自己的纸色（被盗站六个时代，大事记、诈骗站四类，基础知识四个主题），顺序和各站首页一致 */
+.hm-entries a { position: relative; overflow: hidden; padding-top: 20px; }
+.hm-entries a::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; }
+.hm-to-hacks::before { background: linear-gradient(90deg, var(--e1) 0 35.3%, var(--e2) 0 58.8%, var(--e3) 0 70.6%, var(--e4) 0 76.5%, var(--e5) 0 88.2%, var(--e6) 0); }
+.hm-to-ms::before { background: linear-gradient(90deg, var(--e5) 0 25%, var(--e1) 0 50%, var(--e4) 0 75%, var(--e6) 0); }
+.hm-to-sc::before { background: linear-gradient(90deg, var(--e2) 0 25%, var(--e1) 0 50%, var(--e3) 0 75%, var(--e4) 0); }
+.hm-to-bs::before { background: linear-gradient(90deg, var(--e2) 0 14.3%, var(--e5) 0 57.1%, var(--e3) 0 78.6%, var(--e4) 0); }
+@media (max-width: 1000px) { .hm-entries { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .hm-entries { grid-template-columns: 1fr; } }
+
+/* ---------- 合并时间轴 ---------- */
+.hm-base { stroke: var(--ink-3); stroke-width: 1; }
+.hm-band-lab { fill: var(--ink); font-size: 13px; font-weight: 600; }
+.hm-lane-line { stroke: var(--rule); stroke-width: 1; }
+.hm-lane-lab { fill: var(--ink-2); font-size: 13px; }
+/* 被盗事件：竖线高度是损失 */
+.hm-spike { stroke: var(--loss-mark); stroke-width: 2; stroke-linecap: round; }
+.hm-spike.prov { stroke: var(--doubt); stroke-dasharray: 3 3; }
+.hm-dot { fill: var(--loss-mark); stroke: var(--paper); stroke-width: 2; }
+.hm-dot.none { fill: var(--paper); stroke: var(--ink-3); stroke-width: 1.5; }
+.hm-dot.prov { fill: var(--paper); stroke: var(--doubt); stroke-width: 1.5; }
+/* 大事记：红点只给金额是损失的事件 */
+.hm-ms { fill: var(--ink-2); stroke: var(--paper); stroke-width: 2; }
+.hm-ms.loss { fill: var(--loss-mark); }
+.hm-lab { fill: var(--ink-2); font-size: 12.5px; paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round; }
+.hm-lab tspan.v { fill: var(--ink); font-weight: 600; }
+.hm-on .hm-spike { stroke-width: 3.5; }
+.hm-on .hm-dot, .hm-on .hm-ms { stroke: var(--ink); stroke-width: 2.5; }
+.hm-on .hm-lab { fill: var(--ink); font-weight: 600; }
+.hm-hit { fill: transparent; }

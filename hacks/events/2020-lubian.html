@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LuBian 矿池 12.7 万枚 BTC 被转走｜区块链被盗事件编年史</title>
+<meta name="description" content="2020 年 12 月 LuBian 矿池约 12.7 万枚 BTC 在两小时内被转走：32 位种子生成的弱私钥、近五年后的公开披露、美国司法部的没收诉讼与中方的“国家级黑客”指控。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2020-lubian">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2020 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>LuBian 矿池 12.7 万枚 BTC 被转走</h1>
+    <p class="lede">2020 年 12 月 28 日（UTC），中国矿池 LuBian 名下的一组比特币钱包在约两小时内几乎被清空，约 12.7 万枚 BTC 流向新地址，按当时价格约 35 亿美元。这些钱包的私钥来自一个只用 32 位种子初始化的伪随机数生成器，知道算法的人可以把它们算出来。近五年后，这笔钱出现在美国司法部史上最大的没收诉讼里，中方则指控是美国国家级黑客所为，连“被盗”这个定性本身都有争议。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">LuBian 在 2020 年一度占全网约 6% 的算力。它存放大额比特币的钱包看上去是标准的 24 词 BIP39 钱包，熵应该有 256 位；但生成这些钱包的软件用的是梅森旋转（MT19937）伪随机数生成器，而且只用一个 32 位的数做种子。于是所有可能的钱包只有约 43 亿个，用普通硬件就能逐个试完<a class="ref" href="#s3">[3]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <p>2020 年 12 月 28 日 19:40 至 21:53（UTC），这批弱钱包的余额从约 13.7 万枚 BTC 降到约 193 枚<a class="ref" href="#s4">[4]</a>。区块链分析公司 Arkham 统计其中约 127,426 枚流向疑似攻击者的地址<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>，另有约 9,500 枚进了 LuBian 此后仍在使用的收款地址<a class="ref" href="#s4">[4]</a>。LuBian 从未公开承认被盗，只在链上用 OP_RETURN 消息向对方喊话，2021 年 2 月停止运营。</p>
+        <p>这笔钱此后在链上沉睡，2024 年 6 月才再次移动。2025 年 10 月，美国司法部起诉柬埔寨太子集团（Prince Group）董事长陈志，并对约 127,271 枚 BTC 提起民事没收，称这些币是陈志的洗钱所得、“目前由美国政府保管”，却没有说明是怎么拿到的<a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。司法部指控的诈骗园区和杀猪盘，见诈骗站的<a href="../../scams/events/2025-prince-group.html">太子集团与诈骗园区</a>。美国政府几次大额查获的比特币，列在大事记的<a href="../../milestones/events/2013-silk-road.html">FBI 查封 Silk Road 与 Ulbricht 案</a>一页；这些币怎样处置，见<a href="../../milestones/events/2025-btc-reserve.html">美国战略比特币储备</a>。一个月后，中国国家计算机病毒应急处理中心（CVERC）发布报告，称这是一起“国家级黑客组织操盘的‘黑吃黑’事件”<a class="ref" href="#s9">[9]</a>。真正的攻击者是谁、币原本属于谁、这到底算不算盗窃，截至 2026 年 10 月都没有定论。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>LuBian 的名字是汉语“路边”的拼音。它在 2020 年迅速跻身大矿池之列，到当年 5 月已控制全网约 6% 的算力，在亚洲多地（包括中国和伊朗）设有矿场<a class="ref" href="#s2">[2]</a><a class="ref" href="#s8">[8]</a>。美国司法部的起诉书称，LuBian 在活跃期间一度是全球第六大比特币挖矿业务；Elliptic 的分析称它在 2021 年 2 月消失<a class="ref" href="#s7">[7]</a><a class="ref" href="#s11">[11]</a>。</p>
+        <p>安全研究团队 Milk Sad 在追踪弱随机数钱包时发现，有一组钱包反复收到带着“lubian.com”和“Buffett”标记的挖矿奖励。其中地址 <span class="addr">34Jpa4Eu3ApoPVUKNTN2WeuXVVq1jzxgPi</span> 在不到一年里收到超过 14,000 枚 BTC，约 11,000 枚直接来自挖矿奖励。2019 年 4 月，同一组钱包里的 4 个地址还一次收到合计 24,999 枚 BTC<a class="ref" href="#s3">[3]</a>。一个矿池长期把这么多币放在几个钱包里、很少向矿工派发，本身就不寻常。</p>
+        <p>这些钱的来源也有争议。美国司法部称，正常矿池的地址 80%–90% 以上的资金来自新挖出的币，而 LuBian 的地址只有约 30% 来自挖矿，其余来自与挖矿无关的转账，说明它被用来把诈骗所得和“干净”的新币混在一起<a class="ref" href="#s8">[8]</a>。CVERC 的报告则给出另一组数字：约 17,800 枚来自独立挖矿，约 2,300 枚是矿池工资，约 107,100 枚来自交易所等渠道，并称这与“全部是非法所得”的说法矛盾<a class="ref" href="#s9">[9]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">受害方、执法与研究者行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2019-04</time><div class="ev">后来被认定为弱钱包的 4 个地址分两天收到合计 24,999 枚 BTC<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2020-05</time><div class="ev">LuBian 算力占全网近 6%<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk key"><time>2020-12-28</time><div class="ev">19:40–21:53（UTC，北京时间 29 日凌晨），弱钱包里的币被集中转出，余额从约 136,951 枚降到约 193 枚<a class="ref" href="#s4">[4]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="atk"><time>2020-12-30</time><div class="ev">LuBian 在 Bitcoin Omni 层的一个地址又被转走约 600 万美元的 BTC 和 USDT<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2020-12-31</time><div class="ev">LuBian 把剩下的 11,886 枚 BTC 转入新钱包<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2021 年初</time><div class="ev">LuBian 向对方地址发出 1,500 多条 OP_RETURN 消息，请求归还并承诺报酬，共花费约 1.4 BTC 手续费<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2021-02</time><div class="ev">LuBian 停止运营，没有给出解释<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2022-07-03 前后</time><div class="ev">链上出现署名“LB”的消息，称对方为“正在保护我们资产的白帽”，留下邮箱商量归还与报酬<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2023-08</time><div class="ev">Milk Sad 团队公开 Libbitcoin Explorer 的弱熵漏洞 CVE-2023-39910<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2024-04-20</time><div class="ev">Milk Sad 发布研究，指出一批曾存有数万枚 BTC 的弱钱包与 lubian.com 有关，但无法判断 2020 年底的转出是盗窃还是所有者自己的仓促转移<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2024-06-22 至 07-23</time><div class="ev">沉睡三年半的币分几批移到新地址<a class="ref" href="#s20">[20]</a>。Arkham 后来把最终地址标为“美国政府：陈志被查扣资金”<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="key"><time>2025-08-02</time><div class="ev">Arkham 发文称这是“史上最大”的加密货币盗窃，涉及 127,426 枚 BTC<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2025-10-14</time><div class="ev">美国司法部公布对陈志的起诉，并对约 127,271 枚 BTC 提起民事没收，称这是司法部史上规模最大的没收行动；美英同日宣布制裁太子集团<a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="key"><time>2025-11-09</time><div class="ev">CVERC 发布技术溯源报告，称美国政府“或早在 2020 年”就已通过黑客手段窃取了这批比特币<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2025-11-15</time><div class="ev">Milk Sad 指出，没收诉状所列 25 个“陈志钱包”地址全部在其弱钱包名单里<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2026-01-06</time><div class="ev">柬埔寨逮捕陈志并将其遣返中国；据柬埔寨内政部通告，他的柬埔寨国籍 2025 年 12 月已由国王王令撤销<a class="ref" href="#s23">[23]</a><a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2026-03-18</time><div class="ev">ICIJ 报道：司法部拒绝说明如何取得这批比特币，陈志的律师要求法院让检方解释<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-09-25</time><div class="ev">纽约东区联邦法院法官 Rachel P. Kovner 驳回 9 名自称诈骗受害者的索赔资格，没收本身尚未判决<a class="ref" href="#s15">[15]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>BIP39 钱包的安全性全部压在第一步：生成 128 位或 256 位的随机熵。熵变成助记词，助记词经 PBKDF2 变成种子，种子再按 BIP32 派生出每一个私钥和地址，后面每一步都是确定性计算。也就是说，熵有多难猜，钱包就有多安全；熵的生成方式一旦有缺陷，后面的步骤再标准也补不回来。</p>
+        <p>梅森旋转（MT19937）是一种为统计模拟设计的伪随机数生成器，输出分布很均匀，但它不是密码学安全的。更致命的是初始化方式：如果只用一个 32 位整数做种子，整个输出序列就完全由这 32 位决定。软件从这个序列里取 32 个字节当作“256 位熵”，生成的助记词看上去和真随机的一样，可能的组合却只有 2<sup>32</sup>，约 43 亿个<a class="ref" href="#s9">[9]</a>。CVERC 的报告估算，按每秒 100 万个密钥的速度，全部试完约需 4,200 秒<a class="ref" href="#s9">[9]</a>。</p>
+        <p>Milk Sad 团队对这批钱包的描述是：MT19937-32 伪随机数生成器，“Trust Wallet 式”的取数方式，256 位熵生成 24 词 BIP39 助记词，只用 BIP49 的 P2SH-P2WPKH 地址（以 3 开头），派生路径基本是 <code>m/49'/0'/0'/0/0</code><a class="ref" href="#s3">[3]</a>。2025 年的新研究还发现，生成这些钱包的软件在同一次运行里连续创建多个钱包时没有重新播种，每个钱包从同一条伪随机序列的不同位置（相隔 32 轮）取数，所以同一组地址共享同一个种子<a class="ref" href="#s4">[4]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 350" role="img" aria-labelledby="lubian-ent-t lubian-ent-d">
+            <title id="lubian-ent-t">32 位种子如何决定一组“256 位”钱包</title>
+            <desc id="lubian-ent-d">上排：32 位种子初始化 MT19937，取 32 次输出的低 8 位拼成 256 位熵，再按 BIP39、BIP32 和 BIP49 派生出地址，第二步以后都是确定性计算，所以可能的钱包只有 2 的 32 次方个。下排：同一次运行里没有重新播种，连续创建的钱包从同一条伪随机序列的第 0、32、64、96、128 轮开始取数，对应 5 个真实地址。</desc>
+            <defs>
+              <marker id="lubian-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="lubian-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="10" y="20" width="150" height="64" rx="4"/>
+            <text class="d-t b atk" x="85" y="46" text-anchor="middle">32 位种子</text>
+            <text class="d-t s" x="85" y="68" text-anchor="middle">只有约 43 亿种取值</text>
+            <rect class="d-box" x="200" y="20" width="160" height="64" rx="4"/>
+            <text class="d-t b" x="280" y="46" text-anchor="middle">MT19937 输出流</text>
+            <text class="d-t s" x="280" y="68" text-anchor="middle">32 次输出各取低 8 位</text>
+            <rect class="d-box" x="400" y="20" width="160" height="64" rx="4"/>
+            <text class="d-t b" x="480" y="46" text-anchor="middle">“256 位熵”</text>
+            <text class="d-t s" x="480" y="68" text-anchor="middle">24 词 BIP39 助记词</text>
+            <rect class="d-box" x="600" y="20" width="150" height="64" rx="4"/>
+            <text class="d-t b" x="675" y="46" text-anchor="middle">BIP32 / BIP49</text>
+            <text class="d-t s m" x="675" y="68" text-anchor="middle">m/49'/0'/0'/0/0</text>
+            <line class="d-line atk" x1="160" y1="52" x2="198" y2="52" marker-end="url(#lubian-ah-atk)"/>
+            <line class="d-line" x1="360" y1="52" x2="398" y2="52" marker-end="url(#lubian-ah)"/>
+            <line class="d-line" x1="560" y1="52" x2="598" y2="52" marker-end="url(#lubian-ah)"/>
+            <rect class="d-box soft" x="200" y="104" width="550" height="40" rx="4"/>
+            <text class="d-t s" x="475" y="129" text-anchor="middle">从第二步起全是确定性计算：同一个种子永远得到同一组助记词和地址</text>
+            <text class="d-t b atk" x="85" y="129" text-anchor="middle">实际空间 2³²</text>
+            <text class="d-t b" x="380" y="186" text-anchor="middle">同一次运行里连续创建多个钱包，中途不重新播种</text>
+            <rect class="d-box doubt" x="40" y="206" width="120" height="34" rx="4"/>
+            <text class="d-t s" x="100" y="228" text-anchor="middle">第 0–31 轮</text>
+            <rect class="d-box doubt" x="170" y="206" width="120" height="34" rx="4"/>
+            <text class="d-t s" x="230" y="228" text-anchor="middle">第 32–63 轮</text>
+            <rect class="d-box doubt" x="300" y="206" width="120" height="34" rx="4"/>
+            <text class="d-t s" x="360" y="228" text-anchor="middle">第 64–95 轮</text>
+            <rect class="d-box doubt" x="430" y="206" width="120" height="34" rx="4"/>
+            <text class="d-t s" x="490" y="228" text-anchor="middle">第 96–127 轮</text>
+            <rect class="d-box doubt" x="560" y="206" width="120" height="34" rx="4"/>
+            <text class="d-t s" x="620" y="228" text-anchor="middle">第 128–159 轮</text>
+            <text class="d-t s" x="715" y="228" text-anchor="middle">……</text>
+            <line class="d-line" x1="100" y1="240" x2="100" y2="266" marker-end="url(#lubian-ah)"/>
+            <line class="d-line" x1="230" y1="240" x2="230" y2="266" marker-end="url(#lubian-ah)"/>
+            <line class="d-line" x1="360" y1="240" x2="360" y2="266" marker-end="url(#lubian-ah)"/>
+            <line class="d-line" x1="490" y1="240" x2="490" y2="266" marker-end="url(#lubian-ah)"/>
+            <line class="d-line" x1="620" y1="240" x2="620" y2="266" marker-end="url(#lubian-ah)"/>
+            <text class="d-t m" x="100" y="286" text-anchor="middle">338uPV…</text>
+            <text class="d-t m" x="230" y="286" text-anchor="middle">3GaB3n…</text>
+            <text class="d-t m" x="360" y="286" text-anchor="middle">3AWpzK…</text>
+            <text class="d-t m" x="490" y="286" text-anchor="middle">3NmHmQ…</text>
+            <text class="d-t m" x="620" y="286" text-anchor="middle">3FrM1H…</text>
+            <rect class="d-box soft" x="40" y="304" width="640" height="34" rx="4"/>
+            <text class="d-t s" x="360" y="326" text-anchor="middle">Milk Sad 的 A 组：5 个地址共享一个种子，全部出现在司法部没收诉状的地址清单里</text>
+          </svg>
+          </div>
+          <figcaption>图 1：熵在第一步就被压缩到 32 位，后面的标准流程只是把它“放大”成看似随机的助记词。下排的地址分组和轮次偏移来自 Milk Sad 2025 年 8 月的研究<a class="ref" href="#s4">[4]</a>，地址与没收诉状的对应见其 2025 年 11 月的更新<a class="ref" href="#s5">[5]</a>。</figcaption>
+        </figure>
+        <p>LuBian 钱包具体由哪个软件生成至今没有查清。Milk Sad 称之为“Trust Wallet 式”，是因为取数方式和 Trust Wallet 早期的浏览器插件相同。下面是那段已被确认有漏洞的代码（CVE-2023-31290），用来说明这类缺陷长什么样：</p>
+<pre class="code"><code><span class="c">// trustwallet/wallet-core，wasm/src/Random.cpp（3.1.0 及以前）</span>
+void random_buffer(uint8_t* buf, size_t len) {
+<span class="c">    // 用一个 32 位的 random_device 值初始化 MT19937，整条输出序列从此只由这 32 位决定</span>
+<span class="bad">    std::mt19937 rng(std::random_device{}());</span>
+<span class="c">    // 每个字节取一次 32 位输出的最低 8 位；256 位熵要取 32 次</span>
+    std::generate_n(buf, len, [&amp;rng]() -&gt; uint8_t { return rng() &amp; 0x000000ff; });
+    return;
+}
+
+<span class="c">// 3.1.1 的修复：改用浏览器 crypto.getRandomValues 或 Node.js crypto.randomBytes</span>
+void random_buffer(uint8_t* buf, size_t len) {
+<span class="good">    randombytes_init_if_needed();</span>
+<span class="good">    javascript_buf(buf, len);</span>
+    return;
+}</code></pre>
+        <p class="code-cap">来源：trustwallet/wallet-core 仓库 3.1.0 与 3.1.1 标签，wasm/src/Random.cpp<a class="ref" href="#s18">[18]</a>。这是用来说明同类缺陷的代码，不是 LuBian 所用的软件。</p>
+        <p>“每个字节取一次输出”解释了 Milk Sad 观察到的“相隔 32 轮”：生成一个 256 位熵要消耗 32 次输出，下一个钱包就从第 33 次开始。Milk Sad 同时指出，这批钱包在 2018–2020 年就已创建，早于 Trust Wallet 引入这段代码的时间；Trust Wallet 和 Libbitcoin Explorer 都因时间、参数或生成器不符被排除<a class="ref" href="#s3">[3]</a>。至少还有一款未知的钱包软件犯了同样的错误。</p>
+        <h3>同一类缺陷</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>软件</th><th>缺陷</th><th>已知的利用</th></tr></thead>
+            <tbody>
+              <tr><td>LuBian 的钱包（生成软件未知）</td><td>MT19937-32，256 位熵，同一次运行不重新播种</td><td>2020-12 约 12.7 万枚 BTC 被转出</td></tr>
+              <tr><td>Trust Wallet 浏览器插件 0.0.172–0.0.182</td><td>mt19937 只吃一个 32 位种子，约 40 亿种助记词</td><td>NVD 记载 2022-12 和 2023-03 在野利用<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>Libbitcoin Explorer 3.0.0–3.6.0 的 <code>bx seed</code></td><td>mt19937 把内部熵限制在 32 位</td><td>NVD 记载 2023-06 至 07 在野利用<a class="ref" href="#s17">[17]</a></td></tr>
+              <tr><td>Profanity 靓号生成器</td><td>32 位种子派生 256 位私钥</td><td>2022-09 <a href="2022-wintermute.html">Wintermute</a> 损失约 1.6 亿美元</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note">
+          <span class="h">为什么四年都没人发现</span>
+          <p>弱随机数钱包从外面看和正常钱包没有区别：地址格式标准，交易行为正常，区块链上不会留下“熵不够”的痕迹。只有知道生成算法的人，才能从几十亿个可能里把它们找出来。Milk Sad 团队是在研究 <code>bx seed</code> 漏洞、反向搜索同类弱钱包时，才在 2024 年注意到这一组，那时资金已经被转走三年多<a class="ref" href="#s3">[3]</a>。</p>
+        </div>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>没有任何一方公开过 2020 年转出操作的细节，也没有人声称对此负责。下面只整理研究者从公开链上记录中得出的结论。</p>
+        <ol class="steps">
+          <li><b>找到弱钱包</b>转出者怎样发现这批钱包，至今不清楚。CVERC 称攻击者对 5,000 多个弱随机数地址做了暴力破解<a class="ref" href="#s9">[9]</a>。Milk Sad 指出，与其他已确认的梅森旋转弱钱包盗窃相比，这次发生得早了好几年<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>两小时集中转出</b>2020 年 12 月 28 日 19:40 起，弱钱包里的币被一笔笔转到新地址，约两小时后余额只剩约 193 枚。很多可疑交易使用了固定的 75,000 聪手续费，Milk Sad 认为这一点不寻常<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>不是所有钱都给了同一方</b>约 9,500 枚进了 LuBian 此后仍在使用的收款地址 <span class="addr">3HRzRMNbcHR5PTfAzt5Lo7AHgT3oUhq9zG</span>。Milk Sad 估计约 34.4 亿美元流向了转出者<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>再取一次</b>CoinDesk 转述 Arkham 称，两天后 LuBian 在 Omni 层的一个地址又损失约 600 万美元的 BTC 和 USDT<a class="ref" href="#s2">[2]</a>；也有报道写作“次日”。</li>
+          <li><b>长期不动</b>此后近三年半，除了零星的尘埃交易，这些币没有移动<a class="ref" href="#s9">[9]</a>。2024 年 6 月 22 日至 7 月 23 日，它们被分几批整合到新地址<a class="ref" href="#s20">[20]</a>。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">这算不算盗窃</span>
+          <p>Milk Sad 在 2024 年 4 月写道，无法判断 2020 年底的转出是盗窃，还是所有者自己协调的仓促转移；2025 年 8 月拿到更多数据后，改称“很可能”是知道弱私钥的人在 12 月 28 日盗走的<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。Elliptic 给“被盗”加了引号，称不清楚是谁“偷”了陈志和 LuBian 的币，也不清楚盗窃是否真的发生过<a class="ref" href="#s11">[11]</a>。美国司法部的起诉书和没收诉状通篇没有提到黑客攻击。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>弱钱包区间</b>转出前约 136,951 枚 BTC</li>
+          <li class="atk"><b>转出者的地址</b>Arkham 统计约 127,426 枚</li>
+          <li class="doubt"><b>沉睡三年半后整合</b>2024 年 6–7 月移到新地址，Arkham 标为美国政府</li>
+          <li class="def"><b>美国政府保管</b>没收诉讼涉及约 127,271 枚，尚未判决</li>
+        </ol>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>来源</th></tr></thead>
+            <tbody>
+              <tr><td>转出前弱钱包合计余额</td><td class="n">约 136,951 BTC</td><td>Milk Sad<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>两小时后剩余</td><td class="n">约 193 BTC</td><td>数日后降到约 4 BTC<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>流向转出者</td><td class="n"><span class="dispute">127,426 BTC</span></td><td>Arkham<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>被窃取总量</td><td class="n"><span class="dispute">127,272.06953176 BTC</span></td><td>CVERC<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>没收诉状所列 25 个地址（2020 年 12 月时）</td><td class="n"><span class="dispute">约 127,271 BTC</span></td><td>美国司法部<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>流入 LuBian 收款地址</td><td class="n">约 9,500 BTC</td><td>Milk Sad 转述 Arkham<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>LuBian 年底转入新钱包</td><td class="n">11,886 BTC</td><td>CoinDesk 转述 Arkham<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>12 月 30 日 Omni 层损失</td><td class="n">约 600 万美元</td><td>BTC 与 USDT<a class="ref" href="#s2">[2]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>三个总量的差额约 155 枚。没收诉状说明，所列地址是 2020 年 12 月时存放这笔币的地址，“不含其他资金”<a class="ref" href="#s8">[8]</a>；Milk Sad 则另外列出 4 个弱钱包地址不在诉状清单里，其中一个在 12 月 28 日只被部分转出<a class="ref" href="#s5">[5]</a>。差额很可能来自各方纳入的地址不同，但没有一方解释过。按事发时价格，Arkham 估计约 35 亿美元，Milk Sad 按每笔交易时的价格估算流向转出者的约 34.4 亿美元。2025 年 10 月司法部公告时，这批币约值 150 亿美元<a class="ref" href="#s6">[6]</a>；到 2026 年 3 月，ICIJ 按当时价格估为约 90 亿美元<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>按事发时价值，可能是最大的一起</h3>
+        <p>约 35 亿美元的事发时价值，是 2025 年 <a href="2025-bybit.html">Bybit</a> 被盗金额（约 14.6 亿美元）的两倍多，Arkham 称之为史上最大的加密货币盗窃<a class="ref" href="#s1">[1]</a>。在 Arkham 的统计里，转出者的地址一度是其追踪到的第 13 大 BTC 持有者，排在 <a href="2014-mt-gox.html">Mt.Gox</a> 黑客之前<a class="ref" href="#s2">[2]</a>。这样一笔钱在链上躺了近五年，没有媒体报道，也没有受害方报案。</p>
+        <h3>弱随机数是看不见的风险</h3>
+        <p>这批钱包从 2019 年起就处在“任何知道算法的人都能算出私钥”的状态，最多时存放着超过 13 万枚 BTC。Taylor Monahan 检查了 Milk Sad 名单中属于同一漏洞批次的 64 个地址，发现只有陈志和 LuBian 相关的地址有可观余额，“并不是有人在挑挑拣拣”<a class="ref" href="#s20">[20]</a>。也就是说，转出者很可能把整批弱钱包一起扫空了。</p>
+        <h3>资金归属成了地缘政治问题</h3>
+        <p>这次没收让美国政府地址里的 BTC 超过 32.4 万枚<a class="ref" href="#s13">[13]</a>。受害者权益的倡导者担心这笔钱会被并入美国的战略加密货币储备；代理伊朗恐怖袭击受害者的律师也以 LuBian 与伊朗关系密切为由，对这批比特币提出主张<a class="ref" href="#s14">[14]</a>。中方则把它定性为美国政府的“黑吃黑”。同一笔链上资产，三方给出了三种叙事：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th></th><th>Arkham、Milk Sad 等研究者</th><th>美国司法部</th><th>CVERC</th></tr></thead>
+            <tbody>
+              <tr><td>币原本属于谁</td><td>lubian.com 背后的实体</td><td>陈志和太子集团的洗钱所得</td><td>LuBian 矿池，含合法挖矿所得</td></tr>
+              <tr><td>2020 年 12 月发生了什么</td><td>很可能是知道弱私钥的第三方转走</td><td>起诉书和诉状没有提及</td><td>国家级黑客组织“黑吃黑”</td></tr>
+              <tr><td>币现在在哪</td><td>Arkham 标为美国政府地址</td><td>“由美国政府保管”</td><td>美国政府控制，可能早在 2020 年就已控制</td></tr>
+              <tr><td>主要依据</td><td>弱私钥分析、链上时间线</td><td>区块链追踪、内部文件（尚无司法认定）</td><td>四年不动、Arkham 标签、资金构成</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>LuBian 的链上喊话</h3>
+        <p>2021 年初，LuBian 向对方地址发出 1,500 多条 OP_RETURN 消息，内容是“请归还我们的资金，我们会付报酬”，共花费约 1.4 BTC 手续费<a class="ref" href="#s2">[2]</a><a class="ref" href="#s11">[11]</a>。2022 年 7 月和 2024 年 7 月，链上又出现两段拼成一句话的消息：“MSG from LB. To the whitehat who is saving our asset, you can contact us through（邮箱）to discuss the return of asset and your reward.”<a class="ref" href="#s4">[4]</a> CVERC 称对方从未回复<a class="ref" href="#s10">[10]</a>。</p>
+        <p>Arkham 认为这些消息出自真正的钱包所有者<a class="ref" href="#s2">[2]</a>。Milk Sad 提醒，正因为这些钱包的私钥已经不安全，任何人都能从这些地址发出带消息的交易；消息是不是 LuBian 本人发的，要看发消息用的币从哪里来<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>美国的起诉与没收</h3>
+        <p>2025 年 10 月 8 日，纽约东区联邦大陪审团以电信欺诈共谋和洗钱共谋起诉陈志（案号 25-CR-312），起诉书于 10 月 14 日公布<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。起诉书第 49 段把 LuBian 列为太子集团的洗钱渠道之一，称这些挖矿业务产出了“与犯罪所得脱钩的干净比特币”，并引用陈志的话：“利润可观，因为没有成本”。第 53 段写道：</p>
+        <blockquote>
+          <p>By approximately 2020, the defendant CHEN ZHI had amassed a staggering sum of laundered proceeds that included approximately 127,271 bitcoin across unhosted cryptocurrency wallets whose private keys he personally held.</p>
+          <cite>美国诉陈志起诉书第 53 段，纽约东区联邦法院 25-CR-312<a class="ref" href="#s7">[7]</a></cite>
+        </blockquote>
+        <p>同日提交的民事没收诉状（1:25-cv-05745）列出 25 个地址，脚注说明这是“截至 2020 年 12 月”存放这笔币的地址，币“现存放于政府控制的地址”；第 58 段只说这笔币“随后全部转到多个其他地址”<a class="ref" href="#s8">[8]</a>。两份文件都没有提到 2020 年 12 月的大规模转出，也没有说明政府如何取得私钥。ICIJ 2026 年 3 月报道，司法部拒绝就此置评；陈志的律师要求检方解释，并主张这批币 2020 年后一直未动，不可能和起诉书所称 2021–2022 年的诈骗款混同；太子集团的发言人称起诉是“一场巨额掠夺的掩护”<a class="ref" href="#s14">[14]</a>。</p>
+        <p>2026 年 9 月 25 日，法官 Kovner 以“没有把自己的损失与被没收的特定钱包合理联系起来”为由，驳回 9 名自称诈骗受害者的主张，同时指出如果政府胜诉，受害者仍可依 28 CFR 9.8 申请返还<a class="ref" href="#s15">[15]</a>。截至 2026 年 10 月，没收尚未判决。</p>
+        <h3>中方的指控</h3>
+        <p>CVERC 的报告认为，币被转走后近四年不动，“不符合一般黑客急于变现追逐利益的本性”，并据此推断美国政府“或早在 2020 年就已经通过黑客技术手段窃取了陈志持有的 12.7 万枚比特币”<a class="ref" href="#s9">[9]</a>。从公开内容看，报告的论据是资金沉睡的行为特征、Arkham 对最终地址的标签，以及资金构成与司法部说法的矛盾；它没有公布能直接说明 2020 年转出者身份的证据。Arkham 的看法相反：2020 年转出的性质“仍表明是第三方所为”，币如何进入美国政府手中则“仍不清楚”<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>陈志</h3>
+        <p>据柬埔寨内政部通告，陈志的柬埔寨国籍 2025 年 12 月已由国王王令撤销，2026 年 1 月 6 日柬埔寨逮捕他并遣返中国<a class="ref" href="#s23">[23]</a>。新华社 1 月 8 日报道，陈志作为“重大跨境赌诈犯罪集团”头目被押解回国<a class="ref" href="#s21">[21]</a><a class="ref" href="#s22">[22]</a>。美国的民事没收是针对币本身的对物诉讼，与他人在哪里没有直接关系。2020 年 12 月那次转出到底是谁做的，截至 2026 年 10 月没有任何一方公开认定。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给钱包和密钥生成工具的开发者</span>
+          <ul>
+            <li>私钥熵只能来自操作系统或硬件的密码学安全随机源（<code>getrandom</code>、<code>/dev/urandom</code>、<code>crypto.getRandomValues</code>、硬件 TRNG）。MT19937 这类统计用生成器不能用于任何密钥。</li>
+            <li>种子的位数就是安全性的上限。从 32 位种子里取多少字节，熵都还是 32 位；给 256 位输出“哈希一下”也不会增加熵。</li>
+            <li>一次运行生成多个钱包时，每个钱包都要独立地从安全随机源取熵。共享同一条序列，一个被破解，整组都会暴露。</li>
+            <li>测试要检查熵从哪里来，而不只是检查输出格式。助记词校验通过、地址格式正确，都说明不了熵是否足够。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给持有大额资金的机构</span>
+          <ul>
+            <li>记录每个密钥由什么软件、哪个版本、在什么环境下生成。弱熵漏洞公布时，能立刻判断自己是否受影响。</li>
+            <li>大额资金用多签，并让各把密钥由不同实现、不同设备生成。单一生成器出错时，损失不至于是全部。</li>
+            <li>密钥的风险从生成那一刻就开始了，之后放得再“冷”也改变不了。这批钱包从 2019 年起就可以被任何人算出来。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给研究者和执法机构</span>
+          <ul>
+            <li>弱密钥区间可以被反向搜索，研究者也就能在攻击者之前找到受影响的钱包。Milk Sad 的工作说明，这类搜索值得在漏洞公布前后持续做。</li>
+            <li>执法机构说明资产如何取得，有助于受害者判断自己能否主张权利；ICIJ 采访的律师正是以此为由要求披露<a class="ref" href="#s14">[14]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Arkham Intelligence，《BREAKING: ARKHAM UNCOVERS $3.5B HEIST - THE LARGEST EVER》，X，2025-08-02。<a href="https://x.com/arkham/status/1951729790299394113">x.com</a></li>
+          <li id="s2">Siamak Masnavi，《Arkham Says $3.5B LuBian Bitcoin Theft Went Undetected for Nearly Five Years》，CoinDesk，2025-08-02。<a href="https://www.coindesk.com/tech/2025/08/02/arkham-says-usd3-5b-lubian-bitcoin-theft-went-undetected-for-nearly-five-years">coindesk.com</a></li>
+          <li id="s3">Christian Reitter（Milk Sad），《Update #7 - Billion Dollar Wallet Range, Now Empty》，2024-04-20。<a href="https://milksad.info/posts/research-update-7/">milksad.info</a></li>
+          <li id="s4">Christian Reitter（Milk Sad），《Update #14 - More Information on Suspected Lubian.com Hack》，2025-08-04。<a href="https://milksad.info/posts/research-update-14/">milksad.info</a></li>
+          <li id="s5">Christian Reitter（Milk Sad），《Update #15 - US Government Seizes Former lubian.com Funds》，2025-11-15。<a href="https://milksad.info/posts/research-update-15/">milksad.info</a></li>
+          <li id="s6">美国司法部，《Chairman of Prince Group Indicted for Operating Cambodian Forced Labor Scam Compounds Engaged in Cryptocurrency Fraud Schemes》，新闻稿 25-1031，2025-10-14。<a href="https://www.justice.gov/opa/pr/chairman-prince-group-indicted-operating-cambodian-forced-labor-scam-compounds-engaged">justice.gov</a></li>
+          <li id="s7">United States v. Chen Zhi，起诉书，纽约东区联邦法院 25-CR-312，2025-10-08 提交。<a href="https://www.justice.gov/usao-edny/media/1416251/dl">justice.gov</a></li>
+          <li id="s8">United States v. Approximately 127,271 Bitcoin，民事没收诉状，纽约东区联邦法院 1:25-cv-05745，2025-10-14。<a href="https://www.justice.gov/usao-edny/media/1416266/dl">justice.gov</a></li>
+          <li id="s9">国家计算机病毒应急处理中心，《LuBian 矿池遭黑客攻击被窃取巨额比特币事件技术溯源分析报告》，安全内参转载，2025-11-09。<a href="https://www.secrss.com/articles/84842">secrss.com</a></li>
+          <li id="s10">Global Times，《China's National Computer Virus Emergency Response Center issues technical analysis over US…》，2025-11-09。<a href="https://www.globaltimes.cn/page/202511/1347745.shtml">globaltimes.cn</a></li>
+          <li id="s11">Elliptic，《$15 billion US seizure reveals Prince Group's connection to Iran/China bitcoin mining theft》，2025-10-14。<a href="https://www.elliptic.co/insights/15-billion-us-seizure-reveals-prince-groups-connection-to-iran-china-bitcoin-mining-theft/">elliptic.co</a></li>
+          <li id="s12">Cointelegraph，《China raises alarm over alleged US role in one of the largest Bitcoin hacks》，2025-11-11。<a href="https://cointelegraph.com/news/china-raises-alarm-united-states-lubian-127k-bitcoin-hack">cointelegraph.com</a></li>
+          <li id="s13">Finn Grant（Arkham），《The U.S. Government Has Seized $15 Billion BTC Linked to LuBian》，2025-10-16。<a href="https://info.arkm.com/research/us-government-btc-seizure-lubian-chen-zhi-pig-butchering">info.arkm.com</a></li>
+          <li id="s14">ICIJ，《Questions swirl around US plans for record $15B Prince Group crypto seizure》，2026-03-18。<a href="https://www.icij.org/investigations/coin-laundry/questions-swirl-around-us-plans-for-record-15b-prince-group-crypto-seizure/">icij.org</a></li>
+          <li id="s15">CryptoSlate，《US court blocks victims from 127,000 seized Bitcoin, and petition rules are blamed》，2026-10-01。<a href="https://cryptoslate.com/us-court-blocks-victims-from-127000-seized-bitcoin-and-petition-rules-are-blamed/">cryptoslate.com</a></li>
+          <li id="s16">NIST NVD，CVE-2023-31290（Trust Wallet Core 32 位熵）。<a href="https://nvd.nist.gov/vuln/detail/CVE-2023-31290">nvd.nist.gov</a></li>
+          <li id="s17">NIST NVD，CVE-2023-39910（Libbitcoin Explorer，Milk Sad）。<a href="https://nvd.nist.gov/vuln/detail/CVE-2023-39910">nvd.nist.gov</a></li>
+          <li id="s18">trustwallet/wallet-core，wasm/src/Random.cpp，3.1.0 与 3.1.1 标签。<a href="https://github.com/trustwallet/wallet-core/blob/3.1.0/wasm/src/Random.cpp">github.com</a></li>
+          <li id="s19">Milk Sad 团队，《Technical write-up》（CVE-2023-39910 披露），2023-08-08。<a href="https://milksad.info/disclosure.html">milksad.info</a></li>
+          <li id="s20">Taylor Monahan，关于转出时间线与弱钱包批次的两条帖子，X，2025-10-15、2025-10-18。<a href="https://x.com/tayvano_/status/1978267143470019005">x.com</a>　<a href="https://x.com/tayvano_/status/1979380864049123680">x.com</a></li>
+          <li id="s21">维基百科，《Chen Zhi (businessman)》（逮捕与遣返部分）。<a href="https://en.wikipedia.org/wiki/Chen_Zhi_(businessman)">en.wikipedia.org</a></li>
+          <li id="s22">France 24 / AFP，《Cambodia extradites accused cyberscam boss to China》，2026-04-01（文中回顾陈志 1 月被遣返）。<a href="https://www.france24.com/en/live-news/20260401-cambodia-extradites-accused-cyberscam-boss-to-china">france24.com</a></li>
+          <li id="s23">成都商报（新浪新闻转载），《柬政府确认陈志6日已被遣返回中国，柬国王颁布王令撤销其柬埔寨国籍》，2026-01-07（转述柬埔寨内政部通告）。<a href="https://news.sina.com.cn/c/2026-01-07/doc-inhfnzrp1991684.shtml">news.sina.com.cn</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

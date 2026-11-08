@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenSea 合约迁移期的签名钓鱼｜区块链诈骗与骗局</title>
+<meta name="description" content="2022 年 2 月 19 日，OpenSea 开始挂单迁移的第二天，一批用户在钓鱼网站上签了一条消息，254 枚 NFT 随即被转走，外界估计约值 170 万美元。本页讲 Wyvern 订单的签名里有什么、为什么只签名不发交易也会被盗、钓鱼邮件的几种说法，以及部分 NFT 被退回的经过。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-opensea-phishing">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　<a href="../index.html#cat-phish">钓鱼与授权盗币</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>OpenSea 合约迁移期的签名钓鱼</h1>
+    <p class="lede">2022 年 2 月 19 日是星期六。前一天，OpenSea 刚开始让用户把挂单迁移到新的 Wyvern 合约。当晚美东时间 5 点到 8 点，一批 OpenSea 用户的 NFT 被转走，PeckShield 数出 254 枚，含 Bored Ape Yacht Club、Azuki、Doodles 等，外界估计约值 170 万美元。受害者没有泄露私钥，也没有发出交易，只在钱包里签了一条看不懂的消息。按 Check Point 的分析，骗子仿照 OpenSea 的迁移邮件发了钓鱼邮件，受害者签下的是一张不收钱就把 NFT 卖出的 Wyvern 订单。OpenSea 先说 32 人签了恶意内容，后改为 17 人有损失。到 2026 年 11 月，本站没有查到起诉记录。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">这一案是较早出名的链下签名钓鱼。受害者签的东西不上链，也不花 gas，钱包里显示的只是一串十六进制哈希。这串哈希背后是一张 Wyvern 交易协议的卖单，签了名就等于同意按单上的条件出售。骗子把单上的交易目标换成了自己的合约，价格填 0，再自己补上一张买单，交给 OpenSea 用的交易合约撮合，受害者的 NFT 就转到了骗子名下<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。The Verge 打了个比方：受害者签的是一张空白支票，骗子拿到以后自己填完了剩下的部分<a class="ref" href="#s6">[6]</a>。</p>
+        <p>OpenSea 2 月 18 日宣布升级合约，要求有挂单的用户在一周内迁移，还说会发邮件提醒<a class="ref" href="#s1">[1]</a>。第二天晚上，被盗开始<a class="ref" href="#s6">[6]</a>。CEO Devin Finzer 说这是钓鱼攻击，和 OpenSea 网站无关，最初统计 32 名用户签了攻击者的恶意内容<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a>；之后改为 17 人有损失，另 15 人和攻击者交互过但没丢东西<a class="ref" href="#s6">[6]</a><a class="ref" href="#s9">[9]</a>。钓鱼从哪里来，各方说法不一：PeckShield 和 Check Point 认为是冒充 OpenSea 迁移通知的钓鱼邮件<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>，OpenSea 当时说不知道钓鱼发生在哪里，只排除了自己的网站、正版邮件和迁移工具<a class="ref" href="#s4">[4]</a>。</p>
+        <p>骗子把一部分 NFT 在 LooksRare、Rarible 等平台卖掉，收款地址被 Etherscan 标为 Fake_Phishing5169，一度持有约 641 ETH<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。Finzer 说部分被盗的 NFT 已被退回<a class="ref" href="#s5">[5]</a>；对手平台 Mintable 买到三枚被盗的 Azuki，表示要还给原主<a class="ref" href="#s11">[11]</a>。到 2026 年 11 月，本站没有查到针对这一案的起诉、逮捕或制裁的公开报道。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>OpenSea 和 Wyvern</h3>
+        <p>2022 年初，OpenSea 是最大的 NFT 交易市场，The Verge 写它在最近一轮融资里估值 130 亿美元<a class="ref" href="#s6">[6]</a>。它的挂单和成交建在开源的 Project Wyvern 协议上。Check Point 的报告和 Protofire 为 OpenSea 交易合约做的索引都指向同一个以太坊地址 <code>0x7be8076f4ea4a4ad08075c2508e481d6c946d12b</code><a class="ref" href="#s8">[8]</a><a class="ref" href="#s17">[17]</a>。公开的 Wyvern 源码把这一版标为 2.2<a class="ref" href="#s15">[15]</a>，Finzer 把新合约称为 Wyvern 2.3<a class="ref" href="#s4">[4]</a>。</p>
+        <p>在 OpenSea 上挂单不花 gas，原因是挂单本身不上链。卖家只是签一张订单，订单和签名存在 OpenSea 的服务器上。有人来买时才发交易：买方把卖家签过的卖单和自己的买单一起交给交易合约，合约核对两张单能对上，再一次性完成付款和转移<a class="ref" href="#s15">[15]</a>。Business Insider 引 Wyvern 官网的说明：订单必须由挂单人授权，授权有三种方式，签名、事先批准和撮合时批准<a class="ref" href="#s9">[9]</a>。</p>
+        <p>NFT 不是由交易合约直接拿走的。每个在 OpenSea 卖过东西的用户都有一个自己的代理合约 <code>AuthenticatedProxy</code>，源码注释说它“代表用户持有对资产的访问权，并在特定条件下执行调用”<a class="ref" href="#s16">[16]</a>。用户第一次出售某个合集时，要先授权这个代理转移该合集的 NFT。成交时，交易合约让卖家的代理去执行转移。所以 Finzer 事后建议担心的用户撤销对自己 NFT 合集的授权<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>一个月前的旧挂单问题</h3>
+        <p>这次合约升级是为了解决另一个问题，两件事容易混在一起。2022 年 1 月，有人发现 OpenSea 上的旧挂单仍然有效：卖家把 NFT 转出钱包再转回来，以为挂单已经失效，其实还能按当初的低价成交。1 月 24 日前后，一名买家用这个办法低价买进多枚 NFT 再高价卖出，OpenSea 后来向受损用户赔付约 180 万美元<a class="ref" href="#s13">[13]</a><a class="ref" href="#s11">[11]</a>。那一次卖家没有签新的东西，签名是很久以前挂单时留下的，本站不把它算作诈骗。</p>
+        <h3>2 月 18 日的迁移通知</h3>
+        <p>2 月 18 日（周五）美东时间下午 3 点，OpenSea 开放挂单迁移。博客写道，升级会让旧的失效挂单过期，支持一笔低成本交易批量取消，并带来“描述更清楚的签名”；用户有一周时间迁移，2 月 25 日下午 2 点没迁移的挂单过期，期间会发推文和邮件提醒<a class="ref" href="#s1">[1]</a>。OpenSea 维护的 wyvern-js 库在 2 月 4 日已把主网交易合约地址从 <code>0x7be8…d12b</code> 改为 <code>0x7f26…38e5</code><a class="ref" href="#s18">[18]</a>。</p>
+        <p>Cointelegraph 指出，一周的期限和“不迁移就过期”的说法给了骗子机会<a class="ref" href="#s7">[7]</a>。用户刚收到真的迁移邮件，再收到一封格式一样的邮件，很难分辨。</p>
+        <h3>为什么算诈骗</h3>
+        <p>本站按转账是谁签的来分：受害者自己签的转账和授权算诈骗。本案受害者的私钥没有泄露，每一笔被盗都有受害者本人的有效签名。链上调查者 Neso 对 The Verge 说，他检查了每一笔交易，“都有丢了 NFT 的人的有效签名”<a class="ref" href="#s6">[6]</a>。当时的媒体多用“黑客”“攻击”这类词，指的是同一件事。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2021-12</time><div class="ev">后来被标为 Fake_Phishing5169 的地址发出第一笔交易（据 Decrypt）<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk"><time>2022-01-21</time><div class="ev">据 Check Point，骗子用一个月前部署的合约对 OpenSea 交易合约试跑了一次 atomicMatch<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2022-01-24</time><div class="ev">旧挂单问题：有人按旧价低价买进 NFT 再卖出，OpenSea 后来赔付约 180 万美元<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2022-02-04</time><div class="ev">OpenSea 的 wyvern-js 把主网交易合约地址改为新合约<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2022-02-18</time><div class="ev">OpenSea 宣布合约升级，美东下午 3 点开放迁移，期限一周<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2022-02-19</time><div class="ev">美东下午 5 点到 8 点集中被盗，PeckShield 数出 254 枚 NFT<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2022-02-19</time><div class="ev">OpenSea 发推说在调查“漏洞传闻”，看来是起源于网站之外的钓鱼；晚 11 点 Finzer 说 32 名用户签了恶意内容<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2022-02-20</time><div class="ev">PeckShield 认为是钓鱼邮件诱导用户授权“迁移”<a class="ref" href="#s7">[7]</a>。Finzer 排除网站、正版邮件、横幅、迁移工具和 2.3 合约，并称部分 NFT 已退回<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2022-02-21</time><div class="ev">Check Point 发布分析：钓鱼邮件照搬 OpenSea 的格式，签名经攻击者合约送进旧交易合约<a class="ref" href="#s8">[8]</a>。OpenSea 确认受害者为 17 人<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2022-02-23</time><div class="ev">Mintable 宣布在 LooksRare 买到三枚被盗的 Azuki，要还给原主<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2022-02-25</time><div class="ev">OpenSea 的合约升级完成<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2022-06-29</time><div class="ev">OpenSea 披露邮件服务商 Customer.io 的员工下载了用户邮箱，提醒防范钓鱼邮件<a class="ref" href="#s14">[14]</a>。这是另一件事，和 2 月一案的关系没有公开结论。</div></li>
+          <li><time>2026-11</time><div class="ev">没有查到针对本案的起诉、逮捕或制裁的公开报道。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>按 Check Point 的分析，整个过程分两半：受害者在钓鱼网站上签名，这一步不上链；骗子拿着签名，通过自己的合约调用 OpenSea 交易合约的 <code>atomicMatch_</code>，合约核对签名有效，就让受害者的代理把 NFT 转给骗子<a class="ref" href="#s8">[8]</a>。Neso 的描述是：受害者签的是半张有效的 Wyvern 订单，单上除了交易目标（骗子的合约）和调用数据，几乎什么都没填；另一半由骗子自己签<a class="ref" href="#s4">[4]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 400" role="img" aria-labelledby="op-flow-t op-flow-d">
+            <title id="op-flow-t">一次链下签名怎样让 NFT 被转走</title>
+            <desc id="op-flow-d">第一行从左到右：骗子发出仿照 OpenSea 迁移通知的钓鱼邮件，链接到钓鱼网站，网站请求一个看起来像迁移的签名，受害者只签了订单哈希，没有发出交易。第二行从右到左：骗子拿到这张价格为 0、目标是骗子合约的卖单签名，自己补一张买单，通过骗子合约发交易，送进 Wyvern 2.2 交易合约的 atomicMatch_，合约验签通过。第三行从左到右：交易合约让受害者的代理合约按订单执行调用，NFT 转到骗子名下，骗子没有付钱，随后把一部分 NFT 卖出换成 ETH。</desc>
+            <defs>
+              <marker id="op-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="op-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="40" y="44" width="200" height="64" rx="3"/>
+            <text class="d-t b atk" x="56" y="72">钓鱼邮件</text>
+            <text class="d-t s" x="56" y="94">仿 OpenSea 迁移通知</text>
+            <rect class="d-box atk" x="280" y="44" width="200" height="64" rx="3"/>
+            <text class="d-t b atk" x="296" y="72">钓鱼网站</text>
+            <text class="d-t s" x="296" y="94">请求一个像迁移的签名</text>
+            <rect class="d-box" x="520" y="44" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="536" y="72">受害者签名</text>
+            <text class="d-t s" x="536" y="94">只签订单哈希，不发交易</text>
+            <path class="d-line atk" d="M240,76 L276,76" marker-end="url(#op-ah-atk)"/>
+            <path class="d-line atk" d="M480,76 L516,76" marker-end="url(#op-ah-atk)"/>
+            <path class="d-line" d="M620,108 L620,146" marker-end="url(#op-ah)"/>
+            <rect class="d-box atk" x="520" y="150" width="200" height="64" rx="3"/>
+            <text class="d-t b atk" x="536" y="178">骗子拿到卖单签名</text>
+            <text class="d-t s" x="536" y="200">价格 0，目标是骗子合约</text>
+            <rect class="d-box atk" x="280" y="150" width="200" height="64" rx="3"/>
+            <text class="d-t b atk" x="296" y="178">骗子合约</text>
+            <text class="d-t s" x="296" y="200">补一张买单，发交易</text>
+            <rect class="d-box" x="40" y="150" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="56" y="178">Wyvern 2.2 交易合约</text>
+            <text class="d-t s" x="56" y="200"><tspan class="m">atomicMatch_</tspan> 验签通过</text>
+            <path class="d-line atk" d="M520,182 L484,182" marker-end="url(#op-ah-atk)"/>
+            <path class="d-line atk" d="M280,182 L244,182" marker-end="url(#op-ah-atk)"/>
+            <path class="d-line" d="M140,214 L140,252" marker-end="url(#op-ah)"/>
+            <rect class="d-box" x="40" y="256" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="56" y="284">受害者的代理合约</text>
+            <text class="d-t s" x="56" y="306">按订单执行调用</text>
+            <rect class="d-box atk" x="280" y="256" width="200" height="64" rx="3"/>
+            <text class="d-t b atk" x="296" y="284">NFT 转到骗子名下</text>
+            <text class="d-t s" x="296" y="306">骗子一分钱没付</text>
+            <rect class="d-box atk" x="520" y="256" width="200" height="64" rx="3"/>
+            <text class="d-t b atk" x="536" y="284">卖出换成 ETH</text>
+            <text class="d-t s" x="536" y="306">收款地址一度约 641 ETH</text>
+            <path class="d-line atk" d="M240,288 L276,288" marker-end="url(#op-ah-atk)"/>
+            <path class="d-line atk" d="M480,288 L516,288" marker-end="url(#op-ah-atk)"/>
+            <text class="d-t s" x="40" y="356">受害者只签了一次名。之后每一笔交易都由骗子发起，gas 也由骗子付。</text>
+            <text class="d-t s" x="40" y="378">交易合约只核对签名是不是挂单人本人的，不判断订单的条件合不合理。</text>
+          </svg>
+          </div>
+          <figcaption>流程据 Check Point 的分析和 Neso 的描述<a class="ref" href="#s8">[8]</a><a class="ref" href="#s4">[4]</a>，合约行为据 Wyvern 源码<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>，收款地址余额据 Decrypt<a class="ref" href="#s3">[3]</a>。</figcaption>
+        </figure>
+        <h3>一张 Wyvern 订单里有什么</h3>
+        <p>Wyvern 的订单是一个结构体，二十来个字段。和本案有关的是这几项：挂单人 <code>maker</code>、买卖方向 <code>side</code>、交易目标 <code>target</code>、调用方式 <code>howToCall</code>、调用数据 <code>calldata</code>、价格 <code>basePrice</code><a class="ref" href="#s15">[15]</a>。正常的卖单里，<code>target</code> 是 NFT 合约，<code>calldata</code> 是“把这枚 NFT 转给买家”，价格是卖家开的价。</p>
+<pre class="code"><code><span class="c">// ProjectWyvern/wyvern-ethereum，contracts/exchange/ExchangeCore.sol（节选）</span>
+struct Order {
+    address exchange;      <span class="c">// 交易合约地址</span>
+    address maker;         <span class="c">// 挂单人，即签名的人</span>
+    address taker;         <span class="c">// 指定的对手方，0 表示任何人</span>
+    ...
+    SaleKindInterface.Side side;           <span class="c">// 买或卖</span>
+    address target;                        <span class="c">// 代理要调用的合约</span>
+    AuthenticatedProxy.HowToCall howToCall; <span class="c">// Call 或 DelegateCall</span>
+    bytes calldata;                        <span class="c">// 调用数据</span>
+    bytes replacementPattern;              <span class="c">// 允许对方改写哪些字节</span>
+    ...
+    address paymentToken;  <span class="c">// 付款币种，0 表示 ETH</span>
+    uint basePrice;        <span class="c">// 价格</span>
+    ...
+    uint expirationTime;   <span class="c">// 过期时间，0 表示永不过期</span>
+    uint salt;
+}</code></pre>
+        <p class="code-cap">出处：ProjectWyvern/wyvern-ethereum，commit bfca101（2018-06-12），contracts/exchange/ExchangeCore.sol，节选，省略号为本站所加<a class="ref" href="#s15">[15]</a>。同一提交的 WyvernExchange.sol 写明版本为 2.2。中文注释为本站所加。</p>
+        <h3>签的是一串哈希</h3>
+        <p>挂单人签的是订单哈希加上以太坊的标准消息前缀，订单的各个字段并不出现在签名请求里。合约验证时用 <code>ecrecover</code> 从签名里恢复出地址，只要等于 <code>maker</code>，订单就算授权过<a class="ref" href="#s15">[15]</a>：</p>
+<pre class="code"><code><span class="c">// 同一文件（节选）</span>
+function hashToSign(Order memory order) internal pure returns (bytes32) {
+    return keccak256("\x19Ethereum Signed Message:\n32", hashOrder(order));
+}
+
+function validateOrder(bytes32 hash, Order memory order, Sig memory sig) internal view returns (bool) {
+    ...
+    if (cancelledOrFinalized[hash]) { return false; }  <span class="c">// 已取消或已成交</span>
+    if (approvedOrders[hash]) { return true; }          <span class="c">// 事先在链上批准过</span>
+    if (ecrecover(hash, sig.v, sig.r, sig.s) == order.maker) {
+        return true;                                    <span class="c">// 签名者就是挂单人</span>
+    }
+    return false;
+}</code></pre>
+        <p class="code-cap">出处：同上，函数声明合并为一行，省略了参数检查和注释<a class="ref" href="#s15">[15]</a>。</p>
+        <p>这就是钱包看不出危险的原因。按这种写法，钱包弹出的签名请求里只有一串 32 字节的十六进制数，看不到价格、目标合约和调用数据。OpenSea 的升级公告把“描述更清楚的签名”列为新合约的好处之一<a class="ref" href="#s1">[1]</a>，Creaton 的创始人 Alexander Klus 对 Cointelegraph 说，需要 EIP-712 这样的签名标准，人们才能看清自己在批准什么<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>撮合时合约核对什么</h3>
+        <p>成交走 <code>atomicMatch</code>。它先分别验证买单和卖单（发交易的人自己的那张可以不签），再核对两张单能不能配对，然后取出卖家的代理合约，按卖单上的 <code>target</code>、<code>howToCall</code>、<code>calldata</code> 执行调用<a class="ref" href="#s15">[15]</a>：</p>
+<pre class="code"><code><span class="c">// 同一文件，atomicMatch 和 ordersCanMatch（节选）</span>
+require(ordersCanMatch(buy, sell));
+    <span class="c">// 一买一卖、付款币种相同、target 相同、howToCall 相同 ……</span>
+require(ArrayUtils.arrayEq(buy.calldata, sell.calldata));
+OwnableDelegateProxy delegateProxy = registry.proxies(sell.maker);  <span class="c">// 卖家的代理</span>
+...
+uint price = executeFundsTransfer(buy, sell);   <span class="c">// 按价格付款，价格是 0 就不付</span>
+require(proxy.proxy(sell.target, sell.howToCall, sell.calldata));  <span class="c">// 让卖家的代理执行</span></code></pre>
+        <p class="code-cap">出处：同上，atomicMatch 第 688–735 行和 ordersCanMatch，节选，省略号为本站所加<a class="ref" href="#s15">[15]</a>。</p>
+        <p>合约检查的是两张单彼此一致、卖单确实是卖家签的，没有检查 <code>target</code> 是不是 NFT 合约，也没有检查价格是否合理。这些本来由 OpenSea 的网页在生成订单时保证。骗子自己生成订单，就绕过了网页这一层<a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。</p>
+        <h3>代理替谁办事</h3>
+        <p>代理合约的 <code>proxy</code> 函数只认两种调用者：代理的主人，或者注册表批准过的合约（也就是交易合约）。它按 <code>howToCall</code> 选择普通调用或 <code>delegatecall</code><a class="ref" href="#s16">[16]</a>：</p>
+<pre class="code"><code><span class="c">// ProjectWyvern/wyvern-ethereum，contracts/registry/AuthenticatedProxy.sol（节选）</span>
+enum HowToCall { Call, DelegateCall }
+
+<span class="c">/* Delegate call could be used to atomically transfer multiple assets
+   owned by the proxy contract with one order. */</span>
+
+function proxy(address dest, HowToCall howToCall, bytes calldata) public returns (bool result) {
+    require(msg.sender == user || (!revoked &amp;&amp; registry.contracts(msg.sender)));
+    if (howToCall == HowToCall.Call) {
+        result = dest.call(calldata);
+    } else if (howToCall == HowToCall.DelegateCall) {
+        result = dest.delegatecall(calldata);  <span class="c">// 以代理自己的身份运行 dest 的代码</span>
+    }
+    return result;
+}</code></pre>
+        <p class="code-cap">出处：同上提交，contracts/registry/AuthenticatedProxy.sol，节选，函数声明合并为一行<a class="ref" href="#s16">[16]</a>。英文注释是源码原有的，意为“delegatecall 可用来在一张订单里原子地转移代理合约名下的多项资产”。</p>
+        <p>受害者早先挂单时已授权代理转移自己的 NFT。代理以自己的身份执行一段骗子写的代码，这段代码就能动用这些授权，一次转走多枚 NFT。这正是 Neso 说的“交易目标是攻击者合约”<a class="ref" href="#s4">[4]</a>，也是 Check Point 说的“一个请求就能偷走受害者的全部 NFT”<a class="ref" href="#s8">[8]</a>。</p>
+        <div class="note doubt"><span class="h">调用方式是不是 delegatecall</span><p>Neso 只说订单的交易目标是攻击者合约<a class="ref" href="#s4">[4]</a>，Check Point 只说请求经攻击者合约转发到 OpenSea 交易合约<a class="ref" href="#s8">[8]</a>，本站读过的已发表分析都没有写明 <code>howToCall</code> 的取值。上面的推断来自源码：用普通调用时，代理只能调用一个目标合约，而受害者授权的是代理本身，只有 <code>delegatecall</code> 才能让骗子的代码以代理的身份去调用各个 NFT 合约。本站不做链上取证，这一点按推断写，没有核对具体交易。</p></div>
+        <h3>正常卖单和钓鱼卖单</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>字段</th><th>正常挂单</th><th>本案受害者签的卖单</th></tr></thead>
+          <tbody>
+            <tr><td>由谁生成</td><td>OpenSea 网页</td><td>钓鱼网站<a class="ref" href="#s8">[8]</a></td></tr>
+            <tr><td>交易目标</td><td>这枚 NFT 的合约</td><td>骗子的合约<a class="ref" href="#s4">[4]</a></td></tr>
+            <tr><td>调用数据</td><td>把一枚 NFT 转给买家</td><td>骗子预先写好，可转走多枚<a class="ref" href="#s4">[4]</a><a class="ref" href="#s8">[8]</a></td></tr>
+            <tr><td>价格</td><td>卖家开的价</td><td>0，骗子不付钱<a class="ref" href="#s6">[6]</a></td></tr>
+            <tr><td>钱包里看到的</td><td colspan="2">都是一串十六进制哈希，两者看不出区别<a class="ref" href="#s15">[15]</a></td></tr>
+          </tbody>
+        </table></div>
+        <h3>为什么只签名也会被盗</h3>
+        <p>签名本身不动任何资产，所以很多人以为“没有发交易就没事”。在 Wyvern 里，签名就是授权：任何人拿到这张签过的卖单，都可以随时配上一张买单，自己发交易去撮合，gas 由他付，受害者不用再做任何事<a class="ref" href="#s15">[15]</a>。订单在过期、被取消或成交之前一直有效。受害者想作废它，要自己发一笔链上交易取消，或者撤销对代理的授权<a class="ref" href="#s7">[7]</a>。Bluzelle 的联合创始人 Neeraj Murarka 对 Cointelegraph 说，这就像签了一张空白支票，收款人本来应该是你想付的人<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>准备</h3>
+        <p>骗子提前准备了一个多月。Decrypt 查到，收款地址早在 2021 年 12 月就有了第一笔交易，还和另一个被标为 OpenSea 钓鱼的地址有往来<a class="ref" href="#s4">[4]</a>。Check Point 说，攻击用的合约在攻击前一个月创建，骗子还先对 OpenSea 交易合约试跑了一次 <code>atomicMatch</code>，确认办法可行<a class="ref" href="#s8">[8]</a>；BleepingComputer 转述的试跑日期是 2022 年 1 月 21 日<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>迁移第二天的三个小时</h3>
+        <p>2 月 18 日下午 OpenSea 开放迁移<a class="ref" href="#s1">[1]</a>。Check Point 认为，骗子照搬 OpenSea 迁移邮件的格式，重新发给 OpenSea 的用户<a class="ref" href="#s8">[8]</a>；据 BleepingComputer 转述，邮件让收件人以为自己第一次确认没有成功<a class="ref" href="#s10">[10]</a>。链接打开的是钓鱼网站，网站请求的签名看起来和 OpenSea 博客里演示的迁移签名一样<a class="ref" href="#s8">[8]</a>。</p>
+        <p>2 月 19 日周六，被盗集中在美东时间下午 5 点到 8 点<a class="ref" href="#s6">[6]</a>。几个小时里出现了几百笔交易，The Verge 认为这么快的节奏说明骗子有某种共同的渠道接触到受害者<a class="ref" href="#s6">[6]</a>。社交媒体上有人呼吁 OpenSea 暂停新合约<a class="ref" href="#s7">[7]</a>，也有人传言损失达 2 亿美元，Finzer 后来否认了这个数字<a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <h3>OpenSea 的回应</h3>
+        <p>当晚 OpenSea 发推说，正在调查与 OpenSea 相关智能合约的“漏洞传闻”，看来是起源于 OpenSea 网站之外的钓鱼攻击，请用户不要点 opensea.io 之外的链接<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a>。美东晚 11 点左右，Finzer 发推：“据我们所知，这是一次钓鱼攻击……目前看来有 32 名用户签了攻击者的恶意内容，他们的部分 NFT 被盗。”<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a></p>
+        <p>2 月 20 日周日上午，Finzer 说公司在内外部沟通后确认是钓鱼，正在和受害者一起找出他们共同访问过的网站，还感谢了和公司直接通电话的用户<a class="ref" href="#s2">[2]</a>。他列出排除的途径：在 opensea.io 上铸造、买卖、挂单都不是攻击途径，签新的 Wyvern 2.3 合约也不是；正版 OpenSea 邮件、网站横幅、挂单迁移工具都不是<a class="ref" href="#s4">[4]</a>。他说 Neso 的分析和公司的理解一致<a class="ref" href="#s4">[4]</a>。2 月 21 日 OpenSea 发推说还没查到确切来源<a class="ref" href="#s10">[10]</a>，受害人数改为 17 人<a class="ref" href="#s9">[9]</a>。BleepingComputer 说，到 21 日攻击似乎已经停止，最后一笔在前一天<a class="ref" href="#s10">[10]</a>。</p>
+        <div class="note doubt"><span class="h">钓鱼从哪里来</span><p>说法有三种，本站并列。PeckShield 2 月 20 日推测用户是按钓鱼邮件的指示授权了“迁移”，还怀疑用户信息（含邮箱）泄露<a class="ref" href="#s7">[7]</a>。Check Point 2 月 21 日的报告明确写了钓鱼邮件和钓鱼网站<a class="ref" href="#s8">[8]</a>，BleepingComputer 据此报道，并写 OpenSea 确认钓鱼邮件来自平台外部、邮件系统没被攻破<a class="ref" href="#s10">[10]</a>。Finzer 则说“不知道钓鱼发生在哪里”，只排除了正版邮件等途径<a class="ref" href="#s4">[4]</a>；Business Insider 把这句转述成排除了“点击伪造的 OpenSea 邮件”<a class="ref" href="#s9">[9]</a>，和 Decrypt 的转述不一样，本站按 Decrypt 原文引的推文写。到 2026 年 11 月，本站没有找到 OpenSea 公布最终调查结论。四个月后，OpenSea 披露邮件服务商 Customer.io 的一名员工下载了用户邮箱<a class="ref" href="#s14">[14]</a>，那是另一起事件，没有公开材料把它和 2 月的钓鱼联系起来。</p></div>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <h3>卖成 ETH</h3>
+        <p>骗子拿到 NFT 后卖掉了一部分。Decrypt 写道，收款地址 Fake_Phishing5169 在 OpenSea 的对手平台 Rarible 和 LooksRare 上都有交易，2 月 20 日凌晨持有约 641 ETH，约合 170 多万美元<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。Finzer 说，攻击者钱包里有卖掉部分被盗 NFT 得来的 170 万美元 ETH<a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a>。Check Point 2 月 21 日看到的数字是 200 多万美元<a class="ref" href="#s8">[8]</a>。几家说的都是这个地址某一时刻的 ETH 余额，口径不是被盗 NFT 的总价值。</p>
+        <h3>退回和混币</h3>
+        <p>Decrypt 注意到一些反常的转账：一名受害者的部分资产被拿走后又被退回，骗子还给他转了 50 ETH；一部分去向经过 Tornado Cash，另一部分没有<a class="ref" href="#s4">[4]</a>。Finzer 2 月 20 日说部分被盗的 NFT 已经退回<a class="ref" href="#s5">[5]</a>，Cointelegraph 3 月的文章也说黑客把一部分 NFT 还给了原主<a class="ref" href="#s12">[12]</a>。骗子为什么退回，公开报道没有解释。</p>
+        <p>流到市场上的 NFT 被别人买走。Mintable 说，它在 LooksRare 上为自己的促销活动收购 Azuki 时，买到了编号 1178、4176、1180 三枚被盗的 Azuki，决定还给原来的持有人。Mintable 的 CEO Zach Burks 说：“如果 OpenSea 不去弥补，总得有人来做。”<a class="ref" href="#s11">[11]</a></p>
+        <p>本站没有找到链上分析机构对这批 ETH 后续去向的完整追踪，也没有查到有交易所冻结过相关资金。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>多少人</h3>
+        <p>受害者是持有高价 NFT 的 OpenSea 用户，身份大多没有公开，本站不写能认出个人的细节。OpenSea 最初说 32 人，后来改为 17 人：另外 15 人和攻击者交互过，但没有因此丢失代币<a class="ref" href="#s6">[6]</a><a class="ref" href="#s9">[9]</a>。BleepingComputer 写的也是 17 人<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>多少钱</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>出处</th><th>口径</th><th class="n">数字</th></tr></thead>
+          <tbody>
+            <tr><td>PeckShield 的表格（据 The Verge）</td><td>被盗代币数</td><td class="n">254 枚<a class="ref" href="#s6">[6]</a></td></tr>
+            <tr><td>BleepingComputer</td><td>被盗 NFT 数</td><td class="n">250 多枚<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>Molly White（据 The Verge）</td><td>被盗 NFT 的估值</td><td class="n">170 万美元以上<a class="ref" href="#s6">[6]</a></td></tr>
+            <tr><td>Mintable（据 Decrypt）</td><td>被盗 NFT 的估值</td><td class="n">175 万美元<a class="ref" href="#s11">[11]</a></td></tr>
+            <tr><td>BleepingComputer</td><td>被盗 NFT 的估值</td><td class="n">约 200 万美元<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>Decrypt，2 月 20 日</td><td>收款地址余额</td><td class="n">641 ETH<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>Finzer</td><td>卖 NFT 得来的 ETH</td><td class="n">170 万美元<a class="ref" href="#s5">[5]</a></td></tr>
+            <tr><td>Check Point</td><td>攻击者钱包的 ETH</td><td class="n">200 多万美元<a class="ref" href="#s8">[8]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">估值按什么算</span><p>NFT 没有统一的价格，估值通常按合集地板价或成交价算，各家没有说明方法。170 万美元这个数，The Verge 说是 Molly White 对被盗 NFT 的估计<a class="ref" href="#s6">[6]</a>，Finzer 说的却是攻击者钱包里的 ETH<a class="ref" href="#s5">[5]</a>，两者恰好接近，口径不同。一部分 NFT 后来被退回<a class="ref" href="#s5">[5]</a><a class="ref" href="#s11">[11]</a>，净损失应低于这些数字，没有人公布过净额。本站按约 170 万美元记，并列其他说法。</p></div>
+        <h3>被盗的是什么</h3>
+        <p>各家报道提到的合集有 Bored Ape Yacht Club、Azuki、Doodles、Cool Cats 和 Decentraland<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a>。这些都是 2021 年 NFT 热潮里地板价最高的一批，NFT 热潮本身见大事记的 <a href="../../milestones/events/2021-beeple.html">Beeple 的 NFT 在佳士得拍出 6,935 万美元</a>，以太坊上最早出名的 NFT 见 <a href="../../milestones/events/2017-cryptokitties.html">CryptoKitties</a>。</p>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>到 2026 年 11 月，本站没有查到针对这一案的刑事起诉、逮捕、制裁或执法扣押的公开报道，骗子的身份也没有公开。OpenSea 当时说在和受害者一起调查<a class="ref" href="#s2">[2]</a>，没有公开说过向执法机构报案。</p>
+        <h3>赔付</h3>
+        <p>一个月前的旧挂单事件，OpenSea 用 ETH 赔了受损用户约 180 万美元<a class="ref" href="#s11">[11]</a><a class="ref" href="#s13">[13]</a>。这一次，本站没有找到 OpenSea 赔付的记录。Mintable 2 月 23 日退还三枚 Azuki 时说“如果 OpenSea 不去弥补，总得有人来做”<a class="ref" href="#s11">[11]</a>，说明至少到那时 OpenSea 没有宣布赔付。同一篇报道提到，一名在 1 月事件里丢了 Bored Ape 的用户起诉 OpenSea，索赔 100 万美元<a class="ref" href="#s11">[11]</a>，那是 1 月一案，不涉及本案。</p>
+        <h3>OpenSea 后来做了什么</h3>
+        <p>迁移按原计划在 2 月 25 日完成<a class="ref" href="#s1">[1]</a>。OpenSea 当时的建议是只用 opensea.io，不点站外链接，担心的用户可以撤销对 NFT 合集的授权<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a>。2022 年 6 月邮箱泄露后，OpenSea 的安全负责人提醒用户，不要在邮件的引导下签钱包交易<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">邮件和通知</span>
+          <ul>
+            <li>平台真的在做迁移、升级时，最容易收到假通知。本案的钓鱼邮件照搬了 OpenSea 迁移邮件的格式，发在真迁移开始的第二天<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。不点邮件里的链接，从书签或手动输入的网址进入平台，再看有没有要做的事。</li>
+            <li>“上次确认没有成功，请重新确认”“一周内不迁移就过期”，这类话术制造紧迫感<a class="ref" href="#s10">[10]</a><a class="ref" href="#s7">[7]</a>。OpenSea 的真迁移即使错过期限，也可以免费重新挂单<a class="ref" href="#s1">[1]</a>。</li>
+            <li>发件人可以伪造。Murarka 对 Cointelegraph 说，邮件可以由任何人发出，却显示成别人发的<a class="ref" href="#s12">[12]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">签名请求</span>
+          <ul>
+            <li>不花 gas 不等于没有风险。本案受害者一笔交易都没发，只签了一条消息<a class="ref" href="#s6">[6]</a>。签名请求在交易市场里往往就是一张订单，别人拿到后可以替你成交<a class="ref" href="#s15">[15]</a>。</li>
+            <li>看不懂的签名不签。钱包里只显示一串十六进制哈希时，你无从知道价格和交易对象<a class="ref" href="#s15">[15]</a>。能显示字段的签名（EIP-712）要逐项看：价格是不是 0，交易目标是不是你认识的合约<a class="ref" href="#s12">[12]</a>。</li>
+            <li>同类手法后来被做成了工具包，盗走的也不只是 NFT。签一条 Permit 或订单就丢币的例子见 <a href="2023-inferno-drainer.html">Inferno Drainer</a>、<a href="2023-ms-drainer.html">MS Drainer</a>，签一笔交易就交出整个合约钱包的例子见 <a href="2024-dai-phishing.html">5,547 万 DAI 签名钓鱼</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">放 NFT 的钱包</span>
+          <ul>
+            <li>挂单授权是长期有效的。在交易市场卖过的合集，代理一直有权转走它们<a class="ref" href="#s16">[16]</a>。不再卖的合集，撤销授权；Finzer 事后也这样建议<a class="ref" href="#s7">[7]</a>。</li>
+            <li>高价 NFT 放在一个不连网站、不签任何东西的地址里，日常挂单和领空投用另一个地址。</li>
+            <li>已经签了，马上撤销对代理的授权或在链上取消订单，并联系平台。本案被盗的 NFT 有一部分出现在其他市场上，被买家认出后退回<a class="ref" href="#s11">[11]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">OpenSea 博客（Devin Finzer），《Announcing a contract upgrade》，2022-02-18（顶部注明 2022-02-25 升级完成）。<a href="https://opensea.io/blog/announcements/announcing-a-contract-upgrade/">opensea.io</a></li>
+          <li id="s2">The Block（Frank Chaparro），《OpenSea probe concludes millions of dollars worth of NFTs were stolen in phishing attack》，2022-02-19（Internet Archive 存档）。<a href="https://web.archive.org/web/20220622115214/https://www.theblock.co/linked/134832/opensea-is-investigating-rumors-of-a-multi-million-dollar-nft-exploit">web.archive.org</a></li>
+          <li id="s3">Decrypt，《OpenSea CEO Says NFT Exploit Was Likely a 'Phishing Attack'》，2022-02-20。<a href="https://decrypt.co/93355/opensea-ceo-says-exploit-was-likely-phishing-attack">decrypt.co</a></li>
+          <li id="s4">Decrypt，《$1.7 Million NFT Phishing Attack 'Did Not Originate' on OpenSea, Says CEO》，2022-02-20。<a href="https://decrypt.co/93371/opensea-ceo-devin-finzer-responds-1-7-million-phishing-attack">decrypt.co</a></li>
+          <li id="s5">CNBC，《NFT marketplace OpenSea is investigating a phishing hack》，2022-02-20。<a href="https://www.cnbc.com/2022/02/20/nft-marketplace-opensea-is-investigating-a-phishing-hack.html">cnbc.com</a></li>
+          <li id="s6">The Verge（Russell Brandom），《$1.7 million in NFTs stolen in apparent phishing attack on OpenSea users》，2022-02-20（2022-02-22 更新）。<a href="https://www.theverge.com/2022/2/20/22943228/opensea-phishing-hack-smart-contract-bug-stolen-nft">theverge.com</a></li>
+          <li id="s7">Cointelegraph（Arijit Sarkar），《OpenSea planned upgrade stalls as phishing attack targets NFT migration》，2022-02-20。<a href="https://cointelegraph.com/news/opensea-planned-upgrade-stalls-as-phishing-attack-targets-nft-migration">cointelegraph.com</a></li>
+          <li id="s8">Check Point（Dikla Barda、Roman Zaikin、Oded Vanunu），《New OpenSea attack led to theft of millions of dollars in NFTs》，2022-02-21（2022-02-23 更新）。<a href="https://blog.checkpoint.com/security/new-opensea-attack-led-to-theft-of-millions-of-dollars-in-nfts/">blog.checkpoint.com</a></li>
+          <li id="s9">Business Insider（Adam Morgan McCarthy），《OpenSea confirms hackers made $1.7 million on NFTs stolen in a phishing attack at the weekend》，2022-02-21。<a href="https://markets.businessinsider.com/news/currencies/nft-opensea-hack-phishing-stolen-millions-smart-contract-crypto-attack-2022-2">businessinsider.com</a></li>
+          <li id="s10">BleepingComputer（Bill Toulas），《OpenSea users lose $2 million worth of NFTs in phishing attack》，2022-02-21。<a href="https://www.bleepingcomputer.com/news/security/opensea-users-lose-2-million-worth-of-nfts-in-phishing-attack/">bleepingcomputer.com</a></li>
+          <li id="s11">Decrypt，《Mintable Recovers Three NFTs Stolen From OpenSea Users》，2022-02-23。<a href="https://decrypt.co/93608/mintable-recovers-three-nfts-stolen-from-opensea-users">decrypt.co</a></li>
+          <li id="s12">Cointelegraph Magazine（Shiraz Jagati），《OpenSea phishing scandal reveals a security need across the NFT landscape》，2022-03-05。<a href="https://cointelegraph.com/news/opensea-phishing-scandal-reveals-a-security-need-across-the-nft-landscape">cointelegraph.com</a></li>
+          <li id="s13">Web3 is Going Great（Molly White），《OpenSea users lose a collective $1.8 million to an issue allowing people to buy NFTs at low prices from old OpenSea listings the sellers thought they'd deleted》，2022-01-24。<a href="https://www.web3isgoinggreat.com/single/opensea-users-lose-collective-1-8-million">web3isgoinggreat.com</a></li>
+          <li id="s14">BleepingComputer（Sergiu Gatlan），《OpenSea discloses data breach, warns users of phishing attacks》，2022-06-30。<a href="https://www.bleepingcomputer.com/news/security/opensea-discloses-data-breach-warns-users-of-phishing-attacks/">bleepingcomputer.com</a></li>
+          <li id="s15">ProjectWyvern/wyvern-ethereum，contracts/exchange/ExchangeCore.sol 和 contracts/WyvernExchange.sol，commit bfca101，2018-06-12。<a href="https://github.com/ProjectWyvern/wyvern-ethereum/blob/bfca101b2407e4938398fccd8d1c485394db7e01/contracts/exchange/ExchangeCore.sol">github.com</a></li>
+          <li id="s16">ProjectWyvern/wyvern-ethereum，contracts/registry/AuthenticatedProxy.sol，commit bfca101，2018-06-12。<a href="https://github.com/ProjectWyvern/wyvern-ethereum/blob/bfca101b2407e4938398fccd8d1c485394db7e01/contracts/registry/AuthenticatedProxy.sol">github.com</a></li>
+          <li id="s17">protofire/opensea-wyvern-exchange-subgraph-v1，subgraph.yaml（OpenSea Wyvern Exchange 合约地址）。<a href="https://github.com/protofire/opensea-wyvern-exchange-subgraph-v1/blob/master/subgraph.yaml">github.com</a></li>
+          <li id="s18">ProjectOpenSea/wyvern-js，commit 6996a31（“Update address”），src/utils/deployed.ts，2022-02-04。<a href="https://github.com/ProjectOpenSea/wyvern-js/commit/6996a3194a27af60e8333aea988df09ebcd9dbbd">github.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

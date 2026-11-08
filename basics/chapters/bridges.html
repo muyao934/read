@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>跨链桥｜区块链基础知识</title>
+<meta name="description" content="谁来证明、怎么验签、防重放、为什么老出事">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="bridges">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 03 章</p>
+    <h1>跨链桥：谱系与签名验证</h1>
+    <p class="lede">所有桥都在回答同一个问题：B 链凭什么相信 A 链上发生了这件事。按“谁来证明”把各种桥排成一条谱系，再拆开签名验证和防重放，最后看历史上的桥是怎么被攻破的。各协议的详细调研见<a href="atlas.html">跨链方案图鉴</a>。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">跨链桥 = 两端的合约 + 一个让目标链相信源链的“证明者”</p>
+  <p class="lead">链和链之间天然互相看不见：Ethereum 上的合约读不到 Qtum 的区块。所谓“跨链”，其实是两本账同时改：源链上锁住或销毁，目标链上铸出或放出。中间必须有人或有机制告诉目标链“源链那边确实发生了”。<b>桥和桥的区别，几乎全在这个“证明者”是谁。</b></p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见说法里，对的部分</h3>
+      <ul>
+        <li>桥让资产和消息能在链之间流动</li>
+        <li>桥是历史上被盗金额最大的一类目标。Chainalysis 2022-08 统计：13 起桥攻击被盗约 20 亿美元，占 2022 年至当时全部被盗资金的 69%</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>币不会“跨过去”</b>。永远是两条链上的账本各改一次，中间靠一份证明联系起来</li>
+        <li><b>桥不是一个合约</b>。它是两端各一组合约，加上链下的观察、签名或证明系统，再加上管理员权限</li>
+        <li><b>验证者多不等于安全</b>。要看密钥是否真的由不同的人保管，以及管理员能不能改规则</li>
+        <li><b>“官方桥”不等于无需信任</b>。L2BEAT 把 Polygon PoS 官方桥的风险写成“验证者可以提交伪造的 checkpoint，取走全部锁定资金”；连 rollup 官方桥也有能升级合约的多签</li>
+        <li><b>再完美的桥也挡不住源链本身被攻破</b>（见下方 Vitalik 的话）</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><p><b>Vitalik Buterin（2022-01）：</b>“Even if there's a perfect ZK-SNARK-based bridge that fully validates consensus, it's still vulnerable to theft through 51% attacks like this. For this reason, it's always safer to hold Ethereum-native assets on Ethereum…” 意思是：桥最多只能和两边链里较弱的那条一样安全。</p></div>
+</section>
+
+<section id="spectrum">
+  <h2 class="eyebrow">谱系</h2>
+  <p class="sub">按“谁来证明”排成一条线</p>
+  <p class="lead">从上往下，需要额外信任的人越来越少，工程难度和延迟通常越来越高。L2BEAT 的旧版桥页面也用同样的思路，把“Validated by”分成第三方、乐观验证、目标链三类；Connext 的“互操作三难”则分成外部验证、本地验证、原生验证。</p>
+  <div class="tbl"><table class="mw-780">
+    <thead><tr><th>谁来证明</th><th>怎么证明</th><th>例子（2026-10）</th><th>主要风险</th></tr></thead>
+    <tbody>
+      <tr><td><b>托管方</b><br><a class="chap-link" href="atlas.html#central">详见图鉴</a></td><td>一家机构收下资产，自己决定铸币</td><td>WBTC（授权托管方核验后铸造）、cbBTC（Coinbase 持有 BTC）、BSC 上的 Binance-Peg 资产</td><td>托管方本身：挪用、被冻结、被盗</td></tr>
+      <tr><td><b>多签 / MPC</b></td><td>N 把钥匙里凑够 M 个签名；或几方合算出一个签名</td><td>Qtum 桥 4/5、Gnosis Omnibridge 4-of-7、Avalanche Bridge（SGX 中的 Warden，4 个里要 3 个签）、2022 年的 Ronin 5/9、Harmony 2/5、Multichain（MPC）</td><td>钥匙被拿到（Ronin、Harmony、Orbit）、钥匙其实在一个人手里（Multichain）</td></tr>
+      <tr><td><b>外部验证网络</b></td><td>一个有质押或委员会的独立网络观察源链并签名</td><td>Wormhole 19 个 Guardian 里 13 个；Axelar PoS 验证者投票；LayerZero 由应用自己配置 DVN 组合（X-of-Y-of-N）；CCIP 2.0 的 Committee Verifier；tBTC 100 人里 51 人门限签名；THORChain 用 TSS 管理金库</td><td>网络里足够多的节点被攻破或串通；签名验证代码有漏洞（Wormhole 2022）</td></tr>
+      <tr><td><b>源链自己的验证者</b></td><td>源链的验证者集合直接为桥签名</td><td>Polygon PoS（超过 2/3 质押签的 checkpoint）、Sui Bridge（Sui 验证者，转账门槛 33.34% 质押）</td><td>和源链的验证者集合一样强，但桥的门槛可能低于链本身的共识门槛</td></tr>
+      <tr><td><b>乐观验证</b></td><td>默认消息是真的，留出挑战期，谁发现错误谁提交欺诈证明</td><td>OP Mainnet 官方桥（7 天）、Arbitrum（BoLD，约 6.4 天）、Across（UMA 保证金 + 挑战期）、Citrea Clementine（BitVM2，“1-of-N 诚实”）</td><td>挑战期内没人盯；挑战机制本身有漏洞</td></tr>
+      <tr><td><b>原生验证</b></td><td>目标链合约直接验证源链共识或有效性证明</td><td>ZK rollup 官方桥（zkSync Era、Starknet、Linea、Scroll）、Cosmos IBC 轻客户端、IBC Eureka（以太坊上用 SP1 零知识证明验证 Cosmos；初期 relayer 需许可）</td><td>证明系统或电路有漏洞；可升级合约的管理员；源链 51% 攻击</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Configurable</span><h4>“可配置”的协议，安全性由应用自己决定</h4></div>
+      <p>LayerZero 让每个应用为每条路径选 DVN 组合，Hyperlane 让每个应用选自己的 ISM（验证模块）。同一个协议上，有的应用配得很严，有的只配了一个验证者。<b>评价这类桥，要看具体应用的配置，不能只看协议名字。</b></p></div>
+    <div class="bit"><div class="bh"><span class="term">Liquidity</span><h4>另一条路：不搬资产，直接兑换</h4></div>
+      <p>Across、deBridge DLN、Stargate、THORChain 这类方案，用户在目标链上拿到的是<b>别人已经有的资产</b>：做市方或中继先垫付，事后再结算。用户几乎不用等，风险转移到了“垫付方怎么拿回钱”的结算机制上。详见<a href="atlas.html#liquidity">图鉴</a>。</p></div>
+  </div>
+  <h3>资产在两端怎么处理</h3>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th>模式</th><th>源链</th><th>目标链</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td>锁定 → 铸造</td><td>锁进合约</td><td>铸出包装币</td><td>Qtum 桥（USDC → USDC.e）、Wormhole WTT、Hyperlane 抵押 → 合成型 Warp Route、USDT0（以太坊上锁 USDT）</td></tr>
+      <tr><td>销毁 → 铸造</td><td>销毁</td><td>铸造同一种币</td><td>CCTP、LayerZero OFT（新币）、Wormhole NTT 销毁模式</td></tr>
+      <tr><td>锁定 → 释放</td><td>锁进池子</td><td>从池子放出</td><td>Stargate 流动性池、各桥的反向提现</td></tr>
+      <tr><td>垫付 → 结算</td><td>存给协议</td><td>做市方用自己的钱付</td><td>Across、deBridge DLN、Orbiter</td></tr>
+      <tr><td>原生资产互换</td><td>付进金库</td><td>从另一条链的金库付出原生币</td><td>THORChain（没有包装币）</td></tr>
+    </tbody>
+  </table></div>
+</section>
+<section id="sim-sec">
+  <h2 class="eyebrow">资产怎么动</h2>
+  <p class="lead">所有桥都在回答同一个问题：<b>B 链凭什么相信 A 链上发生了这件事？</b>答案不同，信任对象和风险就不同。选一种方式，按“下一步”。条纹边框的代币表示包装资产，实色表示原生资产。</p>
+  <div class="sim">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="stage" id="stage"></div>
+    <div class="ctrl">
+      <button class="btn ghost" id="prev">上一步</button>
+      <button class="btn" id="next">下一步</button>
+      <button class="btn ghost" id="auto">自动播放</button>
+      <span class="prog" id="prog"></span>
+    </div>
+    <div class="narr" id="narr" aria-live="polite"></div>
+    <div class="sum" id="sum"></div>
+  </div>
+</section>
+<section id="sig">
+  <h2 class="eyebrow">签名验证</h2>
+  <p class="sub">一份签名是怎么被验证的</p>
+  <p class="lead">多签桥、验证者网络、Wormhole 的 Guardian，归根结底都在做同一件事：一群人对“某条链上发生了某件事”签名，目标链合约检查签名够不够、是不是对的人签的。下面用 Qtum 桥（<code>qtumproject/bridge-evm-contracts</code>）的真实代码走一遍。</p>
+  <div class="bit wide"><div class="anim" data-anim="sigflow"></div></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">EIP-191</span><h4>为什么要加 “\x19Ethereum Signed Message” 前缀</h4></div>
+      <p>签名前先在 32 字节哈希前面拼上 <code>"\x19Ethereum Signed Message:\n32"</code> 再哈希一次。EIP-191 的解释：开头的 <code>0x19</code> 让这段数据<b>永远不可能是一笔合法的以太坊交易</b>。这样就算有人骗你签了一段数据，也没法把它当成交易广播出去。</p></div>
+    <div class="bit"><div class="bh"><span class="term">ecrecover</span><h4>合约看不到私钥，也不需要公钥</h4></div>
+      <p>签名是 65 字节（r, s, v）。合约用 <code>ecrecover(哈希, 签名)</code> 直接<b>算出签名者地址</b>，再拿这个地址去名单里查。签名者不用上链登记公钥，名单里存地址就够了。</p></div>
+    <div class="bit"><div class="bh"><span class="term">EIP-712</span><h4>结构化签名：把“在哪儿用”写进签名里</h4></div>
+      <p>EIP-712 规定签名内容 = <code>"\x19\x01" ‖ 域分隔符 ‖ 消息结构哈希</code>。域分隔符里放 <code>name</code>、<code>version</code>、<code>chainId</code>、<code>verifyingContract</code>（验证这份签名的合约地址）。注意：EIP-712 原文明说它<b>不包含防重放</b>，nonce 之类还得合约自己做。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Multisig vs TSS</span><h4>多签和门限签名的区别</h4></div>
+      <p><b>多签</b>：链上收 N 份独立签名，逐个验证，谁签了一目了然，Qtum 桥的 4/5 就是这种。<b>门限签名（TSS / MPC）</b>：几方在链下合作算出<b>一份</b>普通签名，链上看起来就是一个地址签的，看不出几个人参与、谁参与了。省 gas，但透明度更低，Multichain 出事就是因为 MPC 的钥匙实际在一个人手里。</p></div>
+  </div>
+
+  <h3>防重放：签名里少了哪一项，就会被哪种方式重放</h3>
+  <p>一份签名写进了哪些字段，决定了它<b>只能在哪儿用、只能用几次</b>。勾选签名里包含的字段，看看哪些攻击能挡住。预设“Qtum 桥”是它领取函数的真实字段。</p>
+  <div class="tool">
+    <div class="ctrl gap-6">
+      <button class="btn ghost" type="button" data-rp="mine">预设：Qtum 桥（withdrawERC20）</button>
+      <button class="btn ghost" type="button" data-rp="712">预设：EIP-712 推荐</button>
+      <button class="btn ghost" type="button" data-rp="none">预设：只签金额和收款人</button>
+    </div>
+    <div class="row" id="rpBoxes"></div>
+    <div class="out" id="rpOut" aria-live="polite"></div>
+  </div>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>Qtum 桥里的签名</th><th>哈希里有什么</th><th>防重放</th><th>缺什么</th></tr></thead>
+    <tbody>
+      <tr><td><code>withdrawERC20</code>（领取）</td><td><code>token, amount, receiver, txHash, txNonce, chainId, operationType</code></td><td><code>usedHashes[keccak(txHash, txNonce)]</code></td><td><b>桥合约地址</b>。同一 chainId 上如果有第二个共用 Validator、也有铸币或放款权的合约，签名分不开；而 Qtum 的 chainId 81 和 Japan Open Chain 重复</td></tr>
+      <tr><td>治理（加减签名人、改门槛、升级）<br><span class="note">仅在 <code>isSignersMode = true</code> 时用签名，否则由 owner 地址直接执行</span></td><td><code>functionData, nonce, address(this), chainId</code></td><td>每类操作一个递增 nonce</td><td>绑了合约地址，但<b>升级签名只覆盖新实现地址</b>，不覆盖升级时一起执行的调用数据</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Dedupe</span><h4>“同一个人签两次”怎么挡</h4></div>
+      <p>Qtum 桥用一个位图去重：取签名者地址的<b>第一个字节</b>当位置。好处是省 gas；代价是两个不同的合法签名者，只要地址首字节相同，就会被误判成重复。源码注释写明了这个要求：所有签名者地址的最高 8 位必须互不相同。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Threshold</span><h4>门槛本身也要被保护</h4></div>
+      <p>签名验证再严，如果门槛能被设成 0、签名人名单能被随意更换，验证就形同虚设：初始化时门槛如果允许为 0，空签名数组也能通过；管理操作如果能把门槛设得高于签名人数量，桥就再也凑不够签名。<b>Poly Network 2021 年被盗的根因也是这一类：攻击者用一条跨链消息换掉了守门人的公钥。</b></p></div>
+  </div>
+</section>
+<section id="hacks">
+  <h2 class="eyebrow">攻击史</h2>
+  <p class="lead">把历史事件按根因分类，会发现大多数不是密码学被破解，而是<b>钥匙管理</b>和<b>验证代码</b>出了问题。每一类都能对应到本章前面讲的某个环节。怎样通过审计提前发现这些问题，见<a href="audit.html">第 10 章</a>。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>事件</th><th>时间</th><th>损失（约）</th><th>根因</th><th>类别</th></tr></thead>
+    <tbody>
+      <tr><td>Poly Network</td><td>2021-08</td><td>6.11 亿美元</td><td>任何人都能调用的跨链执行合约，被诱导去调用存放守门人公钥的合约（函数选择器撞车：攻击者构造的函数名和 <code>putCurEpochConPubKeyBytes(bytes)</code> 的选择器都是 <code>0x41973cd9</code>），换掉了公钥。攻击者事后开始归还资金</td><td>特权跨链消息</td></tr>
+      <tr><td>Qubit</td><td>2022-01</td><td>8000 万美元</td><td>旧的 <code>deposit</code> 函数没删，ETH 的代币地址是零地址，导致没存 ETH 也能在 BSC 上拿到 xETH</td><td>合约逻辑</td></tr>
+      <tr><td>Wormhole</td><td>2022-02</td><td>3.26 亿美元</td><td>Solana 上的签名验证被绕过，攻击者伪造了“已验证”的签名集合，铸出 12 万 wETH</td><td>验证代码</td></tr>
+      <tr><td>Ronin</td><td>2022-03</td><td>17.36 万 ETH + 2550 万 USDC</td><td>9 个验证者里要 5 个签名；攻击者拿到了 Sky Mavis 运营的 4 个，加上 Axie DAO 一个早该撤销的签名授权</td><td>钥匙被盗</td></tr>
+      <tr><td>Harmony Horizon</td><td>2022-06</td><td>1 亿美元</td><td>桥只用 2-of-5 多签</td><td>钥匙被盗</td></tr>
+      <tr><td>Nomad</td><td>2022-08</td><td>1.9 亿美元</td><td>一次升级把零值根设成了“可信”，任何消息都能通过验证；之后很多地址照抄攻击交易，跟着取钱</td><td>验证代码</td></tr>
+      <tr><td>BNB Token Hub</td><td>2022-10</td><td>铸出 200 万 BNB（约 5.86 亿美元），转走约 1.27 亿</td><td>伪造了 IAVL 默克尔证明，凭空铸出两批 100 万 BNB；BNB Chain 暂停约 8 小时</td><td>验证代码</td></tr>
+      <tr><td>Multichain</td><td>2023-07</td><td>1.26 亿 + 1.03 亿美元</td><td>号称多方 MPC，实际 CEO 掌握所有密钥；CEO 2023-05 起在中国被拘留，之后资金被转走</td><td>钥匙集中 / 内部人</td></tr>
+      <tr><td>Orbit Chain</td><td>2023-12-31</td><td>8150 万美元</td><td>以太坊桥的多签疑似被攻破</td><td>钥匙被盗</td></tr>
+      <tr><td>Socket（Bungee）</td><td>2024-01</td><td>330 万美元</td><td>攻击者利用 SocketGateway 合约的漏洞，转走了曾给它无限授权的用户地址里的币</td><td>授权滥用</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Keys</span><h4>钥匙：对应“多签 / MPC”一档</h4></div>
+      <p>Ronin、Harmony、Orbit、Multichain 加起来超过 10 亿美元，都不是合约漏洞，是钥匙被拿到或本来就集中。<b>多签桥的关键不在签名人有几个，而在这些钥匙是否真由不同的人、不同的机器保管。</b></p></div>
+    <div class="bit"><div class="bh"><span class="term">Verification</span><h4>验证代码：签名对了，检查错了</h4></div>
+      <p>Wormhole、Nomad、BNB Token Hub 的签名机制本身没问题，是“检查签名或证明”的代码有漏洞。本章的签名验证一节讲的就是这部分：哈希里有什么、名单和门槛怎么查、重放怎么挡。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Privilege</span><h4>特权消息：别让跨链消息碰管理功能</h4></div>
+      <p>Poly Network 的教训：能执行任意跨链消息的合约，一旦有权调用存放验证者名单的合约，攻击者就能用一条消息换掉验证者。所以治理操作（加减签名人、升级）的签名要和普通领取签名严格分开。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Approvals</span><h4>授权和旧代码：攻击面在桥之外</h4></div>
+      <p>Socket 动的是用户给聚合器的无限授权，Qubit 动的是一个早该删掉的旧函数。桥的前端、聚合器和遗留函数，同样是安全边界的一部分。</p></div>
+  </div>
+</section>
+<section id="vs">
+  <h2 class="eyebrow">最容易混的一对</h2>
+  <p class="sub">CCTP 和 CCIP</p>
+  <p><a class="chap-link" href="cctp-ccip.html">拆到合约层面：第 04 章 →</a></p>
+  <div class="vs">
+    <div class="c-usdc">
+      <h3 class="t-usdc">CCTP · Circle</h3>
+      <p class="one">发行方亲自办的“货币调拨”。</p>
+      <ul>
+        <li>核心是 USDC。2026-09-16 起扩展到 EURC 等其他 Circle 资产，走单独的 <code>CrossChainTokenService</code> 入口</li>
+        <li>源链 <code>burn</code>，目标链 <code>mint</code>，全程都是原生 USDC</li>
+        <li>证明者：Circle 的证明服务（Iris）</li>
+        <li>没有锁仓池，不存在“桥里一大笔钱”被盗的问题</li>
+        <li>V2（2025-03-11 上线）加了 Fast Transfer（约 8–20 秒）和 Hooks（到账后自动调用合约）。V1 从 2026-10-31 开始停用，2026-12-01 完成</li>
+        <li>Standard Transfer 不收协议费；Fast Transfer 按源链收 0–13 个基点</li>
+        <li>上新链需要 Circle 决定，项目方自己无法添加</li>
+      </ul>
+    </div>
+    <div class="c-link">
+      <h3 class="t-link">CCIP · Chainlink</h3>
+      <p class="one">通用的跨链“快递 + 邮政”网络。</p>
+      <ul>
+        <li>可以只发消息、只发代币，或代币 + 指令一起发</li>
+        <li>代币方式由池子决定：Burn &amp; Mint、Lock &amp; Mint、Burn &amp; Unlock、Lock &amp; Unlock</li>
+        <li>证明者：CCIP 2.0（2026-09-28）里叫 Cross-Chain Verifier（CCV），默认是 16 个独立节点运营方组成的 Committee Verifier；执行环节无需许可，谁都能提交</li>
+        <li>任意代币发行方可以通过 CCT 标准接入自己的代币</li>
+        <li>在支持的链上搬 USDC 时，底层直接调用 CCTP</li>
+        <li>上新链同样需要 Chainlink 支持对应网络</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><p><b>一句话：</b>CCTP 是 USDC 的专用通道，可信度来自“发行方本人”；CCIP 是通用通道，可信度来自 Chainlink 节点网络。CCIP 可以把 CCTP 当作搬 USDC 的底层，两者不是竞争关系。</p></div>
+</section>
+<section id="faq">
+  <h2 class="eyebrow">常见误解</h2>
+  <div class="faq">
+    <details><summary>Bitcoin 为什么跨链最难？</summary><p>Bitcoin Script 不能写“看到另一条链的证明就放款”这样的通用逻辑，所以 BTC 跨链几乎都要把 BTC 交给别人看管：WBTC 由 BitGo 和 BiT Global 多机构托管，cbBTC 由 Coinbase 托管（Coinbase 公布储备证明），tBTC 交给随机选出的一组运营方用门限签名共同保管。安全性就是看管方的安全性。</p></details>
+    <details><summary>跨链桥为什么老出事？</summary><p>锁定-铸造桥会把大量资产集中在一个合约里，而“证明者”往往只是少数几把私钥。Ronin（2022-03，约 6.24 亿美元）是 9 个验证者里 5 个的签名权被攻击者拿到；Wormhole（2022-02，约 3.26 亿美元）是签名校验被绕过；Harmony Horizon（2022-06，约 1 亿美元）只用 2-of-5 多签；Nomad（2022-08，约 1.9 亿美元）是一次升级把零值根设成了可信，之后人人都能复制攻击交易。CCTP 用 burn/mint 去掉了锁仓池，但把信任集中到了 Circle。</p></details>
+  </div>
+</section>
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li><a href="https://developers.circle.com/cctp/cctp-supported-blockchains" rel="noopener">Circle：CCTP 支持的链</a>（domain 编号；BSC 仅 USYC）</li>
+    <li><a href="https://developers.circle.com/cctp/concepts/finality-and-block-confirmations" rel="noopener">Circle：CCTP 最终性与确认时间</a>；<a href="https://developers.circle.com/cctp/concepts/fees" rel="noopener">CCTP 费用</a>；<a href="https://developers.circle.com/cctp/migration-from-v1-to-v2" rel="noopener">V1 → V2 迁移</a></li>
+    <li><a href="https://developers.circle.com/cctp/references/contract-interfaces" rel="noopener">Circle：CCTP 合约接口</a>（depositForBurn、receiveMessage）</li>
+    <li><a href="https://docs.chain.link/ccip/concepts/architecture/overview" rel="noopener">Chainlink：CCIP 架构</a>（CCV、Committee Verifier、Executor、RMN）；<a href="https://docs.chain.link/ccip/tutorials/evm/usdc" rel="noopener">CCIP 的 USDC 转账</a></li>
+    <li><a href="https://specs.optimism.io/protocol/withdrawals.html" rel="noopener">OP Stack specs：withdrawals</a>；<a href="https://docs.base.org/specifications/base-protocol/bridging/withdrawals" rel="noopener">Base docs：Withdrawals</a></li>
+    <li><a href="https://github.com/qtumproject/bridge-evm-contracts/tree/a351a067f6ba06640c6ec000701fa86b1dd954d8" rel="noopener">qtumproject/bridge-evm-contracts @ a351a067</a>（depositERC20、withdrawERC20 签名）</li>
+    <li><a href="https://rekt.news/" rel="noopener">rekt.news</a>（Ronin、Wormhole、Harmony、Nomad 事件复盘）；<a href="https://ethereum.org/en/developers/docs/bridges/" rel="noopener">ethereum.org：Bridges</a></li>
+    <li><a href="https://eips.ethereum.org/EIPS/eip-191" rel="noopener">EIP-191</a>（签名前缀、为何不会是合法交易）；<a href="https://eips.ethereum.org/EIPS/eip-712" rel="noopener">EIP-712</a>（域分隔符字段；原文明说不含防重放）</li>
+    <li><a href="https://github.com/qtumproject/bridge-evm-contracts/tree/a351a067f6ba06640c6ec000701fa86b1dd954d8" rel="noopener">bridge-evm-contracts @ a351a067</a>：<code>utils/Signers.sol</code>（ecrecover、首字节位图去重、门槛、治理签名哈希）、<code>utils/Hashes.sol</code>（usedHashes）、<code>bridge/Bridge.sol</code>（withdrawERC20、升级授权）</li>
+    <li><a href="https://www.chainalysis.com/blog/cross-chain-bridge-hacks-2022/" rel="noopener">Chainalysis：Cross-Chain Bridge Hacks Emerge as Top Security Risk（2022-08）</a>（20 亿美元、69%）</li>
+    <li>Vitalik Buterin 2022-01 reddit 评论（web.archive.org 存档，old.reddit.com/r/ethereum，评论 id hrngyk8）；Connext：The Interoperability Trilemma（2021-10-01，web.archive.org 存档）；L2BEAT 旧版 Bridges 风险页（web.archive.org 2025-01-10 快照，“Validated by”）</li>
+    <li>L2BEAT 项目页（2026-10-28）：Polygon PoS、Arbitrum、OP Mainnet、zkSync Era、Starknet、Linea、Scroll、Avalanche Bridge 配置；<a href="https://github.com/MystenLabs/sui/blob/main/bridge/evm/contracts/utils/BridgeUtils.sol" rel="noopener">Sui Bridge BridgeUtils.sol</a>（TRANSFER_STAKE_REQUIRED = 3334）</li>
+    <li><a href="https://wormhole.com/docs/protocol/infrastructure/guardians/" rel="noopener">Wormhole：Guardians</a>（19 个，13-of-19）；<a href="https://docs.layerzero.network/v2/concepts/modular-security/security-stack-dvns" rel="noopener">LayerZero：Security Stack (DVNs)</a>；<a href="https://docs.axelar.dev/learn/" rel="noopener">Axelar 文档</a>；<a href="https://docs.hyperlane.xyz/docs/protocol/ISM/modular-security" rel="noopener">Hyperlane：ISM</a>；<a href="https://docs.across.to/introduction/security" rel="noopener">Across：Security Model</a>；<a href="https://docs.threshold.network/tbtc-v2/wallet-generation" rel="noopener">tBTC v2：51-of-100</a></li>
+    <li>rekt.news 复盘：<a href="https://rekt.news/polynetwork-rekt/" rel="noopener">Poly Network</a>、<a href="https://rekt.news/qubit-rekt/" rel="noopener">Qubit</a>、<a href="https://rekt.news/bnb-bridge-rekt/" rel="noopener">BNB Bridge</a>、<a href="https://rekt.news/multichain-r3kt/" rel="noopener">Multichain</a>、<a href="https://rekt.news/orbit-bridge-rekt/" rel="noopener">Orbit</a>、<a href="https://rekt.news/socket-rekt/" rel="noopener">Socket</a>；Ronin 官方事件公告（web.archive.org 存档）</li>
+  </ol>
+  <p>核查日期 2026-10-28。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // ---------- 模拟器：四种场景 ----------
+  // 每一步列出代币位置：lw/lc = 左链钱包/合约，rw/rc = 右链钱包/合约，mid = 中间证明者
+  // 可选标记：w 包装资产，lock 锁定，gone 消失；msg = 消息信封位置；hot/danger = 高亮槽位
+  const SCN = [
+    {key:'l2', name:'L2 官方桥', L:{n:'Ethereum', c:'--eth', s:'L1'}, R:{n:'Base', c:'--base', s:'L2'},
+     mid:['Sequencer + 状态提交','L2 定期把状态根交给 L1'], lc:'L1StandardBridge', rc:'L2StandardBridge',
+     sum:{信任:'Ethereum 本身 + 证明系统', 速度:'充值约几分钟 / 提现：Base 1–5 天，OP Mainnet 7 天', 到账资产:'同一种 ETH（L1 锁着，L2 记账）'},
+     steps:[
+      {h:'起点：钱包里有 1 ETH', p:'Base 是以太坊的 L2。两边各有一个官方桥合约，它们不是第三方，是 rollup 协议的一部分。', tk:[{id:'a',l:'1 ETH',c:'--eth',at:'lw'}]},
+      {h:'存入 L1 桥合约', p:'ETH 被锁在 Ethereum 上的桥合约里，同时合约发出一条“充值”事件。', code:'L1StandardBridge.depositETH(minGasLimit, extraData)  // msg.value = 1 ETH', tk:[{id:'a',l:'1 ETH',c:'--eth',at:'lc',lock:1}], msg:'lc', hot:['lc']},
+      {h:'L2 读取 L1 事件', p:'L2 节点本来就在跟踪以太坊，看到充值事件就把它当成一笔必须执行的交易。这里不需要额外的证明者，L2 天生信任 L1。', tk:[{id:'a',l:'1 ETH',c:'--eth',at:'lc',lock:1}], msg:'mid', on:1},
+      {h:'Base 上到账 1 ETH', p:'L2 给你记上 1 ETH。它和 L1 上锁着的那 1 ETH 一一对应，所以 Base 的 gas 币就是 ETH。', tk:[{id:'a',l:'1 ETH',c:'--eth',at:'lc',lock:1},{id:'b',l:'1 ETH',c:'--eth',at:'rw'}], msg:'rc', hot:['rw']},
+      {h:'反向提现：先在 L2 发起', p:'把 L2 上的 ETH 交回 L2 桥，L2 余额销掉。', code:'L2StandardBridge.bridgeETHTo(to, minGasLimit, extraData)  // 旧的 withdraw() 仍在，但标为 legacy', tk:[{id:'a',l:'1 ETH',c:'--eth',at:'lc',lock:1},{id:'b',l:'1 ETH',c:'--eth',at:'rc',gone:1}], msg:'rc', hot:['rc']},
+      {h:'在 L1 上证明，然后等待', p:'L1 不能直接相信 L2 说的话。你先在 L1 上提交提现证明（prove），然后等：OP Mainnet 要等 7 天挑战期；Base 2026 年起改用自己的证明系统，单一证明 5 天，双证明快速通道 1 天。', tk:[{id:'a',l:'1 ETH',c:'--eth',at:'lc',lock:1}], msg:'mid', on:1, hot:['lc']},
+      {h:'L1 释放 ETH', p:'等待期满后在 L1 上 finalize，以太坊合约把锁着的 ETH 还给你。', tk:[{id:'a',l:'1 ETH',c:'--eth',at:'lw'}], msg:'lc', hot:['lw']},
+     ]},
+    {key:'lockmint', name:'锁定-铸造桥', L:{n:'Ethereum', c:'--eth', s:'L1'}, R:{n:'Qtum', c:'--qtum', s:'L1'},
+     mid:['Validator 4 / 5','项目方运行的签名者'], lc:'Bridge（储备金库）', rc:'Bridge + USDC.e',
+     sum:{信任:'Validator 私钥 + 合约管理员', 速度:'等确认数 + 签名，分钟级', 到账资产:'USDC.e（包装资产，借据）'},
+     steps:[
+      {h:'起点：钱包里有 100 USDC', p:'这是 Circle 发行的原生 USDC。Qtum 不在 Circle 支持名单上，只能由项目自己搭桥。', tk:[{id:'a',l:'100 USDC',c:'--usdc',at:'lw'}]},
+      {h:'把 USDC 锁进 Ethereum 桥合约', p:'先 approve，再调用桥的存款函数。USDC 进了金库，事件里写着金额、收款人、目标链。', code:'USDC.approve(bridge, 100e6)\nBridge.depositERC20(token, amount, receiver, network, operationType)\n// receiver 和 network 都是字符串', tk:[{id:'a',l:'100 USDC',c:'--usdc',at:'lc',lock:1}], msg:'lc', hot:['lc']},
+      {h:'Validator 观察并签名', p:'每个 Validator 用自己的节点读事件，等足确认块数，再对“谁在哪条链收多少钱”签名。至少 4 个签名才算数。', tk:[{id:'a',l:'100 USDC',c:'--usdc',at:'lc',lock:1}], msg:'mid', on:1},
+      {h:'Qtum 合约验签后铸币', p:'用户或中继把 4 个签名提交到 Qtum 上的桥合约，验签通过就铸出 100 USDC.e。注意它是新代币，条纹边框表示它是“借据”。', code:'Bridge.withdrawERC20(token, amount, receiver, txHash, txNonce,\n                     operationType, signatures)', tk:[{id:'a',l:'100 USDC',c:'--usdc',at:'lc',lock:1},{id:'b',l:'USDC.e',c:'--qtum',at:'rw',w:1}], msg:'rc', hot:['rw']},
+      {h:'风险：金库就是靶子', p:'USDC.e 值 1 美元，前提是金库里真有 USDC。如果 4 把 Validator 私钥被拿到，或管理员能改签名名单，攻击者就能凭空铸币，或直接从金库提走储备。Ronin、Harmony 等事件都是这一类。', tk:[{id:'a',l:'100 USDC',c:'--usdc',at:'lc',lock:1},{id:'b',l:'USDC.e',c:'--qtum',at:'rw',w:1}], danger:['lc'], on:1},
+     ]},
+    {key:'cctp', name:'CCTP', L:{n:'Ethereum', c:'--eth', s:'domain 0'}, R:{n:'Base', c:'--base', s:'domain 6'},
+     mid:['Circle Attestation','Circle 签发证明'], lc:'TokenMessenger', rc:'MessageTransmitter',
+     sum:{信任:'Circle（USDC 发行方本人）', 速度:'Standard 约 15–19 分钟 / Fast 约 8–20 秒', 到账资产:'原生 USDC'},
+     steps:[
+      {h:'起点：钱包里有 100 USDC', p:'Ethereum 和 Base 上都有 Circle 发行的原生 USDC。CCTP 的思路是：既然发行方能在每条链上铸币，就没必要锁仓。', tk:[{id:'a',l:'100 USDC',c:'--usdc',at:'lw'}]},
+      {h:'在源链烧掉 USDC', p:'调用 TokenMessenger，USDC 被真正销毁，Ethereum 上的 USDC 总量减少 100，同时发出 MessageSent 事件。', code:'TokenMessenger.depositForBurn(\n  amount, destinationDomain = 6, mintRecipient, burnToken,\n  destinationCaller, maxFee, minFinalityThreshold)  // V2', tk:[{id:'a',l:'100 USDC',c:'--usdc',at:'lc',gone:1}], msg:'lc', hot:['lc']},
+      {h:'Circle 签发证明', p:'Circle 的 Attestation 服务等源链达到最终性，对这条消息签名。Fast Transfer 不等完整最终性，在“已确认”时就签发，所以快；它受一个可用额度（allowance）限制，额度不够时要改用 Standard。', tk:[], msg:'mid', on:1},
+      {h:'目标链铸造原生 USDC', p:'任何人都可以把“消息 + 证明”提交到 Base 的 MessageTransmitter。验签通过，直接给收款人铸 100 USDC，是原生的，不是包装的。', code:'MessageTransmitter.receiveMessage(message, attestation)', tk:[{id:'b',l:'100 USDC',c:'--usdc',at:'rw'}], msg:'rc', hot:['rw']},
+      {h:'为什么更安全', p:'过程中没有任何地方囤着一大笔 USDC，所以没有可被盗空的金库。代价是你必须信任 Circle。不过持有 USDC 本身就已经在信任 Circle，这份信任没有增加。', tk:[{id:'b',l:'100 USDC',c:'--usdc',at:'rw'}], on:1},
+     ]},
+    {key:'ccip', name:'CCIP', L:{n:'Base', c:'--base', s:'selector'}, R:{n:'BSC', c:'--bsc', s:'selector'},
+     mid:['CCV 验证者','默认 16 个节点运营方'], lc:'Router + TokenPool', rc:'OffRamp → Receiver',
+     sum:{信任:'Chainlink 的 Committee Verifier（CCIP 2.0）', 速度:'取决于源链最终性', 到账资产:'看池子：原生（burn/mint）或包装（lock/mint）'},
+     steps:[
+      {h:'起点：一个 dApp 想跨链“转账 + 下指令”', p:'比如在 Base 上发 100 个自有代币 XYZ 到 BSC，并让 BSC 上的合约收到后自动质押。这是 CCTP 做不到的：它只管 USDC。', tk:[{id:'a',l:'100 XYZ',c:'--link',at:'lw'}]},
+      {h:'调用 CCIP Router', p:'消息里同时装着收款合约、调用数据和代币。费用可以付 LINK 或原生币。', code:'Router.ccipSend(destChainSelector, Client.EVM2AnyMessage({\n  receiver: abi.encode(stakeContract),\n  data: abi.encode("stake", user),\n  tokenAmounts: [{token: XYZ, amount: 100e18}],\n  feeToken: LINK, extraArgs: ...\n}))', tk:[{id:'a',l:'100 XYZ',c:'--link',at:'lc',gone:1}], msg:'lc', hot:['lc']},
+      {h:'验证者确认消息', p:'CCIP 2.0 里由 Cross-Chain Verifier 证明“这条消息确实在源链上发出”。默认验证者是 16 个独立节点运营方组成的委员会。RMN 现在只是一个手动的链上安全开关，出事时可以叫停。', tk:[], msg:'mid', on:1},
+      {h:'执行：代币和指令一起到达', p:'执行者（无需许可，谁都可以）把消息和验证结果交给目标链的 OffRamp，TokenPool 按配置 mint 或 release 代币，同一笔交易里调用接收合约。', code:'function _ccipReceive(Client.Any2EVMMessage memory m) internal override {\n  // m.sourceChainSelector / m.sender 需校验\n  stake(m.destTokenAmounts[0].amount, decode(m.data));\n}', tk:[{id:'b',l:'100 XYZ',c:'--link',at:'rc'}], msg:'rc', hot:['rc']},
+      {h:'和 CCTP 的关系', p:'如果搬的是 USDC 且两端都在 CCTP 名单里，CCIP 的 USDC 池底层就直接调用 CCTP，保证到账的是原生 USDC。CCIP 负责“消息”，CCTP 负责“USDC 本身”。注意 CCIP 的 USDC 支持列表里没有 BNB Chain，因为 Circle 不在 BSC 上发原生 USDC。', tk:[{id:'b',l:'100 XYZ',c:'--link',at:'rw'}], hot:['rw'], on:1},
+     ]},
+  ];
+  const stage = document.getElementById('stage'), tabs = document.getElementById('tabs');
+  const narr = document.getElementById('narr'), sumEl = document.getElementById('sum'), prog = document.getElementById('prog');
+  const prevB = document.getElementById('prev'), nextB = document.getElementById('next'), autoB = document.getElementById('auto');
+  let sc = 0, st = 0, timer = null, toks = {}, msgEl = null;
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+  function build(){
+    const s = SCN[sc];
+    stage.innerHTML = `
+      <div class="chain l" style="--c:var(${s.L.c})"><div class="cn">${s.L.n}<small>${s.L.s}</small></div>
+        <div class="slot wallet" data-a="lw">用户钱包</div><div class="slot contract" data-a="lc">${s.lc}</div></div>
+      <div class="mid" id="mid"><b>${s.mid[0]}</b>${s.mid[1]}</div>
+      <div class="chain r" style="--c:var(${s.R.c})"><div class="cn">${s.R.n}<small>${s.R.s}</small></div>
+        <div class="slot wallet" data-a="rw">收款钱包</div><div class="slot contract" data-a="rc">${s.rc}</div></div>`;
+    toks = {};
+    msgEl = document.createElement('div'); msgEl.className = 'msg'; msgEl.textContent = 'msg'; msgEl.style.opacity = 0;
+    stage.appendChild(msgEl);
+    sumEl.innerHTML = Object.entries(s.sum).map(([k,v]) => `<span>${k}：<b>${v}</b></span>`).join('');
+    tabs.querySelectorAll('.tab').forEach((t,i) => t.setAttribute('aria-selected', i === sc));
+  }
+  // 计算锚点在舞台内的中心坐标
+  function anchor(a){
+    const sr = stage.getBoundingClientRect();
+    const target = a === 'mid' ? stage.querySelector('#mid') : stage.querySelector(`[data-a="${a}"]`);
+    const r = target.getBoundingClientRect();
+    return {x: r.left - sr.left + r.width / 2, y: r.top - sr.top + r.height / 2 + (a === 'mid' ? 0 : 6)};
+  }
+  function render(){
+    const s = SCN[sc], step = s.steps[st];
+    const seen = new Set();
+    step.tk.forEach(t => {
+      let e = toks[t.id];
+      const fresh = !e;
+      if (fresh) { e = document.createElement('div'); e.className = 'token'; stage.appendChild(e); toks[t.id] = e; }
+      e.textContent = t.l;
+      e.style.background = `var(${t.c})`; e.style.setProperty('--tc', `var(${t.c})`);
+      e.classList.toggle('wrapped', !!t.w); e.classList.toggle('locked', !!t.lock);
+      const p = anchor(t.at);
+      if (fresh) { e.style.left = (p.x - 32) + 'px'; e.style.top = (p.y - 15) + 'px'; e.classList.add('gone'); e.getBoundingClientRect(); }
+      e.style.left = (p.x - 32) + 'px'; e.style.top = (p.y - 15) + 'px';
+      e.classList.toggle('gone', !!t.gone);
+      seen.add(t.id);
+    });
+    Object.keys(toks).forEach(id => { if (!seen.has(id)) toks[id].classList.add('gone'); });
+    if (step.msg) { const p = anchor(step.msg); msgEl.style.left = (p.x + (step.msg === 'mid' ? -15 : 22)) + 'px'; msgEl.style.top = (p.y - 26) + 'px'; msgEl.style.opacity = 1; }
+    else msgEl.style.opacity = 0;
+    stage.querySelectorAll('.slot').forEach(sl => {
+      sl.classList.toggle('hot', (step.hot || []).includes(sl.dataset.a));
+      sl.classList.toggle('danger', (step.danger || []).includes(sl.dataset.a));
+    });
+    stage.querySelector('#mid').classList.toggle('on', !!step.on);
+    narr.innerHTML = `<h3>${st + 1}. ${step.h}</h3><p>${step.p}</p>` + (step.code ? `<pre>${esc(step.code)}</pre>` : '');
+    prog.textContent = `${st + 1} / ${s.steps.length}`;
+    prevB.disabled = st === 0;
+    nextB.textContent = st === s.steps.length - 1 ? '重新开始' : '下一步';
+  }
+  function go(d){ const n = SCN[sc].steps.length; st = d === 'reset' ? 0 : Math.min(Math.max(st + d, 0), n - 1); if (d === 'reset') { build(); } render(); }
+  function stopAuto(){ clearInterval(timer); timer = null; autoB.textContent = '自动播放'; }
+  SCN.forEach((s,i) => {
+    const b = document.createElement('button'); b.className = 'tab'; b.role = 'tab'; b.textContent = s.name;
+    b.addEventListener('click', () => { stopAuto(); sc = i; st = 0; build(); render(); });
+    tabs.appendChild(b);
+  });
+  nextB.addEventListener('click', () => { stopAuto(); st === SCN[sc].steps.length - 1 ? go('reset') : go(1); });
+  prevB.addEventListener('click', () => { stopAuto(); go(-1); });
+  autoB.addEventListener('click', () => {
+    if (timer) return stopAuto();
+    autoB.textContent = '暂停';
+    timer = setInterval(() => { if (st === SCN[sc].steps.length - 1) return stopAuto(); go(1); }, 2600);
+  });
+  let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 120); });
+  build(); render();
+  // 签名从产生到被验证：用 Qtum 桥 withdrawERC20 的真实流程
+  A.sigflow = {h:300,
+    b:[['src',2,4,30,42,'源链：存款事件'],['val',35,4,30,42,'Validator 签名'],['dst',68,4,30,42,'目标链 withdrawERC20'],['chk',2,54,96,42,'合约里的检查']],
+    it:[
+      {id:'ev', h:'<div class="lbl">DepositedERC20<br><span class="m">token · amount<br>receiver · txHash</span></div>', x:17, y:28},
+      {id:'h1', h:'<span class="cell">keccak256(7 个字段)</span>', x:50, y:18, hide:1},
+      {id:'h2', h:'<span class="cell">+ EIP-191 前缀</span>', x:50, y:28, hide:1},
+      {id:'sg', h:chip('签名 ×4 (r,s,v)','--accent'), x:50, y:39, hide:1},
+      {id:'rc', h:'<span class="cell">ecrecover → 4 个地址</span>', x:83, y:22, hide:1},
+      {id:'mint', h:chip('mint USDC.e','--qtum'), x:83, y:37, hide:1},
+      {id:'c1', h:'<div class="lbl m">① 在名单里</div>', x:14, y:76, hide:1}, {id:'c2', h:'<div class="lbl m">② 首字节不重复</div>', x:38, y:76, hide:1},
+      {id:'c3', h:'<div class="lbl m">③ 达到门槛 4</div>', x:62, y:76, hide:1}, {id:'c4', h:'<div class="lbl m">④ 这笔没领过</div>', x:86, y:76, hide:1}],
+    s:[
+      {c:'Validator 在源链上看到一条存款事件，里面有代币、金额、收款人、源交易哈希和序号。它要对“这件事”签名。', lit:['src']},
+      {c:'先把要证明的字段按固定顺序拼起来求哈希：keccak256(token, amount, receiver, txHash, txNonce, chainId, operationType)，其中 chainId 是目标链的。这 32 字节就代表“那件事”。', set:{h1:{hide:0}}, lit:['val']},
+      {c:'再加上 EIP-191 前缀哈希一次，然后用私钥签名，得到 65 字节的 (r, s, v)。5 个 Validator 各签各的。', set:{h2:{hide:0}, sg:{hide:0}}, lit:['val']},
+      {c:'有人（用户或中继）把 4 份签名一起提交给目标链的 withdrawERC20。合约用同样的字段重新算哈希，所以字段里任何一项被改，哈希就对不上，签名也就验不过。', set:{sg:{x:83, y:22}}, lit:['dst']},
+      {c:'合约对每份签名调用 ecrecover，直接算出签名者的地址。', set:{sg:{hide:1}, rc:{hide:0}}, lit:['dst']},
+      {c:'逐项检查：① 每个地址都在签名人名单里；② 没有重复（按地址首字节做位图）；③ 份数达到门槛 4；④ 这笔源交易的 txHash + txNonce 没被领过，并立刻标记为已用。',
+       set:{c1:{hide:0}, c2:{hide:0}, c3:{hide:0}, c4:{hide:0}}, lit:['chk']},
+      {c:'全部通过才铸币。代码里“标记已用”放在铸币之前；任何一步失败，整笔交易回滚，标记也一起撤销。',
+       set:{mint:{hide:0}, c1:{h:'<div class="lbl g">① 在名单里</div>'}, c2:{h:'<div class="lbl g">② 首字节不重复</div>'}, c3:{h:'<div class="lbl g">③ 达到门槛 4</div>'}, c4:{h:'<div class="lbl g">④ 这笔没领过</div>'}}, lit:['dst','chk']},
+    ]};
+  Guide.mount(A);
+  // 防重放检查器：勾选签名里包含的字段，看哪些重放方式会被挡住
+  const RF = [
+    {k:'biz', t:'代币 + 金额 + 收款人'},
+    {k:'tx', t:'源交易 txHash + nonce（并记为已用）'},
+    {k:'chain', t:'目标链 chainId'},
+    {k:'addr', t:'桥合约地址（verifyingContract）'},
+    {k:'op', t:'操作类型（铸币 / 释放）'},
+  ];
+  const RA = [
+    {t:'截获签名，把收款人改成自己再提交', stop:'biz'},
+    {t:'同一份签名再提交一次，领第二次', stop:'tx'},
+    {t:'另一条链上有同地址的桥（例如用 CREATE2 部署）、同一组 Validator：拿去那边领', stop:'chain'},
+    {t:'同一条链上还有第二个合约，共用这组 Validator、也能铸币或放款：拿去那边领', stop:'addr'},
+    {t:'另一条链恰好用了同一个 chainId（Qtum 的 81 与 Japan Open Chain），那边的桥地址不同、Validator 相同：拿去那边领', stop:'addr'},
+    {t:'把“释放”用途的签名，当成“铸币”用途提交', stop:'op'},
+  ];
+  const RP = {mine:['biz','tx','chain','op'], '712':['biz','tx','chain','addr','op'], none:['biz']};
+  const rpBoxes = document.getElementById('rpBoxes'), rpOut = document.getElementById('rpOut');
+  rpBoxes.innerHTML = RF.map(f => `<label for="rp_${f.k}" style="display:flex;gap:8px;align-items:center"><input id="rp_${f.k}" type="checkbox" style="width:auto">${f.t}</label>`).join('');
+  const NAME = Object.fromEntries(RF.map(f => [f.k, f.t]));
+  function rpRun(){
+    const on = new Set(RF.filter(f => document.getElementById('rp_' + f.k).checked).map(f => f.k));
+    rpOut.innerHTML = RA.map(a => on.has(a.stop)
+      ? `<span><b style="color:var(--ok)">挡住</b> ${a.t}<span class="m">（靠：${NAME[a.stop]}）</span></span>`
+      : `<span><b style="color:var(--warn)">能重放</b> ${a.t}<span class="m">（缺：${NAME[a.stop]}）</span></span>`).join('');
+  }
+  function rpSet(p){ RF.forEach(f => document.getElementById('rp_' + f.k).checked = RP[p].includes(f.k)); rpRun(); }
+  RF.forEach(f => document.getElementById('rp_' + f.k).addEventListener('change', rpRun));
+  document.querySelectorAll('[data-rp]').forEach(b => b.addEventListener('click', () => rpSet(b.dataset.rp)));
+  rpSet('mine');
+})();
+</script>
+</body>
+</html>

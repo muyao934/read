@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bybit 冷钱包被盗 14.6 亿美元｜区块链被盗事件编年史</title>
+<meta name="description" content="2025 年 Bybit 以太坊冷钱包被盗约 14.6 亿美元的完整经过：Safe{Wallet} 前端被篡改、签名人盲签 delegatecall 交易、THORChain 洗钱路径、72 小时补足储备，以及行业在签名环节做的改进。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2025-bybit">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2025 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Bybit 冷钱包被盗 14.6 亿美元</h1>
+    <p class="lede">2025 年 2 月 21 日，Bybit 的签名人在网页上确认了一笔看似普通的冷钱包转账，实际签下的却是一笔把冷钱包合约逻辑换成攻击者版本的交易，约 40 万枚 ETH 和 11 万多枚质押类 ETH 随即被转走。攻击者没有攻破 Bybit 自己的系统，攻破的是它用来发起多签交易的工具 Safe{Wallet}。在 2026 年 10 月币安事件之前，这是金额最大的已确认盗币案。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Bybit 的以太坊冷钱包是一个 Safe 多签合约，6 个签名人中凑够 3 个签名才能转出资产。签名人通过 Safe 团队运营的网页 Safe{Wallet} 发起交易，再用 Ledger 硬件钱包签名。2 月 19 日，攻击者替换了 Safe{Wallet} 存放在 AWS S3 上的前端 JavaScript。恶意代码只在 Bybit 冷钱包发起交易时生效：网页显示的是正常转账，送去签名的却是一笔对攻击者合约的 <code>delegatecall</code>。</p>
+        <p>三个签名凑齐后，这笔交易在链上执行，把冷钱包代理合约里保存“实现合约地址”的存储槽改成了攻击者的后门合约。冷钱包的地址没变，里面运行的代码已经换了。攻击者随后不再需要任何签名，转走 401,346 枚 ETH 和约 11.3 万枚 stETH、cmETH、mETH，按当时价格约 14.6 亿美元<a class="ref" href="#s4">[4]</a>。约两分钟后，Safe{Wallet} 服务器上的恶意文件被换回干净版本<a class="ref" href="#s3">[3]</a>。</p>
+        <p>源头是 2 月 4 日一名 Safe{Wallet} 开发者在 Mac 上运行了一个伪装成股票模拟器的 Docker 项目，攻击者借此劫持了他的 AWS 会话<a class="ref" href="#s7">[7]</a>。FBI 在 2 月 26 日认定这是朝鲜 TraderTraitor 所为<a class="ref" href="#s2">[2]</a>。Bybit 没有暂停提现，三天内靠借款、大额存入和购币补足了 ETH 缺口<a class="ref" href="#s15">[15]</a>。赃款在十天左右基本被洗成比特币，主要通道是 THORChain；截至 2025 年 4 月，只有约 3.84% 被冻结，约 27.6% 已无法追踪<a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Bybit 是一家中心化加密货币交易所。事发当天，它在公告中称自己管理的资产超过 200 亿美元，足以覆盖这次损失<a class="ref" href="#s1">[1]</a>。交易所通常把大部分资产放在冷钱包里，只在热钱包留够日常提现用的部分，需要时从冷钱包往热钱包调拨。2 月 21 日出事的，正是一次例行的“冷转热”。</p>
+        <p>Bybit 的以太坊冷钱包不是一个普通地址，而是部署在链上的 Safe 多签合约：合约里登记了 6 个签名人地址，任何转出都要其中 3 人签名<a class="ref" href="#s11">[11]</a>。签名人的私钥保存在 Ledger 硬件钱包里，不接触联网电脑。Safe（原 Gnosis Safe）是以太坊上常用的多签合约，这次事件的取证没有发现它的合约代码有漏洞<a class="ref" href="#s6">[6]</a>。</p>
+        <p>合约只负责核对签名和执行交易，签名人具体签什么，是由另一个软件算出来再交给他们看的。对 Bybit 来说，这个软件就是 Safe 团队运营的网页应用 Safe{Wallet}（app.safe.global）：它把签名人想做的操作编码成待签数据，送到硬件钱包签名，再收集签名、提交上链。</p>
+        <p>这种“网页发起、硬件签名”的流程在 2024 年已经出过两次事。7 月，印度交易所 <a href="2024-wazirx.html">WazirX</a> 的多签钱包被盗约 2.3 亿美元，它和提供签名界面的托管商 Liminal 事后互相指责<a class="ref" href="#s10">[10]</a>。10 月，Radiant Capital 三名开发者的电脑被植入恶意软件，Safe{Wallet} 界面显示正常交易，后台签下的是恶意交易，损失约 5,000 万美元，Mandiant 将其归因于朝鲜相关组织 UNC4736<a class="ref" href="#s28">[28]</a>。Sygnia 在 Bybit 事件的报告中把这三起放在一起比较：都是界面显示一笔交易，实际签下另一笔<a class="ref" href="#s3">[3]</a>。</p>
+        <p>攻击 Bybit 的 TraderTraitor（又名 Jade Sleet、UNC4899）是朝鲜专门针对加密行业的黑客组织，惯用假招聘、假编程测试和恶意 Docker 项目接近开发者，再从开发者电脑进入云环境<a class="ref" href="#s9">[9]</a>。2024 年 5 月 <a href="2024-dmm-bitcoin.html">DMM Bitcoin</a> 被盗 4,502.9 枚 BTC，也是它先用假编程测试攻破了钱包服务商 Ginco 的一名员工<a class="ref" href="#s9">[9]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与各方响应</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2024-07 / 2024-10</time><div class="ev">WazirX 与 Radiant Capital 先后因“界面显示与实际签名不一致”被盗，均被归因于朝鲜<a class="ref" href="#s11">[11]</a><a class="ref" href="#s28">[28]</a>。</div></li>
+          <li class="atk key"><time>2025-02-04</time><div class="ev">一名 Safe{Wallet} 开发者在 macOS 电脑上运行了名为 MC-Based-Stock-Invest-Simulator 的 Docker 项目，电脑被攻击者控制。这名开发者是少数拥有较高权限的员工之一<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="atk"><time>2025-02 上中旬</time><div class="ev">攻击者用劫持的 AWS 会话令牌绕过多因素认证，在 Safe{Wallet} 的 AWS 环境里侦察，并按这名开发者的作息时间活动<a class="ref" href="#s7">[7]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2025-02-18</time><div class="ev">攻击者在以太坊上预先部署两个合约：一个用来改写存储槽，一个带有转出资产的后门函数<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk key"><time>2025-02-19</time><div class="ev">Safe{Wallet} 网页从 AWS S3 加载的 JavaScript 被替换成恶意版本，恶意逻辑只对 Bybit 冷钱包和另一个疑似攻击者测试用的地址生效<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>2025-02-21 14 时许</time><div class="ev">Bybit 的 3 名签名人确认一笔“冷钱包转热钱包”交易，实际签下的是篡改后的 <code>delegatecall</code>。冷钱包的实现合约被替换，攻击者随即转走 401,346 枚 ETH 及约 11.3 万枚 stETH、cmETH、mETH（时间为 UTC）<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk"><time>2025-02-21 14:15</time><div class="ev">恶意交易执行约两分钟后，S3 上的 JavaScript 被换回干净版本，Sygnia 认为这是攻击者在清理痕迹<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2025-02-21</time><div class="ev">Bybit 发布公告，称在一次例行冷转热中发现异常，其他冷钱包安全，提现照常，资产 1:1 足额<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2025-02-22</time><div class="ev">mETH Protocol 借助协议内置的 8 小时提款延迟，从攻击者地址追回 15,000 枚 cmETH（约 4,300 万美元）；Tether 冻结 181,000 枚 USDT<a class="ref" href="#s25">[25]</a>。Bitget 无息借给 Bybit 4 万枚 ETH 应对提现<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def key"><time>2025-02-24</time><div class="ev">Bybit 宣布补足缺口：通过紧急借款和大额存入获得近 44.7 万枚 ETH，Hacken 审计确认主要币种储备率超过 100%<a class="ref" href="#s15">[15]</a>。次日 Bitget 的借款被归还<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def key"><time>2025-02-26</time><div class="ev">FBI 发布公告，认定朝鲜对此负责，攻击归于 TraderTraitor，并公布 51 个相关以太坊地址<a class="ref" href="#s2">[2]</a>。同日 Bybit 公布 Sygnia 与 Verichains 的初步取证结论：问题出在 Safe{Wallet}，Bybit 基础设施未被入侵<a class="ref" href="#s5">[5]</a>。Bybit 的赏金计划按冻结金额的 10% 发放，总额上限约 1.4 亿美元，此时已向 5 名赏金猎人支付 423 万美元<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2025-02-27</time><div class="ev">THORChain 有 3 个验证者投票暂停以太坊交易，想切断 Lazarus 的兑换，投票很快被撤回；核心开发者 Pluto 当天宣布退出<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>2025-03-03</time><div class="ev">攻击者最初分散到约 50 个钱包里的 ETH 全部转出<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2025-03-04</time><div class="ev">Bybit CEO Ben Zhou 公布追踪进展：77% 仍可追踪，20% 已无法追踪，3% 被冻结；约 83% 的 ETH 已换成比特币<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2025-03-06</time><div class="ev">Safe 公布 Mandiant 的初步调查结论：开发者电脑在 2 月 4 日被入侵，AWS 会话被劫持，攻击归于 TraderTraitor（UNC4899）<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2025-03-17</time><div class="ev">OKX 暂停 DEX 聚合服务，称发现 Lazarus 试图借它清洗 Bybit 赃款<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def"><time>2025-04-21</time><div class="ev">Bybit 更新：68.57% 可追踪，27.59% 已无法追踪，3.84% 被冻结；赏金计划两个月收到 5,443 份线索，其中 70 份有效<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2025-04-30</time><div class="ev">德国 BKA 与荷兰 FIOD 查封兑换服务 eXch，没收超过 3,400 万欧元加密资产<a class="ref" href="#s23">[23]</a>。eXch 此前拒绝了封堵 Bybit 赃款的请求<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2025-10-06</time><div class="ev">Elliptic 统计朝鲜相关黑客 2025 年已盗取超过 20 亿美元，创年度纪录，其中 14.6 亿美元来自 Bybit<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2025-11-20</time><div class="ev">Safe Labs 在 Safe{Wallet} 中集成 Hypernative 风险引擎，每笔交易执行前评分，高风险交易直接拦截<a class="ref" href="#s29">[29]</a>。</div></li>
+          <li class="def"><time>2026-05-12</time><div class="ev">以太坊基金会发布 Clear Signing 标准（基于 ERC-7730），把 Bybit 事件列为盲签造成损失的例子<a class="ref" href="#s30">[30]</a>。</div></li>
+          <li class="def"><time>2026-08-07</time><div class="ev">Bybit 在美国哥伦比亚特区联邦地区法院起诉朝鲜、侦察总局和 Lazarus Group，取得冻结部分被盗资产的初步禁令<a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2026-10-05</time><div class="ev">ZachXBT 称伪装成客户渗透了一个为 Lazarus 洗钱的华人团伙，追踪到逾 1,200 万美元 Bybit 赃款，Tether 冻结其中 44.2 万枚 USDT<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li class="def"><time>2026-10-27</time><div class="ev">Safe Labs 推出 Policy Engine，把转账规则写进链上合约：不符合规则的交易，签名再多也不能执行<a class="ref" href="#s31">[31]</a>。</div></li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">事发时刻有两个说法</span>
+          <p>Bybit 的首份公告称“约 12:30（UTC）”在例行转账中发现异常<a class="ref" href="#s1">[1]</a>；CertiK 给出的攻击时间是 14:16:11（UTC），Sygnia 记录的恶意文件替换时间是 14:15（UTC），在恶意交易执行约两分钟后<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。两者相差约一个半小时，公开资料没有解释原因。本页的链上动作按安全公司给出的时间记录。</p>
+        </div>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次攻击没有利用智能合约漏洞。Safe 合约忠实地执行了它收到的交易，问题出在签名人以为自己签的和实际签下的不是同一笔交易。要看清这一点，需要先看 Safe 钱包的结构。</p>
+        <h3>冷钱包里运行的代码从哪来</h3>
+        <p>每个 Safe 钱包在链上是一个很小的代理合约（proxy）。它保存签名人名单、门槛、nonce 和资产，自己几乎没有逻辑；收到的每一次调用都用 <code>delegatecall</code> 转交给一个共用的实现合约（Safe 称为 masterCopy，v1.3.0 起改名 singleton）去执行。<code>delegatecall</code> 的含义是“运行对方的代码，但读写我自己的存储”。至于转交给谁，取决于代理合约第一个存储槽（slot 0）里存的地址。公开报告没有写明 Bybit 冷钱包的 Safe 版本，下面引用的是 v1.1.1 的源码，v1.3.0 的结构相同<a class="ref" href="#s32">[32]</a><a class="ref" href="#s33">[33]</a>：</p>
+<pre class="code"><code><span class="c">// Proxy.sol（Safe v1.1.1），英文注释是原有的，中文注释是本站加的</span>
+contract Proxy {
+
+    // masterCopy always needs to be first declared variable, to ensure that it is at
+    // the same location in the contracts to which calls are delegated.
+<span class="bad">    address internal masterCopy;     <span class="c">// 第一个变量，位于 slot 0</span></span>
+    ……
+    function ()
+        external
+        payable
+    {
+        assembly {
+            <span class="c">// 每次调用都先读出 slot 0，把它当作实现合约地址</span>
+            let masterCopy := and(sload(0), 0xffffffffffffffffffffffffffffffffffffffff)
+            <span class="c">// ……（省略：查询 masterCopy 地址的特殊分支）……</span>
+            calldatacopy(0, 0, calldatasize())
+            let success := delegatecall(gas, masterCopy, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
+            if eq(success, 0) { revert(0, returndatasize()) }
+            return(0, returndatasize())
+        }
+    }
+}</code></pre>
+        <p class="code-cap">来源：safe-global/safe-contracts 仓库 v1.1.1 标签，contracts/proxies/Proxy.sol 第 12–46 行。略去构造函数、部分注释和第 35–39 行，第 14 行的长注释折成两行。</p>
+        <p>谁能改写 slot 0，谁就能决定这个钱包运行什么代码。正常情况下，slot 0 只能通过 Safe 自己的 <code>changeMasterCopy</code> 修改，这个函数带有 <code>authorized</code> 修饰符，要求调用来自钱包自身，也就是一笔凑够签名的 Safe 交易<a class="ref" href="#s32">[32]</a>。所以攻击者仍然需要 3 个签名，难点在于让这笔交易在界面和签名设备上看起来不像“升级”。</p>
+        <h3>operation 字段</h3>
+        <p>Safe 交易里有一个 <code>operation</code> 字段。它为 0 时，钱包对目标地址发起普通 <code>call</code>；为 1 时，钱包对目标地址发起 <code>delegatecall</code>，用钱包自己的存储运行目标地址的代码：</p>
+<pre class="code"><code><span class="c">// Enum.sol（Safe v1.1.1）</span>
+enum Operation {
+    Call,           <span class="c">// 0：普通调用，转账用的就是它</span>
+    DelegateCall    <span class="c">// 1：在钱包自己的存储上运行目标合约的代码</span>
+}
+
+<span class="c">// Executor.sol（Safe v1.1.1）</span>
+function execute(address to, uint256 value, bytes memory data,
+                 Enum.Operation operation, uint256 txGas)
+    internal
+    returns (bool success)
+{
+    if (operation == Enum.Operation.Call)
+        success = executeCall(to, value, data, txGas);
+<span class="c">    // 目标合约的代码可以改写钱包的任何存储槽，包括 slot 0</span>
+<span class="bad">    else if (operation == Enum.Operation.DelegateCall)</span>
+<span class="bad">        success = executeDelegateCall(to, data, txGas);</span>
+    else
+        success = false;
+}</code></pre>
+        <p class="code-cap">来源：同上仓库 v1.1.1 标签，contracts/common/Enum.sol 第 7–10 行，contracts/base/Executor.sol 第 9–19 行（函数签名折成两行）。</p>
+        <p><code>delegatecall</code> 是 Safe 的正常功能，官方的批量交易合约 <code>MultiSend</code> 就要求必须用 <code>delegatecall</code> 调用<a class="ref" href="#s32">[32]</a>。但对一个只做“冷转热”的冷钱包来说，一笔 <code>operation = 1</code>、目标是陌生合约的交易本身就是最强的危险信号。</p>
+        <h3>签名人签的是什么</h3>
+        <p><code>execTransaction</code> 把 <code>to</code>、<code>value</code>、<code>data</code>、<code>operation</code> 等字段连同 nonce 按 EIP-712 规则编码，算出一个哈希，再核对签名人对这个哈希的签名。<code>operation</code> 在被签名的数据里：</p>
+<pre class="code"><code><span class="c">// GnosisSafe.sol（Safe v1.1.1）</span>
+//keccak256(
+//    "SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,
+//     uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
+//);
+……
+bytes memory txHashData = encodeTransactionData(
+<span class="bad">    to, value, data, operation, // Transaction info   <span class="c">// operation 也在签名范围内</span></span>
+    safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, // Payment info
+    nonce
+);
+// Increase nonce and execute transaction.
+nonce++;
+txHash = keccak256(txHashData);
+checkSignatures(txHash, txHashData, signatures, true);   <span class="c">// 凑够门槛就放行</span>
+……
+success = execute(to, value, data, operation,
+                  safeTxGas == 0 &amp;&amp; gasPrice == 0 ? gasleft() : safeTxGas);</code></pre>
+        <p class="code-cap">来源：同上仓库 v1.1.1 标签，contracts/GnosisSafe.sol 第 28–30 行、第 132–147 行。类型字符串和最后一行为排版折行，中间省略了 gas 检查和退款逻辑。</p>
+        <p>所以链上这一侧没有问题：签名人确实签了 <code>operation = 1</code>，合约也只执行了被签名的内容。问题出在签名之前。CertiK 指出，送到 Ledger 的确实是被篡改后的数据，签名人判断交易内容时看的却是 Safe{Wallet} 网页上的显示<a class="ref" href="#s4">[4]</a>。CertiK 还引述 Ben Zhou 的话：他签名前没有在 Ledger 屏幕上核对交易数据。Hex Trust 的分析也说，签名人依赖 Safe 界面，没有在设备上核对解码后的交易<a class="ref" href="#s11">[11]</a>。</p>
+        <p>这就是“盲签”（blind signing）：硬件钱包上显示的往往只是哈希或难以人工核对的原始字段，签名人实际上只能信任电脑屏幕。2026 年以太坊基金会发布 Clear Signing 标准时，称盲签是“造成数十亿美元用户损失的结构性缺陷”，并点名了 Bybit<a class="ref" href="#s30">[30]</a>。</p>
+        <h3>恶意代码做了什么</h3>
+        <p>Sygnia 和 Verichains 各自取证后得出同一结论：被改动的是 Safe{Wallet} 网页从 AWS S3 加载的 JavaScript 文件，而不是 Safe 的源码仓库或合约<a class="ref" href="#s3">[3]</a><a class="ref" href="#s6">[6]</a>。Sygnia 在 Bybit 签名人电脑的 Chrome 缓存和公开网页存档里都找到了这份恶意文件，证明它确实是从 Safe{Wallet} 的服务器下发的。按 Sygnia 的报告，这段代码有三个特点：</p>
+        <ul>
+          <li>只对两个合约地址生效：Bybit 的冷钱包，以及另一个可能属于攻击者的地址。其他用户打开同一个网页，一切照常。这解释了为什么它在线上放了两天没人发现。</li>
+          <li>在签名之前替换交易：把签名人要发起的交易换成一笔 <code>operation = 1</code>、目标是攻击者预先部署的合约的交易，网页上仍显示签名人原本想做的转账。</li>
+          <li>篡改网页自己的校验函数，让替换后的交易和签名能够通过检查、顺利提交。</li>
+        </ul>
+        <p>Verichains 根据证据推断，Safe{Wallet} 的 AWS S3 或 CloudFront 账户或 API 密钥可能已经泄露<a class="ref" href="#s6">[6]</a>。Mandiant 后来查清了完整链条：攻击者从开发者电脑上偷走了 AWS 会话令牌，借此绕过了多因素认证<a class="ref" href="#s7">[7]</a>。</p>
+        <p>签名人签下的这笔 <code>delegatecall</code> 在冷钱包的上下文里运行攻击者的代码，把一个后门合约的地址写进了 slot 0。从这一刻起，代理合约收到的任何调用都会转交给后门合约。CertiK 记录，后门合约带有 <code>sweepETH</code> 和 <code>sweepERC20</code> 两个转出资产的函数，调用它们不需要任何多签批准<a class="ref" href="#s4">[4]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 356" role="img" aria-labelledby="bybit-sig-t bybit-sig-d">
+            <title id="bybit-sig-t">Bybit 签名人看到的交易与实际签下的交易</title>
+            <desc id="bybit-sig-d">签名人在 Safe{Wallet} 网页上看到的是一笔从冷钱包到热钱包的普通转账，operation 为 0。被替换的 JavaScript 只对 Bybit 冷钱包生效，把送去 Ledger 签名的交易换成 operation 为 1、目标是攻击者 2 月 18 日部署的合约、作用是改写冷钱包 slot 0 的交易。3 名签名人签名后，Safe 合约核对签名通过并执行 delegatecall，攻击者的合约改写了 slot 0。冷钱包从此运行后门合约，攻击者不需要签名就转出了约 40 万枚 ETH 等资产。</desc>
+            <defs>
+              <marker id="bybit-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bybit-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="20" y="16" width="280" height="122" rx="4"/>
+            <text class="d-t b" x="160" y="42" text-anchor="middle">签名人在网页上看到的</text>
+            <text class="d-t s" x="160" y="70" text-anchor="middle">例行转账：冷钱包 → 热钱包</text>
+            <text class="d-t s" x="160" y="94" text-anchor="middle"><tspan class="m">operation = 0</tspan>（普通 call）</text>
+            <text class="d-t s" x="160" y="118" text-anchor="middle">界面上没有任何异常</text>
+            <line class="d-line atk" x1="302" y1="78" x2="456" y2="78" marker-end="url(#bybit-ah-atk)"/>
+            <text class="d-t atk halo" x="379" y="68" text-anchor="middle">恶意 JS 替换</text>
+            <text class="d-t s atk" x="379" y="100" text-anchor="middle">只对 Bybit 冷钱包生效</text>
+            <rect class="d-box atk" x="460" y="16" width="280" height="122" rx="4"/>
+            <text class="d-t b atk" x="600" y="42" text-anchor="middle">实际送去 Ledger 签名的</text>
+            <text class="d-t s" x="600" y="70" text-anchor="middle">目标：攻击者 2 月 18 日部署的合约</text>
+            <text class="d-t s" x="600" y="94" text-anchor="middle"><tspan class="m">operation = 1</tspan>（delegatecall）</text>
+            <text class="d-t s" x="600" y="118" text-anchor="middle">作用：改写冷钱包的 <tspan class="m">slot 0</tspan></text>
+            <path class="d-line atk" d="M600,138 V164 H99 V186" marker-end="url(#bybit-ah-atk)"/>
+            <text class="d-t atk halo" x="350" y="169" text-anchor="middle">送去签名</text>
+            <rect class="d-box" x="20" y="190" width="159" height="88" rx="4"/>
+            <text class="d-t b" x="99" y="214" text-anchor="middle">① 3 名签名人签名</text>
+            <text class="d-t s" x="99" y="240" text-anchor="middle">Ledger 上只有哈希</text>
+            <text class="d-t s" x="99" y="262" text-anchor="middle">签名人看的是网页</text>
+            <line class="d-line" x1="179" y1="234" x2="205" y2="234" marker-end="url(#bybit-ah)"/>
+            <rect class="d-box" x="207" y="190" width="159" height="88" rx="4"/>
+            <text class="d-t b" x="286" y="214" text-anchor="middle">② Safe 合约核对签名</text>
+            <text class="d-t s" x="286" y="240" text-anchor="middle">3/6 个签名有效</text>
+            <text class="d-t s" x="286" y="262" text-anchor="middle">按规则执行</text>
+            <line class="d-line atk" x1="366" y1="234" x2="392" y2="234" marker-end="url(#bybit-ah-atk)"/>
+            <rect class="d-box atk" x="394" y="190" width="159" height="88" rx="4"/>
+            <text class="d-t b atk" x="473" y="214" text-anchor="middle">③ delegatecall</text>
+            <text class="d-t s" x="473" y="240" text-anchor="middle">运行攻击者的合约</text>
+            <text class="d-t s" x="473" y="262" text-anchor="middle"><tspan class="m">slot 0</tspan> 被改写</text>
+            <line class="d-line atk" x1="553" y1="234" x2="579" y2="234" marker-end="url(#bybit-ah-atk)"/>
+            <rect class="d-box atk" x="581" y="190" width="159" height="88" rx="4"/>
+            <text class="d-t b atk" x="660" y="214" text-anchor="middle">④ 后门接管钱包</text>
+            <text class="d-t s" x="660" y="240" text-anchor="middle">调用转出函数无需签名</text>
+            <text class="d-t s" x="660" y="262" text-anchor="middle">转走约 40 万 ETH 等</text>
+            <rect class="d-box soft" x="20" y="300" width="720" height="40" rx="4"/>
+            <text class="d-t" x="380" y="325" text-anchor="middle">合约按规则执行了被签名的交易。被攻破的是签名人和合约之间的那一层：网页。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：签名人看到的与实际签下的。红色是攻击者控制的部分。三个签名都是真的，被替换的是签名的对象。</figcaption>
+        </figure>
+        <div class="note warn">
+          <span class="h">3/6 多签为什么没有起作用</span>
+          <p>多签的前提是签名人彼此独立：攻击者要同时骗过或控制多个人。Bybit 的签名人用的是同一个网页，看到的是同一个被篡改的界面，硬件钱包又没有给出他们能独立核对的信息。显示层一旦被攻破，3 个签名就退化成了 1 次判断。Huntress 的总结是：“没有独立核验，多签就不够”<a class="ref" href="#s35">[35]</a>。</p>
+        </div>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面的步骤综合了 Safe 公布的 Mandiant 调查、Sygnia 与 Verichains 的取证和 CertiK 的链上分析<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。攻击者事后删除了恶意软件、清空了 Bash 历史，部分环节只能由日志和残留证据推断。</p>
+        <ol class="steps">
+          <li><b>攻破一名开发者的电脑（2 月 4 日）</b>攻击者冒充可信的开源贡献者接近一名 Safe{Wallet} 开发者，让他在 macOS 上以较高权限运行一个伪装成股票投资模拟器的 Docker 项目。这个项目连接的域名两天前才注册。</li>
+          <li><b>进入 AWS，绕过多因素认证</b>这名开发者在 AWS 里有较高权限。攻击者没有去破解他的密码，而是偷走他已登录的会话令牌，直接以他的身份操作，还试图注册一个虚拟 MFA 设备长期驻留。登录来自 ExpressVPN 的 IP，User-Agent 带有 Kali Linux 特征；活动时间与开发者的作息对齐，以免引起注意。攻击者在系统里待了近 20 天。</li>
+          <li><b>预先部署合约（2 月 18 日）</b>在以太坊上部署两个合约：一个在被 <code>delegatecall</code> 时改写存储槽，一个是带转出函数的后门“实现合约”。</li>
+          <li><b>替换前端文件（2 月 19 日）</b>替换 Safe{Wallet} 存放在 AWS S3 上的 JavaScript。恶意代码先判断当前钱包地址，只有遇到 Bybit 冷钱包等两个地址才动手。</li>
+          <li><b>等待例行转账（2 月 21 日）</b>Bybit 按计划从冷钱包往热钱包调拨 ETH。签名人在网页上看到的是这笔转账，硬件钱包收到的是被替换的交易。3 个签名凑齐后，交易上链执行。</li>
+          <li><b>接管并转空</b><code>delegatecall</code> 把冷钱包的 slot 0 改成后门合约地址，攻击者随即调用转出函数，把 401,346 枚 ETH 和 stETH、cmETH、mETH 转到自己的地址。</li>
+          <li><b>清理痕迹</b>约两分钟后，S3 上的文件被换回正常版本；开发者电脑上的恶意软件和 Bash 历史也被清除。</li>
+        </ol>
+        <p>这条链上没有一步需要破解密码学。每一步利用的都是一种信任：开发者信任“开源项目”，AWS 信任已登录的会话，签名人信任官方网页，合约信任有效签名。每一层都把上一层的结果当作真的，没有再核对一次。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 330" role="img" aria-labelledby="bybit-chain-t bybit-chain-d">
+            <title id="bybit-chain-t">Bybit 事件的攻击链与每一环可以加的检查</title>
+            <desc id="bybit-chain-d">上排是攻击链的五个环节：Safe{Wallet} 开发者的 Mac 在 2 月 4 日运行了伪装的 Docker 项目；攻击者用偷来的 AWS 会话令牌绕过多因素认证；2 月 19 日替换 S3 上的前端 JavaScript，只对 Bybit 生效；Bybit 签名人的浏览器显示正常转账，Ledger 上看不出异常；2 月 21 日冷钱包合约的 slot 0 被改写，资产被转走。下排对应每一环可以加的检查：开发环境隔离、短时效且绑定设备的凭证、只允许 CI 发布并监控文件变更、用独立工具解码交易并在硬件钱包上清晰签名、用 Guard 禁止 delegatecall 并给大额转出加时间锁。</desc>
+            <defs>
+              <marker id="bybit-ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b atk" x="20" y="22">攻击链</text>
+            <rect class="d-box atk" x="20" y="34" width="132" height="96" rx="4"/>
+            <text class="d-t b" x="86" y="58" text-anchor="middle">开发者的 Mac</text>
+            <text class="d-t s" x="86" y="84" text-anchor="middle">2 月 4 日运行</text>
+            <text class="d-t s" x="86" y="106" text-anchor="middle">伪装的 Docker 项目</text>
+            <line class="d-line atk" x1="152" y1="82" x2="170" y2="82" marker-end="url(#bybit-ah2)"/>
+            <rect class="d-box atk" x="172" y="34" width="132" height="96" rx="4"/>
+            <text class="d-t b" x="238" y="58" text-anchor="middle">AWS 会话</text>
+            <text class="d-t s" x="238" y="84" text-anchor="middle">偷走会话令牌</text>
+            <text class="d-t s" x="238" y="106" text-anchor="middle">绕过多因素认证</text>
+            <line class="d-line atk" x1="304" y1="82" x2="322" y2="82" marker-end="url(#bybit-ah2)"/>
+            <rect class="d-box atk" x="324" y="34" width="132" height="96" rx="4"/>
+            <text class="d-t b" x="390" y="58" text-anchor="middle">S3 前端文件</text>
+            <text class="d-t s" x="390" y="84" text-anchor="middle">2 月 19 日替换</text>
+            <text class="d-t s" x="390" y="106" text-anchor="middle">只对 Bybit 生效</text>
+            <line class="d-line atk" x1="456" y1="82" x2="474" y2="82" marker-end="url(#bybit-ah2)"/>
+            <rect class="d-box atk" x="476" y="34" width="132" height="96" rx="4"/>
+            <text class="d-t b" x="542" y="58" text-anchor="middle">签名人的浏览器</text>
+            <text class="d-t s" x="542" y="84" text-anchor="middle">网页显示正常转账</text>
+            <text class="d-t s" x="542" y="106" text-anchor="middle">Ledger 看不出异常</text>
+            <line class="d-line atk" x1="608" y1="82" x2="626" y2="82" marker-end="url(#bybit-ah2)"/>
+            <rect class="d-box atk" x="628" y="34" width="112" height="96" rx="4"/>
+            <text class="d-t b" x="684" y="58" text-anchor="middle">冷钱包合约</text>
+            <text class="d-t s" x="684" y="84" text-anchor="middle"><tspan class="m">slot 0</tspan> 被改写</text>
+            <text class="d-t s" x="684" y="106" text-anchor="middle">2 月 21 日转空</text>
+            <line class="d-line dash" x1="86" y1="130" x2="86" y2="196"/>
+            <line class="d-line dash" x1="238" y1="130" x2="238" y2="196"/>
+            <line class="d-line dash" x1="390" y1="130" x2="390" y2="196"/>
+            <line class="d-line dash" x1="542" y1="130" x2="542" y2="196"/>
+            <line class="d-line dash" x1="684" y1="130" x2="684" y2="196"/>
+            <text class="d-t b def halo" x="380" y="168" text-anchor="middle">每一环可以多加的一道检查</text>
+            <rect class="d-box def" x="20" y="196" width="132" height="118" rx="4"/>
+            <text class="d-t s" x="86" y="224" text-anchor="middle">开发环境与生产</text>
+            <text class="d-t s" x="86" y="246" text-anchor="middle">权限分开，高权限</text>
+            <text class="d-t s" x="86" y="268" text-anchor="middle">设备不跑来路</text>
+            <text class="d-t s" x="86" y="290" text-anchor="middle">不明的项目</text>
+            <rect class="d-box def" x="172" y="196" width="132" height="118" rx="4"/>
+            <text class="d-t s" x="238" y="224" text-anchor="middle">短时效凭证</text>
+            <text class="d-t s" x="238" y="246" text-anchor="middle">会话绑定设备</text>
+            <text class="d-t s" x="238" y="268" text-anchor="middle">异常登录与 MFA</text>
+            <text class="d-t s" x="238" y="290" text-anchor="middle">设备注册告警</text>
+            <rect class="d-box def" x="324" y="196" width="132" height="118" rx="4"/>
+            <text class="d-t s" x="390" y="224" text-anchor="middle">只允许 CI 发布</text>
+            <text class="d-t s" x="390" y="246" text-anchor="middle">线上文件与构建</text>
+            <text class="d-t s" x="390" y="268" text-anchor="middle">产物比对，变更</text>
+            <text class="d-t s" x="390" y="290" text-anchor="middle">即时告警</text>
+            <rect class="d-box def" x="476" y="196" width="132" height="118" rx="4"/>
+            <text class="d-t s" x="542" y="224" text-anchor="middle">用第二个工具</text>
+            <text class="d-t s" x="542" y="246" text-anchor="middle">独立解码交易</text>
+            <text class="d-t s" x="542" y="268" text-anchor="middle">硬件钱包上</text>
+            <text class="d-t s" x="542" y="290" text-anchor="middle">清晰签名</text>
+            <rect class="d-box def" x="628" y="196" width="112" height="118" rx="4"/>
+            <text class="d-t s" x="684" y="224" text-anchor="middle">Guard 禁止</text>
+            <text class="d-t s m" x="684" y="246" text-anchor="middle">delegatecall</text>
+            <text class="d-t s" x="684" y="268" text-anchor="middle">大额转出</text>
+            <text class="d-t s" x="684" y="290" text-anchor="middle">加时间锁</text>
+          </svg>
+          </div>
+          <figcaption>图 2：上排是攻击链，下排是事后各份报告建议、能在对应环节拦住攻击的检查<a class="ref" href="#s4">[4]</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。前三环发生在 Safe 一侧，后两环在 Bybit 一侧。</figcaption>
+        </figure>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>被盗资产的美元估值有几种说法：Bybit 的首份公告写“超过 15 亿美元”，后来的版本改为“超过 14 亿美元”<a class="ref" href="#s1">[1]</a>；FBI 写约 15 亿美元<a class="ref" href="#s2">[2]</a>；CertiK 和 Elliptic 按事发时价格算出约 <span class="dispute">14.6 亿美元</span><a class="ref" href="#s4">[4]</a><a class="ref" href="#s12">[12]</a>。本页采用 14.6 亿美元。按代币计，CertiK 的统计如下：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>资产</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>ETH</td><td class="n">401,346</td><td>原生 ETH，占被盗资产的大部分</td></tr>
+              <tr><td>stETH</td><td class="n">90,375</td><td>Lido 的质押凭证</td></tr>
+              <tr><td>cmETH</td><td class="n">15,000</td><td>Mantle 生态的再质押凭证，后被 mETH Protocol 追回</td></tr>
+              <tr><td>mETH</td><td class="n">8,000</td><td>Mantle 生态的质押凭证</td></tr>
+              <tr><td>USDT</td><td class="n">约 90</td><td>零星余额</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>洗钱路径</h3>
+        <ol class="flow">
+          <li class="atk"><b>换币、拆分</b>stETH、cmETH 等在 DEX 上换成 ETH，避免被发行方冻结；两小时内分散到约 50 个钱包</li>
+          <li class="atk"><b>跨链换成 BTC</b>主要经 THORChain，也用了 eXch 和 OKX 的 DEX 聚合器</li>
+          <li class="atk"><b>再拆散、混币</b>BTC 分散到数万个钱包，部分进入 Wasabi、CryptoMixer</li>
+          <li class="doubt"><b>出金</b>经场外交易（OTC）和 P2P 渠道换成法币或稳定币</li>
+        </ol>
+        <p>这次洗钱最突出的是速度。TRM 统计，事发 48 小时内至少 1.6 亿美元进入洗钱渠道，到 2 月 26 日超过 4 亿美元<a class="ref" href="#s13">[13]</a>。Elliptic 记录，最初的约 50 个钱包在 9 天里被逐个清空，最后一个在 3 月 3 日清空；eXch 拒绝了封堵请求，从中赚了数十万美元手续费<a class="ref" href="#s12">[12]</a>。3 月 4 日，Ben Zhou 称约 83% 的 ETH 已换成比特币，分散在 6,954 个钱包里<a class="ref" href="#s18">[18]</a>。到 4 月 21 日，84.45%（432,748 ETH）已经过 THORChain 换成比特币，仍可追踪的部分变成 10,003 枚 BTC，分散在 35,772 个钱包里，平均每个 0.28 枚<a class="ref" href="#s19">[19]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>渠道</th><th class="n">经手</th><th>事后</th></tr></thead>
+            <tbody>
+              <tr><td>THORChain</td><td class="n">约 43.3 万 ETH</td><td>ETH 换 BTC 的主通道。Chainalysis 估计节点运营者从中赚了至少 1,200 万美元手续费<a class="ref" href="#s20">[20]</a></td></tr>
+              <tr><td>eXch</td><td class="n">约 7.97 万 ETH</td><td>Bybit 称这部分“已消失”；2025-04-30 被德国、荷兰执法部门查封<a class="ref" href="#s18">[18]</a><a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>OKX Web3 DEX 聚合器</td><td class="n">约 4.02 万 ETH</td><td>其中约 2.36 万 ETH 无法追踪；OKX 于 2025-03-17 暂停该服务<a class="ref" href="#s18">[18]</a><a class="ref" href="#s22">[22]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>冻结与追回</h3>
+        <p>能冻结的主要是两类资产：发行方能控制的代币，和流进合规交易所的资金。</p>
+        <ul>
+          <li>mETH Protocol 追回 15,000 枚 cmETH（约 4,300 万美元）。协议对提款设有 8 小时延迟，团队在 Polygon CISO Mudit Gupta 和 SEAL 的协助下，在延迟期内暂停合约并把这批 cmETH 转到恢复地址<a class="ref" href="#s25">[25]</a>。</li>
+          <li>事发首日，多家交易所和链上项目按 Bybit 公布的黑名单冻结了约 4,289 万美元<a class="ref" href="#s25">[25]</a>。</li>
+          <li>Tether 先冻结 181,000 枚 USDT<a class="ref" href="#s25">[25]</a>；2026 年 10 月，又在 ZachXBT 追踪到的一组 Bybit 赃款里冻结 442,000 枚 USDT<a class="ref" href="#s24">[24]</a>。</li>
+          <li>2026 年 8 月，美国法院对部分匿名被告持有的赃款下达初步禁令，报道没有披露金额<a class="ref" href="#s26">[26]</a>。</li>
+        </ul>
+        <p>按 Bybit 自己的口径，冻结比例在 3 月 4 日约为 3%<a class="ref" href="#s18">[18]</a>，4 月 21 日为 3.84%<a class="ref" href="#s19">[19]</a>。crypto.news 转述的 3 月下旬数字是可追踪 88.87%、无法追踪 7.59%、冻结 3.54%，和前后两组数字衔接不上，可能是统计口径不同<a class="ref" href="#s27">[27]</a>。截至 2026 年 10 月，本页没有查到大额追回的公开报道；按已公布的冻结比例，九成五以上的被盗资产没有追回。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>挤兑与偿付</h3>
+        <p>Bybit 没有暂停提现。首份公告发出时，70% 的待处理提现已经完成<a class="ref" href="#s1">[1]</a>。按 Cointelegraph 的报道，2 月 22 日用户提走了超过 50 亿美元，Hacken 的审计显示储备仍然高于负债<a class="ref" href="#s16">[16]</a>。交易所被盗后常见的做法是冻结提现、按比例分摊损失，七个月前的 WazirX 就是这样。Bybit 在三天内补上了约 44.7 万枚 ETH 的缺口，提现没有中断，用户没有承担损失<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>朝鲜的年度纪录</h3>
+        <p>Elliptic 统计，朝鲜相关黑客在 2025 年前九个月盗取了超过 20 亿美元，是有记录以来最高的年度金额，接近 2024 年全年的三倍；此前的纪录是 2022 年的 13.5 亿美元，主要来自 <a href="2022-ronin-bridge.html">Ronin</a> 和 Harmony 两座跨链桥<a class="ref" href="#s14">[14]</a>。Bybit 一案的 14.6 亿美元占了其中大半。Elliptic 的判断是，朝鲜的手法正从技术漏洞转向社会工程，“加密安全的薄弱环节越来越多是人，而不是技术”。</p>
+        <h3>谁该负责</h3>
+        <div class="compare">
+          <div>
+            <h4>Bybit 的说法</h4>
+            <p>两家取证机构都没有发现 Bybit 基础设施被入侵。是 Safe 一名开发者的凭证被盗，攻击者借此进入 Safe{Wallet} 的基础设施，“彻底骗过了签名人”<a class="ref" href="#s5">[5]</a>。</p>
+          </div>
+          <div>
+            <h4>Safe 的说法</h4>
+            <p>攻击来自一台被攻破的 Safe{Wallet} 开发者电脑，影响的是 Bybit 运营的一个账户。外部研究者的审查“没有发现 Safe 智能合约或前端与服务源码中的漏洞”<a class="ref" href="#s10">[10]</a>。</p>
+          </div>
+        </div>
+        <p>CoinDesk 援引一位知情人士的话说，如果 Bybit 没有“盲签”，攻击就不可能成功<a class="ref" href="#s10">[10]</a>。两种说法都有事实依据：恶意代码确实是从 Safe{Wallet} 的服务器下发的，Bybit 的签名流程也确实没有独立核对交易内容的环节。CoinDesk 指出，这和 2024 年 WazirX 与 Liminal 的互相指责如出一辙。</p>
+        <h3>“中立”基础设施的争论</h3>
+        <p>THORChain 成了这次洗钱的主通道。CoinDesk 援引研究者的数据，约 12 亿美元、85% 的被盗资金经过了 THORChain；3 月 1 日一天的兑换量就超过 10 亿美元，比它平常一个月的量还多<a class="ref" href="#s20">[20]</a>。验证者 TCB 说：“当你的大部分流量都是朝鲜偷来的钱，这就成了国家安全问题，不再是游戏。”THORChain 创始人 John-Paul Thorbjornsen 则称自己已不参与 THORChain，并认为“指望这些区块链去审查交易不现实”<a class="ref" href="#s21">[21]</a>。一位前美国财政部官员提醒，明知资金来自 Lazarus 还收手续费，可能有违反 OFAC 制裁的风险<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>同一种手法的三起事件</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th class="n">损失</th><th>被篡改的显示层</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2024-wazirx.html">WazirX</a></td><td>2024-07</td><td class="n">约 2.3 亿美元</td><td>托管商 Liminal 提供的签名界面，事后双方互相指责<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>Radiant Capital</td><td>2024-10</td><td class="n">约 5,000 万美元</td><td>3 名开发者自己的电脑被植入恶意软件<a class="ref" href="#s28">[28]</a></td></tr>
+              <tr><td>Bybit</td><td>2025-02</td><td class="n">约 14.6 亿美元</td><td>Safe{Wallet} 官方网页，所有用户共用的前端<a class="ref" href="#s3">[3]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Sygnia 指出，Safe 开发者电脑被入侵的最早证据晚于前两起事件，所以 WazirX 和 Radiant 看来不是从 Safe{Wallet} 的基础设施开始的<a class="ref" href="#s3">[3]</a>。三起事件的共同点是：签名人信任的显示层可以被攻击者控制。区别在于被篡改的是哪一层：Radiant 是开发者自己的电脑，WazirX 是托管商的界面，Bybit 是所有 Safe 用户共用的官方网页。最后一种的影响面最大，攻击者改一个文件，就同时控制了所有用户看到的界面，再让它只对一个目标生效。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>72 小时补足储备</h3>
+        <p>事发当天，Bybit 称管理的资产超过 200 亿美元，必要时会借过桥贷款<a class="ref" href="#s1">[1]</a>。CNBC 报道，到 2 月 24 日，Bybit 通过紧急借款和大额存入获得了近 44.7 万枚 ETH，资金来自 Galaxy Digital、FalconX、Wintermute 等机构；Hacken 的审计确认 BTC、ETH、SOL、USDT、USDC 的储备率都超过 100%<a class="ref" href="#s15">[15]</a>。CoinDesk 的数字是：超过 4 亿美元通过 OTC 买入，另有约 3 亿美元从其他交易所调入<a class="ref" href="#s18">[18]</a>。同行也伸了手：Bitget 无息、无抵押借给 Bybit 4 万枚 ETH，三天后收回。Bitget CEO Gracy Chen 说：“这只是在帮助一个有困难的同行。”<a class="ref" href="#s16">[16]</a></p>
+        <h3>赏金计划</h3>
+        <p>Bybit 拿出追回金额的 10% 作为赏金，总额上限约 1.4 亿美元：5% 给提供线索的人，5% 给执行冻结的机构，并建立 LazarusBounty 网站公开追踪进展。到 2 月 26 日已向 5 名赏金猎人支付 423 万美元<a class="ref" href="#s17">[17]</a>。按 The Block 的报道，协助 mETH 追回资金的 Mudit Gupta 与 SEAL 可得约 430 万美元<a class="ref" href="#s25">[25]</a>。两个月里，Bybit 收到 5,443 份线索，其中 70 份被认定有效<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>调查与归因</h3>
+        <p>Bybit 请 Sygnia 和 Verichains 取证，两家的初步结论都是 Bybit 基础设施没有被入侵<a class="ref" href="#s5">[5]</a>。Safe 请 Mandiant 调查，确认开发者电脑被攻破、AWS 会话被劫持，攻击者是 TraderTraitor，即 Mandiant 追踪的 UNC4899，也叫 Jade Sleet、PUKCHONG<a class="ref" href="#s7">[7]</a>。FBI 在事发五天后发布公告，正式认定朝鲜对此负责，并呼吁 RPC 节点运营者、交易所、跨链桥和链上分析公司封堵攻击者正在使用的地址<a class="ref" href="#s2">[2]</a>。这是执法机构的认定，不是安全公司根据链上特征做的推测。</p>
+        <h3>Safe 的整改</h3>
+        <p>Safe 称已“完全重建、重新配置了所有基础设施，并轮换了所有凭证”<a class="ref" href="#s6">[6]</a>。SecurityWeek 列出的措施包括：轮换所有密钥和凭证、重置集群、更换开发者电脑、重新构建并部署容器镜像、限制外部访问交易服务（Transaction Service），以及为对外服务增加防火墙规则<a class="ref" href="#s8">[8]</a>。之后的两项产品改动直接针对签名环节：</p>
+        <ul>
+          <li>2025 年 11 月，Safe{Wallet} 集成 Hypernative 的风险引擎，每笔交易执行前评分，低风险直接放行，可疑的要求额外确认，高风险的直接拦截<a class="ref" href="#s29">[29]</a>。</li>
+          <li>2026 年 10 月，Safe Labs 推出 Policy Engine，通过 Safe 的 Transaction Guard 挂载链上策略合约：收款地址白名单、限额、合约调用白名单，以及对增删签名人、改门槛、启用模块的延时或联签。Safe 的原话是：“不符合策略的交易不能执行，不管有多少签名人批准。”<a class="ref" href="#s31">[31]</a></li>
+        </ul>
+        <p>Transaction Guard 是 Safe v1.3.0 起才有的接口：<code>execTransaction</code> 在核对签名之后、执行之前，调用 Guard 合约的 <code>checkTransaction</code>，Guard 可以拒绝 <code>operation = 1</code> 或白名单之外的目标<a class="ref" href="#s33">[33]</a>。v1.1.1 的 <code>execTransaction</code> 里没有这一步<a class="ref" href="#s32">[32]</a>。</p>
+        <h3>行业标准</h3>
+        <p>2026 年 5 月 12 日，以太坊基金会发布 Clear Signing 标准，所用的描述格式是 Ledger 发起的 ERC-7730：应用方用统一格式描述“这笔交易会做什么”，钱包据此显示人类可读的确认信息，安全专家再对描述的正确性做审核与背书。Fireblocks、Trezor、MetaMask、WalletConnect 等参与了这项工作<a class="ref" href="#s30">[30]</a>。另一类工具在客户端本地重算 Safe 交易哈希，供签名人和 Ledger 屏幕上的值逐位比对，例如 pcaversaccio 维护的 safe-tx-hashes-util<a class="ref" href="#s34">[34]</a>。</p>
+        <h3>诉讼与 Bybit 自身</h3>
+        <p>2026 年 8 月，Bybit 在美国哥伦比亚特区联邦地区法院起诉朝鲜、侦察总局和 Lazarus Group，取得一项初步禁令，冻结部分匿名被告持有的被盗资产，案件尚未判决<a class="ref" href="#s26">[26]</a>。Ben Zhou 说，Lazarus 的攻击“不只是对 Bybit 的攻击，也是对整个行业信任的攻击”。事发后不久，Bybit 表示正在评估其他托管钱包方案<a class="ref" href="#s5">[5]</a>。按 Bybit 2026 年上半年的风控报告，它对冷、温、热钱包和上架代币合约的链上活动做到全覆盖监控，半年里拦截了 3 万多笔可疑提现申请<a class="ref" href="#s27">[27]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <p>按攻击链的顺序，每一环都有事后报告指出的检查可以加上<a class="ref" href="#s4">[4]</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。这些检查都不新，这次缺的是把它们放在同一条链上。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>环节</th><th>这次发生了什么</th><th>本可以拦住的检查</th></tr></thead>
+            <tbody>
+              <tr><td>开发者电脑</td><td>高权限员工在工作电脑上运行了陌生人给的 Docker 项目</td><td>开发与生产权限分离；陌生代码只在隔离环境里跑</td></tr>
+              <tr><td>云账户</td><td>偷来的会话令牌绕过了多因素认证</td><td>短时效凭证；会话绑定设备；对 IAM 枚举、新 MFA 设备注册告警</td></tr>
+              <tr><td>前端发布</td><td>S3 上的生产文件被直接替换，两天没人发现</td><td>只允许 CI 发布；线上文件与构建产物持续比对，不一致立即告警</td></tr>
+              <tr><td>签名</td><td>3 名签名人都只看网页，Ledger 上的内容没有核对</td><td>用另一套工具独立解码交易并模拟执行；硬件钱包上清晰签名</td></tr>
+              <tr><td>合约</td><td>一笔 <code>delegatecall</code> 就换掉了整个钱包的逻辑</td><td>用 Guard 禁止 <code>operation = 1</code> 和白名单外的目标；权限类操作加延时</td></tr>
+              <tr><td>资金集中</td><td>一个钱包里放着约 15 亿美元</td><td>分散存放；限制单笔、单日转出额度；大额转出加时间锁</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所和托管方</span>
+          <ul>
+            <li>多签的安全来自签名人彼此独立。至少一名签名人要用不同的工具链核对交易，例如命令行工具或自建解码服务，而不是和其他人用同一个网页。</li>
+            <li>冷钱包的日常操作应该只有“固定目标的普通转账”。任何 <code>operation = 1</code>、任何白名单外的目标，都按安全事件处理，不签。</li>
+            <li>不要把全部储备放在一个钱包里。mETH Protocol 靠 8 小时提款延迟追回了 4,300 万美元，时间锁对托管钱包同样有用。</li>
+            <li>第三方工具是你的攻击面。这次 Bybit 的系统没有被攻破，损失仍然由 Bybit 承担。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给钱包和前端开发者</span>
+          <ul>
+            <li>前端是签名流程的一部分。生产环境的发布权限、构建链和静态资源，要像合约一样审计和监控。</li>
+            <li>对 <code>delegatecall</code>、改实现合约、改签名人和门槛这类操作，界面和硬件钱包上都要有醒目的警告。</li>
+            <li>支持 Clear Signing（ERC-7730）这样的标准，让硬件钱包直接显示交易的含义，而不只是一串哈希。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给签名人</span>
+          <ul>
+            <li>硬件钱包屏幕上的内容才是你签的东西，网页只是一个可能被篡改的显示层。看不懂设备上的内容，就不要签。</li>
+            <li>用独立工具在本地重算 Safe 交易哈希，和硬件钱包上显示的值逐位比对<a class="ref" href="#s34">[34]</a>。</li>
+            <li>在专用、干净的设备上签名。CertiK 建议用加固的专用或隔离设备、每次使用全新的系统环境<a class="ref" href="#s4">[4]</a>；safe-tx-hashes-util 的说明建议核对、签名后立即关机<a class="ref" href="#s34">[34]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Bybit，《Incident Update: Unauthorized Activity Involving ETH Cold Wallet》，2025-02-21（本站查阅的是 2025-02-22 与 2025-03-14 的网页存档）。<a href="https://announcements.bybit.com/en/article/incident-update-unauthorized-activity-involving-eth-cold-wallet-blt292c0454d26e9140/">announcements.bybit.com</a></li>
+          <li id="s2">FBI，《North Korea Responsible for $1.5 Billion Bybit Hack》，PSA250226，2025-02-26。<a href="https://www.ic3.gov/PSA/2025/PSA250226">ic3.gov</a></li>
+          <li id="s3">Sygnia，《Sygnia’s Investigation into the Bybit Hack: What We Know So Far》，2025-03-16。<a href="https://www.sygnia.co/blog/sygnia-investigation-bybit-hack/">sygnia.co</a></li>
+          <li id="s4">CertiK，《Bybit Incident Technical Analysis》，2025-02-22。<a href="https://www.certik.com/blog/bybit-incident-technical-analysis">certik.com</a></li>
+          <li id="s5">Bybit，《Bybit Confirms Security Integrity Amid Safe (Wallet) Incident - No Compromise in Infrastructure》，PR Newswire，2025-02-26。<a href="https://www.prnewswire.com/apac/news-releases/bybit-confirms-security-integrity-amid-safe-wallet-incident--no-compromise-in-infrastructure-302386279.html">prnewswire.com</a></li>
+          <li id="s6">BleepingComputer，《Lazarus hacked Bybit via breached Safe{Wallet} developer machine》，2025-02-26（含 Safe 声明与 Sygnia、Verichains 结论的摘录）。<a href="https://www.bleepingcomputer.com/news/security/lazarus-hacked-bybit-via-breached-safe-wallet-developer-machine/">bleepingcomputer.com</a></li>
+          <li id="s7">Ravie Lakshmanan，《Safe{Wallet} Confirms North Korean TraderTraitor Hackers Stole $1.5 Billion in Bybit Heist》，The Hacker News，2025-03-07（转述 Safe 于 2025-03-06 公布的 Mandiant 初步结论）。<a href="https://thehackernews.com/2025/03/safewallet-confirms-north-korean.html">thehackernews.com</a></li>
+          <li id="s8">SecurityWeek，《How Social Engineering Sparked a Billion-Dollar Supply Chain Cryptocurrency Heist》，2025-03-06。<a href="https://www.securityweek.com/how-social-engineering-sparked-a-billion-dollar-supply-chain-cryptocurrency-heist/">securityweek.com</a></li>
+          <li id="s9">Wiz，《TraderTraitor: Deep Dive》，2025-07-28。<a href="https://www.wiz.io/blog/north-korean-tradertraitor-crypto-heist">wiz.io</a></li>
+          <li id="s10">CoinDesk，《Bybit and Safe Custody Are at Odds on Who's to Blame for $1.5B Hack》，2025-02-26。<a href="https://www.coindesk.com/business/2025/02/26/bybit-and-safe-custody-blame-each-other-over-usd1-5b-hack">coindesk.com</a></li>
+          <li id="s11">Hex Trust，《The Bybit Crypto Hack – An Analysis by Hex Trust》，2025（页面未注明日期）。<a href="https://www.hextrust.com/resources-collection/the-bybit-crypto-hack---an-analysis-by-hex-trust">hextrust.com</a></li>
+          <li id="s12">Elliptic，《The largest theft in history - following the money trail from the Bybit Hack》，2025-02-23，2025-03-05 更新。<a href="https://www.elliptic.co/blog/bybit-hack-largest-in-history">elliptic.co</a></li>
+          <li id="s13">TRM Labs，《The Bybit Hack: Following North Korea’s Largest Exploit》，2025-02-26。<a href="https://www.trmlabs.com/resources/blog/the-bybit-hack-following-north-koreas-largest-exploit">trmlabs.com</a></li>
+          <li id="s14">Elliptic，《North Korea's crypto hackers have stolen over $2 billion in 2025》，2025-10-06。<a href="https://www.elliptic.co/insights/north-korea-linked-hackers-have-already-stolen-over-2-billion-in-2025/">elliptic.co</a></li>
+          <li id="s15">CNBC，《Crypto exchange Bybit says it fully replenished reserves after record $1.5 billion hack》，2025-02-24。<a href="https://www.cnbc.com/2025/02/24/bybit-replenished-reserves-after-record-breaking-1point5-billion-hack.html">cnbc.com</a></li>
+          <li id="s16">Cointelegraph，《Bybit repays Bitget’s 40,000 ETH loan after $1.4B hack》，2025-02-25（TradingView 转载）。<a href="https://www.tradingview.com/news/cointelegraph:14a799c98094b:0-bybit-repays-bitget-s-40-000-eth-loan-after-1-4b-hack/">tradingview.com</a></li>
+          <li id="s17">TechCrunch，《Hacked crypto exchange Bybit offers $140M bounty to trace stolen funds》，2025-02-26。<a href="https://techcrunch.com/2025/02/26/hacked-crypto-exchange-bybit-offers-140-million-bounty-to-trace-stolen-funds/">techcrunch.com</a></li>
+          <li id="s18">CoinDesk，《Bybit CEO Says 77% of Stolen Funds From Record $1.4B Hack Still Traceable》，2025-03-04。<a href="https://www.coindesk.com/markets/2025/03/04/bybit-says-77-of-stolen-funds-from-record-usd1-4b-hack-still-traceable">coindesk.com</a></li>
+          <li id="s19">CoinDesk，《Bybit's CEO Ben Zhou Says Nearly 28% Funds From $1.4B Hack Have Gone Dark》，2025-04-21。<a href="https://www.coindesk.com/markets/2025/04/21/over-usd380m-worth-of-crypto-stolen-during-bybit-s-usd1-4b-hack-has-gone-dark">coindesk.com</a></li>
+          <li id="s20">CoinDesk，《Inside North Korea's Favorite Crypto Laundering Tool: THORChain》，2025-04-07。<a href="https://www.coindesk.com/tech/2025/04/07/the-blockchain-fueling-north-korea-s-massive-crypto-laundering-operation">coindesk.com</a></li>
+          <li id="s21">Cointelegraph，《THORChain dev exits after failed bid to halt North Korean transactions》，2025-02-27（TradingView 转载）。<a href="https://www.tradingview.com/news/cointelegraph:608f6b38d094b:0-thorchain-dev-exits-after-failed-bid-to-halt-north-korean-transactions/">tradingview.com</a></li>
+          <li id="s22">The Record，《Crypto exchange OKX shuts down tool used by North Korean hackers to launder stolen funds》，2025-03-17。<a href="https://therecord.media/crypto-okx-shuts-down-exchange">therecord.media</a></li>
+          <li id="s23">荷兰 FIOD，《BKA and FIOD shut down cryptocurrency swap service eXch》，2025-05-09。<a href="https://www.fiod.nl/en/bka-and-fiod-shut-down-cryptocurrency-swap-service-exch-e-34-million-in-cryptocurrency-has-been-seized-during-the-operation/">fiod.nl</a></li>
+          <li id="s24">CryptoSlate，《ZachXBT infiltrates $1B crypto syndicate to expose Lazarus Group》，2026-10-05。<a href="https://cryptoslate.com/zachxbt-infiltrates-1b-crypto-syndicate-to-expose-lazarus-group/">cryptoslate.com</a></li>
+          <li id="s25">The Block，《mETH Protocol announces $43 million recovery from Bybit hack, while Tether freezes $181,000》，2025-02-22。<a href="https://www.theblock.co/news/regulation/2025-02-22-meth-protocol-announces-43-million-recovery-from-bybit-hack-while-tether-freezes-181000-342840">theblock.co</a></li>
+          <li id="s26">CoinDesk，《Bybit sues North Korea and Lazarus Group over $1.5 billion hack, secures asset freeze》，2026-08-07。<a href="https://www.coindesk.com/policy/2026/08/07/bybit-sues-north-korea-and-lazarus-group-over-usd1-5-billion-hack-secures-asset-freeze">coindesk.com</a></li>
+          <li id="s27">crypto.news，《Bybit intercepted over $700M in potential losses after $1.46B hack》，2026-08-19（转述 Bybit 2026 年上半年风控与安全报告）。<a href="https://crypto.news/bybit-intercepted-over-700m-in-potential-losses-after-1-46b-hack/">crypto.news</a></li>
+          <li id="s28">SecurityWeek，《$50 Million Radiant Capital Heist Blamed on North Korean Hackers》，2024-12-10。<a href="https://www.securityweek.com/radiant-capital-50-million-heist-blamed-on-north-korean-hackers/">securityweek.com</a></li>
+          <li id="s29">Safe Labs，《Safe partners with Hypernative to launch enterprise security integration》，2025-11-20。<a href="https://safe.global/blog/safe-partners-with-hypernative-to-launch-enterprise-security-integration">safe.global</a></li>
+          <li id="s30">以太坊基金会，《Clear Signing: Making Transaction Approvals Safer on Ethereum》，2026-05-12。<a href="https://blog.ethereum.org/2026/05/12/clear-signing-announcement">blog.ethereum.org</a></li>
+          <li id="s31">Dev Pramoth（Safe Labs），《Introducing the Safe Policy Engine》，2026-10-27。<a href="https://safe.global/blog/introducing-the-safe-policy-engine">safe.global</a></li>
+          <li id="s32">Safe 合约源码，safe-global/safe-contracts 仓库 v1.1.1 标签（Proxy.sol、Enum.sol、Executor.sol、MasterCopy.sol、GnosisSafe.sol、MultiSend.sol）。<a href="https://github.com/safe-global/safe-contracts/tree/v1.1.1">github.com</a></li>
+          <li id="s33">Safe 合约源码，safe-global/safe-contracts 仓库 v1.3.0 标签（GnosisSafeProxy.sol、GnosisSafe.sol 中的 Guard 调用）。<a href="https://github.com/safe-global/safe-contracts/tree/v1.3.0">github.com</a></li>
+          <li id="s34">pcaversaccio，safe-tx-hashes-util 仓库 README。<a href="https://github.com/pcaversaccio/safe-tx-hashes-util">github.com</a></li>
+          <li id="s35">Huntress，《Bybit Cryptocurrency Exchange Hack: What Happened, Impact, and Lessons》，2025-12-16。<a href="https://www.huntress.com/threat-library/data-breach/bybit-cryptocurrency-exchange-data-breach">huntress.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

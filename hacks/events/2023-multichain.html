@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multichain 跨链桥资产异常转出｜区块链被盗事件编年史</title>
+<meta name="description" content="2023 年 7 月 Multichain 三座跨链桥约 1.26 亿美元资产被转出的经过：号称 MPC 去中心化的节点全部挂在 CEO 个人云账号下，第二波资金由 CEO 的妹妹转走，以及新加坡清盘和纽约 Chapter 15 程序的最新进展。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-multichain">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Multichain 跨链桥资产异常转出</h1>
+    <p class="lede">2023 年 7 月 6 日（UTC），Multichain 通往 Fantom、Moonriver 和 Dogechain 的三座跨链桥被转走约 1.26 亿美元，三天后路由池里又有约 1.03 亿美元被 CEO 的妹妹转走。转走资金用的都是协议自己的 MPC 签名。团队事后承认，号称由多个独立节点共同控制的 MPC 服务器，全部运行在 CEO 一个人的云账号下，而这名 CEO 此前已被中国警方带走。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Multichain（前身 Anyswap）是 2022 年锁仓规模最大的跨链桥之一。用户的资产锁在由 SMPC 节点网络生成的地址里，官方文档称这些地址“只由 SMPC 节点控制”。2023 年 5 月 CEO Zhaojun 被中国警方带走后，团队失去了节点服务器的权限。7 月 6 日，三座桥在以太坊一侧锁仓的资产被转走超过 1.25 亿美元<a class="ref" href="#s6">[6]</a>。</p>
+        <p>这次不需要任何合约漏洞。资产是从锁仓的 MPC 地址直接转出的；这类地址的私钥由 SMPC 节点以门限方式共同持有，只要 MPC 网络签了名，转账就和日常的跨链兑付一样有效<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。7 月 14 日团队发布声明：MPC 节点服务器“实际运行在 Zhaojun 的个人云服务器账号下”，团队里没有人能登录；第一波转出前，有人从昆明的 IP 登录过这个账号；第二波则是 CEO 的妹妹以“资产保全”为名，把路由池剩余资产转进了自己控制的两个地址，她随后也被警方带走<a class="ref" href="#s1">[1]</a>。</p>
+        <p>被转走的稳定币中，约 6,320 万美元的 USDC 和超过 250 万美元的 USDT 很快被 Circle 和 Tether 冻结<a class="ref" href="#s9">[9]</a>。Fantom 基金会（现 Sonic Labs）在新加坡胜诉，法院于 2025 年 5 月下令清盘 Multichain Foundation；清盘人随后到纽约破产法院申请 Chapter 15 救济，让这笔 USDC 继续冻结<a class="ref" href="#s19">[19]</a><a class="ref" href="#s21">[21]</a>。截至 2026 年 10 月，第一波转出由谁执行、CEO 兄妹的案情和这笔资金最终归谁，都没有公开的司法结论，用户没有拿回资产。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Anyswap 于 2020 年 7 月作为跨链 DEX 上线，同年 11 月接入 Fantom 主网<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。2021 年 12 月它更名为 Multichain，同时完成 6,000 万美元种子轮融资，由 Binance Labs 领投，Sequoia China、IDG Capital、Three Arrows Capital、Circle Ventures 等参投，当时锁仓约 48 亿美元<a class="ref" href="#s24">[24]</a>。据 DefiLlama 的数据，2022 年初它的锁仓一度达到约 92 亿美元<a class="ref" href="#s20">[20]</a>。</p>
+        <p>Multichain 提供两种服务。Bridge 模式把源链资产转进一个由 SMPC 节点生成的地址锁起来，在目标链按 1:1 铸出包装资产，文档把这个地址叫作“去中心化管理账户”，并写明它“只由 SMPC 节点控制，不由任何人或其他外部账户控制”<a class="ref" href="#s3">[3]</a>。Router 模式在各条链上部署 anyToken 和 Router 合约，资产在各链金库之间调度，调用资金的函数同样只认 MPC 地址。两种模式的信任根是同一个 SMPC 网络。</p>
+        <p>官方安全文档把这套机制描述为基于安全多方计算的门限分布式签名：私钥分片在“独立运行的节点”上生成，签名时各节点不交换私钥，完整私钥从不出现<a class="ref" href="#s3">[3]</a>。文档没有公开节点数量、签名门限和节点运营方是谁。Fantom 基金会后来在诉讼中主张，用户协议的关键条款之一就是跨链桥由“去中心化、安全的 MPC 节点控制，不可能被一个人控制”<a class="ref" href="#s5">[5]</a>。</p>
+        <p>Fantom 对它的依赖很深。2023 年 5 月，Fantom 上约 80% 的稳定币是经 Multichain 跨来的<a class="ref" href="#s25">[25]</a>。Fantom 基金会还长期按 Multichain 的请求为桥补充 FTM 流动性，2021 年 8 月到 2023 年 4 月累计超过 2.5 亿枚，最后一笔 417.5 万枚 FTM 于 2023 年 4 月 14 日转入后没有被归还<a class="ref" href="#s5">[5]</a>。</p>
+        <p>Multichain 此前出过安全事故。2021 年 7 月，Anyswap V3 路由的 MPC 签名数据里出现重复值，被人据此反推出私钥，损失约 800 万美元；2022 年初，几个 anyToken 合约的授权漏洞又造成约 300 万美元用户损失<a class="ref" href="#s26">[26]</a>。这两次都是代码或密码学实现的问题，2023 年这次不同。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">资金被转出</span><span class="def">防守方、发行方与法院行动</span><span>其他事件</span></p>
+        <p>团队声明里的日期多按亚洲时间书写，链上时间一律为 UTC。第一波转出按 UTC 计在 7 月 6 日，团队声明和新加坡判决书写作“7 月 7 日”，差别应来自时区。</p>
+        <ol class="timeline">
+          <li><time>2020-07</time><div class="ev">Anyswap 作为跨链 DEX 上线，11 月接入 Fantom 主网<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2021-12-20</time><div class="ev">更名 Multichain，完成 Binance Labs 领投的 6,000 万美元融资<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li><time>2023-04-14</time><div class="ev">Fantom 基金会按流动性安排向桥转入 417.5 万枚 FTM，此后未获归还<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="key"><time>2023-05-21</time><div class="ev">据团队事后声明，CEO Zhaojun 在家中被中国警方带走，电脑、手机、硬件钱包和助记词被收走；节点运营方的 MPC 服务器运维密钥随即失效<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2023-05-24</time><div class="ev">团队发推称部分跨链路线“因不可抗力”不可用，恢复时间未知<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2023-05-25</time><div class="ev">币安暂停 10 种 Multichain 包装代币的充值，跨链聚合器 Li.Fi 断开 Multichain，MULTI 较此前下跌 54%<a class="ref" href="#s25">[25]</a>。</div></li>
+          <li><time>2023-05-31</time><div class="ev">团队公开表示联系不上 CEO，拿不到维护所需的服务器权限<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2023-06-04</time><div class="ev">据团队声明，CEO 家属用他家中电脑里的历史信息登录了云服务器平台，只允许团队工程师到现场用这台电脑修复 Router2 和 Router5<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2023-07-06</time><div class="ev">第一波转出。Fantom、Moonriver、Dogechain 三座桥在以太坊一侧锁仓的 USDC、WBTC、WETH 等约 1.26 亿美元资产被转到未知地址<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s26">[26]</a>。</div></li>
+          <li class="def"><time>2023-07-06 23:27</time><div class="ev">团队发推：MPC 地址上锁仓的资产被“异常转移到未知地址”，团队“不确定发生了什么”，建议用户停用服务并撤销授权<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2023-07-07 04:57</time><div class="ev">团队宣布服务停止，跨链交易将卡在源链上。币安当天起停止支持多种 Multichain 包装代币<a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-07-07</time><div class="ev">Circle 冻结约 6,320 万美元 USDC；Tether 随后冻结超过 250 万美元 USDT<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2023-07-09 起</time><div class="ev">据团队声明，CEO 的妹妹把路由池剩余的用户资产转进她控制的两个 EOA。链上可见 Router 的 MPC 地址调用 <code>anySwapFeeTo</code> 掏空各链 anyToken 金库。Beosin 统计这一波约 1.03 亿美元<a class="ref" href="#s1">[1]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2023-07-10</time><div class="ev">Chainalysis 发文称这起事件“看起来是一次黑客攻击或内部人卷款”<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2023-07-13</time><div class="ev">据团队声明，警方带走了 CEO 的妹妹，她转走的资产状态不明<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="key"><time>2023-07-14 08:22</time><div class="ev">团队发布 12 条声明，承认全部 MPC 节点服务器运行在 CEO 个人云账号下，并宣布停止运营<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2023-09-18</time><div class="ev">Fantom 基金会在新加坡高等法院起诉 Multichain Foundation Ltd 和 Multichain Pte Ltd<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2023-11-01</time><div class="ev">停用近四个月的桥短暂恢复约三小时，一个钱包借机把约 28 万美元的 FTM 换成约 190 万美元资产转进币安<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2024-01-30</time><div class="ev">新加坡高等法院对 Multichain 两家公司作出缺席判决，Fantom 胜诉<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2024-03-04</time><div class="ev">Fantom 宣布将申请清盘 Multichain Foundation，为其他用户追索开路<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2024-07-08</time><div class="ev">法院评定赔偿：两家公司向 Fantom 支付约 218.8 万美元<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def key"><time>2025-05-09</time><div class="ev">新加坡高等法院下令清盘 Multichain Foundation，指定 KPMG 新加坡的三名联合清盘人<a class="ref" href="#s18">[18]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2025-10-30</time><div class="ev">纽约南区破产法院法官 David S. Jones 应清盘人申请，命令 Circle 继续冻结三个地址并保留对应的美元储备<a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2026</time><div class="ev">In re Multichain Foundation 案中，纽约南区破产法院驳回了债务人要求暂停一起联邦集体诉讼的申请，Multichain 不是该诉讼的当事人<a class="ref" href="#s22">[22]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起事件里没有合约漏洞被利用。两波转出的每一笔交易都带着协议自己的 MPC 签名，链上合约和以太坊本身都按规则放行了。问题出在签名之前：链上只能验证“这个签名来自 MPC 地址”，验证不了“这个签名是 n 个独立节点协商出来的”，还是一个人控制着所有节点的机器算出来的。MPC 方案的安全有一半在链下，取决于节点是不是真的分散。</p>
+        <h3>Bridge 模式：锁仓地址就是一个普通账户</h3>
+        <p>按官方文档，跨链时源链上的资产存进一个特殊的 SMPC 钱包地址，文档称之为“去中心化管理账户”；它的私钥由 SMPC 节点以门限签名的方式共同生成和使用<a class="ref" href="#s3">[3]</a>。从文档的描述看，这样的地址是由一组私钥控制的普通钱包地址（EOA），不是合约。</p>
+        <p>资产直接放在 EOA 里，意味着没有任何合约层面的限额、延时或二次审批可以介入。谁能让 MPC 网络产出一个签名，谁就能一次转走全部余额。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 470" role="img" aria-labelledby="mchain-ctl-t mchain-ctl-d">
+            <title id="mchain-ctl-t">Multichain 资金控制链：设计上的多方共管与实际的单一账号</title>
+            <desc id="mchain-ctl-d">文档宣称 SMPC 节点独立运行、无人能单独签名。团队事后承认所有节点服务器都在 CEO 个人云账号下，能登录这个账号就能让节点产出门限签名。签名对应的 MPC 地址在 Bridge 模式下直接持有锁仓资产，用 transfer 即可转走；在 Router 模式下是合约唯一认可的调用者，可以调用 anySwapFeeTo 等函数提走金库资产。第一波和第二波资金分别从这两条路径流出。</desc>
+            <defs>
+              <marker id="mchain-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="mchain-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="14" width="350" height="64" rx="4"/>
+            <text class="d-t b" x="195" y="40" text-anchor="middle">能登录 CEO 个人云账号的人</text>
+            <text class="d-t s" x="195" y="62" text-anchor="middle">据团队称：家属 6 月起可登录，另有昆明 IP 登录记录</text>
+            <rect class="d-box doubt" x="410" y="14" width="330" height="64" rx="4"/>
+            <text class="d-t b" x="575" y="40" text-anchor="middle">文档宣称的安全模型</text>
+            <text class="d-t s" x="575" y="62" text-anchor="middle">节点“独立运行”，无人能单独签名</text>
+            <line class="d-line atk" x1="195" y1="78" x2="195" y2="118" marker-end="url(#mchain-ah-atk)"/>
+            <text class="d-t atk halo" x="205" y="104">登录即全权</text>
+            <line class="d-line dash" x1="575" y1="78" x2="575" y2="118" marker-end="url(#mchain-ah)"/>
+            <text class="d-t s halo" x="585" y="104">假设节点分属不同主体</text>
+            <rect class="d-box soft" x="20" y="120" width="720" height="114" rx="4"/>
+            <text class="d-t b" x="380" y="142" text-anchor="middle">CEO 的个人云服务器账号（团队其他成员无法登录）</text>
+            <rect class="d-box" x="70" y="156" width="130" height="36" rx="4"/>
+            <text class="d-t m" x="135" y="179" text-anchor="middle">SMPC 节点 1</text>
+            <rect class="d-box" x="230" y="156" width="130" height="36" rx="4"/>
+            <text class="d-t m" x="295" y="179" text-anchor="middle">SMPC 节点 2</text>
+            <text class="d-t b" x="400" y="179" text-anchor="middle">……</text>
+            <rect class="d-box" x="440" y="156" width="130" height="36" rx="4"/>
+            <text class="d-t m" x="505" y="179" text-anchor="middle">SMPC 节点 n</text>
+            <text class="d-t s" x="380" y="220" text-anchor="middle">各节点协同算出门限签名（n 与门限 t 从未公开）</text>
+            <line class="d-line atk" x1="380" y1="234" x2="380" y2="266" marker-end="url(#mchain-ah-atk)"/>
+            <rect class="d-box atk" x="200" y="268" width="360" height="54" rx="4"/>
+            <text class="d-t b" x="380" y="291" text-anchor="middle">MPC 地址</text>
+            <text class="d-t s" x="380" y="311" text-anchor="middle">门限私钥对应的普通 EOA，链上只验签名不验来源</text>
+            <path class="d-line atk" d="M300,322 V346 H190 V368" marker-end="url(#mchain-ah-atk)"/>
+            <path class="d-line atk" d="M460,322 V346 H570 V368" marker-end="url(#mchain-ah-atk)"/>
+            <rect class="d-box" x="20" y="370" width="340" height="88" rx="4"/>
+            <text class="d-t b" x="190" y="394" text-anchor="middle">Bridge：资产直接锁在 MPC 地址</text>
+            <text class="d-t s" x="190" y="416" text-anchor="middle">一个签名的 <tspan class="m">transfer()</tspan> 即可转走，无额外检查</text>
+            <text class="d-t s atk" x="190" y="442" text-anchor="middle">第一波：7 月 6 日，约 1.26 亿美元</text>
+            <rect class="d-box" x="400" y="370" width="340" height="88" rx="4"/>
+            <text class="d-t b" x="570" y="394" text-anchor="middle">Router：合约只认 MPC 地址</text>
+            <text class="d-t s" x="570" y="416" text-anchor="middle"><tspan class="m">onlyMPC</tspan> 只检查 <tspan class="m">msg.sender</tspan></text>
+            <text class="d-t s atk" x="570" y="442" text-anchor="middle">第二波：<tspan class="m">anySwapFeeTo()</tspan> 提空金库</text>
+          </svg>
+          </div>
+          <figcaption>图 1：Multichain 的资金控制链。黄色框是官方文档的说法，红色是 7 月 14 日团队声明揭示的实际路径。链上合约看到的只有最下面两层，节点是否独立在链上无从验证。</figcaption>
+        </figure>
+        <h3>Router 模式：合约只认一个地址</h3>
+        <p>Router 合约的源码是公开验证过的。下面摘自以太坊上 AnyswapV4Router（<span class="addr">0x6b7a87899490ece95443e979ca9485cbe7e71522</span>）中与权限有关的几段<a class="ref" href="#s4">[4]</a>，英文注释是原有的，中文注释是本站加的：</p>
+<pre class="code"><code><span class="c">// AnyswapV4Router（Solidity 0.8.1），以太坊已验证源码</span>
+modifier onlyMPC() {
+<span class="bad">    require(msg.sender == mpc(), "AnyswapV3Router: FORBIDDEN");  <span class="c">// 唯一的权限检查</span></span>
+    _;
+}
+
+function changeMPC(address newMPC) public onlyMPC returns (bool) {
+    require(newMPC != address(0), "AnyswapV3Router: address(0x0)");
+    _oldMPC = mpc();
+    _newMPC = newMPC;
+<span class="good">    _newMPCEffectiveTime = block.timestamp + 2*24*3600;  <span class="c">// 换签名者要等 48 小时</span></span>
+    emit LogChangeMPC(_oldMPC, _newMPC, _newMPCEffectiveTime, cID());
+    return true;
+}
+
+<span class="c">// 铸出包装代币：只看调用者是不是 MPC，不在链上核对源链是否真有对应的转出</span>
+function anySwapIn(bytes32 txs, address token, address to, uint amount, uint fromChainID)
+    external onlyMPC {
+    _anySwapIn(txs, token, to, amount, fromChainID);
+}
+
+// extracts mpc fee from bridge fees
+<span class="c">// amount 由调用者任填，合约不核对累计手续费</span>
+<span class="bad">function anySwapFeeTo(address token, uint amount) external onlyMPC {</span>
+    address _mpc = mpc();
+    AnyswapV1ERC20(token).mint(_mpc, amount);                 <span class="c">// 先给自己铸出 anyToken</span>
+<span class="bad">    AnyswapV1ERC20(token).withdrawVault(_mpc, amount, _mpc);  <span class="c">// 再从金库兑走底层资产</span></span>
+}</code></pre>
+        <p class="code-cap">来源：Blockscout 上 AnyswapV4Router 的已验证源码，第 214–217、230–237、309–311、329–334 行；<code>anySwapIn</code> 的函数签名为排版拆成两行，去掉了一层缩进。</p>
+        <p>这几段代码说明两件事。第一，Router 里所有动用资金的函数，权限检查都只有 <code>msg.sender == mpc()</code> 这一行。<code>anySwapIn</code> 铸币前不在链上验证源链的转出，完全信任 MPC 节点的判断；<code>anySwapFeeTo</code> 名义上是提取跨链手续费，提取金额却由调用者任填。第二，设计者考虑过签名者被替换的风险，给 <code>changeMPC</code> 加了 48 小时生效延迟，但没有给任何动用资金的函数加延迟或限额。掌握了 MPC 签名的人不需要更换签名者，直接调用这些函数就行。</p>
+        <p>第二波正是这样发生的。7 月 10 日（UTC），链上调查者 Spreek 发现 Router 的 MPC 地址在多条链上调用 <code>anySwapFeeTo</code>，把各个 anyToken 金库的余额提给自己，再转进一个新地址<a class="ref" href="#s10">[10]</a>。团队 7 月 14 日的声明称，这一波是 CEO 的妹妹把路由池剩余资产转进了她控制的两个地址<a class="ref" href="#s1">[1]</a>。第二波用的是协议自己的签名和合约本来就允许的路径。</p>
+        <h3>门限签名在运维层面退化成了一个账号</h3>
+        <p>门限签名的前提是：攻击者要拿到 t 个节点的密钥分片才能签名，而这 t 个节点由不同的人、在不同的机器上运行。团队 7 月 14 日的声明第 1 条否定了这个前提：</p>
+        <blockquote>
+          <p>Furthermore, these MPC node servers, like all other ordinary servers, were actually running under Zhaojun's personal cloud server account. No member of the team has access to Zhaojun's personal cloud server account, so nobody can log on to these MPC servers.</p>
+          <cite>Multichain 团队声明第 1 条，2023-07-14<a class="ref" href="#s1">[1]</a></cite>
+        </blockquote>
+        <p>所有节点跑在同一个云账号下，分片存放在同一个人能控制的机器上。能登录这个账号的人，就能让足够多的节点参与签名，门限 t-of-n 在运维层面变成了 1-of-1。声明里还有一个细节能印证这一点：CEO 被带走后，节点运营方的“运维访问密钥被撤销”。如果节点真由互相独立的运营方管理，他们的访问权限不会因为一个人失联而一起失效。</p>
+        <div class="note doubt">
+          <span class="h">已知与未知</span>
+          <p>以上关于云账号的说法全部来自团队声明，没有日志或第三方核实。声明没有公开节点数量、签名门限和节点运营方的身份。“昆明 IP 登录”只是 CEO 妹妹的转述。警方是否接触过这个云账号、第一波转出由谁执行，至今没有任何官方说明。</p>
+        </div>
+        <h3>合约层面本可以多一道闸</h3>
+        <p>MPC 签名一旦被人控制，链上合约就是最后能起作用的地方。如果锁仓资产放在一个有限速和延时的金库合约里，而不是放在 EOA 里，拿到签名的人也只能慢慢取。按每种资产每小时放行 500 万美元估算，第一波转走的 USDC 约 6,320 万美元<a class="ref" href="#s9">[9]</a>，单这一种资产就要分十几个小时才能取完。下面是示意写法：</p>
+<pre class="code"><code><span class="c">// 示意：MPC 签名者只能在限额内放款，超额排队，独立的守护方可以暂停</span>
+function release(address token, address to, uint256 amount) external onlyMPC {
+    require(!paused, "paused");                        <span class="c">// guardian 是独立于 MPC 的另一方</span>
+<span class="good">    Window storage w = windows[token];</span>
+<span class="good">    if (block.timestamp &gt;= w.start + 1 hours) { w.start = block.timestamp; w.used = 0; }</span>
+<span class="good">    require(w.used + amount &lt;= hourlyCap[token], "over cap, queue it");</span>
+    w.used += amount;
+    IERC20(token).safeTransfer(to, amount);
+}
+
+function pause() external onlyGuardian { paused = true; }  <span class="c">// 守护方只能停，不能取钱</span></code></pre>
+        <p class="code-cap">示意代码，不是 Multichain 的实现。超额请求的排队与延时放行逻辑从略。守护方如果和签名者是同一批人，这道闸同样会失效。</p>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>这起事件没有可以复现的攻击代码，只有团队的叙述和链上记录。下面每一步都注明出处，并标明哪些是团队的说法、哪些是第三方的统计。</p>
+        <ol class="steps">
+          <li><b>CEO 被带走，团队失去服务器权限（团队说法）</b>据团队称，5 月 21 日 CEO 被中国警方带走，设备、硬件钱包和助记词被收走。团队联系节点运营方，得知 MPC 节点服务器的运维密钥已被撤销，只能靠少数没被收回权限的非 MPC 服务器维持部分跨链路线<a class="ref" href="#s1">[1]</a>。5 月 24 日到 31 日的公开表态只提到“不可抗力”和联系不上 CEO<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>家属接管云账号（团队说法）</b>6 月 4 日起，CEO 家属用他家中电脑里的历史信息登录了云服务器平台，只允许团队工程师到现场用那台电脑修复 Router2 和 Router5。家属和律师与警方保持沟通，团队被告知 CEO“很快会被释放”，被要求继续维护系统<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>第一波：锁仓资产被转走（第三方统计）</b>7 月 6 日，三座桥在以太坊一侧锁仓的 USDC、WBTC、WETH 等资产被转到未知地址。按当时价格，Chainalysis 的统计是：Fantom 桥接近 1.2 亿美元，Moonriver 桥约 680 万美元，Dogechain 桥约 66.6 万美元，合计超过 1.25 亿美元<a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。转出方此后没有把可被冻结的 USDC 换成别的资产<a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>“昆明 IP”（团队转述）</b>团队 7 月 14 日称，据 CEO 的妹妹说，云服务器平台上出现了来自昆明 IP 的登录信息，以及一系列从 MPC 地址转出资金的操作<a class="ref" href="#s1">[1]</a>。团队声明只说 CEO 是“在家中”被带走；DL News 等媒体报道他是在昆明被带走的<a class="ref" href="#s16">[16]</a>。</li>
+          <li><b>第二波：“资产保全”（团队说法与链上记录）</b>据团队称，7 月 9 日 CEO 的妹妹把路由池里剩余的用户资产转进她控制的两个 EOA，事后通知了团队和几个项目方<a class="ref" href="#s1">[1]</a>。链上可见 Router 的 MPC 地址从 7 月 10 日起在多条链上调用 <code>anySwapFeeTo</code><a class="ref" href="#s10">[10]</a>，Beosin 统计这一波约 1.03 亿美元<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>停运</b>7 月 13 日，据家属告知，CEO 的妹妹也被警方带走。7 月 14 日团队宣布停止运营，并说自己连前端域名的账号都没有权限，只能请 GoDaddy 帮忙下线 multichain.org<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+        <h3>外部盗窃还是内部转移</h3>
+        <p>没有任何法院或执法机关公开认定过第一波转出的执行者。各方的说法和依据如下。</p>
+        <div class="compare">
+          <div>
+            <h4>倾向“外部有人动手”</h4>
+            <p>团队事发当晚称“不确定发生了什么”，事后把第一波归于一次来自昆明 IP 的登录<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。Fantom CEO Michael Kong 起初认为，可能有执法系统内部的人盯上了 CEO，知道“他手里有钱”<a class="ref" href="#s16">[16]</a>。美国司法部后来告诉 Circle，因为无法确认黑客身份，将撤销扣押令<a class="ref" href="#s19">[19]</a>。</p>
+          </div>
+          <div>
+            <h4>倾向“内部人转移”</h4>
+            <p>Chainalysis 认为这像是“黑客攻击或内部人卷款”，理由之一是转出方没有换掉可冻结的 USDC，这与一般黑客的做法相反<a class="ref" href="#s6">[6]</a>。按团队自己的说法，只有 CEO 的云账号能操作 MPC，第二波也确实是 CEO 家属经手的<a class="ref" href="#s1">[1]</a>。Fantom 在诉讼中指出，Multichain Pte Ltd 在事发前不久才突然注册，董事和股东与 Multichain Foundation 是同一人<a class="ref" href="#s5">[5]</a>。Kong 在 2024 年说自己当初“太相信 Multichain 的说法了”<a class="ref" href="#s16">[16]</a>。</p>
+          </div>
+        </div>
+        <p>第三种说法是执法扣押：Cointelegraph 援引 Telegram 上的消息称，中国警方以洗钱为由调查 CEO，想把协议资产作为犯罪所得扣押，没被冻结的资金“据称已到了警方手里”<a class="ref" href="#s13">[13]</a>。这个说法没有任何官方文件或链上证据支持。新加坡法院在判决书中特别说明，案情事实主要是原告一方的陈述，法院对资产被转移去向的指控“不作任何认定”<a class="ref" href="#s5">[5]</a>。</p>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>两波资金的性质和去向不同。第一波中的稳定币很快被发行方冻结，其余资产的去向没有公开的追踪结论。第二波进了 CEO 妹妹控制的地址，此后的状态团队只说“不确定”。</p>
+        <h3>第一波</h3>
+        <ol class="flow">
+          <li class="atk"><b>三座桥的锁仓地址</b>7 月 6 日转出约 1.26 亿美元</li>
+          <li class="atk"><b>未知地址</b>团队当晚称“不确定发生了什么”</li>
+          <li class="def"><b>发行方冻结</b>Circle 冻结约 6,320 万美元 USDC，Tether 冻结超过 250 万美元 USDT</li>
+          <li class="doubt"><b>其余资产</b>WBTC、WETH 等的去向，未见公开的追踪结论</li>
+        </ol>
+        <p>据 IBTimes 报道，0xScope 在 7 月 7 日报告了 Circle 的冻结；Tether 冻结的金额来自 Fantom 基金会当时公布的“超过 250 万美元”<a class="ref" href="#s9">[9]</a>。</p>
+        <p>清盘人后来在纽约破产法院申请 Chapter 15 救济，法院延长了对这笔约 6,300 万美元 USDC 的冻结<a class="ref" href="#s19">[19]</a>。</p>
+        <h3>第二波</h3>
+        <ol class="flow">
+          <li class="doubt"><b>路由池剩余资产</b>7 月 9 日至 11 日转出，Beosin 统计约 1.03 亿美元</li>
+          <li class="doubt"><b>CEO 妹妹控制的两个 EOA</b>团队 7 月 14 日公布了地址</li>
+          <li class="doubt"><b>她被警方带走</b>团队称这些资产“状态不明”</li>
+        </ol>
+        <p>团队公布的两个地址是 <span class="addr">0x1eed63efba5f81d95bfe37d82c8e736b974f477b</span> 和 <span class="addr">0x6b6314f4f07c974600d872182dcde092c480e57b</span><a class="ref" href="#s1">[1]</a>。1.03 亿美元这个数字只有 Beosin 一个来源<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>金额为什么对不上</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>说法</th><th class="n">金额</th><th>口径与出处</th></tr></thead>
+            <tbody>
+              <tr><td>第一波</td><td class="n">约 1.26 亿美元</td><td>7 月 6 日三座桥以太坊一侧的转出，rekt.news 等的统计<a class="ref" href="#s26">[26]</a>；Chainalysis 写作“超过 1.25 亿”<a class="ref" href="#s6">[6]</a></td></tr>
+              <tr><td>新加坡判决书</td><td class="n">逾 1.27 亿美元</td><td>原告证人称实际“更多”<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>Fantom 自报的桥上损失</td><td class="n"><span class="dispute">1.22 亿美元</span></td><td>Cointelegraph 转述<a class="ref" href="#s15">[15]</a>；CoinDesk 转述为“约占被盗总额的三分之一”<a class="ref" href="#s17">[17]</a></td></tr>
+              <tr><td>第二波</td><td class="n">约 1.03 亿美元</td><td>Beosin 统计的 7 月 9 日至 11 日转出<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>两波合计</td><td class="n"><span class="dispute">2.1 亿至 2.28 亿美元</span></td><td>Beosin 与 Fantom 估计“至少 2.1 亿”<a class="ref" href="#s18">[18]</a>；BankInfoSecurity 写作 2.28 亿<a class="ref" href="#s12">[12]</a></td></tr>
+              <tr><td>无法取用的锁仓</td><td class="n">约 15 亿美元</td><td>截至 7 月 14 日桥上被困的全部锁仓，其中最终损失多少不明<a class="ref" href="#s13">[13]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>本站以第一波约 1.26 亿美元作为本案的损失金额，因为第二波是否属于盗窃本身有争议。Fantom 的两种说法互相矛盾：1.22 亿美元接近第一波的全部，而“三分之一”按 2.1 亿美元算只有约 7,000 万美元，差别可能来自统计对象不同（基金会自身损失与 Fantom 链上全部用户损失），本站没有找到 Fantom 的原始说明。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>Fantom 生态</h3>
+        <p>Fantom 受到的冲击最大。事发前它约 80% 的稳定币是 Multichain 的包装资产<a class="ref" href="#s25">[25]</a>。底层资产被转走后，这些包装币失去支撑：Fantom 基金会在桥上持有的包装稳定币，7 月 6 日面值约 61,830 美元，到 9 月 18 日在 SpookySwap 上只值约 3,209 美元，跌了约 95%<a class="ref" href="#s5">[5]</a>。到 2024 年 7 月，Fantom 的 DeFi 锁仓约 1.29 亿美元，只有事发前的一半多<a class="ref" href="#s16">[16]</a>。基金会此后更名为 Sonic Labs。</p>
+        <h3>其他链和用户</h3>
+        <p>据 rekt.news 统计，Moonriver 桥被转走约 80% 的锁仓<a class="ref" href="#s26">[26]</a>；据 Chainalysis 统计，Dogechain 桥被转走约 85%<a class="ref" href="#s6">[6]</a>。事发后十多条链上的 Multichain 服务被暂停<a class="ref" href="#s6">[6]</a>。币安较早撤出：赵长鹏在事发当天说，币安“早前已把所有资产换出并关闭了充值”，用户不受影响<a class="ref" href="#s7">[7]</a>。没来得及撤出的普通用户损失从几千美元到近 50 万美元不等，受害者自发组建的维权群有 300 多人<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>重新审视 MPC 桥</h3>
+        <p>此前跨链桥的风险讨论多集中在合约漏洞和多签门限上。<a href="2022-ronin-bridge.html">Ronin</a> 的 9 个验证者里有 4 个在同一家公司手里，<a href="2022-harmony-horizon.html">Harmony Horizon</a> 只要 5 个签名者中的 2 个。Multichain 暴露的是另一种更难发现的集中：门限签名的设计和节点数量都可以很好看，但如果所有节点跑在同一个人的基础设施上，签名门限就没有意义。而这一点在链上完全看不出来，审计报告和用户都无从核实。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>名义上的签名门槛</th><th>实际需要攻破的控制点</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2022-ronin-bridge.html">Ronin 跨链桥</a></td><td>9 个验证者中 5 个</td><td>Sky Mavis 一家公司的 4 把密钥，加一项未撤销的 Axie DAO 签名授权</td></tr>
+              <tr><td><a href="2022-harmony-horizon.html">Harmony Horizon</a></td><td>5 个签名者中 2 个</td><td>2 把私钥</td></tr>
+              <tr><td>Multichain</td><td>SMPC 门限签名，n 与 t 未公开</td><td>据团队称，CEO 的一个个人云账号</td></tr>
+              <tr><td><a href="2023-htx-heco.html">HTX 与 Heco 跨链桥</a></td><td>桥运营方地址</td><td>运营方的私钥</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>团队停运，桥又短暂打开过一次</h3>
+        <p>7 月 14 日的声明之后，Multichain 团队没有再公开回应。团队在声明中说，按律师建议，他们一直配合 CEO 家属的要求、遵守当地法律，没有公开案情，最终因“缺少信息来源和运营资金”被迫停运<a class="ref" href="#s1">[1]</a>。Fantom 在新加坡起诉时，两家 Multichain 公司从未出庭<a class="ref" href="#s5">[5]</a>。</p>
+        <p>2023 年 11 月 1 日，停用近四个月的桥突然恢复运行约三小时。一个钱包在这段时间从币安提出约 190 万枚 FTM（约 28 万美元），在 Fantom 上换成已经脱锚的包装资产，再跨回以太坊，换出约 28.4 枚 WBTC、357 枚 ETH 和 29.8 万 USDT，合计约 190 万美元，转进币安<a class="ref" href="#s14">[14]</a>。社区质疑这个钱包是窗口期唯一的受益者；分析机构 0xScope 表示没有确凿证据证明是内部人所为<a class="ref" href="#s14">[14]</a>；Kong 则说 Fantom 认为这是 Multichain 前团队的人<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>稳定币冻结和美国司法部</h3>
+        <p>Circle 在 7 月 7 日拉黑了三个接收地址。据 The Block 报道，美国司法部事后取得扣押令，要求 Circle 维持冻结；后来司法部通知 Circle 将撤销扣押令，理由是无法确认黑客身份。没有扣押令或法院命令，Circle 就失去了继续拉黑的依据<a class="ref" href="#s19">[19]</a>。另有报道称 Circle 是在 2023 年 10 月按司法部的指示冻结的<a class="ref" href="#s21">[21]</a>，与链上 7 月 7 日即已拉黑的记录不一致，可能是把扣押令的时间当成了冻结时间，本站没有看到扣押令原件。与此同时，一批美国投资者在纽约州法院起诉 Circle，要求取得这笔 USDC，Circle 依据《集体诉讼公平法》（CAFA）把案件移到了纽约南区联邦法院<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>新加坡：从缺席判决到清盘</h3>
+        <p>Fantom 基金会于 2023 年 9 月 18 日起诉 Multichain Foundation Ltd 和 Multichain Pte Ltd（案号 HC/OC 621/2023），主要诉由是违反用户协议中“不可能被一个人控制”的承诺，并构成欺诈性虚假陈述。对方没有应诉，法院于 2024 年 1 月 30 日作出缺席判决。2024 年 7 月 8 日，Mohamed Faizal 司法委员评定赔偿：存款损失 58,620.55 美元，加上未归还的 417.5 万枚 FTM 按 2023 年 4 月 14 日价格折算的 2,129,250 美元<a class="ref" href="#s5">[5]</a>。判决书写明，由于被告缺席，事实主要是原告的陈述，法院对资产被转往 Multichain Pte Ltd 等指控“不作任何认定”<a class="ref" href="#s5">[5]</a>。</p>
+        <p>Fantom 随后表示，它没有法律资格替用户追款，但可以借这个判决申请清盘，为其他受害者开路<a class="ref" href="#s17">[17]</a>。2025 年 5 月 9 日，新加坡高等法院 Kwek Mean Luck 法官批准清盘 Multichain Foundation，指定 KPMG 新加坡为联合清盘人<a class="ref" href="#s18">[18]</a><a class="ref" href="#s23">[23]</a>，三人分别是 Bob Yap Cheng Ghee、Toh Ai Ling 和 Tan Yen Chiaw<a class="ref" href="#s21">[21]</a>。Sonic Labs CEO Kong 说，Multichain 的前员工“完全不配合”，如果 Multichain 没有躲着受害者，清盘本可以避免<a class="ref" href="#s18">[18]</a><a class="ref" href="#s23">[23]</a>。</p>
+        <h3>美国：Chapter 15</h3>
+        <p>清盘人到纽约南区破产法院申请承认新加坡程序为“外国主程序”，并于 2025 年 10 月 23 日申请临时救济，理由是 Circle 一旦解除拉黑会造成“立即且无法弥补的损害”<a class="ref" href="#s19">[19]</a><a class="ref" href="#s21">[21]</a>。10 月 30 日，David S. Jones 法官依据《破产法》第 1519 条下令，Circle 须继续冻结三个地址并保留对应的美元储备，“直至另行通知”<a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a>。</p>
+        <p>2026 年，同一法院在 In re Multichain Foundation 案中驳回了债务人的另一项请求：债务人要求禁止一起联邦集体诉讼继续进行，理由是它影响 Chapter 15 财产的管理，但它并不是该诉讼的当事人。据 Faegre Drinker 律师的评述，法院认为外国债务人对第三方持有的代币和储备资金没有所有权，该诉讼也不涉及债务人的资产或负债<a class="ref" href="#s22">[22]</a>。这意味着这笔约 6,300 万美元 USDC 最终归清盘人还是归集体诉讼的原告，仍未确定。本站没有查到 Chapter 15 承认申请是否已获批准的公开报道。</p>
+        <h3>CEO 和他的家属</h3>
+        <p>截至 2026 年 10 月，中国官方没有公开过与此案有关的任何信息，包括罪名、起诉和判决。外界知道的情况几乎都来自 Multichain 团队的声明。团队只称他为 Zhaojun，Fantom 和部分媒体写作 Zhaojun He，本站没有找到他中文姓名的可靠来源。Fantom 在 2024 年 3 月称他在中国“正处于调查之中”<a class="ref" href="#s15">[15]</a>。新加坡判决书显示，两家被告公司的董事和股东是同一人 He Xiaokun<a class="ref" href="#s5">[5]</a>；Cointelegraph 援引社区查询和匿名爆料称此人是 CEO 的父亲，这一说法未经独立核实<a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给跨链桥与 MPC 方案的设计者</span>
+          <ul>
+            <li>门限签名的分散要落实到运维：每个节点由不同的法律主体运营，用各自的云账号、硬件和访问凭据。几个分片放在同一个账号下，门限就是 1。</li>
+            <li>公开节点数量、门限和运营方，并让运营方能被外部核验，例如定期由各节点独立签名证明自己仍在线、仍掌握分片。</li>
+            <li>不要把全部储备放在一个 EOA 里。用有速率限制和延时的金库合约托管，暂停权交给独立于签名者的另一方。</li>
+            <li>给每个动用资金的管理函数设上限和核对。“金额由调用者任填”的手续费函数，本质上是留给签名者的提款后门。</li>
+            <li>换签名者要延时，动用资金同样要延时。Multichain 只给了前者。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给项目方的运营</span>
+          <ul>
+            <li>运营资金、服务器、云账号、域名都不能只在一个人手里。Multichain 停运时，团队连自己前端的域名都下不了线。</li>
+            <li>关键人员失联时，尽早公开并暂停涉及资金的服务。从 CEO 被带走到第一波转出隔了 46 天，团队直到 7 月 14 日才说明原因，这段时间部分跨链路线仍在接收用户资产。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给接入跨链桥的公链和用户</span>
+          <ul>
+            <li>包装资产是一张欠条，价值取决于锁仓方。一条链的大部分稳定币依赖同一座第三方桥，桥出事会拖垮整条链的流动性；发行方原生的跨链方式或多桥分担可以降低这种集中。</li>
+            <li>对“去中心化”的说法要追问节点由谁运营、在哪里运行。合同写明“不可能被一个人控制”能帮你在法庭上胜诉，却不能让资金回来：Fantom 胜诉两年多后，被冻结的 USDC 仍在诉讼中。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Multichain（@MultichainOrg），12 条情况说明，X，2023-07-14 08:22 UTC（全文据互联网档案馆存档，发布时间据 X 公开嵌入接口）。<a href="https://web.archive.org/web/20230714083322/https://twitter.com/MultichainOrg/status/1679768407628185600">web.archive.org</a></li>
+          <li id="s2">Multichain（@MultichainOrg），2023 年 5 月至 7 月的公告：5 月 24 日“不可抗力”、5 月 31 日联系不上 CEO、7 月 6 日资产异常转移、7 月 7 日服务停止。<a href="https://web.archive.org/web/20230706234540/https://twitter.com/MultichainOrg/status/1677096839731097600">7 月 6 日公告存档</a>、<a href="https://web.archive.org/web/20230707164230/https://twitter.com/MultichainOrg/status/1677180114227056641">7 月 7 日公告存档</a></li>
+          <li id="s3">Multichain 官方文档（存档）：《Security model》《Cross-Chain Bridge》《FAQ》，2022 年。<a href="https://web.archive.org/web/20220927100019/https://docs.multichain.org/getting-started/security/security-model">安全模型</a>、<a href="https://web.archive.org/web/20220628070008/https://docs.multichain.org/getting-started/how-it-works/cross-chain-bridge">跨链桥</a>、<a href="https://web.archive.org/web/20220120203408/https://docs.multichain.org/faq">FAQ</a></li>
+          <li id="s4">AnyswapV4Router 已验证源码，以太坊 0x6b7a87899490ece95443e979ca9485cbe7e71522。<a href="https://eth.blockscout.com/address/0x6b7a87899490EcE95443e979cA9485CBE7E71522?tab=contract">eth.blockscout.com</a></li>
+          <li id="s5">新加坡高等法院，《Fantom Foundation Ltd v Multichain Foundation Ltd and another》[2024] SGHC 173，Mohamed Faizal JC，2024-07-08。<a href="https://www.elitigation.sg/gd/s/2024_SGHC_173">elitigation.sg</a></li>
+          <li id="s6">Chainalysis Team，《Multichain Protocol Experiences Mysterious Withdrawals, Suggesting Multi-Million Dollar Hack or Rug Pull》，2023-07-10（7 月 19 日更新）。<a href="https://www.chainalysis.com/blog/multichain-exploit-july-2023/">chainalysis.com</a></li>
+          <li id="s7">Danny Nelson，《Multichain Bridges Exploited for Nearly $130M Across Fantom, Moonriver and Dogechain》，CoinDesk（Yahoo Finance 转载），2023-07-07。<a href="https://finance.yahoo.com/news/multichain-bridges-experience-unannounced-outflows-203541897.html">finance.yahoo.com</a></li>
+          <li id="s8">Tom Blackstone，《Multichain MPC bridge sees $100M+ outflows, sparking fears of exploit》，Cointelegraph，2023-07-07。<a href="https://cointelegraph.com/news/multichain-mpc-bridge-sees-millions-in-outflows-exploit-feared">cointelegraph.com</a></li>
+          <li id="s9">IBTimes，《Multichain Hack Forces Tether, Circle To Freeze Over $65M In Assets》，2023-07-10。<a href="https://www.ibtimes.com/multichain-hack-forces-tether-circle-freeze-over-65m-assets-3704247">ibtimes.com</a></li>
+          <li id="s10">Cointelegraph，《Multichain Executor has been ‘draining’ AnySwap tokens: Report》，2023-07-11。<a href="https://cointelegraph.com/news/multichain-executor-has-been-draining-anyswap-tokens-report">cointelegraph.com</a></li>
+          <li id="s11">Mathew Di Salvo，《Another $103M Disappears From Multichain in Potential ‘Rug Pull’》，Decrypt（Yahoo Finance 转载），2023-07-12。<a href="https://finance.yahoo.com/news/another-103m-disappears-multichain-potential-200206075.html">finance.yahoo.com</a></li>
+          <li id="s12">BankInfoSecurity，《Cryptohack Roundup: Multichain Lost $228M – Nobody Knows Why》，2023-07-13。<a href="https://www.bankinfosecurity.com/cryptohack-roundup-multichain-lost-228m-nobody-knows-a-22532">bankinfosecurity.com</a></li>
+          <li id="s13">Cointelegraph，《Multichain victims search for answers in $1.5B exploit as new evidence emerges》，2023-08-23。<a href="https://cointelegraph.com/news/multichain-victims-search-for-answers-in-billion-dollar-exploit-as-new-evidence-emerges">cointelegraph.com</a></li>
+          <li id="s14">Cointelegraph，《Trader exploits Multichain opening to turn $280K to $1.9M; community suspects insider job》，2023-11-02。<a href="https://cointelegraph.com/news/trader-exploits-multichain-opening-to-turn-280k-to-1-9m-community-suspects-insider-job">cointelegraph.com</a></li>
+          <li id="s15">Cointelegraph，《Fantom seeks Multichain liquidation in attempt to recover $122M from exploit》，2024-03-05。<a href="https://cointelegraph.com/news/fantom-wants-multichain-court-liquidated-to-recover-exploited-millions">cointelegraph.com</a></li>
+          <li id="s16">DL News，《Singapore court ruling fans suspicions the $125m Multichain hack was an inside job》，2024-07-17。<a href="https://www.dlnews.com/articles/defi/singapore-court-fuels-view-multichain-hack-was-inside-job/">dlnews.com</a></li>
+          <li id="s17">CoinDesk，《Fantom Seeks Money Back From Multichain’s $200M Exploit》，2024-03-05。<a href="https://www.coindesk.com/business/2024/03/05/fantom-seeks-money-back-from-multichains-200m-exploit">coindesk.com</a></li>
+          <li id="s18">Cointelegraph，《Sonic Labs wins judgment for Multichain Foundation to wind up》，2025-05-15。<a href="https://cointelegraph.com/news/sonic-labs-wins-judgment-multichain-foundation-to-wind-up">cointelegraph.com</a></li>
+          <li id="s19">The Block，《New York judge grants relief to Multichain liquidators, extending freeze on stolen USDC》，2025-10-31。<a href="https://www.theblock.co/news/regulation/2025-10-31-multichain-extends-freeze-stolen-usdc-377094">theblock.co</a></li>
+          <li id="s20">Vince Dioquino，《New York Court Extends Asset Freeze to Aid Singapore's Multichain Liquidation》，Decrypt（Yahoo Finance 转载），2025-10-31。<a href="https://finance.yahoo.com/news/york-court-extends-asset-freeze-030350191.html">finance.yahoo.com</a></li>
+          <li id="s21">Hassan Shittu，《Multichain Liquidators Win Key Ruling as New York Court Extends Freeze on Stolen USDC》，Cryptonews（Yahoo Finance 转载），2025-11-01。<a href="https://finance.yahoo.com/news/multichain-liquidators-win-key-ruling-205321890.html">finance.yahoo.com</a></li>
+          <li id="s22">Andrew C. Kassner、Joseph N. Argentina Jr.（Faegre Drinker），《Bankruptcy Court Denies Stay of District Court Litigation in Chapter 15 Case》，The Legal Intelligencer，2026-10-26（律所摘要页）。<a href="https://www.faegredrinker.com/en/insights/publications/2026/10/bankruptcy-court-denies-stay-of-district-court-litigation-in-chapter-15-case">faegredrinker.com</a></li>
+          <li id="s23">The Block，《Sonic Labs secures court order to liquidate Multichain Foundation to recoup losses from $210 million exploit》，2025-05-15。<a href="https://www.theblock.co/news/regulation/2025-05-15-sonic-labs-secures-court-order-to-liquidate-multichain-foundation-to-recoup-losses-from-210-million-exploit-354439">theblock.co</a></li>
+          <li id="s24">CoinDesk，《Anyswap Rebrands to Multichain, Raises $60M Led by Binance Labs》，2021-12-21。<a href="https://www.coindesk.com/business/2021/12/21/anyswap-rebrands-to-multichain-raises-60m-led-by-binance-labs/">coindesk.com</a></li>
+          <li id="s25">CoinDesk，《Binance, Other Crypto Players Shun Multichain as Bridging Rumors Swirl》，2023-05-26。<a href="https://www.coindesk.com/business/2023/05/26/binance-other-crypto-players-shun-multichain-as-bridging-rumors-swirl">coindesk.com</a></li>
+          <li id="s26">rekt.news，《Multichain - Rekt II》，2023-07-07。<a href="https://rekt.news/multichain-rekt2/">rekt.news</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

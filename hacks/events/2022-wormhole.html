@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wormhole 签名验证绕过｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 2 月 Wormhole 跨链桥被凭空铸出 12 万枚 wETH 的经过：Solana 端 verify_signatures 为什么会被一个伪造的 instruction sysvar 账户骗过、修复提交加的 4 行代码、提前公开却未部署的工具链升级、Jump Crypto 补足 12 万枚 ETH、2023 年 Oasis 依英国高等法院命令取回资产，以及事后加上的 Governor 与 Global Accountant 两道检查。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-wormhole">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Wormhole 签名验证绕过</h1>
+    <p class="lede">2022 年 2 月 2 日，攻击者利用 Wormhole 在 Solana 一侧签名验证中缺失的一项账户检查，伪造出一条“守护者已签名”的消息，凭空铸出 12 万枚 wETH，并用其中 93,750 枚换走了以太坊上真实锁定的 ETH。Wormhole 的主要开发方 Jump Crypto 次日补入 12 万枚 ETH，桥上的用户没有承担损失。补上这项检查只需要 4 行代码；另一份碰巧补上它的提交，攻击前三周就已出现在公开仓库，只是还没有部署。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Wormhole 是一个跨链消息协议，由 19 个“守护者”（Guardian）节点给跨链消息签名，超过三分之二签了名的消息才算有效；它的代币桥 Portal 按这些消息在目标链上铸出包装代币。Solana 端的核心合约自己不做验签计算，而是借 Solana 的 secp256k1 原生程序验签，再通过一个叫 instruction sysvar 的系统账户确认验签确实发生过。修复前的 <code>verify_signatures</code> 没有核对调用者传进来的这个账户是不是真的 instruction sysvar，攻击者传入一个自己伪造的账户，合约就把一条没有守护者签名的消息当成了已验证的消息<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <p>凭这条伪造的消息，Portal 在 Solana 上铸出 12 万枚 wETH，背后没有任何 ETH 存款。攻击者把其中 93,750 枚跨回以太坊，从桥合约里取走等量的 ETH，其余的在 Solana 上换成了 SOL<a class="ref" href="#s1">[1]</a>。按当时价格，这批 wETH 价值超过 3.2 亿美元<a class="ref" href="#s5">[5]</a>。43 分钟后，Wormhole 的贡献者发现账目对不上；又过了 33 分钟，部分守护者停止转发消息，跨链转账暂停。团队通过链上留言向攻击者提出 1,000 万美元的白帽协议，没有得到回应<a class="ref" href="#s6">[6]</a>。</p>
+        <p>补上这项检查的修复只有 4 行，2 月 2 日 20:02（UTC）提交，次日 00:32 由审计公司 Neodyme 部署上线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a>。另一份碰巧补上同一项检查的工具链升级，1 月 13 日就已出现在公开仓库，攻击当天下午合并，但还没有部署<a class="ref" href="#s1">[1]</a><a class="ref" href="#s16">[16]</a>。2 月 3 日 13:08（UTC），Jump Crypto 向合约补入 12 万枚 ETH，恢复了 1:1 的抵押，桥在约 20 分钟后重新上线<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。攻击者留在以太坊上的资金后来进了 Oasis 的金库。2023 年 2 月 21 日，Oasis 依英国高等法院的命令，利用自己管理员多签的一个漏洞，把这些资产转给了法院授权的第三方<a class="ref" href="#s4">[4]</a>。追回的金额，各家报道在<span class="dispute">约 1.4 亿到 2.18 亿美元</span>之间，Oasis 没有公布数字。截至 2026 年 10 月，本页查到的报道中没有攻击者身份被公开认定或被起诉的消息。</p>
+        <p>事后，Wormhole 的官方仓库先后加入两份设计文档（2022 年 8 月、2023 年 4 月），在守护者签名之前再加两道检查。按文档的现行版本，Governor 按链设转出额度，超过单笔阈值的转出要延迟 24 小时才签名；Global Accountant 按链记账，即使一条链被攻破，从这条链转出的包装代币也不能超过转入它的数量<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。两者都只能限制损失，堵不住漏洞本身。2026 年 Drift Protocol 被盗时，Governor 延迟了攻击者经 Wormhole 发出的 2 笔转账<a class="ref" href="#s20">[20]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Wormhole 最初由 Certus One 开发。2021 年 8 月，芝加哥的交易公司 Jump Trading 收购了 Certus One，此后 Wormhole 主要由它的加密业务部门 Jump Crypto 推动<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。Wormhole 于 2021 年夏天上线，在以太坊、Solana 等链之间传递消息和资产<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <p>按官方事故报告的描述，Wormhole 网络由 19 个守护者运行。一条跨链消息要有超过三分之二的守护者签名才被认可，协议和合约的升级也要超过三分之二的守护者投票通过<a class="ref" href="#s1">[1]</a>。代币桥 Portal 建在这套消息协议之上：用户在以太坊上把 ETH 锁进桥合约，守护者签发消息，Solana 上就铸出等量的 Wormhole 包装 ETH（下称 wETH）；反过来，把 wETH 跨回以太坊，就能从桥合约里取回 ETH。每一枚 wETH 的价值，都靠以太坊上锁定的那份 ETH 支撑。</p>
+        <p>上线前，Wormhole 的代码经过 Solana 审计公司 Neodyme 审查，报告在 2022 年 1 月公开。事发时，Kudelski 的审计刚在 1 月第三周开始，Trail of Bits 的两次审计排在 2022 年内，Immunefi 上最高 350 万美元的漏洞赏金计划原定 2 月中旬上线<a class="ref" href="#s1">[1]</a>。</p>
+        <p>事发后，有人在社交媒体上指出，Wormhole 的公开代码仓库在攻击前就有一次提交修好了这个漏洞。官方报告的解释是：这是一次例行的工具链升级，把 Solana 工具链升到 1.9.4 版；新版弃用了两个旧的读取函数，改用带检查的版本，正好补上了缺失的那项检查。当时没人意识到它的安全含义；这次提交 1 月 13 日推送到公开仓库，按计划要先审计、再随下一个版本发布<a class="ref" href="#s1">[1]</a>。GitHub 上的记录显示，这次改动所在的 PR #751 于 1 月 13 日创建，2 月 2 日 16:31（UTC）合并进 dev.v2 分支，比攻击早约 1 小时 53 分钟。合并不等于部署，线上合约仍是旧代码<a class="ref" href="#s16">[16]</a>。官方承认，攻击者可能正是从这次公开提交中发现了漏洞，也可能是看到修复已经合并，觉得不得不抢先动手<a class="ref" href="#s1">[1]</a>。The Verge 写作修复代码 1 月 13 日写好、攻击当天上传到 GitHub，它链接的正是合并后的提交<a class="ref" href="#s6">[6]</a>。按 PR 记录，代码从 1 月 13 日起就在公开仓库里可以看到，攻击当天发生的是合并。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>时间均为 UTC。2022 年 2 月 2 日至 3 日的时刻出自 Wormhole 官方事故报告和官方推文<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>，PR 和提交的时刻出自 GitHub 上的记录<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。官方报告称事故总共持续约 16 小时，但按它列出的时刻，从攻击到恢复约 19 小时，从发现到恢复约 18 小时，报告没有说明 16 小时的算法。</p>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与相关方行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-08</time><div class="ev">Jump Trading 收购 Wormhole 的开发方 Certus One<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2022-01-13</time><div class="ev">PR #751 在公开仓库创建，把 Solana 工具链升到 1.9.4，并把读取 instruction sysvar 的两个函数换成带检查的版本，客观上修复了后来被利用的漏洞<a class="ref" href="#s1">[1]</a><a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>02-02 16:31</time><div class="ev">PR #751 合并进 dev.v2 分支，没有部署到线上合约<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="atk key"><time>02-02 18:24</time><div class="ev">攻击者让 Solana 端合约铸出 12 万枚没有抵押的 wETH，随后把 93,750 枚跨回以太坊取走 ETH，其余换成 SOL。</div></li>
+          <li class="def"><time>02-02 19:07</time><div class="ev">Wormhole 贡献者在例行检查中发现资金数目对不上，开始调查。19:10 至 19:20 确认漏洞，召集 Jump Crypto、Neodyme 等方开应急电话会议。</div></li>
+          <li class="def"><time>02-02 19:40</time><div class="ev">6 个守护者节点（约占网络投票权的 37%）停止转发消息，跨链转账暂停。此后一个小时内，停止转发的守护者超过三分之二。</div></li>
+          <li class="def"><time>02-02 19:55</time><div class="ev">漏洞经内部复核和多家第三方审计公司确认。修复先提交到一个临时的私有分支，事后才公开；这次提交在仓库记录上的时间是 20:02<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>02-02 20:15</time><div class="ev">团队尝试联系攻击者，提出 1,000 万美元的白帽协议，换取归还资金。</div></li>
+          <li class="def"><time>02-02 20:42</time><div class="ev">Wormhole 发推称网络停机维护，正在调查一起“潜在的漏洞利用”。22:25 再发推确认被盗 12 万枚 wETH，并承诺补入 ETH，保证 wETH 1:1 有支撑<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>02-02 22:07</time><div class="ev">Neodyme 团队“借漏洞完成升级”的备用方案做出了可用的原型，团队决定采用这一方案。</div></li>
+          <li class="def key"><time>02-03 00:32</time><div class="ev">Neodyme 执行合约升级，部署了地址检查，漏洞被关闭，攻击者无法再伪造新消息。</div></li>
+          <li class="def"><time>02-03 05:53</time><div class="ev">守护者以超过三分之二的票数通过第二次升级，在 Solana 端的 Portal 中屏蔽攻击者事先准备好的几条伪造消息。</div></li>
+          <li class="def key"><time>02-03 13:08</time><div class="ev">Jump Crypto 向合约补入 12 万枚 ETH，恢复全额抵押。13:29 网络和 Portal 恢复运行，13:39 官方发推宣布“所有资金已恢复”<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>02-03 18:13</time><div class="ev">Jump Crypto 发推确认是它补入了 12 万枚 ETH<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2022-02-04</time><div class="ev">官方事故报告发布，重申 1,000 万美元白帽协议，另悬赏 1,000 万美元征集能导致逮捕定罪或追回资产的线索<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2022-02-24</time><div class="ev">白帽 satya0x 通过 Immunefi 报告以太坊核心桥合约中的另一个严重漏洞（逻辑合约未初始化），与本次攻击无关，Wormhole 当天修复<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2022-05-20</time><div class="ev">Wormhole 公布向 satya0x 支付 1,000 万美元漏洞赏金<a class="ref" href="#s9">[9]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2022-08</time><div class="ev">Governor 的设计文档进入官方仓库，首个版本的目标是让守护者按链限制一段时间内转出的名义金额<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="def"><time>2023-02-16</time><div class="ev">一个白帽团队联系 Oasis，演示可以从攻击者的金库中取回资产<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>2023-02-21</time><div class="ev">Oasis 收到英国高等法院（英格兰及威尔士）的命令，当天通过管理员多签和一个法院授权的第三方取回攻击者金库中的资产<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2023-02-24</time><div class="ev">Blockworks 根据链上记录报道接收资产的钱包看起来属于 Jump Crypto；Oasis 随后发表声明，确认是依法院命令行事<a class="ref" href="#s10">[10]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-04</time><div class="ev">Global Accountant 的设计文档进入官方仓库。按现行版本，它按链记账，从一条链转出的包装代币不超过转入它的数量<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2023-11</time><div class="ev">据 Bloomberg 报道，Jump Trading 把 Wormhole 分拆为独立实体<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-05</time><div class="ev">Drift Protocol 在被盗后的恢复计划中写道，攻击者经 Wormhole 发出的 2 笔转账被 Governor 延迟到 7 月下旬<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>截至 2026-10</time><div class="ev">本页查到的报道中，攻击者身份没有被公开认定，也没有人因此被起诉。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>本节的技术内容只依据两样材料：Wormhole 官方事故报告<a class="ref" href="#s1">[1]</a>，以及官方代码仓库中与修复相关的两次提交和它们改动的源文件<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。引用的代码保留原有的英文注释，中文注释是本站加的。守护者计票和 Portal 铸币的代码不在这两次提交改动的文件里，本页只按官方报告转述这两步。</p>
+        <h3>签名验证原本怎样工作</h3>
+        <p>守护者用 secp256k1 密钥签名，和以太坊是同一种曲线，守护者集合里存的是每个守护者 20 字节的地址。Solana 端的核心合约没有在自己的代码里做这部分计算，而是借 Solana 自带的 secp256k1 原生程序，分三步完成：</p>
+        <ol class="steps">
+          <li><b>原生程序验签</b>交易里先放一条指令，调用 Solana 的 secp256k1 原生程序，交给它若干组签名、地址和消息。签名不对，这条指令失败，整笔交易随之失败。</li>
+          <li><b>核心合约回看上一条指令</b>紧接着的一条指令调用 Wormhole 核心合约的 <code>verify_signatures</code>。它通过 instruction sysvar 读出“上一条指令”的内容，确认那是一条 secp256k1 验签指令，并从中取出被验证的地址和消息哈希。官方报告解释了为什么可以信任这份内容：instruction sysvar 由 Solana 运行时填写<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>记账</b>对调用者声明的每个签名者，核对上一条指令里的地址等于守护者集合中对应的公钥，再在一个 SignatureSet 账户里把这个守护者标记为“已签名”，同时记下消息哈希。同一条消息可以分几次调用，把签名逐步记进同一个 SignatureSet<a class="ref" href="#s15">[15]</a>。</li>
+        </ol>
+        <p>之后，已签名的守护者超过三分之二，这条消息就被当作守护者认可的消息；按官方报告，Portal 在 Solana 上铸出包装代币之前，依靠的就是 <code>verify_signatures</code> 的验证结果<a class="ref" href="#s1">[1]</a>。这套设计里，<code>verify_signatures</code> 本身从不检查签名。它只确认“同一笔交易里，原生程序已经替我验过了”，而这个确认完全建立在 instruction sysvar 的内容上。</p>
+
+        <h3>缺了哪项检查</h3>
+        <p>Solana 程序收到的账户全部由调用者在交易里指定，调用者可以往任何一个账户位置填任意账户，每个程序要自己核对收到的账户是不是它期望的那一个<a class="ref" href="#s1">[1]</a>。官方报告的原话是，可被利用的版本中，<code>verify_signatures</code> 没有断言调用者传入的账户就是那个特殊的 instruction sysvar<a class="ref" href="#s1">[1]</a>。这个缺口在代码里有两层。</p>
+        <p>第一层是账户声明。<code>VerifySignatures</code> 列出了这条指令要用的四个账户。从类型名看，前三个各带约束：付款人要可写、要签名，守护者集合要是已初始化的 <code>GuardianSet</code>，签名记录要是 <code>SignatureSet</code>。第四个 <code>instruction_acc</code> 是裸的 <code>Info</code>，类型上什么也不要求，“这是特殊的 sysvar”只写在注释里：</p>
+<pre class="code"><code><span class="c">// verify_signature.rs（修复前），VerifySignatures 账户结构</span>
+#[derive(FromAccounts)]
+pub struct VerifySignatures&lt;'b&gt; {
+    /// Payer for account creation
+    pub payer: Mut&lt;Signer&lt;Info&lt;'b&gt;&gt;&gt;,
+
+    /// Guardian set of the signatures
+    pub guardian_set: GuardianSet&lt;'b, { AccountState::Initialized }&gt;,
+
+    /// Signature Account
+    pub signature_set: Mut&lt;Signer&lt;SignatureSet&lt;'b, { AccountState::MaybeInitialized }&gt;&gt;&gt;,
+
+    /// Instruction reflection account (special sysvar)
+<span class="bad">    pub instruction_acc: Info&lt;'b&gt;,   <span class="c">// 裸账户，类型上没有任何约束</span></span>
+}</code></pre>
+        <p class="code-cap">来源：wormhole-foundation/wormhole 仓库，修复提交 e8b9181 的父提交 79ab522，solana/bridge/program/src/api/verify_signature.rs 第 22–35 行<a class="ref" href="#s15">[15]</a>。</p>
+        <p>第二层是函数本身。<code>verify_signatures</code> 一开始就用 <code>verify_derivation</code> 核对 <code>guardian_set</code> 是不是程序按守护者集合编号派生出的那个账户；对 <code>instruction_acc</code>，它什么也没做，直接取出账户里的原始字节，交给 Solana SDK 的 <code>load_current_index</code> 和 <code>load_instruction_at</code> 去解析。修复前的文件里，<code>instruction_acc</code> 只出现在第 34、93、103 行，没有一处核对它的地址<a class="ref" href="#s15">[15]</a>。</p>
+<pre class="code"><code><span class="c">// verify_signature.rs（修复前），verify_signatures 开头部分</span>
+pub fn verify_signatures(
+    ctx: &amp;ExecutionContext,
+    accs: &amp;mut VerifySignatures,
+    data: VerifySignaturesData,
+) -&gt; Result&lt;()&gt; {
+    <span class="c">// 对 guardian_set：核对它是按守护者集合编号派生出的账户</span>
+    accs.guardian_set
+        .verify_derivation(ctx.program_id, &amp;(&amp;*accs).into())?;
+
+    <span class="c">// ……（第 76–91 行：把 data.signers 整理成 SigInfo 列表）……</span>
+
+    <span class="c">// 对 instruction_acc：没有任何核对，只把它的数据字节交给 SDK 解析</span>
+<span class="bad">    let current_instruction = solana_program::sysvar::instructions::load_current_index(</span>
+<span class="bad">        &amp;accs.instruction_acc.try_borrow_mut_data()?,</span>
+    );
+    if current_instruction == 0 {
+        return Err(InstructionAtWrongIndex.into());
+    }
+
+    // The previous ix must be a secp verification instruction
+    let secp_ix_index = (current_instruction - 1) as u8;
+<span class="bad">    let secp_ix = solana_program::sysvar::instructions::load_instruction_at(</span>
+        secp_ix_index as usize,
+<span class="bad">        &amp;accs.instruction_acc.try_borrow_mut_data()?,</span>
+    )
+    .map_err(|_| ProgramError::InvalidAccountData)?;
+
+    // Check that the instruction is actually for the secp program
+    if secp_ix.program_id != solana_program::secp256k1_program::id() {
+        return Err(InvalidSecpInstruction.into());
+    }</code></pre>
+        <p class="code-cap">来源：同上，79ab522 版 verify_signature.rs 第 68–74 行、第 92–110 行<a class="ref" href="#s15">[15]</a>。</p>
+        <p>这两个函数收到的只是一段字节。它们能按 instruction sysvar 的格式把字节解析出来，却无从知道这段字节来自哪个账户。账户声明没有约束，函数里没有核对，读取函数又看不到地址，三处都没有拦住一个“格式对、地址错”的账户。</p>
+
+        <h3>为什么验证可以被冒充</h3>
+        <p>读出“上一条指令”之后，后面的检查看起来很细：<code>program_id</code> 必须是 secp256k1 程序；签名、地址、消息三段数据都必须指向这条指令；所有签名必须针对同一段消息，而且消息必须正好是 32 字节的哈希；每个声明的签名者，地址必须等于守护者集合里对应的公钥。</p>
+<pre class="code"><code><span class="c">// verify_signature.rs（修复前），逐段解析 secp256k1 指令并记账</span>
+<span class="c">// 整段去掉了一层缩进</span>
+for i in 0..sig_len {
+    <span class="c">// 签名偏移读出后就丢弃：签名本身交给原生程序去验，这里从不看</span>
+    let _sig_offset = byteorder::LE::read_u16(&amp;secp_ix.data[index..index + 2]) as usize;
+    <span class="c">// ……（第 123–135 行：依次读出各段所在的指令序号、偏移和长度）……</span>
+
+    if address_ix != secp_ix_index || msg_ix != secp_ix_index || sig_ix != secp_ix_index {
+        return Err(InvalidSecpInstruction.into());
+    }
+
+    let address: &amp;[u8] = &amp;secp_ix.data[address_offset..address_offset + 20];
+    <span class="c">// ……（第 142–153 行：要求各段消息相同，存入 secp_ixs）……</span>
+}
+
+<span class="c">// ……（第 155–159 行）……</span>
+// Data must be a hash
+if secp_ixs[0].msg_size != 32 {
+    return Err(ProgramError::InvalidArgument.into());
+}
+
+<span class="c">// ……（第 164–198 行：取出 32 字节消息哈希，创建或核对 SignatureSet）……</span>
+for s in sig_infos {
+    <span class="c">// ……（第 200–207 行：检查两个序号没有越界）……</span>
+    let key = accs.guardian_set.keys[s.signer_index as usize];
+    // Check key in ix
+    if key != secp_ixs[s.sig_index as usize].address {
+        return Err(ProgramError::InvalidArgument.into());
+    }
+    <span class="c">// ……（第 213–214 行）……</span>
+    accs.signature_set.signatures[s.signer_index as usize] = true;   <span class="c">// 记为已签名</span>
+}</code></pre>
+        <p class="code-cap">来源：同上，79ab522 版 verify_signature.rs 第 121–122、137–141、160–163、199、208–216 行，其余从略<a class="ref" href="#s15">[15]</a>。</p>
+        <p>这些检查核对的全是 <code>instruction_acc</code> 里的数据。只要这个账户没有被确认是真的 instruction sysvar，里面的数据就可以是调用者写进去的任何内容：<code>program_id</code> 只是 32 个字节，序号、偏移和长度只是数字；守护者的地址存在链上公开的 <code>GuardianSet</code> 账户里，照抄即可，第 208–212 行的比对因此照样通过。官方报告描述的正是这种做法：攻击者构造一个账户，填入看上去像 instruction sysvar 的数据，传给 <code>verify_signatures</code>，让它以为签名已经验证通过<a class="ref" href="#s1">[1]</a>。</p>
+        <p>整套设计把“验签”交给原生程序，把“确认验签发生过”交给 instruction sysvar。账户一旦是假的，两件事同时落空：原生程序根本没有被调用，守护者却照样被记为已签名。官方报告据此指出，任何一条目标链为 Solana 的 Wormhole 消息都可以被攻击者“签名”，铸造包装代币的消息只是其中一种<a class="ref" href="#s1">[1]</a>。19 个守护者和三分之二的门槛在这里不起作用，因为整个过程用不到任何一把守护者私钥。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 496" role="img" aria-labelledby="wh-sig-t wh-sig-d">
+            <title id="wh-sig-t">verify_signatures 的信任链与缺失的地址检查</title>
+            <desc id="wh-sig-d">verify_signatures 通过调用者指定的 instruction_acc 读出上一条指令。正常情况下传入的是 Solana 运行时写入的真 instruction sysvar，其中的 secp256k1 指令确实执行过。攻击者传入一个按同样格式自建的账户，其中的 secp256k1 指令从未执行。修复前没有地址检查，两种账户都直接进入内容检查，内容检查只读账户里的数据，所以伪造的数据同样通过，守护者被记为已签名。修复后入口先比较账户地址是否等于 sysvar::instructions::id()，不相等就返回 InvalidSysvar。</desc>
+            <defs>
+              <marker id="wh-sig-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="wh-sig-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="wh-sig-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <rect class="d-box ok" x="20" y="14" width="330" height="78" rx="4"/>
+            <text class="d-t b" x="185" y="40" text-anchor="middle">真的 instruction sysvar</text>
+            <text class="d-t s" x="185" y="62" text-anchor="middle">Solana 运行时写入本笔交易的全部指令</text>
+            <text class="d-t s" x="185" y="81" text-anchor="middle">其中的 secp256k1 指令确实执行、验签通过</text>
+            <rect class="d-box atk" x="410" y="14" width="330" height="78" rx="4"/>
+            <text class="d-t b" x="575" y="40" text-anchor="middle">攻击者自建的账户</text>
+            <text class="d-t s" x="575" y="62" text-anchor="middle">数据按 sysvar 的格式写成，内容由调用者决定</text>
+            <text class="d-t s atk" x="575" y="81" text-anchor="middle">其中的 secp256k1 指令从未执行</text>
+            <line class="d-line" x1="185" y1="92" x2="185" y2="124" marker-end="url(#wh-sig-ah)"/>
+            <text class="d-t s halo" x="196" y="113">正常调用</text>
+            <line class="d-line atk" x1="575" y1="92" x2="575" y2="124" marker-end="url(#wh-sig-ah-atk)"/>
+            <text class="d-t s atk halo" x="586" y="113">攻击</text>
+            <rect class="d-box soft" x="20" y="126" width="720" height="52" rx="4"/>
+            <text class="d-t b" x="380" y="148" text-anchor="middle"><tspan class="m">verify_signatures</tspan> 的 <tspan class="m">instruction_acc</tspan> 参数</text>
+            <text class="d-t s" x="380" y="168" text-anchor="middle">这个位置填哪个账户，由调用者在交易里指定</text>
+            <line class="d-line atk dash" x1="120" y1="178" x2="120" y2="318" marker-end="url(#wh-sig-ah-atk)"/>
+            <text class="d-t s atk" x="134" y="226">修复前没有地址核对</text>
+            <text class="d-t s atk" x="134" y="246">两种账户都直接进入内容检查</text>
+            <line class="d-line def" x1="480" y1="178" x2="480" y2="208" marker-end="url(#wh-sig-ah-def)"/>
+            <text class="d-t s def halo" x="491" y="199">修复后</text>
+            <rect class="d-box def" x="360" y="210" width="240" height="74" rx="4"/>
+            <text class="d-t b" x="480" y="232" text-anchor="middle">新增：核对账户地址</text>
+            <text class="d-t s" x="480" y="252" text-anchor="middle">地址必须等于</text>
+            <text class="d-t s m" x="480" y="271" text-anchor="middle">sysvar::instructions::id()</text>
+            <line class="d-line def" x1="600" y1="247" x2="628" y2="247" marker-end="url(#wh-sig-ah-def)"/>
+            <rect class="d-box def" x="630" y="222" width="120" height="50" rx="4"/>
+            <text class="d-t s" x="690" y="243" text-anchor="middle">不相等就拒绝</text>
+            <text class="d-t s m" x="690" y="262" text-anchor="middle">InvalidSysvar</text>
+            <line class="d-line def" x1="480" y1="284" x2="480" y2="318" marker-end="url(#wh-sig-ah-def)"/>
+            <text class="d-t s def halo" x="491" y="306">地址正确</text>
+            <rect class="d-box" x="20" y="320" width="720" height="74" rx="4"/>
+            <text class="d-t b" x="380" y="343" text-anchor="middle"><tspan class="m">verify_signatures</tspan> 读出“上一条指令”，逐项核对内容</text>
+            <text class="d-t s" x="380" y="364" text-anchor="middle">program_id 是 secp256k1 程序 · 三段数据指向同一条指令 · 消息为 32 字节 · 地址等于守护者公钥</text>
+            <text class="d-t s atk" x="380" y="384" text-anchor="middle">这些检查只读账户里的数据：数据照着格式伪造，检查照样通过</text>
+            <line class="d-line" x1="380" y1="394" x2="380" y2="424" marker-end="url(#wh-sig-ah)"/>
+            <rect class="d-box" x="20" y="426" width="720" height="56" rx="4"/>
+            <text class="d-t b" x="380" y="449" text-anchor="middle">SignatureSet 记账：<tspan class="m">signatures[i] = true</tspan>，记下消息哈希</text>
+            <text class="d-t s" x="380" y="470" text-anchor="middle">超过三分之二的守护者被记为已签名，消息即被当作守护者认可；Portal 据此在 Solana 上铸币</text>
+          </svg>
+          </div>
+          <figcaption>图 1：<code>verify_signatures</code> 的信任链。它通过调用者指定的 <code>instruction_acc</code> 读出上一条指令。修复前没有核对这个账户的地址（红色虚线），按格式伪造的账户能通过后面全部的内容检查；修复在入口加了一次地址比较（蓝色），伪造的账户在读取任何数据之前就被拒绝。本图依据官方事故报告和修复前后的源码绘制。</figcaption>
+        </figure>
+        <h3>修复改了什么</h3>
+        <p>事发当晚部署的修复是提交 e8b9181，标题是“Check instructions sysvar”。官方报告说，这个修复先提交在一个临时的私有分支上，事后才公开<a class="ref" href="#s1">[1]</a>。它只改了 <code>verify_signature.rs</code> 一个文件，在函数开头加了 4 行，没有删除任何代码<a class="ref" href="#s15">[15]</a>：</p>
+<pre class="code"><code><span class="c">// verify_signature.rs（提交 e8b9181 之后），verify_signatures 开头</span>
+pub fn verify_signatures(
+    ctx: &amp;ExecutionContext,
+    accs: &amp;mut VerifySignatures,
+    data: VerifySignaturesData,
+) -&gt; Result&lt;()&gt; {
+<span class="good">    if *accs.instruction_acc.key != solana_program::sysvar::instructions::id() {</span>
+<span class="good">        return Err(SolitaireError::InvalidSysvar(*accs.instruction_acc.key));</span>
+<span class="good">    }</span>
+
+    accs.guardian_set
+        .verify_derivation(ctx.program_id, &amp;(&amp;*accs).into())?;</code></pre>
+        <p class="code-cap">来源：wormhole-foundation/wormhole 仓库，提交 e8b9181，verify_signature.rs 第 68–78 行，新增的是第 73–76 行（第 76 行为空行）<a class="ref" href="#s15">[15]</a>。</p>
+        <p>新加的这几行比较的是账户的地址，没有读账户的数据。地址不是数据：调用者可以决定传哪个账户，但没法让自己建的账户拥有 instruction sysvar 那个固定的地址。所以伪造的账户在任何数据被读取之前就会被拒绝，后面那些内容检查重新有了意义。</p>
+        <p>引发传言的那次工具链升级，从另一个方向补上了同一项检查。Solana 1.9.4 弃用了 <code>load_current_index</code> 和 <code>load_instruction_at</code>，推荐改用带 <code>_checked</code> 后缀的版本，官方报告说这些版本恰好包含了缺失的那项检查<a class="ref" href="#s1">[1]</a>。PR #751 在同一段代码上的改动如下<a class="ref" href="#s16">[16]</a>：</p>
+<pre class="code"><code><span class="c">// verify_signature.rs，PR #751（提交 7edbbd3，“Update Solana to 1.9.4”）的改动</span>
+<span class="bad">-    let current_instruction = solana_program::sysvar::instructions::load_current_index(</span>
+<span class="bad">-        &amp;accs.instruction_acc.try_borrow_mut_data()?,</span>
+<span class="bad">-    );</span>
+<span class="good">+    let current_instruction = solana_program::sysvar::instructions::load_current_index_checked(</span>
+<span class="good">+        &amp;accs.instruction_acc,</span>
+<span class="good">+    )?;</span>
+     ……
+<span class="bad">-    let secp_ix = solana_program::sysvar::instructions::load_instruction_at(</span>
+<span class="good">+    let secp_ix = solana_program::sysvar::instructions::load_instruction_at_checked(</span>
+         secp_ix_index as usize,
+<span class="bad">-        &amp;accs.instruction_acc.try_borrow_mut_data()?,</span>
+<span class="good">+        &amp;accs.instruction_acc,</span>
+     )</code></pre>
+        <p class="code-cap">来源：wormhole-foundation/wormhole 仓库，提交 7edbbd3 中 verify_signature.rs 的 diff，改动前后均为第 92–94 行和第 101–104 行<a class="ref" href="#s16">[16]</a>。</p>
+        <p>关键在参数。旧函数拿到的是 <code>try_borrow_mut_data()</code> 借出来的字节，新函数拿到的是账户本身；只有拿到账户，函数才能核对它的地址。这次提交改了 35 个文件，其中 23 个是 Cargo.toml、Cargo.lock 和 Dockerfile；<code>verify_signature.rs</code> 之外的 11 个 Rust 文件，每个只增删 3 到 4 行。<code>verify_signature.rs</code> 里的改动只有这两处函数调用和一处 <code>use</code> 语句的排序，提交说明只有一行“Update Solana to 1.9.4”<a class="ref" href="#s16">[16]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th>7edbbd3（PR #751）</th><th>e8b9181</th></tr></thead>
+            <tbody>
+              <tr><td>标题</td><td>Update Solana to 1.9.4</td><td>Check instructions sysvar</td></tr>
+              <tr><td>时间（UTC）</td><td>2022-01-13 创建 PR；02-02 16:31 合并进 dev.v2</td><td>2022-02-02 20:02 提交，先放在私有分支</td></tr>
+              <tr><td>改动范围</td><td>35 个文件，以依赖升级为主</td><td>1 个文件，新增 4 行</td></tr>
+              <tr><td>怎样补上检查</td><td>两个读取函数换成 <code>_checked</code> 版本</td><td>函数开头直接比较账户地址</td></tr>
+              <tr><td>攻击发生时</td><td>已合并，未部署，排队等审计后随下一版发布</td><td>还不存在</td></tr>
+              <tr><td>部署</td><td>不是这次事故中部署的修复</td><td>2022-02-03 00:32 由 Neodyme 部署</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>两次提交的父提交都是 79ab522<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。这和官方报告的说法一致：事发时团队在工具链升级之前的代码上单独写了修复，为的是让改动面最小；两处补的是同一项检查，这一点是事后才看清的<a class="ref" href="#s1">[1]</a>。官方报告链接的仓库地址是 certusone/wormhole，现在会跳转到 wormhole-foundation/wormhole。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>本页不分析攻击交易和攻击者的代码。下面前三步按官方事故报告和修复前的代码整理，说明要骗过验证必须满足什么条件，不是对攻击交易的还原；后面的应对按官方事故报告整理。时间均为 UTC<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>伪造签名与铸币</h3>
+        <ol class="steps">
+          <li><b>准备一个假的 instruction sysvar</b>攻击者自己建一个账户，写入看上去像 instruction sysvar 的数据<a class="ref" href="#s1">[1]</a>。按修复前的检查，这份数据要让“上一条指令”看起来是一条 secp256k1 验签指令：列出足够多的真实守护者地址，消息是要伪造的那条消息的哈希。交易里不需要真的有这样一条验签指令。</li>
+          <li><b>把它当作 instruction_acc 传进去</b>Solana 允许调用者往任何账户位置填任意账户，修复前的程序又不核对这个位置的地址，于是 <code>verify_signatures</code> 从假账户里读出“上一条指令”，各项内容检查全部通过，对应的守护者被记为已签名。凑够三分之二的门槛之后，这条消息在合约看来就和守护者真的签过的消息没有区别。整个过程不需要任何一把守护者私钥。</li>
+          <li><b>铸币与兑现（2 月 2 日 18:24）</b>伪造的消息让 Solana 端的 Portal 铸出 12 万枚没有抵押的 wETH。攻击者把其中 93,750 枚跨回以太坊赎回成 ETH，剩下的在 Solana 上换成 SOL。官方报告还提到，攻击者事先准备了另外几条伪造的消息，可以用来继续取钱<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+        <div class="note">
+          <span class="h">以太坊一侧没有出错</span>
+          <p>按官方报告，漏洞只在 Solana 端的签名验证里。攻击者把 wETH 跨回以太坊，走的是 Portal 的正常流程：守护者照常为这笔转出签名，以太坊上的合约照常放款，它无从得知这些 wETH 背后没有对应的 ETH。这是本站根据官方报告所做的推断。签名验证一旦被绕过，能拦住这一步的只剩签名之外的另一层核对，例如官方路线图里“按链隔离风险的记账机制”<a class="ref" href="#s1">[1]</a>。</p>
+        </div>
+        <h3>防守方的应对</h3>
+        <ol class="steps">
+          <li><b>发现与暂停（19:07 至 19:40）</b>19:07，Wormhole 的贡献者在例行检查中发现资金数目对不上。十几分钟内，他们确认了漏洞，宣布进入事故状态，拉起应急电话会议，参加的有 Jump Crypto 的贡献者、审计公司 Neodyme、主要相关方和外部研究者。19:33 请守护者停止转发消息；19:40，6 个守护者节点停下（官方称约占网络投票权的 37%），跨链转账暂停。</li>
+          <li><b>用同一个漏洞完成升级（19:40 至次日 00:32）</b>Solana 上的合约升级要由超过三分之二的守护者投票通过。网络已经停下，守护者没法照常提交投票。两组人同时动手：一组走正常的治理流程，并测试一种只让治理投票通过、不恢复代币转账的办法；另一组是 Neodyme，准备利用攻击者用过的同一个漏洞来完成升级。这个漏洞能给任何目标链为 Solana 的消息伪造签名，治理消息也不例外。22:07，Neodyme 的原型先做了出来；2 月 3 日 00:32，升级完成，攻击者不能再伪造新消息。官方报告把这次部署的修复链接到提交 e8b9181<a class="ref" href="#s1">[1]</a><a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>屏蔽已经备好的伪造消息（03:42 至 05:53）</b>补上检查只能挡住新的伪造，攻击者事先备好的几条伪造消息仍然可以用来取钱。03:42，团队给 Solana 端的 Portal 加了一道保护，把这些伪造消息列入黑名单，并提出治理升级；05:53，超过三分之二的守护者同意，升级在 Solana 上执行<a class="ref" href="#s1">[1]</a>。官方报告没有解释这些消息为什么在修复之后还能用。从修复前的代码看，验证结果会写进 SignatureSet 账户一直保存，修复只在入口加了检查，不会改动已经写下的结果，这是本站的推断。</li>
+          <li><b>悬赏（2 月 2 日 20:15 起）</b>团队通过一笔发往攻击者以太坊地址的交易，在附言里提出白帽协议<a class="ref" href="#s6">[6]</a>：攻击者归还全部资金、说明漏洞细节，就能拿到 1,000 万美元的漏洞赏金<a class="ref" href="#s2">[2]</a>。2 月 4 日的事故报告重申了这一条件，并另外悬赏 1,000 万美元，征集能导致逮捕定罪或追回资产的线索<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。攻击者始终没有接受<a class="ref" href="#s10">[10]</a>。</li>
+          <li><b>补足与恢复（2 月 3 日）</b>11:27，各方就重启网络达成一致。13:08，Jump Crypto 向合约补入 12 万枚 ETH，恢复全额抵押。13:29，网络和 Portal 恢复运行，距攻击发生约 19 个小时。</li>
+        </ol>
+        <p>当天 18:13，Jump Crypto 在官方账号上确认了这笔钱的来源：</p>
+        <blockquote>
+          <p>Jump Crypto 相信多链的未来，也相信 Wormhole 是必不可少的基础设施。因此我们补入了 12 万枚 ETH，让社区成员不受损失，并在 Wormhole 继续发展的过程中支持它。</p>
+          <cite>Jump Crypto 官方推文，2022-02-03 18:13（UTC），本站译文<a class="ref" href="#s3">[3]</a></cite>
+        </blockquote>
+
+        <h3>哪一步本可以拦住</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>环节</th><th>当时的情况</th><th>本可以怎样拦住</th></tr></thead>
+            <tbody>
+              <tr><td>账户声明</td><td><code>instruction_acc</code> 声明为裸的 <code>Info</code>，“特殊 sysvar”只写在注释里</td><td>在入口核对地址等于 <code>sysvar::instructions::id()</code>，这正是 2 月 3 日部署的修复<a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>读取 sysvar</td><td>用 <code>load_current_index</code>、<code>load_instruction_at</code>，只传数据字节</td><td>改用 <code>_checked</code> 版本，传入账户本身；PR #751 做的就是这件事<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>发布流程</td><td>PR #751 在公开仓库放了 20 天才合并，合并后排队等审计，没有部署<a class="ref" href="#s1">[1]</a></td><td>把“旧函数弃用、改用 checked 版本”当作安全信号单独评估，先修线上的那一处</td></tr>
+              <tr><td>监控</td><td>攻击 43 分钟后，例行检查才发现账目不符，又过 33 分钟才暂停<a class="ref" href="#s1">[1]</a></td><td>持续、自动地核对 Solana 上 wETH 的发行量和以太坊上锁定的 ETH，越早暂停，能被兑现的越少</td></tr>
+              <tr><td>转出额度</td><td>93,750 枚 wETH 跨回以太坊，照常签名放行；本页没有查到当时有按链限额或延迟的机制</td><td>按链设 24 小时额度和单笔阈值，大额转出先排队，给守护者留出删掉异常消息的时间；后来的 Governor 就是这样设计的<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td>跨链记账</td><td>以太坊端照常为跨回的 wETH 放款</td><td>官方路线图中的“按链隔离风险的记账机制”，让一条链上的伪造铸币不能随意兑现另一条链上的资产<a class="ref" href="#s1">[1]</a>；后来的 Global Accountant 按这个目标设计<a class="ref" href="#s19">[19]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>前两行任何一项做到，这次攻击本身就不会成功。后四行修不了漏洞，只能让修复更早上线，或者让损失更小。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>凭空铸出的 12 万枚 wETH 分成了两部分。93,750 枚被跨回以太坊，兑现成桥合约里真实锁定的 ETH；其余 26,250 枚（按 12 万减 93,750 计算）留在 Solana 上换成了 SOL<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。前一部分让以太坊上的 Portal 合约少了 93,750 枚 ETH，后一部分让 Solana 上多出 26,250 枚没有支撑的 wETH，两者合计正是 Jump Crypto 补入的 12 万枚。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 740 556" role="img" aria-labelledby="wh-flow-t wh-flow-d">
+            <title id="wh-flow-t">Wormhole 事件的资金流向与处置</title>
+            <desc id="wh-flow-d">2022 年 2 月 2 日，攻击者用伪造的消息让 Solana 端 Portal 凭空铸出 12 万枚 wETH，其中 93,750 枚跨回以太坊取走 ETH，26,250 枚在 Solana 上换成 SOL。2 月 3 日 13:08，Jump Crypto 补入 12 万枚 ETH，wETH 恢复 1:1 抵押，13:29 桥恢复运行。2023 年 2 月 21 日，Oasis 依英国高等法院命令，用管理员多签转走攻击者金库的抵押品和债务，资产转入法院授权的第三方控制的钱包。Blockworks 据链上记录估算，一个被标为 Jump Crypto 的钱包还清 8,000 万 DAI，取出约 2.18 亿美元抵押品，净值约 1.4 亿美元，当事方没有确认。</desc>
+            <defs>
+              <marker id="wh-flow-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="wh-flow-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t b" x="10" y="22">① 2022-02-02 攻击：凭空铸币</text>
+            <rect class="d-box atk" x="10" y="70" width="180" height="60" rx="4"/>
+            <text class="d-t b" x="100" y="95" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="100" y="116" text-anchor="middle">伪造“已验证”的消息</text>
+            <line class="d-line atk" x1="190" y1="100" x2="238" y2="100" marker-end="url(#wh-flow-ah-atk)"/>
+            <rect class="d-box" x="240" y="36" width="210" height="128" rx="4"/>
+            <text class="d-t b" x="345" y="76" text-anchor="middle">Solana 端 Portal</text>
+            <text class="d-t s" x="345" y="100" text-anchor="middle">凭空铸出</text>
+            <text class="d-t b atk" x="345" y="124" text-anchor="middle">120,000 wETH</text>
+            <text class="d-t s" x="345" y="146" text-anchor="middle">没有 ETH 存款支撑</text>
+            <line class="d-line atk" x1="450" y1="70" x2="498" y2="70" marker-end="url(#wh-flow-ah-atk)"/>
+            <line class="d-line atk" x1="450" y1="134" x2="498" y2="134" marker-end="url(#wh-flow-ah-atk)"/>
+            <rect class="d-box atk" x="500" y="40" width="230" height="60" rx="4"/>
+            <text class="d-t b" x="615" y="64" text-anchor="middle">93,750 wETH 跨回以太坊</text>
+            <text class="d-t s" x="615" y="85" text-anchor="middle">从 Portal 合约取走等量 ETH</text>
+            <rect class="d-box atk" x="500" y="104" width="230" height="60" rx="4"/>
+            <text class="d-t b" x="615" y="128" text-anchor="middle">其余 26,250 wETH</text>
+            <text class="d-t s" x="615" y="149" text-anchor="middle">在 Solana 上换成 SOL</text>
+            <rect class="d-box soft" x="10" y="184" width="720" height="34" rx="4"/>
+            <text class="d-t s" x="370" y="206" text-anchor="middle">结果：以太坊上的 Portal 合约少了 93,750 ETH，Solana 上还有 26,250 wETH 没有资产支撑</text>
+            <line class="d-line dash" x1="10" y1="240" x2="730" y2="240"/>
+            <text class="d-t b" x="10" y="266">② 2022-02-03 补足与恢复</text>
+            <rect class="d-box def" x="10" y="290" width="200" height="60" rx="4"/>
+            <text class="d-t b" x="110" y="314" text-anchor="middle">Jump Crypto</text>
+            <text class="d-t s" x="110" y="335" text-anchor="middle">13:08 补入 120,000 ETH</text>
+            <line class="d-line def" x1="210" y1="320" x2="258" y2="320" marker-end="url(#wh-flow-ah-def)"/>
+            <rect class="d-box ok" x="260" y="290" width="230" height="60" rx="4"/>
+            <text class="d-t b" x="375" y="314" text-anchor="middle">以太坊端 Portal 合约</text>
+            <text class="d-t s" x="375" y="335" text-anchor="middle">wETH 恢复 1:1 抵押</text>
+            <line class="d-line def" x1="490" y1="320" x2="538" y2="320" marker-end="url(#wh-flow-ah-def)"/>
+            <rect class="d-box ok" x="540" y="290" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="635" y="314" text-anchor="middle">13:29 桥恢复运行</text>
+            <text class="d-t s" x="635" y="335" text-anchor="middle">距攻击约 19 小时</text>
+            <line class="d-line dash" x1="10" y1="372" x2="730" y2="372"/>
+            <text class="d-t b" x="10" y="398">③ 2023-02-21 依英国高等法院命令取回</text>
+            <rect class="d-box atk" x="10" y="420" width="210" height="60" rx="4"/>
+            <text class="d-t b" x="115" y="444" text-anchor="middle">攻击者的 Oasis 金库</text>
+            <text class="d-t s" x="115" y="465" text-anchor="middle">质押衍生品抵押，借 DAI 加杠杆</text>
+            <line class="d-line def" x1="220" y1="450" x2="258" y2="450" marker-end="url(#wh-flow-ah-def)"/>
+            <rect class="d-box def" x="260" y="420" width="230" height="60" rx="4"/>
+            <text class="d-t b" x="375" y="444" text-anchor="middle">Oasis 管理员多签</text>
+            <text class="d-t s" x="375" y="465" text-anchor="middle">依法院命令转走抵押品和债务</text>
+            <line class="d-line def" x1="490" y1="450" x2="538" y2="450" marker-end="url(#wh-flow-ah-def)"/>
+            <rect class="d-box ok" x="540" y="420" width="190" height="60" rx="4"/>
+            <text class="d-t b" x="635" y="444" text-anchor="middle">法院授权的第三方</text>
+            <text class="d-t s" x="635" y="465" text-anchor="middle">资产转入其控制的钱包</text>
+            <rect class="d-box doubt" x="10" y="494" width="720" height="52" rx="4"/>
+            <text class="d-t s" x="370" y="515" text-anchor="middle">Blockworks 据链上记录估算：取出抵押品约 2.18 亿美元，扣除偿还的 8,000 万 DAI 后净值约 1.4 亿美元</text>
+            <text class="d-t s" x="370" y="536" text-anchor="middle">还款的钱包被认为属于 Jump Crypto，Jump 和 Oasis 都没有确认；其他报道的数字不同，见下表</text>
+          </svg>
+          </div>
+          <figcaption>图 2：资金流向与处置的三个阶段。红色是攻击者一方，蓝色是补救动作，绿色是恢复后的状态，黄褐色框是 Blockworks 的链上估算，未经当事方确认。</figcaption>
+        </figure>
+
+        <h3>以太坊上的余款与 2023 年的追回</h3>
+        <p>换成 SOL 的那部分，本页没有查到后续去向的报道。留在以太坊上的 ETH，据 Blockworks 报道，攻击者此后不断在多个以太坊应用之间转移，后来在 Oasis 开了两个金库，用两种 ETH 质押衍生品作抵押，建立了加杠杆的做多仓位，两个金库都用了 Oasis 的自动化服务<a class="ref" href="#s10">[10]</a>。The Defiant 写明这两种资产是 stETH 和 rETH。Oasis 是 MakerDAO 金库的前端之一，用户在上面抵押资产、借出 DAI；2021 年 6 月 Maker 基金会解散时，它从 MakerDAO 分拆出来<a class="ref" href="#s12">[12]</a>。</p>
+        <ol class="steps">
+          <li><b>白帽团队找上 Oasis（2023-02-16）</b>据 Oasis 的声明，2 月 16 日（周四）晚，一个白帽团队联系它，演示了取回这些资产的办法，并提供了概念验证<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>法院命令（2023-02-21）</b>2 月 21 日，Oasis 收到英格兰及威尔士高等法院的命令，要它采取一切必要步骤，取回与 2022 年 2 月 2 日 Wormhole 攻击者地址相关的资产。Oasis 称当天就按命令的要求，通过 Oasis 多签和一个法院授权的第三方执行了操作<a class="ref" href="#s4">[4]</a>。本页查到的报道都没有说明是谁向法院申请了这项命令。</li>
+          <li><b>临时签名人与金库转移</b>Blockworks Research 的分析师 Dan Smith 根据链上记录还原了过程：拥有 Oasis 代理合约的是一个 4/12 多签；2 月 21 日，一个被他称为 Sender 的地址被加为这个多签的签名人，发出 5 笔交易后又被移除。其中第 3 笔交易让 Oasis 的合约把攻击者金库里的抵押品和债务转进了 Sender 自己的金库<a class="ref" href="#s10">[10]</a>。Forbes 的描述是，这一步利用 Oasis 的可升级代理结构改写了底层合约的逻辑，改写后的逻辑借用了攻击者自己开启的止损触发器，这个触发器授予了 AutomationBot 动用金库的权限<a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>还款与取出抵押品</b>随后，一个被多家分析机构标为 Jump Crypto 的钱包给 Sender 送来 8,000 万 DAI，还清金库的贷款，取出约 2.18 亿美元的抵押品，转给另一个被称为 Holder 的地址<a class="ref" href="#s10">[10]</a>。Oasis 的声明说，资产随即转入法院授权的第三方控制的钱包，Oasis 自己不保留任何控制权<a class="ref" href="#s4">[4]</a>。</li>
+        </ol>
+        <p>Oasis 承认，这次操作之所以可行，是因为管理员多签的权限设计中有一个此前不为人知的漏洞。它没有公布取回的金额，也没有说明第三方是谁<a class="ref" href="#s4">[4]</a>。Blockworks 据链上记录推断这些地址属于 Jump，扣除还款后净值约 1.4 亿美元。它报道时，Jump Crypto 拒绝置评，Oasis 没有回复置评请求，报道发出后才发表了上面这份声明<a class="ref" href="#s10">[10]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">2023 年追回金额</th><th>口径与说明</th></tr></thead>
+            <tbody>
+              <tr><td>Oasis 声明<a class="ref" href="#s4">[4]</a></td><td class="n">未公布</td><td>只说资产已交给法院授权的第三方</td></tr>
+              <tr><td>Blockworks<a class="ref" href="#s10">[10]</a></td><td class="n">约 2.18 亿美元</td><td>取出的抵押品，扣除 8,000 万 DAI 后净值约 1.4 亿美元</td></tr>
+              <tr><td>The Defiant<a class="ref" href="#s12">[12]</a></td><td class="n">约 2.02 亿美元</td><td>stETH 和 rETH，报道称数字来自公司方面</td></tr>
+              <tr><td>Forbes<a class="ref" href="#s13">[13]</a></td><td class="n">约 1.95 亿美元</td><td>攻击者原本可以带走的被盗 ETH</td></tr>
+              <tr><td>CoinDesk<a class="ref" href="#s11">[11]</a></td><td class="n">1.4 亿美元</td><td>同 Blockworks 净值，但被写成“去年漏洞攻击”的金额，与 2022 年的损失不符</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>差异主要来自口径：有的算取出的抵押品总值，有的扣掉了还给 Maker 的 DAI；折算价格的时点可能也不同，这一点是本站的推测，各报道没有说明。Oasis 的声明本身没有金额，所以本页把追回金额写作<span class="dispute">约 1.4 亿到 2.18 亿美元</span>。2022 年的损失也有几种写法：CoinDesk 写作超过 3.2 亿美元，The Block 写作接近 3.23 亿美元，The Verge 和 Blockworks 写作约 3.25 亿美元，rekt.news 写作 3.26 亿美元<a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s21">[21]</a>。最大和最小相差不到 2%，可能来自折算 ETH 价格的时点不同；本站的统计采用 3.26 亿美元。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>用户没有损失，代价由开发方承担</h3>
+        <p>wETH 的持有人没有承担损失<a class="ref" href="#s3">[3]</a>，这个结果靠的是 Jump 愿意、也有能力在一天之内拿出 12 万枚 ETH。如果没有人补上缺口，流通的 wETH 会比合约里锁定的 ETH 多出 12 万枚；wETH 彼此无法区分，合约只会按赎回的先后照常放出 ETH，排在后面的持有人可能就取不回来。这是本站依据官方报告和 Global Accountant 设计文档的说明所做的推断<a class="ref" href="#s1">[1]</a><a class="ref" href="#s19">[19]</a>。在 Jump 表态之前，The Verge 写道，攻击让桥上的 wETH 和桥实际持有的 ETH 之间出现了巨大的缺口，补缺口的钱从哪里来还不清楚，它发给 Jump Crypto 的问题也没有得到回复<a class="ref" href="#s6">[6]</a>。Bloomberg 的报道则认为，这笔足以拖垮其他交易公司的损失，Jump 看起来没怎么吃力就扛了下来<a class="ref" href="#s7">[7]</a>。</p>
+
+        <h3>修复为什么躺在公开仓库里</h3>
+        <p>The Verge 的标题把这次攻击和“GitHub 上的失误”联系在一起。据它报道，软件开发者 Matthew Garrett 在 Twitter 上指出，那次上传被描述成一次普通的版本更新，实际却包含大量改动；报道认为，这一点可能让攻击者看出它是一次伪装起来的安全修复<a class="ref" href="#s6">[6]</a>。官方报告的说法是，那是一次例行的工具链升级，补上漏洞是附带的结果，当时没人意识到它的安全含义<a class="ref" href="#s1">[1]</a>。按 GitHub 上的记录，这次提交以依赖升级为主，提交说明只有一行（见“漏洞原理”一节）<a class="ref" href="#s16">[16]</a>。两种说法在一点上没有分歧：补丁在攻击前约三周就已出现在公开仓库，这段时间里线上合约一直运行着旧代码。</p>
+
+        <h3>2022 年跨链桥的一连串失守</h3>
+        <p>Wormhole 是本站收录的 2022 年跨链桥事件中的第一起。事发时，它在 DeFi 攻击的金额中仅次于 2021 年 8 月的 <a href="2021-poly-network.html">Poly Network</a><a class="ref" href="#s12">[12]</a>。此后八个月里，本站又收录了四起跨链桥事件，被攻破的环节各不相同：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间</th><th class="n">损失</th><th>失守的环节</th></tr></thead>
+            <tbody>
+              <tr><td>Wormhole</td><td>2022-02</td><td class="n">约 3.26 亿美元</td><td>Solana 端签名验证缺少一项账户检查</td></tr>
+              <tr><td><a href="2022-ronin-bridge.html">Ronin</a></td><td>2022-03</td><td class="n">约 6.24 亿美元</td><td>9 个验证者中 5 个的签名落入攻击者手中</td></tr>
+              <tr><td><a href="2022-harmony-horizon.html">Harmony Horizon</a></td><td>2022-06</td><td class="n">约 1 亿美元</td><td>5 签 2 的多签，2 把私钥被盗</td></tr>
+              <tr><td><a href="2022-nomad-bridge.html">Nomad</a></td><td>2022-08</td><td class="n">约 1.86 亿美元</td><td>可信根被设成 0x00，未经证明的消息被当作已验证</td></tr>
+              <tr><td><a href="2022-bnb-bridge.html">BNB Chain 跨链桥</a></td><td>2022-10</td><td class="n">约 5.7 亿美元</td><td>IAVL 证明校验有缺陷，凭伪造的证明铸出 200 万枚 BNB（金额按铸出的 BNB 计）</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>五起之中，Wormhole、Nomad 和 BNB Chain 跨链桥出问题的是合约对消息或证明的验证，攻击者没有拿到任何签名私钥；Ronin 和 Harmony 则是签名私钥落入了攻击者手中。The Defiant 在 2023 年 2 月引用 rekt.news 的排行称，Wormhole 当时已退居 DeFi 攻击金额的第五位，前五名里有四起针对的是跨链桥<a class="ref" href="#s12">[12]</a>。</p>
+
+        <h3>法院授权的“反向攻击”引出的争论</h3>
+        <p>2023 年的追回让一些人担心前端和合约里的管理员权限。据 The Defiant 报道，Adam Cochran 发推说，他乐见 Wormhole 攻击者被反制，但不喜欢 Oasis 的自动化服务留有后门、能凭法院命令扣押用户的资产，并问以后美国法院要求扣押美国用户的资产时怎么办。MakerDAO 随后声明，接入 Maker 协议的前端都不由它开发或维护<a class="ref" href="#s12">[12]</a>。Forbes 的评论认为，一个 DeFi 平台能写出挪动用户资金的后门，这一点本身就可能严重损害 Jump 和 Oasis 的声誉；强调“依法院命令行事”，在担心政府干预私人资金的用户那里，也可能成为一个公关隐患<a class="ref" href="#s13">[13]</a>。Oasis 则强调，这项权限只是为了在遭到攻击时能迅速修补漏洞，用户资产在过去和现在都没有面临被未经授权的人动用的风险<a class="ref" href="#s4">[4]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>悬赏没有换回资金</h3>
+        <p>1,000 万美元的白帽协议，攻击者始终没有接受。Blockworks 在 2023 年 2 月写道，这笔交易看来从未发生<a class="ref" href="#s10">[10]</a>。另一笔征集线索的 1,000 万美元奖励，本页没有查到后续。</p>
+
+        <h3>审计与赏金计划</h3>
+        <p>事故报告列出的审计（Kudelski、Neodyme、Trail of Bits）都在事发前就已排定，见“背景”一节<a class="ref" href="#s1">[1]</a>。The Verge 指出，Wormhole 的 GitHub 页面上有一份 Neodyme 在 2021 年 7 月到 9 月之间做的审计报告，漏洞当时是否已经存在并不清楚，Neodyme 没有回应它的询问<a class="ref" href="#s6">[6]</a>。</p>
+        <p>原定 2 月中旬上线的 Immunefi 赏金计划，事故报告里写的最高赏金是 350 万美元<a class="ref" href="#s1">[1]</a>；到 5 月，严重漏洞的最高赏金已是 1,000 万美元<a class="ref" href="#s9">[9]</a>。攻击约三周后的 2 月 24 日，白帽 satya0x 通过这个计划报告了以太坊核心桥合约中的一个严重漏洞，与本次攻击无关。按 Immunefi 的复盘，代理合约背后的逻辑合约在此前一次修复中被撤销了初始化，任何人都可以先调用 <code>initialize()</code> 设定一个自己控制的守护者集合，再借升级函数让逻辑合约自毁，依赖它的代理合约随之失效，用户资金可能被锁死。Wormhole 当天确认并修复，没有用户资金损失；5 月 20 日公布向 satya0x 支付 1,000 万美元赏金<a class="ref" href="#s17">[17]</a><a class="ref" href="#s9">[9]</a>。这和 2017 年 11 月 <a href="2017-parity-multisig.html">Parity 多签钱包</a>库合约被自毁、依赖它的钱包被冻结是同一类问题：一个没有初始化的合约，被人取得权限后自毁。这是本站的类比，Immunefi 的复盘没有提到 Parity。</p>
+
+        <h3>两道新的检查：Governor 与 Global Accountant</h3>
+        <p>官方事故报告的路线图里有两项与这次事故直接相关：按链隔离风险的记账机制，以及持续监控、尽早发现事故<a class="ref" href="#s1">[1]</a>。Wormhole 的官方仓库后来加入了两份设计文档。Governor 的文档最早在 2022 年 8 月提交，首个版本写的目标是提供一层可选的安全措施，让守护者能限制转出的名义金额；现行版本的背景部分直接以 2 月 2 日这次攻击为例，并写道，如果代币桥的转账不限额、即时到账，一条链上的漏洞就可能掏空整座桥<a class="ref" href="#s18">[18]</a>。Global Accountant 的文档最早在 2023 年 4 月提交，现行版本写明的目标是：即使一条链被攻破，能从这条链转出的包装代币也永远不超过转入这条链的数量<a class="ref" href="#s19">[19]</a>。本页没有查到两者在主网启用的确切日期。两者的设计要点按文档的现行版本整理如下<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th>Governor</th><th>Global Accountant</th></tr></thead>
+            <tbody>
+              <tr><td>设计文档进入官方仓库</td><td>2022-08-09</td><td>2023-04-10</td></tr>
+              <tr><td>运行位置</td><td>每个守护者节点在本地运行，由守护者自行决定是否启用</td><td>Wormchain 上的合约，作为守护者签名之前的完整性检查</td></tr>
+              <tr><td>怎样限制</td><td>每条链设单笔阈值和 24 小时额度（以美元计）。超过单笔阈值的转出一律延迟 24 小时再签名；小额转出在 24 小时滑动窗口内累计超过额度后排队</td><td>按链记录每种代币锁定和铸出的数量。13 个守护者提交预观察后记账，会让某个账户余额变负的转账被拒绝</td></tr>
+              <tr><td>拦下之后</td><td>排队期间，守护者可以各自删掉可疑消息，19 个中有 7 个删掉，这条消息就凑不够签名；13 个守护者可以手动放行；排队最长时间目前设为 24 小时，到期自动放行，运营者可以把单条消息的计时器延长到最多 30 天</td><td>被拒绝说明要么程序有错误，要么真的遭到攻击，两种情况都需要人工处理</td></tr>
+              <tr><td>文档写明的局限</td><td>只能减轻攻击的影响，不能阻止攻击；守护者要在 24 小时窗口内人工处理异常消息</td><td>不管不跨链的攻击，例如在本链上把伪造的包装代币换成别的资产；可以按发送方设成只记录、不拦截的模式</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>把这两道检查放回 2022 年 2 月，可以看出它们各自管到哪一步。Solana 上的铸币它们管不到：伪造的消息直接骗过了 Solana 端的 <code>verify_signatures</code>，从头到尾没有经过守护者。它们管到的是下一步：攻击者把 wETH 跨回以太坊，走的是一条真实的 Portal 消息，要由守护者观察、签名。按设计，这样一笔大额转出如果超过 Solana 的单笔阈值，Governor 会让它排队 24 小时，守护者有时间删掉它；Accountant 会把能取走的 ETH 限制在正当转入 Solana 的 wETH 数量以内。Accountant 文档举的第三个例子几乎就是这次事故：攻击者利用 Solana 合约的漏洞印出假的 wETH 并跨回以太坊，能取走的总量受限于 Solana 端代币桥发行的 wETH 总量；之后 Wormhole 自己出钱补足，守护者再发两项治理操作修正账目<a class="ref" href="#s19">[19]</a>。在 Solana 上直接换成 SOL 的 26,250 枚 wETH 不经过跨链，两道检查都管不到，Accountant 文档把这种情况明确列为非目标<a class="ref" href="#s19">[19]</a>。以上是本站依据两份设计文档所做的推演，不是对 2022 年的还原，当时这两道检查都还不存在。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 580" role="img" aria-labelledby="wh-gate-t wh-gate-d">
+            <title id="wh-gate-t">Governor 与 Global Accountant 管到哪一步</title>
+            <desc id="wh-gate-d">按两份设计文档推演 2022 年 2 月攻击的三步。第一步，伪造的消息骗过 Solana 端 verify_signatures，Portal 铸出 12 万枚 wETH，这一步不经过守护者签名，两道检查都看不到。第二步，把 93,750 枚 wETH 跨回以太坊，这是一条真实的 Portal 消息，守护者签名之前要经过两道检查：Governor 按链设单笔阈值和 24 小时额度，大额转出延迟 24 小时，排队期间守护者可以删掉可疑消息；Global Accountant 在 Wormchain 上按链记账，余额不许为负，能取走的 ETH 不超过正当转入 Solana 的 wETH 数量。两道检查都是事后才设计的，2022 年 2 月时还不存在。第三步，其余 26,250 枚 wETH 在 Solana 上直接换成 SOL，不经过 Wormhole 跨链，Accountant 文档把这种情况列为非目标，Governor 只管代币桥发出的 Wormhole 消息。</desc>
+            <defs>
+              <marker id="wh-gate-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="wh-gate-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="wh-gate-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t b" x="10" y="22">① Solana 上铸币：12 万枚 wETH</text>
+            <rect class="d-box atk" x="10" y="38" width="220" height="64" rx="4"/>
+            <text class="d-t b" x="120" y="63" text-anchor="middle">伪造“已验证”的消息</text>
+            <text class="d-t s" x="120" y="86" text-anchor="middle">骗过 <tspan class="m">verify_signatures</tspan></text>
+            <line class="d-line atk" x1="230" y1="70" x2="268" y2="70" marker-end="url(#wh-gate-ah-atk)"/>
+            <rect class="d-box" x="270" y="38" width="200" height="64" rx="4"/>
+            <text class="d-t b" x="370" y="63" text-anchor="middle">Solana 端 Portal</text>
+            <text class="d-t s" x="370" y="86" text-anchor="middle">铸出 120,000 wETH</text>
+            <line class="d-line dash" x1="470" y1="70" x2="498" y2="70"/>
+            <rect class="d-box soft" x="500" y="38" width="250" height="64" rx="4"/>
+            <text class="d-t s" x="625" y="63" text-anchor="middle">这一步不经过守护者签名</text>
+            <text class="d-t s atk" x="625" y="86" text-anchor="middle">Governor 和 Accountant 都看不到</text>
+            <line class="d-line dash" x1="10" y1="122" x2="750" y2="122"/>
+            <text class="d-t b" x="10" y="148">② 跨回以太坊：93,750 枚 wETH</text>
+            <rect class="d-box atk" x="10" y="162" width="260" height="56" rx="4"/>
+            <text class="d-t b" x="140" y="185" text-anchor="middle">在 Solana 发起转出</text>
+            <text class="d-t s" x="140" y="206" text-anchor="middle">这是一条真实的 Portal 消息</text>
+            <line class="d-line" x1="270" y1="190" x2="298" y2="190" marker-end="url(#wh-gate-ah)"/>
+            <rect class="d-box" x="300" y="162" width="450" height="56" rx="4"/>
+            <text class="d-t b" x="525" y="185" text-anchor="middle">守护者观察到这条消息</text>
+            <text class="d-t s" x="525" y="206" text-anchor="middle">签名之前，先过两道检查（事后才设计，2022 年 2 月时还不存在）</text>
+            <line class="d-line" x1="525" y1="218" x2="525" y2="236" marker-end="url(#wh-gate-ah)"/>
+            <rect class="d-box soft" x="10" y="238" width="740" height="146" rx="4"/>
+            <rect class="d-box def" x="22" y="250" width="350" height="122" rx="4"/>
+            <text class="d-t b" x="197" y="274" text-anchor="middle">Governor（守护者节点本地）</text>
+            <text class="d-t s" x="197" y="298" text-anchor="middle">每条链设单笔阈值和 24 小时额度</text>
+            <text class="d-t s" x="197" y="320" text-anchor="middle">大额转出延迟 24 小时再签名</text>
+            <text class="d-t s" x="197" y="342" text-anchor="middle">排队期间守护者可以删掉可疑消息</text>
+            <text class="d-t s" x="197" y="363" text-anchor="middle">只能减轻影响，不能阻止攻击</text>
+            <rect class="d-box def" x="388" y="250" width="350" height="122" rx="4"/>
+            <text class="d-t b" x="563" y="274" text-anchor="middle">Global Accountant（Wormchain）</text>
+            <text class="d-t s" x="563" y="298" text-anchor="middle">按链记录锁定和铸出的数量</text>
+            <text class="d-t s" x="563" y="320" text-anchor="middle">会让余额变负的转账被拒绝</text>
+            <text class="d-t s" x="563" y="342" text-anchor="middle">能取走的 ETH 不超过正当转入 Solana 的 wETH</text>
+            <text class="d-t s" x="563" y="363" text-anchor="middle">不管不跨链的攻击</text>
+            <line class="d-line def" x1="380" y1="384" x2="380" y2="408" marker-end="url(#wh-gate-ah-def)"/>
+            <text class="d-t s def halo" x="392" y="401">通过</text>
+            <rect class="d-box" x="190" y="410" width="380" height="44" rx="4"/>
+            <text class="d-t b" x="380" y="437" text-anchor="middle">通过后守护者签名，以太坊 Portal 放出 ETH</text>
+            <line class="d-line dash" x1="10" y1="474" x2="750" y2="474"/>
+            <text class="d-t b" x="10" y="500">③ 其余 26,250 枚 wETH：在 Solana 上换成 SOL</text>
+            <rect class="d-box atk" x="10" y="516" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="160" y="539" text-anchor="middle">在 Solana 上直接兑换</text>
+            <text class="d-t s" x="160" y="560" text-anchor="middle">不经过 Wormhole 跨链</text>
+            <line class="d-line dash" x1="310" y1="544" x2="368" y2="544"/>
+            <rect class="d-box soft" x="370" y="516" width="380" height="56" rx="4"/>
+            <text class="d-t s" x="560" y="539" text-anchor="middle">Accountant 文档把这种情况列为非目标</text>
+            <text class="d-t s" x="560" y="560" text-anchor="middle">Governor 只管代币桥发出的 Wormhole 消息</text>
+          </svg>
+          </div>
+          <figcaption>图 3：按 Governor 和 Global Accountant 的设计文档推演 2022 年 2 月攻击的三步。两道检查都在守护者签名之前。在 Solana 上铸币和在 Solana 上换成 SOL 都不经过守护者签名，它们只管得到跨回以太坊的那一步，做法是延迟或设上限。本图表示的是设计意图，2022 年 2 月时这两道检查都还不存在。</figcaption>
+        </figure>
+        <p>本页查到一次 Governor 拦下资金的公开记录。2026 年 4 月 <a href="2026-drift-protocol.html">Drift Protocol</a> 被盗后，Drift 在 5 月 5 日的恢复计划中写道，攻击者经 Wormhole 发出的 2 笔转账（约 59.37 枚 WBTC、约 557.90 枚 WETH）被 Wormhole Governor 延迟到 7 月下旬，等于把这笔资金锁在途中；同一份计划写明，攻击者控制的 4 个以太坊钱包里集中了约 130,259 枚 ETH<a class="ref" href="#s20">[20]</a>。被 Governor 拦下的只占被盗资产的一小部分。</p>
+
+        <h3>Jump 与 Wormhole 分开</h3>
+        <p>2023 年 11 月，Bloomberg 报道 Jump Trading 把 Wormhole 分拆为独立实体，Wormhole 的 CEO Saeed Badreg 和 COO Anthony Ramirez 随之离开 Jump<a class="ref" href="#s14">[14]</a>。</p>
+
+        <h3>攻击者</h3>
+        <p>攻击者的身份至今没有公开。本页查到的官方公告和媒体报道中，没有执法机构认定或起诉攻击者的消息。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给 Solana 程序开发者</span>
+          <ul>
+            <li>调用者传进来的每个账户，都要核对它是不是程序期望的那一个<a class="ref" href="#s1">[1]</a>。固定地址的系统账户比较地址，程序派生的账户核对派生关系（如本页代码中对 <code>guardian_set</code> 做的 <code>verify_derivation</code>）。这次缺的是最基本的一项：没有比较一个账户的地址。</li>
+            <li>约束要写进类型或代码里，不能只写在注释里。修复前的 <code>instruction_acc</code> 声明为裸的 <code>Info</code>，“特殊 sysvar”只出现在注释中<a class="ref" href="#s15">[15]</a>。</li>
+            <li>只接收字节的读取函数看不到账户地址，没法替你核对数据的来源。依赖库把这类函数标为弃用、推荐带 <code>_checked</code> 的版本时，要把它当作一个安全信号单独评估，不要只当成升级时顺手改掉的接口<a class="ref" href="#s1">[1]</a>。</li>
+            <li>借 instruction sysvar 确认“另一条指令已经验过”的设计，整条信任链都压在“读到的确实是真的 sysvar”这一点上，这一环要单独检查。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给跨链桥团队</span>
+          <ul>
+            <li>补丁一旦进了公开仓库，就要假设攻击者也看得到。这次的修复在攻击前约三周已经公开，却在排队等审计和发版，线上合约一直带着漏洞<a class="ref" href="#s1">[1]</a>。涉及安全的改动需要一条更快的部署通道。</li>
+            <li>签名门槛之外要有第二道防线。按链记账和大额延迟不能阻止漏洞被利用，但能给单点失守的损失设上限，Governor 和 Global Accountant 就是按这个思路设计的<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。</li>
+            <li>持续、自动地核对各条链上包装代币的发行量和锁定的资产。这次是攻击 43 分钟后，例行检查才发现账目不对<a class="ref" href="#s1">[1]</a>。</li>
+            <li>暂停和紧急升级要事先设计好、演练过。这次从发现到暂停用了 33 分钟；网络停下之后，守护者没法照常提交升级投票，最后是借同一个漏洞完成了升级<a class="ref" href="#s1">[1]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户和集成方</span>
+          <ul>
+            <li>包装资产的价值取决于桥里的储备。这次用户没有损失，是因为 Jump 选择出钱补足，协议本身没有这样的保证。评估一座桥时，要问清楚出了缺口由谁来补。</li>
+            <li>可升级合约和管理员多签既能保护资产，也能在法院命令下挪动用户的仓位，2023 年的追回就是这样完成的<a class="ref" href="#s4">[4]</a><a class="ref" href="#s10">[10]</a>。用户应当了解自己用的前端和合约里有哪些管理员权限。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Wormhole，《Wormhole Incident Report — 02/02/22》，Medium，2022-02-04。原文经 Wayback Machine 快照阅读。<a href="https://wormholecrypto.medium.com/wormhole-incident-report-02-02-22-ad9b8f21eec6">wormholecrypto.medium.com</a>，<a href="http://web.archive.org/web/20220206192833/https://wormholecrypto.medium.com/wormhole-incident-report-02-02-22-ad9b8f21eec6">web.archive.org</a></li>
+          <li id="s2">Wormhole 官方 X（Twitter）账号推文（时间为 UTC）：2022-02-02 20:42，网络停机维护，<a href="https://x.com/wormhole/status/1488976115750383626">x.com</a>；2022-02-02 22:25，确认被盗 12 万枚 wETH，<a href="https://x.com/wormhole/status/1489001949881978883">x.com</a>；2022-02-03 13:39，资金已恢复、网络恢复运行，<a href="https://x.com/wormhole/status/1489232008521859079">x.com</a>；2022-02-04 21:42，1,000 万美元白帽协议，<a href="https://x.com/wormhole/status/1489715920436183040">x.com</a>。</li>
+          <li id="s3">Jump Crypto 官方 X（Twitter）账号推文，2022-02-03 18:13（UTC）。<a href="https://x.com/jump_/status/1489301013408497666">x.com</a></li>
+          <li id="s4">Oasis，《Statement Regarding The Transactions From The Oasis Multisig on 21st Feb 2023》，Oasis Blog，2023-02-24。原地址无法直接访问，引用 Wayback Machine 快照。<a href="http://web.archive.org/web/20230303122606/https://blog.oasis.app/statement-regarding-the-transactions-from-the-oasis-multisig-on-21st-feb-2023/">web.archive.org</a></li>
+          <li id="s5">Andrew Thurman，《Jump Trading Backstops Wormhole's $320M Exploit Loss》，CoinDesk，2022-02-03。<a href="https://www.coindesk.com/business/2022/02/03/jump-trading-backstops-wormholes-320m-exploit-loss-sources">coindesk.com</a></li>
+          <li id="s6">Corin Faife，《Wormhole cryptocurrency platform hacked for $325 million after error on GitHub》，The Verge，2022-02-03。<a href="https://www.theverge.com/2022/2/3/22916111/wormhole-hack-github-error-325-million-theft-ethereum-solana">theverge.com</a></li>
+          <li id="s7">Nick Baker、Yueqi Yang、Olga Kharif（Bloomberg），《$320 million crypto hack is no big deal for the trading firm behind Wormhole—it refunded customer losses in a day》，Fortune 转载，2022-02-04。<a href="https://fortune.com/2022/02/04/320-million-crypto-hack-blockchain-ether-jump-trading-wormhole-refund-customer-losses/">fortune.com</a></li>
+          <li id="s8">Alexander Culafi，《Wormhole offers $10M to Ethereum thieves》，TechTarget，2022-02-07。<a href="https://www.techtarget.com/cybersecurity/news/252513054/Wormhole-offers-10M-to-Ethereum-thieves">techtarget.com</a></li>
+          <li id="s9">Catarina Moura，《Wormhole announces $10 million bug bounty payout》，The Block，2022-05-20。<a href="https://www.theblock.co/news/regulation/2022-05-20-wormhole-announces-10-million-bug-bounty-payout-148085">theblock.co</a></li>
+          <li id="s10">Jon Rice，《Jump Crypto Just Counter-Exploited the Wormhole Hacker for $140 Million》，Blockworks，2023-02-24（含 Blockworks Research 分析师 Dan Smith 的链上分析和 Oasis 声明）。经 Wayback Machine 快照阅读。<a href="https://blockworks.co/news/jump-crypto-wormhole-hack-recovery">blockworks.co</a>，<a href="http://web.archive.org/web/20230302122903/https://blockworks.co/news/jump-crypto-wormhole-hack-recovery">web.archive.org</a></li>
+          <li id="s11">Elizabeth Napolitano、Danny Nelson，《Oasis Exploits Its Own Wallet Software to Seize Crypto Stolen in Wormhole Hack》，CoinDesk，2023-02-24。<a href="https://www.coindesk.com/business/2023/02/24/oasis-exploits-its-own-wallet-software-to-seize-crypto-stolen-in-wormhole-hack/">coindesk.com</a></li>
+          <li id="s12">Aleksandar Gilbert、Samuel Haig，《'Counter-Exploit' Claws Back $202M From Hacker》，The Defiant，2023-02-28。经 Wayback Machine 快照阅读。<a href="https://thedefiant.io/news/defi/counter-exploit-oasis-defi-hack">thedefiant.io</a>，<a href="http://web.archive.org/web/20251105033003/https://thedefiant.io/news/defi/counter-exploit-oasis-defi-hack">web.archive.org</a></li>
+          <li id="s13">Kamran Rosen，《After Suffering Second-Largest-Ever Crypto Hack, Jump Crypto Recovers 120,000 ETH By Exploiting Smart Contracts》，Forbes，2023-03-03。经 Wayback Machine 快照阅读。<a href="https://www.forbes.com/sites/digital-assets/2023/03/03/after-suffering-second-largest-ever-crypto-hack-jump-crypto-recovers-120000-eth-by-exploiting-its-own-smart-contracts/">forbes.com</a>，<a href="http://web.archive.org/web/20230930210054/https://www.forbes.com/sites/digital-assets/2023/03/03/after-suffering-second-largest-ever-crypto-hack-jump-crypto-recovers-120000-eth-by-exploiting-its-own-smart-contracts/">web.archive.org</a></li>
+          <li id="s14">Bralon Hill，《Wormhole becomes independent entity following spin-off from Jump Trading》，crypto.news，2023-11-17（转述 Bloomberg 的报道）。<a href="https://crypto.news/wormhole-becomes-independent-entity-following-spin-off-from-jump-trading/">crypto.news</a></li>
+          <li id="s15">Wormhole 官方代码仓库 wormhole-foundation/wormhole（原 certusone/wormhole），提交 e8b9181《Check instructions sysvar》，2022-02-02 20:02（UTC），只改动 solana/bridge/program/src/api/verify_signature.rs；修复前的源码取自它的父提交 79ab522。<a href="https://github.com/wormhole-foundation/wormhole/commit/e8b91810a9bb35c3c139f86b4d0795432d647305">提交 e8b9181</a>，<a href="https://github.com/wormhole-foundation/wormhole/blob/79ab522f802ccc5ba34278d3c648fa62e06f4f1c/solana/bridge/program/src/api/verify_signature.rs">79ab522 版源文件</a></li>
+          <li id="s16">Wormhole 官方代码仓库，PR #751《Update Solana to 1.9.4》，2022-01-13 创建，2022-02-02 16:31（UTC）合并进 dev.v2 分支，合并后的提交为 7edbbd3，改动 35 个文件。<a href="https://github.com/wormhole-foundation/wormhole/pull/751">PR #751</a>，<a href="https://github.com/wormhole-foundation/wormhole/commit/7edbbd3677ee6ca681be8722a607bc576a3912c8">提交 7edbbd3</a></li>
+          <li id="s17">Immunefi，《Wormhole Uninitialized Proxy Bugfix Review》，Medium，2022-05-20。<a href="https://medium.com/immunefi/wormhole-uninitialized-proxy-bugfix-review-90250c41a43a">medium.com</a></li>
+          <li id="s18">Wormhole 官方代码仓库，设计文档《Governor》（whitepapers/0007_governor.md）。首个版本为 2022-08-09 的提交 09b3355《Chain Governor》；正文按 2026 年 11 月读取的 main 分支版本转述，该版本最近一次修改于 2025-06-24。<a href="https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0007_governor.md">github.com</a>，<a href="https://github.com/wormhole-foundation/wormhole/commit/09b33552df90a3628c78c2d4f6eea82f41e078b8">首个版本的提交</a></li>
+          <li id="s19">Wormhole 官方代码仓库，设计文档《Global Accountant》（whitepapers/0011_accountant.md）。首个版本为 2023-04-10 的提交 c7897e3；正文按 2026 年 11 月读取的 main 分支版本转述，该版本最近一次修改于 2025-07-23。<a href="https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0011_accountant.md">github.com</a>，<a href="https://github.com/wormhole-foundation/wormhole/commit/c7897e31b36ee2729dbbc96db56ec1c9e4300bc5">首个版本的提交</a></li>
+          <li id="s20">Drift Protocol，《Recovery Plan for Affected Users》，2026-05-05。<a href="https://www.drift.trade/updates/recovery-plan-for-affected-users">drift.trade</a></li>
+          <li id="s21">rekt.news，《Wormhole - REKT》，2022-02-03。<a href="https://rekt.news/wormhole-rekt/">rekt.news</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

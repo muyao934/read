@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5,547 万 DAI 签名钓鱼｜区块链诈骗与骗局</title>
+<meta name="description" content="2024 年 8 月 20 日，一名用户在冒充 DeFi Saver 的网站上签了一笔交易，把控制 Maker 金库的 DSProxy 合约钱包的所有权交给骗子，约 5,547 万枚 DAI 随即被提走。本页讲 setOwner 换掉的是什么、它和普通代币授权的区别、钱包为什么看不出危险，以及赃款冻结在 Coinbase 后的民事诉讼。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2024-dai-phishing">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2024 年　/　<a href="../index.html#cat-phish">钓鱼与授权盗币</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>5,547 万 DAI 签名钓鱼</h1>
+    <p class="lede">2024 年 8 月 20 日，一名以太坊用户在冒充 DeFi Saver 的钓鱼网站上签了一笔交易，把自己的 DSProxy 合约钱包的所有权交给了骗子。这个 DSProxy 控制着他在 Maker 协议里的一个金库，骗子随即从中提走约 5,547 万枚 DAI，约值 5,500 万美元。ScamSniffer 把它记为 2024 年钱包盗币类钓鱼里最大的一笔。到 2026 年 11 月，没有查到刑事起诉；受害者追到的一部分赃款冻结在 Coinbase，正在旧金山联邦法院打民事官司。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">这一案和常见的授权钓鱼不同，区别在受害者签出去的权限。普通的 approve 或 Permit 只让对方转走某一种代币，额度可以设上限，事后也能撤销，这类签名见 <a href="2023-inferno-drainer.html">Inferno Drainer</a>。本案受害者签的是 DSProxy 合约的 <code>setOwner</code>，换掉的是整个合约钱包的主人<a class="ref" href="#s5">[5]</a><a class="ref" href="#s1">[1]</a>。他的 Maker 金库由这个 DSProxy 控制，谁当 DSProxy 的主人，谁就能操作金库。签完以后，受害者自己再调用 DSProxy 就失败了<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p>
+        <p>2024 年 8 月 20 日是星期二。据 The Block 和 Decrypt，链上调查者 ZachXBT 最先发现这起事件<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>；Lookonchain、CertiK、BlockSec 随后给出分析<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。按 BlockSec 的说法，受害者被引去签了一笔更换金库主人的交易，骗子再发一笔交易把金库掏空<a class="ref" href="#s1">[1]</a>。被提走的 DAI 约 5,547 万枚<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。Lookonchain 称骗子很快把其中 2,750 万枚换成了 10,625 枚 ETH<a class="ref" href="#s2">[2]</a>。CertiK 认为骗子用的是 Inferno Drainer 的工具<a class="ref" href="#s1">[1]</a>，受害者后来的起诉书也这样说<a class="ref" href="#s10">[10]</a>。</p>
+        <p>ScamSniffer 的 2024 年报统计，钱包盗币工具全年造成约 4.94 亿美元损失，最大单笔 5,548 万美元，就是这一起<a class="ref" href="#s5">[5]</a>。受害者报了警，又雇私人公司追踪；2024 年 12 月，Coinbase 冻结了追到其平台一个散户账户里的一部分赃款<a class="ref" href="#s10">[10]</a>。2026 年 5 月，受害者起诉 Coinbase 要回这笔钱；Coinbase 请求把钱提存到法院后退出，听证定在 2027 年 1 月 22 日<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。到 2026 年 11 月，没有查到针对骗子的刑事起诉、逮捕或制裁的公开报道。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>Maker 金库和 DSProxy</h3>
+        <p>Maker 金库是一种抵押债务仓位：用户存入抵押品，借出和美元挂钩的稳定币 DAI<a class="ref" href="#s1">[1]</a>。很多用户不直接操作金库合约，而是先给自己部署一个 DSProxy。DSProxy 由 dapphub 编写，源码注释说，它让用户用一个固定的身份执行一连串原子操作，“因为代理的主人可以更换”，所以也能用于多签这类所有权安排<a class="ref" href="#s15">[15]</a>。Maker 的金库管理合约 DssCdpManager 给每个金库登记一个主人<a class="ref" href="#s16">[16]</a>，通过 DSProxy 开的金库，登记的主人就是 DSProxy 的地址。</p>
+        <p>据 CertiK 和 BlockSec 的分析，本案受害者的普通钱包地址（EOA）是一个 DSProxy 的主人，这个 DSProxy 控制着一个 Maker 金库<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>DeFi Saver</h3>
+        <p>DeFi Saver 是管理 Maker、Aave 等协议仓位的工具，起诉书称它是“非托管”的，资产仍在用户自己的合约里<a class="ref" href="#s10">[10]</a>。受害者在起诉书里说，他用 DeFi Saver 管理以 DAI 计的资产，用笔记本电脑上的硬件钱包签名<a class="ref" href="#s10">[10]</a>。SlowMist 的 8 月报告把这一案描述为针对受害者“DeFi Saver Proxy”的钓鱼<a class="ref" href="#s3">[3]</a>。各方报道都没有说 DeFi Saver 本身被攻破，本站也没有找到 DeFi Saver 的公开声明。</p>
+        <h3>Inferno Drainer 回来了</h3>
+        <p>Inferno Drainer 2023 年 11 月宣布关闭，2024 年又活跃起来。据 ScamSniffer 的年报，Pink Drainer 5 月底退出时占 28% 的份额，被 Inferno 吸收；10 月底 Angel 宣布接管 Inferno 之后，Inferno 仍占 40% 到 45%<a class="ref" href="#s5">[5]</a>。Cointelegraph 引安全公司 Blockaid 的数据说，2024 年用 Inferno 搭建的恶意应用从年初约 800 个增加到年底 2,400 多个<a class="ref" href="#s8">[8]</a>。工具包怎样出租、怎样分账，见 <a href="2023-inferno-drainer.html">Inferno Drainer</a>。CertiK 认为本案用的就是它<a class="ref" href="#s1">[1]</a>。起诉书把 Inferno 称作一个持续运作的犯罪团伙，原告据此对匿名被告提出 RICO 索赔<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <h3>为什么算诈骗</h3>
+        <p>本站按转账是谁签的来分：受害者自己签的交易算诈骗。本案受害者的私钥没有泄露，交易是他在假网站上自己签的。BlockSec 的分析师 Jingyi Guo 对 The Block 说，从链上数据看，受害者签了钓鱼交易的可能性大于私钥泄露<a class="ref" href="#s1">[1]</a>。CertiK 和起诉书都用了“进入账户”“取得访问权”这类说法<a class="ref" href="#s1">[1]</a><a class="ref" href="#s10">[10]</a>，说的是签名之后的结果：骗子拿到的是 DSProxy 的主人身份，私钥仍在受害者手里。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li><time>2024-05</time><div class="ev">Pink Drainer 退出，份额被 Inferno Drainer 吸收<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk key"><time>2024-08-20</time><div class="ev">受害者在一个冒充 DeFi Saver、以 .app 结尾的网站上签名，DSProxy 的主人改成了 Etherscan 标为 Fake_Phishing187019 的地址<a class="ref" href="#s1">[1]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>2024-08-20</time><div class="ev">所有权再转到另一个地址，骗子从金库提走约 5,547 万枚 DAI<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2024-08-20</time><div class="ev">受害者想把钱转到新地址，调用 DSProxy 失败<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2024-08-20</time><div class="ev">ZachXBT 发出警报（据 The Block、Decrypt）<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>；Lookonchain 称 2,750 万枚 DAI 已换成 10,625 枚 ETH<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2024-08-21</time><div class="ev">MistTrack 发布追踪：DAI 分到多个地址，部分又归集，多数换成 ETH<a class="ref" href="#s3">[3]</a>。CertiK、BlockSec 向 The Block 解释作案过程<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2024-09-03</time><div class="ev">ScamSniffer 称 8 月钓鱼损失约 6,300 万美元，这一起占 88%<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2024-11-30</time><div class="ev">受害者雇的 Zero Shadow 通知 Coinbase，部分赃款进了 Coinbase 的一个地址<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def key"><time>2024-12-02</time><div class="ev">Coinbase 确认地址属于一个散户账户，钱还在，采取措施防止转走<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2025-01-03</time><div class="ev">ScamSniffer 2024 年报：最大单笔 5,548 万美元，大案里 setOwner 签名占 31.9%<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2026-01-03</time><div class="ev">ScamSniffer 2025 年报：全年最大单笔降到 650 万美元<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def key"><time>2026-05-04</time><div class="ev">受害者在北加州联邦地区法院起诉 Coinbase 和匿名被告，案号 3:26-cv-04050<a class="ref" href="#s9">[9]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2026-07-20</time><div class="ev">Coinbase 答辩，并对账户持有人提出 interpleader 交叉请求<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2026-10-01</time><div class="ev">Coinbase 请求把争议资金存入法院，原告不反对<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2026-10-07</time><div class="ev">账户持有人收到送达后没有答辩，书记官登记缺席<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2026-10-15</time><div class="ev">案件改派 Charles R. Breyer 法官，提存动议听证定在 2027 年 1 月 22 日<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2026-11</time><div class="ev">没有查到针对骗子的刑事起诉、逮捕或制裁的公开报道。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>本案的关键是一条所有权链：受害者的钱包是 DSProxy 的主人，DSProxy 是 Maker 金库登记的主人，金库里是抵押品和 DAI<a class="ref" href="#s1">[1]</a><a class="ref" href="#s16">[16]</a>。骗子不需要私钥，也不需要任何代币授权，只要把链上的第一环换成自己。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 462" role="img" aria-labelledby="dp-chain-t dp-chain-d">
+            <title id="dp-chain-t">一次 setOwner 签名怎样换掉金库的实际控制人</title>
+            <desc id="dp-chain-d">上半部分是签名之前：受害者的钱包是 DSProxy 的主人，DSProxy 是 Maker 金库登记的主人。中间是受害者在冒充 DeFi Saver 的 .app 网站上签下的 DSProxy.setOwner，这笔交易不转出任何代币。下半部分是签名之后：骗子的地址成了 DSProxy 的主人，金库登记的主人没变，仍是 DSProxy；受害者的钱包再调用 DSProxy 时通不过 auth 检查；骗子通过 DSProxy 操作金库，约 5,547 万枚 DAI 被转到骗子控制的地址。</desc>
+            <defs>
+              <marker id="dp-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="dp-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t b" x="40" y="28">签名之前</text>
+            <rect class="d-box" x="40" y="44" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="56" y="72">受害者的钱包</text>
+            <text class="d-t s" x="56" y="94">EOA，用硬件钱包签名</text>
+            <rect class="d-box" x="280" y="44" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="296" y="72">DSProxy</text>
+            <text class="d-t s" x="296" y="94">owner = 受害者</text>
+            <rect class="d-box" x="520" y="44" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="536" y="72">Maker 金库</text>
+            <text class="d-t s" x="536" y="94">登记的主人 = DSProxy</text>
+            <path class="d-line" d="M240,86 L276,86" marker-end="url(#dp-ah)"/>
+            <path class="d-line" d="M480,86 L516,86" marker-end="url(#dp-ah)"/>
+            <text class="d-t s" x="260" y="72" text-anchor="middle">主人</text>
+            <text class="d-t s" x="500" y="72" text-anchor="middle">主人</text>
+            <rect class="d-box atk" x="40" y="130" width="680" height="60" rx="3"/>
+            <text class="d-t b" x="56" y="156">钓鱼签名：<tspan class="m">DSProxy.setOwner(骗子地址)</tspan></text>
+            <text class="d-t s" x="56" y="178">在冒充 DeFi Saver、以 .app 结尾的网站上签下；这笔交易不转出任何代币</text>
+            <text class="d-t b" x="40" y="222">签名之后</text>
+            <rect class="d-box atk" x="40" y="238" width="200" height="64" rx="3"/>
+            <text class="d-t b atk" x="56" y="266">骗子的地址</text>
+            <text class="d-t s" x="56" y="288">先是 Fake_Phishing187019</text>
+            <rect class="d-box" x="280" y="238" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="296" y="266">DSProxy</text>
+            <text class="d-t s" x="296" y="288">owner = 骗子</text>
+            <rect class="d-box" x="520" y="238" width="200" height="64" rx="3"/>
+            <text class="d-t b" x="536" y="266">Maker 金库</text>
+            <text class="d-t s" x="536" y="288">登记的主人没变</text>
+            <path class="d-line atk" d="M240,280 L276,280" marker-end="url(#dp-ah-atk)"/>
+            <path class="d-line" d="M480,280 L516,280" marker-end="url(#dp-ah)"/>
+            <rect class="d-box soft" x="40" y="340" width="200" height="56" rx="3"/>
+            <text class="d-t b" x="56" y="364">受害者的钱包</text>
+            <text class="d-t s" x="56" y="386">再调用 execute：失败</text>
+            <path class="d-line dash" d="M140,340 L140,322 L380,322 L380,306"/>
+            <text class="d-t s" x="250" y="316">auth 检查不通过</text>
+            <rect class="d-box atk" x="520" y="340" width="200" height="56" rx="3"/>
+            <text class="d-t b atk" x="536" y="364">约 5,547 万枚 DAI</text>
+            <text class="d-t s" x="536" y="386">转到骗子控制的地址</text>
+            <path class="d-line atk" d="M620,302 L620,336" marker-end="url(#dp-ah-atk)"/>
+            <text class="d-t s" x="40" y="430">骗子没有拿到私钥，也没有拿到任何代币授权，换掉的只是链上的第一环。</text>
+            <text class="d-t s" x="40" y="450">金库合约只认登记的主人 DSProxy，DSProxy 又只听它的新主人。</text>
+          </svg>
+          </div>
+          <figcaption>所有权链据 CertiK、BlockSec 的分析和 ds-auth、DssCdpManager 的源码<a class="ref" href="#s1">[1]</a><a class="ref" href="#s14">[14]</a><a class="ref" href="#s16">[16]</a>；签名类型据 ScamSniffer<a class="ref" href="#s5">[5]</a>，假网站的域名据起诉书<a class="ref" href="#s10">[10]</a>。</figcaption>
+        </figure>
+        <h3>setOwner 换掉的是什么</h3>
+        <p>DSProxy 继承自 dapphub 的 DSAuth 合约。DSAuth 只记一个主人 <code>owner</code>，带 <code>auth</code> 修饰的函数只有主人、合约自己或主人指定的权限合约能调用。<code>setOwner</code> 本身也带 <code>auth</code>，主人可以把 <code>owner</code> 改成任何地址<a class="ref" href="#s14">[14]</a>：</p>
+<pre class="code"><code><span class="c">// dapphub/ds-auth，src/auth.sol，commit a51e7ca（节选）</span>
+function setOwner(address owner_) public auth {
+    owner = owner_;              <span class="c">// 一个参数，直接换主人</span>
+    emit LogSetOwner(owner);
+}
+
+modifier auth {
+    require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
+    _;
+}
+
+function isAuthorized(address src, bytes4 sig) internal view returns (bool) {
+    if (src == address(this)) {
+        return true;
+    } else if (src == owner) {   <span class="c">// 只认当前主人</span>
+        return true;
+    } else if (authority == DSAuthority(address(0))) {
+        return false;            <span class="c">// 没设权限合约，其他人一律拒绝</span>
+    } else {
+        return authority.canCall(src, address(this), sig);
+    }
+}</code></pre>
+        <p class="code-cap">出处：dapphub/ds-auth，commit a51e7ca（2021-07-29），src/auth.sol，节选，函数声明合并为一行<a class="ref" href="#s14">[14]</a>。中文注释为本站所加。</p>
+        <p>DSProxy 最要紧的函数 <code>execute</code> 也带 <code>auth</code>。主人可以让它用 <code>delegatecall</code> 执行任意一段合约代码，这段代码以 DSProxy 的身份运行，能动用 DSProxy 名下的一切<a class="ref" href="#s15">[15]</a>：</p>
+<pre class="code"><code><span class="c">// dapphub/ds-proxy，src/proxy.sol，commit 20a0e4b（节选）</span>
+function execute(address _target, bytes memory _data)
+    public auth note payable returns (bytes memory response)
+{
+    require(_target != address(0), "ds-proxy-target-address-required");
+    <span class="c">// 在 DSProxy 自己的上下文里执行 _target 的代码</span>
+    assembly {
+        let succeeded := delegatecall(sub(gas, 5000), _target, add(_data, 0x20), mload(_data), 0, 0)
+        ...
+    }
+}</code></pre>
+        <p class="code-cap">出处：dapphub/ds-proxy，commit 20a0e4b（2022-06-05），src/proxy.sol，节选，省略号为本站所加<a class="ref" href="#s15">[15]</a>。</p>
+        <p>Maker 的 DssCdpManager 在每个金库操作前检查调用者：必须是金库登记的主人 <code>owns[cdp]</code>，或者被这个主人授权过<a class="ref" href="#s16">[16]</a>。调整抵押和债务的 <code>frob</code>、转出抵押品的 <code>flux</code>、转出 DAI 的 <code>move</code> 都要过这道检查：</p>
+<pre class="code"><code><span class="c">// makerdao/dss-cdp-manager，src/DssCdpManager.sol，commit 95eb088（节选）</span>
+mapping (uint => address) public owns;      // CDPId => Owner
+
+modifier cdpAllowed(uint cdp) {
+    require(msg.sender == owns[cdp] || cdpCan[owns[cdp]][cdp][msg.sender] == 1, "cdp-not-allowed");
+    _;
+}</code></pre>
+        <p class="code-cap">出处：makerdao/dss-cdp-manager，commit 95eb088，src/DssCdpManager.sol，节选，修饰符参数合并为一行<a class="ref" href="#s16">[16]</a>。</p>
+        <p>三段合起来看：金库登记在 DSProxy 名下，谁能让 DSProxy 执行代码，谁就能操作金库。<code>setOwner</code> 之后，这个人成了骗子。受害者的地址再也通不过 <code>auth</code>，这就是他当天的补救交易失败的原因<a class="ref" href="#s1">[1]</a><a class="ref" href="#s14">[14]</a>。</p>
+        <h3>和普通代币授权的区别</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th></th><th>approve、Permit 等代币授权</th><th>DSProxy 的 setOwner</th></tr></thead>
+          <tbody>
+            <tr><td>交出的是什么</td><td>转走某一种代币的额度</td><td>整个合约钱包的主人身份<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>范围</td><td>一种代币，额度可以设上限</td><td>DSProxy 名下的所有仓位和资产，没有上限<a class="ref" href="#s15">[15]</a></td></tr>
+            <tr><td>能不能撤回</td><td>受害者自己把额度改成 0</td><td>受害者已通不过 auth，只有新主人能再改<a class="ref" href="#s14">[14]</a></td></tr>
+            <tr><td>钱包看到的</td><td>代币名、授权对象，常有额度</td><td>一个地址参数，没有代币和金额<a class="ref" href="#s14">[14]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">签的是不是 setOwner</span><p>ScamSniffer 的年报明确写的是针对 Proxy 所有权地址的 <code>setOwner</code> 签名<a class="ref" href="#s5">[5]</a>。CertiK 对 The Block 说，骗子用受害者的 EOA 转移了 DSProxy 的所有权；BlockSec 说受害者被骗签了一笔“更换金库主人”的交易<a class="ref" href="#s1">[1]</a>。起诉书没有点函数名，只说受害者被骗“授权了一个恶意的代理钱包或智能合约权限”，把实际控制权交给了骗子<a class="ref" href="#s10">[10]</a>。几方说的是同一件事，本站按 ScamSniffer 和 BlockSec 的说法写。</p></div>
+        <h3>钱包为什么看不出危险</h3>
+        <ul>
+          <li>网站像真的。假页面模仿 DeFi Saver 的登录页，只把 .com 换成了 .app<a class="ref" href="#s10">[10]</a>。受害者以为自己在登录<a class="ref" href="#s7">[7]</a>。</li>
+          <li>调用的是自己的合约。<code>setOwner</code> 发往受害者自己用过的 DSProxy，收款方不是陌生地址，按地址拦截的黑名单派不上用场。</li>
+          <li>没有资产变化。这笔交易本身不转出任何代币，钱包按余额变化做的模拟只会显示没有变化。ScamSniffer 把“欺骗钱包的模拟结果”列为 drainer 绕过检测的手法之一<a class="ref" href="#s5">[5]</a>。</li>
+          <li>参数只是一个地址。<code>setOwner</code> 只有一个参数<a class="ref" href="#s14">[14]</a>，界面上是一串十六进制字符，看不出它会让出金库。</li>
+          <li>硬件钱包不管签什么。受害者用的是硬件钱包<a class="ref" href="#s10">[10]</a>，它保护的是私钥，签什么内容仍由人决定。</li>
+        </ul>
+        <div class="note doubt"><span class="h">“铸出”还是“提走”</span><p>The Block 写，骗子把主人改成自己后，“铸出了 55,473,618 枚 DAI”<a class="ref" href="#s1">[1]</a>。Cointelegraph 写的是这笔签名改变了 Maker 里 5,547 万枚 DAI 的所有权，骗子随后把钱提走<a class="ref" href="#s2">[2]</a>；BlockSec 的说法是“掏空了金库”<a class="ref" href="#s1">[1]</a>。前一种说法意味着骗子用金库的抵押借出新的 DAI，后一种像是金库里本来就有 DAI。公开报道没有说明金库的抵押品和债务，起诉书里的金额也被涂黑<a class="ref" href="#s10">[10]</a>，本站不推断，两种说法并列。</p></div>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>8 月 20 日：签名和提款</h3>
+        <p>起诉书称，骗子用一个链接把受害者引到假的 DeFi Saver 登录页，域名以 .app 结尾，真的以 .com 结尾<a class="ref" href="#s10">[10]</a>。受害者在页面上签了名。按 BlockSec 对链上数据的解读，这笔交易把 DSProxy 的所有权交给了 Etherscan 标为 Fake_Phishing187019 的地址；所有权随后又转到另一个地址，由它负责提款和后面的洗钱<a class="ref" href="#s1">[1]</a>。Lookonchain 称，骗子已把所有权设到一个新建的地址，并从协议里提走了资产<a class="ref" href="#s2">[2]</a>。</p>
+        <p>受害者似乎很快发现了问题。Cointelegraph 写道，他想把钱提到一个新地址，交易失败了，因为主人已经换了<a class="ref" href="#s2">[2]</a>。BlockSec 的 Jingyi Guo 说，受害者试图调用 DSProxy，但他已不是 DSProxy 的主人，调用失败<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>谁先发现</h3>
+        <p>各家说法不一。The Block 和 Decrypt 都说链上调查者 ZachXBT 最先发现<a class="ref" href="#s1">[1]</a><a class="ref" href="#s7">[7]</a>。Cointelegraph 当天的报道引的是 Lookonchain<a class="ref" href="#s2">[2]</a>。8 月 21 日，SlowMist 旗下的 MistTrack 发布了资金追踪<a class="ref" href="#s3">[3]</a>，CertiK 和 BlockSec 向 The Block 解释了作案过程<a class="ref" href="#s1">[1]</a>。ScamSniffer 是在 9 月的月度统计和年报里记录这一案的<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>，本站没有找到它最先发现的依据。</p>
+        <h3>一起占了 8 月的近九成</h3>
+        <p>据 ScamSniffer 9 月 3 日的统计，8 月约 9,145 名受害者因钓鱼损失约 6,300 万美元，人数比 7 月少 34%，金额却涨了 215%；Cointelegraph 算出，这一起占当月被盗金额的 88%<a class="ref" href="#s4">[4]</a>。同一篇报道的导语写的是 8 月损失 6,600 多万美元<a class="ref" href="#s4">[4]</a>，两个数字出自同一篇，没有说明差别。放大到全部安全事件，SlowMist 统计 8 月全行业损失约 3.16 亿美元，只追回约 1,358 万美元；同月还有一笔约 4,064 枚 BTC 的可疑转账，ZachXBT 说其中只有约 20.5 万美元被还回<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>追踪和起诉</h3>
+        <p>受害者报了警，又雇了 Zero Shadow 和 Five Stones Intelligence 两家公司追踪赃款<a class="ref" href="#s10">[10]</a>。2024 年 11 月 30 日，Zero Shadow 通知 Coinbase，部分赃款进了 Coinbase 的一个地址；12 月 2 日，Coinbase 确认地址属于一个散户账户，钱还在，并采取了防止转走的措施<a class="ref" href="#s10">[10]</a>。Coinbase 要求先有法院判定归属才放款<a class="ref" href="#s10">[10]</a>。一年五个月后，受害者在 2026 年 5 月 4 日起诉<a class="ref" href="#s9">[9]</a>。</p>
+        <p>起诉书里的金额被涂黑，Decrypt 说它描述的经过和 2024 年 8 月这一案“非常相似”<a class="ref" href="#s7">[7]</a>，Cointelegraph 则直接写成本案<a class="ref" href="#s8">[8]</a>。</p>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <h3>当天换成 ETH</h3>
+        <p>Lookonchain 称，骗子把 2,750 万枚 DAI 换成了 10,625 枚 ETH<a class="ref" href="#s2">[2]</a>。按 MistTrack 8 月 21 日的追踪，约 5,500 万枚 DAI 先分到多个地址，一部分又归集到一个地址，多数随后换成 ETH；当时其中一个地址还持有 6,745.88 枚 ETH 和约 1,927 万枚 DAI<a class="ref" href="#s3">[3]</a>。地址投毒那一案里，被骗的 WBTC 当天也被换成了 ETH，见<a href="2024-address-poisoning.html">地址投毒骗走 1,155 枚 WBTC</a>。各方报道都没有提到有人冻结这批 DAI。</p>
+        <h3>混币和交易所</h3>
+        <p>按原告和 Coinbase 的联合案件管理陈述，赃款经 CowSwap、Tornado Cash 等非托管工具转手，用来切断存入和取出地址之间的联系<a class="ref" href="#s11">[11]</a>。Cointelegraph 据起诉书写道，骗子经 Tornado Cash 洗过以后，把一部分“可追溯的赃款”存进了一个 Coinbase 散户账户<a class="ref" href="#s8">[8]</a>。</p>
+        <p>起诉书称，Zero Shadow 和 Five Stones 找到证据，显示一名可能是乌克兰籍的人可能在洗钱中起了重要作用<a class="ref" href="#s10">[10]</a>。这是原告一方的说法，Coinbase 答辩时表示不知情；此人没有被起诉，本站不写他的名字。</p>
+        <p>追到并冻结在 Coinbase 的金额，起诉书里涂黑了<a class="ref" href="#s10">[10]</a>，公开报道也没有给出数字。其余赃款的去向，公开资料里没有进一步的说明。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>本案</h3>
+        <p>本案只有一名受害者。法院文件用姓名缩写称呼他，起诉书说他用笔记本电脑上的硬件钱包签名、用 DeFi Saver 管理以 DAI 计的资产<a class="ref" href="#s10">[10]</a>，Decrypt 称他为“巨鲸”<a class="ref" href="#s7">[7]</a>。他的身份没有公开，本站也不写其他能认出他的细节。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>出处</th><th>口径</th><th class="n">数字</th></tr></thead>
+          <tbody>
+            <tr><td>Cointelegraph 引 Lookonchain，2024-08-21</td><td>所有权被改变的 DAI</td><td class="n">5,547 万枚<a class="ref" href="#s2">[2]</a></td></tr>
+            <tr><td>The Block，2024-08-21</td><td>骗子提到自己地址的 DAI</td><td class="n">55,473,618 枚<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>The Block 导语</td><td>美元价值</td><td class="n">约 5,540 万美元<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>SlowMist 8 月报告</td><td>美元价值</td><td class="n">5,543 万美元<a class="ref" href="#s3">[3]</a></td></tr>
+            <tr><td>ScamSniffer 2024 年报</td><td>年度最大单笔</td><td class="n">5,548 万美元<a class="ref" href="#s5">[5]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>DAI 和美元挂钩，各方的差别来自取整和取价的时刻。本站按约 5,547 万枚 DAI、约 5,500 万美元记。</p>
+        <h3>“最大的一笔”按什么口径</h3>
+        <p>ScamSniffer 统计的是钱包盗币工具（wallet drainer）造成的钓鱼损失。按它的年报，单笔最大的被盗金额 2023 年是 2,405 万美元，2024 年是本案的 5,548 万美元，2025 年降到 650 万美元<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。这个“最大”只在这一口径里成立。转错地址的地址投毒、被骗说出助记词的社工案不在 ScamSniffer 的统计里，金额更大的案子另有，例如<a href="2024-address-poisoning.html">地址投毒骗走 1,155 枚 WBTC</a>，约 6,800 万美元。</p>
+        <h3>放在 2024 年的钓鱼损失里</h3>
+        <p>ScamSniffer 统计，2024 年钱包盗币类钓鱼共造成约 4.94 亿美元损失，受害地址约 33.2 万个；损失超过 100 万美元的大案 30 起，合计约 1.71 亿美元。8 月和 9 月分别出现 5,548 万和 3,251 万美元的大案，两个月占全年大案损失的 52%<a class="ref" href="#s5">[5]</a>。按签名类型分，大案损失里 Permit 占 56.7%，<code>setOwner</code> 占 31.9%<a class="ref" href="#s5">[5]</a>。本站按这两个数推算，31.9% 约合 5,455 万美元，和本案差不多，2024 年大案里的 <code>setOwner</code> 损失基本就是这一起。ScamSniffer 2025 年的对比表把 2024 年的主要签名类型写成“Permit/setOwner”<a class="ref" href="#s6">[6]</a>。</p>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>到 2026 年 11 月，本站没有查到针对本案骗子的刑事起诉、逮捕、制裁或执法扣押的公开报道。起诉书说受害者报了警<a class="ref" href="#s10">[10]</a>，没有说是哪个机构，也没有执法机构公开说过在查这一案。骗子和 Inferno Drainer 开发者的身份都没有公开。</p>
+        <h3>民事诉讼</h3>
+        <p>2026 年 5 月 4 日，受害者在北加州联邦地区法院起诉 Coinbase 的两家公司和一名匿名被告，案号 3:26-cv-04050<a class="ref" href="#s9">[9]</a>。对匿名被告，他依据《计算机欺诈和滥用法》和反诈骗的 RICO 条款索赔，要求三倍赔偿；对 Coinbase，他请求法院确认冻结的币归他所有，并命令 Coinbase 交还<a class="ref" href="#s9">[9]</a>。起诉书部分内容获准密封<a class="ref" href="#s11">[11]</a>。</p>
+        <p>Coinbase 在 7 月 20 日的答辩里承认了冻结的经过和账户的存在，对盗币经过表示不知情；它说自己对这笔钱没有利益，请法院让原告和账户持有人当面争归属<a class="ref" href="#s10">[10]</a>。经法院许可的早期取证，Coinbase 查明了账户持有人，法院准许以化名起诉他<a class="ref" href="#s11">[11]</a>。持有人 9 月 3 日经电子邮件收到送达，没有答辩，10 月 7 日被登记缺席<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。</p>
+        <p>10 月 1 日，Coinbase 请求把争议资金存入法院后退出诉讼，原告不反对<a class="ref" href="#s12">[12]</a>。原告预计申请简易判决，确认这笔钱归他<a class="ref" href="#s11">[11]</a>。案件 10 月 13 日改派 Charles R. Breyer 法官，提存动议的听证定在 2027 年 1 月 22 日<a class="ref" href="#s13">[13]</a>。到 2026 年 11 月，法院还没有判定这笔钱的归属，冻结的币仍在 Coinbase。</p>
+        <h3>冻结以后为什么还要打官司</h3>
+        <p>Cointelegraph 指出，交易所收到警报后常会冻结可疑资金，但多半要先有法院命令才肯把钱交给自称失主的人<a class="ref" href="#s8">[8]</a>。本案从冻结到起诉过了一年五个月，起诉到听证又排了八个多月<a class="ref" href="#s10">[10]</a><a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">签名之前</span>
+          <ul>
+            <li>核对完整域名，从书签进入常用工具。本案假页面和 DeFi Saver 的登录页长得一样，只是 .com 换成了 .app<a class="ref" href="#s10">[10]</a>。</li>
+            <li>看清调用的函数名。带 Owner、Authority 字样的调用，例如 <code>setOwner</code>、<code>setAuthority</code>，换的是合约的控制人<a class="ref" href="#s14">[14]</a>。登录、验证、领取都不需要换主人，看到这类请求就停下。</li>
+            <li>“没有资产变化”不等于安全。本案这笔签名不转出任何代币<a class="ref" href="#s14">[14]</a>，按余额变化的模拟看不出问题，ScamSniffer 也说 drainer 在研究怎样欺骗钱包的模拟<a class="ref" href="#s5">[5]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">用合约钱包的人</span>
+          <ul>
+            <li>弄清自己的仓位登记在谁名下。仓位挂在 DSProxy 这类合约钱包下面时，合约钱包的主人就是全部仓位的主人<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>，丢掉主人身份就丢掉一切。</li>
+            <li>撤销授权的办法救不了这种签名。代币授权可以自己改成 0，主人换掉以后，原主人连改回来的权限都没有<a class="ref" href="#s14">[14]</a>。本案受害者当天就发现了，补救交易仍然失败<a class="ref" href="#s1">[1]</a>。</li>
+            <li>大额仓位分开放，用多签或另设一个只用来签管理操作的地址，日常浏览用的地址不连这个钱包。</li>
+            <li>硬件钱包只保护私钥。本案受害者用的就是硬件钱包<a class="ref" href="#s10">[10]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">已经签了</span>
+          <ul>
+            <li>尽快报警，找链上追踪公司，并通知赃款可能流入的交易所。本案的部分赃款三个多月后进了 Coinbase，被冻结<a class="ref" href="#s10">[10]</a>。</li>
+            <li>冻结只是第一步。交易所多半要法院命令才放款<a class="ref" href="#s8">[8]</a>，本案到 2026 年 11 月仍在诉讼中<a class="ref" href="#s13">[13]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">The Block（Danny Park、Vishal Chawla），《Crypto whale loses $55 million in Dai stablecoin to phishing attack》，2024-08-21（2024-08-22 更新）。<a href="https://www.theblock.co/news/regulation/2024-08-21-hacking-55-million-dai-inferno-drainer-312326">theblock.co</a></li>
+          <li id="s2">Cointelegraph（Ezra Reguerra），《Crypto phishing attack drains $55M from whale’s wallet》，2024-08-21。<a href="https://cointelegraph.com/news/crypto-whale-loses-55m-phishing-attack">cointelegraph.com</a></li>
+          <li id="s3">IBTimes（Marvie Basilan），《Crypto Industry Recovers Only $13M Of $316M Lost To Security Incidents In August: SlowMist》，2024-09-02。<a href="https://www.ibtimes.com/crypto-industry-recovers-only-13m-316m-lost-security-incidents-august-slowmist-3741683">ibtimes.com</a></li>
+          <li id="s4">Cointelegraph，《August sees 215% rise in crypto phishing, $55M lost in single attack》，2024-09-03（TradingView 转载）。<a href="https://tw.tradingview.com/news/cointelegraph:44d3ba184094b:0-august-sees-215-rise-in-crypto-phishing-55m-lost-in-single-attack/">tradingview.com</a></li>
+          <li id="s5">ScamSniffer，《Scam Sniffer 2024: Web3 Phishing Attacks – Wallet Drainers Drain $494 Million》，2025-01-03。<a href="https://drops.scamsniffer.io/scam-sniffer-2024-web3-phishing-attacks-wallet-drainers-drain-494-million/">drops.scamsniffer.io</a></li>
+          <li id="s6">ScamSniffer，《Scam Sniffer 2025: Crypto Phishing Losses Fall 83% to $84 Million》，2026-01-03。<a href="https://drops.scamsniffer.io/scam-sniffer-2025-crypto-phishing-losses-fall-83-to-84-million/">drops.scamsniffer.io</a></li>
+          <li id="s7">Decrypt（Sander Lutz），《Crypto Whale Sues Coinbase Alleging Exchange Refuses to Return Stolen Funds》，2026-05-05。<a href="https://decrypt.co/366823/crypto-whale-sues-coinbase-alleging-exchange-refuses-return-stolen-funds">decrypt.co</a></li>
+          <li id="s8">Cointelegraph（Zoltan Vardai），《Coinbase faces lawsuit over frozen funds from $55M crypto theft》，2026-05-06。<a href="https://cointelegraph.com/news/coinbase-sued-for-withholding-frozen-crypto-linked-to-55m-defi-saver-hack">cointelegraph.com</a></li>
+          <li id="s9">美国北加州联邦地区法院，起诉书，案号 3:26-cv-04050，ECF No. 1，2026-05-04。<a href="https://storage.courtlistener.com/recap/gov.uscourts.cand.469386/gov.uscourts.cand.469386.1.0.pdf">courtlistener.com</a></li>
+          <li id="s10">同上，Coinbase 的答辩及 interpleader 交叉请求和反请求，ECF No. 19，2026-07-20（逐段引用起诉书第 14–32 段）。<a href="https://storage.courtlistener.com/recap/gov.uscourts.cand.469386/gov.uscourts.cand.469386.19.0.pdf">courtlistener.com</a></li>
+          <li id="s11">同上，联合案件管理陈述，ECF No. 42，2026-10-01。<a href="https://storage.courtlistener.com/recap/gov.uscourts.cand.469386/gov.uscourts.cand.469386.42.0.pdf">courtlistener.com</a></li>
+          <li id="s12">同上，Coinbase 的 interpleader 动议，ECF No. 40，2026-10-01。<a href="https://storage.courtlistener.com/recap/gov.uscourts.cand.469386/gov.uscourts.cand.469386.40.0.pdf">courtlistener.com</a></li>
+          <li id="s13">CourtListener，案卷 3:26-cv-04050，截至 2026-10-15 的条目（ECF No. 45、47、49）。<a href="https://www.courtlistener.com/docket/73294035/b-v-coinbase-global-inc/">courtlistener.com</a></li>
+          <li id="s14">dapphub/ds-auth，src/auth.sol，commit a51e7ca，2021-07-29。<a href="https://github.com/dapphub/ds-auth/blob/a51e7caa1f03eeffed66d67f3b38605e0f1f881d/src/auth.sol">github.com</a></li>
+          <li id="s15">dapphub/ds-proxy，src/proxy.sol，commit 20a0e4b，2022-06-05。<a href="https://github.com/dapphub/ds-proxy/blob/20a0e4b13d7f5ff1fd3bcfce4b821db5ee8c5978/src/proxy.sol">github.com</a></li>
+          <li id="s16">makerdao/dss-cdp-manager，src/DssCdpManager.sol，commit 95eb088。<a href="https://github.com/makerdao/dss-cdp-manager/blob/95eb088495239d6033e4ff4ccc28427adb20500b/src/DssCdpManager.sol">github.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

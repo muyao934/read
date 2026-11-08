@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>L2：Base 与 OP Mainnet｜区块链基础知识</title>
+<meta name="description" content="链下执行 + 以太坊上的一组合约；Base 没有自己的币">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="l2">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 06 章</p>
+    <h1>L2：Base 与 OP Mainnet</h1>
+    <p class="lede">Base 和 OP Mainnet 是怎么借用以太坊安全的，钱锁在哪、数据交到哪、争议去哪裁决，以及 Base 为什么没有自己的币。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="l2">
+  <h2 class="eyebrow">机制</h2>
+  <p class="sub">Base 到底是什么</p>
+  <p class="lead">常听到一句话：“L2 本质上是以太坊上的一个智能合约。”这句话抓住了关键，但只说对了一半。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">对的那一半</h3>
+      <ul>
+        <li>Base 的<b>钱</b>锁在以太坊的合约里。你在 Base 上的每一个 ETH，都对应以太坊合约里锁着的一个 ETH</li>
+        <li>Base 的<b>交易数据</b>要发到以太坊上存档</li>
+        <li>Base 的<b>状态</b>（账本快照）要提交到以太坊合约，谁不服可以在以太坊上挑战</li>
+        <li>以太坊合约说了算：提现能否放款，由以太坊上的合约判定</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">不准确的那一半</h3>
+      <ul>
+        <li>Base 的交易<b>不在以太坊上执行</b>。它有自己的节点、自己的区块（每 2 秒一个）、自己的 RPC 和区块浏览器</li>
+        <li>一笔 Base 交易不会触发以太坊合约运行，以太坊只是事后收到一大批压缩数据</li>
+        <li>所以更准确的说法是：<b>Base = 链下执行的 EVM 链 + 以太坊上的一组合约</b></li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout"><p><b>打个比方：</b>以太坊是总部，管着<b>金库</b>、<b>档案室</b>和<b>仲裁庭</b>；Base 是营业厅，日常业务都在营业厅办完，速度快、手续费低。但营业厅必须定期把全部流水交到档案室，钱永远锁在总部金库，有争议去总部仲裁。</p></div>
+  <div class="callout"><p><b>2026 年的重要变化：Base 不再是标准的 OP Stack 链。</b>Base 2026-02-18 宣布“未来几个月逐步离开 OP Stack”，但保持与 OP Stack 规范兼容；2026-03 退出 Optimism 的 Superchain 治理，并取消了链上收入分成；之后用自己命名的升级（Azul、Beryl、Cobalt）换掉了证明系统。所以下面先讲 <b>OP Stack 的标准机制</b>（OP Mainnet 现在仍是这样），再用一张表讲 Base 改了哪些地方。</p></div>
+
+  <h3>以太坊上属于每条 L2 的那组合约（OP Stack 标准）</h3>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>合约（OP Stack 命名）</th><th>比喻</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">OptimismPortal2<br>L1StandardBridge</td><td>金库 + 大门</td><td>充值、提现和“强制交易”的入口。ERC-20 锁在 L1StandardBridge；ETH 在 OP Mainnet 上锁在 2025 年加入的 <code>ETHLockbox</code>，在 Base 上仍锁在 OptimismPortal2</td></tr>
+      <tr><td class="mono">BatchInbox（一个地址）</td><td>档案室</td><td>L2 的全部交易压缩后，以 blob 数据的形式发到这里。任何人都能下载，自己重算 L2 的账本。OP Mainnet 是 <code>0xFF00…0010</code>，Base 是 <code>0xff00…8453</code></td></tr>
+      <tr><td class="mono">DisputeGameFactory</td><td>仲裁庭</td><td>定期接收 L2 的状态根（账本快照的指纹）。OP Mainnet 用 FaultDisputeGame，任何人都能用欺诈证明挑战；Base 2026 年起改用自己的 AggregateVerifier（TEE + ZK 证明）。旧的 L2OutputOracle 已弃用</td></tr>
+      <tr><td class="mono">AnchorStateRegistry<br>DelayedWETH</td><td>判决记录 + 押金</td><td>记录最新一个通过裁决的状态根；暂存争议双方押的保证金</td></tr></tr>
+      <tr><td class="mono">SystemConfig<br>ProxyAdmin</td><td>总部章程</td><td>链的参数和合约升级权，是 L2 最主要的中心化信任点。Base 的升级权在一个 2/2 嵌套多签里（Base Security Council 8/11 + Base Coordinator 3/6），按 L2BEAT 记录，升级没有延迟期</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>四个角色</h3>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Sequencer</span><h4>排序器</h4></div><p>接收用户交易、排序、执行、每 2 秒出一个 L2 区块。Base 官方文档写明<b>目前只有一个活跃排序器</b>（一个高可用集群，由 Base 运行），另外每约 200 毫秒发一个 Flashblock 作为预确认。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Batcher</span><h4>打包上传者</h4></div><p>把成千上万笔 L2 交易压缩，打包成 blob 发到以太坊的 BatchInbox。这一步付的是以太坊的数据费（blob 见<a class="chap-link" href="ethereum.html#fees">第 05 章</a>）。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Proposer</span><h4>状态提交者</h4></div><p>定期把“执行完这些交易后，L2 的账本长这样”的状态根提交到以太坊的 DisputeGameFactory。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Challenger</span><h4>挑战者（任何人）</h4></div><p>从以太坊下载交易数据自己重算。发现状态根不对，就在挑战期内发起欺诈证明。OP Mainnet 2024-06 开放无许可挑战，Base 2024-10-30 跟进；Base 2026-05 起改用 TEE + ZK 多重证明。</p></div>
+  </div>
+
+  <h3>一笔交易在 L2 上的一生</h3>
+  <div class="bit wide"><div class="anim" data-anim="rollup"></div></div>
+
+  <h3>三种“确认”，钱包和桥看的不是同一个</h3>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>状态</th><th>大约多久</th><th>意味着什么</th><th>谁会用它</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">unsafe</td><td>~2 秒（Base 的 Flashblock 约 0.2 秒）</td><td>排序器说“收到并执行了”。只是排序器的承诺</td><td>钱包、普通 DApp</td></tr>
+      <tr><td class="mono">safe</td><td>Base 约 2 分钟</td><td>交易数据已经发到以太坊，排序器没法偷偷改历史</td><td>中等金额的业务</td></tr>
+      <tr><td class="mono">finalized</td><td>Base 约 20 分钟</td><td>包含这批数据的以太坊区块已经最终确定</td><td>交易所、CCTP、跨链桥</td></tr>
+      <tr><td>提现到 L1</td><td>OP Mainnet 7 天；Base 1–5 天</td><td>状态根熬过挑战期，以太坊合约才放款</td><td>官方桥提现</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">“finalized”只说明 Base 的交易历史不会再变，但官方桥提现还要单独再等证明期，因为以太坊合约要确认的是“L2 的账本算对了”，不只是“数据已经存档”。CCTP 不走这个等待期，它在 Base 上 burn、在以太坊上由 Circle 证明后 mint。</p>
+
+  <h3>OP Mainnet 和 Base 现在哪里不一样（2026-10）</h3>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th></th><th><span class="dot bg-op"></span>OP Mainnet</th><th><span class="dot bg-base"></span>Base</th></tr></thead>
+    <tbody>
+      <tr><th>代码</th><td>OP Stack</td><td>源自 OP Stack，2026 年起自行演进，保持规范兼容</td></tr>
+      <tr><th>Superchain</th><td>成员</td><td>2026-03 退出治理；2026-04 从 superchain-registry 移除</td></tr>
+      <tr><th>证明系统</th><td>FaultDisputeGame（欺诈证明）</td><td>AggregateVerifier（TEE + SP1 ZK 多重证明，2026-05 Azul 升级起）</td></tr>
+      <tr><th>提现到 L1</th><td>7 天（3.5 天挑战期 + 3.5 天执行延迟）</td><td>Beryl 升级起：单一证明 5 天；TEE 和 ZK 两种证明都有时 1 天</td></tr>
+      <tr><th>L1 上 ETH 锁在哪</th><td>ETHLockbox（2025-07 部署）</td><td>OptimismPortal2（2026-09 Cobalt 升级去掉了 ETHLockbox 支持）</td></tr>
+      <tr><th>升级权</th><td>安全委员会和 Optimism 基金会都要批准，常规升级没有延迟期</td><td>2/2 嵌套多签：Base Security Council（8/11）+ Base Coordinator（3/6）。2026-03 之前还要 OP Foundation 第三方批准，之后移除；同样没有延迟期</td></tr>
+      <tr><th>出块</th><td>每 2 秒</td><td>每 2 秒 + 约 200 毫秒的 Flashblocks；计划中的 Denim 升级要改成每秒 5 个区块（目标 2026-11，测试网已上线）</td></tr>
+      <tr><th>L2BEAT 评级</th><td>Stage 1</td><td>Stage 1（2025-04-29 达到）</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="callout"><p><b>和其他章节的关系：</b>“finalized”等的是以太坊的最终确定，机制见<a class="chap-link" href="ethereum.html#finality">第 05 章</a>；blob 和 L1 数据费见<a class="chap-link" href="ethereum.html#fees">第 05 章手续费一节</a>；官方桥提现的分步演示在<a class="chap-link" href="bridges.html#sim-sec">第 03 章</a>；想绕开提现等待，可以走 <a class="chap-link" href="cctp-ccip.html#cctp-fast">CCTP Fast Transfer</a> 或 <a class="chap-link" href="atlas.html#liquidity">流动性桥</a>；OP Stack 合约层面和以太坊的细微差别（<code>block.coinbase</code>、<code>tx.origin</code> 别名）见<a class="chap-link" href="evm.html#equiv">第 09 章</a>；BSC 的 L2 opBNB 也是 OP Stack，见<a class="chap-link" href="bsc.html#family">第 07 章</a>；合约升级权为什么是最大的信任点，见<a class="chap-link" href="usdc.html#roles">第 02 章的角色一节</a>。</p></div>
+
+  <h3>Base 有没有自己的币</h3>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>链</th><th>付 gas 用</th><th>有没有自己的代币</th><th>为什么</th></tr></thead>
+    <tbody>
+      <tr><td><span class="dot bg-base"></span>Base</td><td class="mono">ETH</td><td class="n"><b>没有</b></td><td>目前没有网络代币。收入来自排序器手续费：用户付的 gas − 付给以太坊的数据费。按 Superchain 规则，原本要把收入的 2.5% 或利润的 15%（取高者）分给 Optimism；2026-03 起这项链上分成已取消</td></tr>
+      <tr><td><span class="dot bg-op"></span>OP Mainnet</td><td class="mono">ETH</td><td>有 <code>OP</code>，但只用于治理投票</td><td>OP 代币不能付 gas，和链的运行无关</td></tr>
+      <tr><td><span class="dot bg-bsc"></span>BSC</td><td class="mono">BNB</td><td>有，BNB 就是原生币</td><td>BSC 是独立 L1，不需要从以太坊搬 ETH，自然用自己的币</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><p><b>关键点：</b>L2 上用 ETH 付 gas，不是因为“没发币所以借用 ETH”。Base 上的 ETH 本来就是以太坊金库合约里锁着的 ETH 的“提货凭证”。就算某个 L2 发了代币（比如 OP），gas 仍然是 ETH。是否发币、发不发，都不改变它的安全来源。</p>
+  <p class="note">2025-09-15 Base 官方博客写道 “Base is beginning to explore a network token”，并说明还没有关于时间、设计和治理的任何细节。截至 2026-10-27，Base 博客和主流媒体都没有正式发币公告。注意：B20 是 Base 的代币标准名称，不是 Base 的网络代币。</p></div>
+</section>
+<section id="faq">
+  <h2 class="eyebrow">常见误解</h2>
+  <div class="faq">
+    <details open><summary>“ETH” 到底是链还是币？</summary><p>两者都叫。Ethereum 是网络，ETH 是它的原生币。Base 和 OP Mainnet 上付 gas 也用 ETH，那是从以太坊通过官方桥搬过来的 ETH，不是新的币。OP 代币是 Optimism 的治理代币，不用来付 gas；Base 没有自己的代币。</p></details>
+    <details><summary>L2 为什么提现要等好几天，充值却只要几分钟？</summary><p>Optimistic Rollup 默认 L2 提交的状态是对的，留出一段时间让任何人提交欺诈证明：OP Mainnet 是 7 天。Base 改用 TEE + ZK 证明后缩短到 5 天，双证明时 1 天。L1 → L2 方向不需要质疑 L1，所以快。<a class="chap-link" href="cctp-ccip.html#cctp-fast">CCTP</a> 或第三方<a class="chap-link" href="atlas.html#liquidity">流动性桥</a>能让用户绕开等待，代价是信任 Circle 或做市方。</p></details>
+  </div>
+</section>
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li><a href="https://base.org/blog/next-chapter-for-base-chain-1" rel="noopener">Base：Next chapter for Base Chain（2026-02-18）</a></li>
+    <li><a href="https://l2beat.com/scaling/projects/base" rel="noopener">L2BEAT · Base</a>；<a href="https://l2beat.com/scaling/projects/op-mainnet" rel="noopener">L2BEAT · OP Mainnet</a>（阶段、升级权、挑战期、历史记录）</li>
+    <li><a href="https://docs.base.org/specifications/base-protocol/bridging/withdrawals" rel="noopener">Base docs：Withdrawals</a>；<a href="https://docs.base.org/base-chain/network-information/transaction-finality" rel="noopener">Transaction finality</a>；<a href="https://docs.base.org/specifications/security/reliability-and-liveness" rel="noopener">Reliability and liveness</a>；<a href="https://docs.base.org/upgrades/denim/overview" rel="noopener">Denim</a></li>
+    <li><a href="https://specs.optimism.io/protocol/derivation.html" rel="noopener">OP Stack specs：derivation</a>（sequencing window、unsafe / safe / finalized）</li>
+    <li><a href="https://docs.optimism.io/stack/smart-contracts" rel="noopener">Optimism docs：smart contracts</a>；<a href="https://docs.optimism.io/stack/transactions/fees" rel="noopener">fees</a></li>
+    <li><a href="https://gov.optimism.io/t/season-6-standard-rollup-charter/8135" rel="noopener">Optimism：Standard Rollup Charter</a>（收入分成条款）</li>
+    <li><a href="https://base.org/blog/the-state-of-base-at-basecamp-2025" rel="noopener">Base：The state of Base at BaseCamp 2025（2025-09-15）</a>（探索网络代币）</li>
+  </ol>
+  <p>核查日期 2026-10-27。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // L2 交易生命周期（OP Stack 标准流程）：上半是 L2，下半是 Ethereum 上属于这条 L2 的合约
+  A.rollup = {h:320,
+    b:[['l2',2,4,96,40,'L2（链下执行，自己的节点）'],['seq',4,14,26,26,'Sequencer'],['l2b',33,14,63,26,'L2 区块 · 每 2 秒'],
+       ['l1',2,52,96,44,'Ethereum · L1 上属于这条 L2 的合约'],['pt',4,62,28,30,'OptimismPortal 金库'],['ib',36,62,28,30,'BatchInbox 档案'],['dg',68,62,28,30,'DisputeGame 仲裁']],
+    it:[
+      {id:'tx', h:chip('你的 tx','--base'), x:17, y:30},
+      {id:'b1', h:blk('#1'), x:42, y:29, hide:1}, {id:'b2', h:blk('#2'), x:52, y:29, hide:1}, {id:'b3', h:blk('#3'), x:62, y:29, hide:1},
+      {id:'st', h:'<div class="lbl w">unsafe</div>', x:84, y:29, hide:1},
+      {id:'vault', h:chip('锁着 ETH','--eth'), x:18, y:80},
+      {id:'blob', h:chip('blob · 压缩数据','--muted'), x:52, y:29, hide:1},
+      {id:'root', h:chip('状态根 0x9f…','--accent'), x:84, y:29, hide:1},
+      {id:'clk', h:'<div class="lbl m">挑战期</div>', x:82, y:88, hide:1},
+      {id:'out', h:chip('ETH 放款','--eth','out'), x:18, y:80, hide:1},
+      {id:'force', h:chip('强制交易','--warn'), x:18, y:90, hide:1}],
+    s:[
+      {c:'以 OP Stack 的标准流程为例（OP Mainnet 现在就是这样）。上面是 L2：一条独立运行的链，有自己的节点和区块。下面是它在以太坊上的几个合约：金库、档案室、仲裁庭。你在 L2 上的 ETH，对应的就是金库里锁着的 ETH。', lit:['l2','l1']},
+      {c:'① 你在 L2 上发交易。Sequencer 收到后排序、执行，2 秒内打进 L2 区块。钱包马上显示成功，但这只是“unsafe”：此时只有排序器的承诺，以太坊还什么都不知道。',
+       set:{tx:{x:42,y:29,hide:1}, b1:{hide:0,h:blk('#1','new')}, b2:{hide:0}, b3:{hide:0}, st:{hide:0}}, lit:['seq','l2b']},
+      {c:'② Batcher 把这段时间几千笔 L2 交易压缩成一个 blob，发到以太坊的 BatchInbox。现在任何人都能从以太坊下载这些数据，自己重算 L2 的账本，状态变成“safe”。手续费里最大的一块就是这笔以太坊数据费。',
+       set:{blob:{hide:0,x:50,y:80}, st:{h:'<div class="lbl g">safe</div>'}}, lit:['ib']},
+      {c:'③ Proposer 把“执行完这些交易后 L2 的账本指纹”（状态根）提交到以太坊的 DisputeGame 合约。',
+       set:{root:{hide:0,x:82,y:76}}, lit:['dg']},
+      {c:'④ 挑战期开始（OP Mainnet 是 7 天）。任何人都可以用以太坊上的 blob 数据重算一遍，如果发现状态根是假的，就提交欺诈证明，以太坊合约当场判它无效。这就是“Optimistic”：先默认它是对的，给大家一段时间举报。',
+       set:{clk:{hide:0}}, lit:['dg','ib']},
+      {c:'⑤ 挑战期内没人挑战成功，状态根生效。你如果在 L2 上发起过提现，并已在 L1 上提交了证明，就能去以太坊的 OptimismPortal 领钱，金库放款。Base 2026 年换成 TEE + ZK 证明后，这段等待缩短到 5 天，两种证明都有时 1 天。',
+       set:{out:{hide:0,x:18,y:66}, clk:{h:'<div class="lbl g">已生效</div>'}}, lit:['pt','dg']},
+      {c:'⑥ 逃生通道：如果排序器宕机或故意不收你的交易，你可以直接在以太坊上调用 OptimismPortal 提交。L2 必须在 sequencing window（3600 个 L1 区块，约 12 小时）内把它包含进来，这是最坏情况的上限，正常几分钟就会进。排序器能拖延，但不能永久审查你。',
+       set:{out:{hide:1}, force:{hide:0,x:17,y:30}}, lit:['pt','seq']},
+      {c:'所以：交易在 L2 上执行，但钱、数据、裁决都在以太坊合约里。这就是“L2 继承以太坊安全”的真正含义。剩下的中心化风险是：排序器只有一个，以及这些合约能被多签升级。',
+       set:{force:{hide:1}}, lit:['l1']},
+    ]};
+
+  Guide.mount(A);
+})();
+</script>
+</body>
+</html>

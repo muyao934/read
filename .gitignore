@@ -1,0 +1,14 @@
+# 只提交网页需要的文件：先忽略根目录全部，再放行站点目录
+/*
+!/.gitignore
+!/.nojekyll
+!/index.html
+!/assets/
+!/shared/
+!/hacks/
+!/milestones/
+!/scams/
+!/basics/
+# 内部文档（含本机路径，网页不引用）
+*.md
+.DS_Store

@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordinals 铭文上线：图片和 BRC-20 代币写进比特币区块｜区块链大事记</title>
+<meta name="description" content="2023 年 1 月 Ordinals 铭文在比特币主网上线：按挖出顺序给每一聪编号，把内容包在 Taproot 脚本路径的见证数据里，借 SegWit 的计重折扣写进区块；随后出现 BRC-20 和 Runes。本页讲铭文的写法、手续费的变化，过滤铭文的争论，共识规则和转发策略的区别，以及 Bitcoin Core v30 放宽 OP_RETURN 和 BIP 110 分叉。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-ordinals">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Ordinals 铭文上线：图片和 BRC-20 代币写进比特币区块</h1>
+    <p class="lede">2023 年 1 月 20 日，Casey Rodarmor 发布 ord 0.4.0，说比特币主网可以写铭文了。铭文把图片、文字或代币数据放进交易的见证数据，按四分之一计重；不到两周，一张巫师图几乎占满了一个区块，3 月又出现了 BRC-20 代币。ord 的文档说铭文给矿工带来手续费，主张过滤的开发者说这是挤占支付的垃圾数据。2017 年争的是区块该多大，这次争的是区块里该装什么，争论主要落在节点的转发策略上。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">2022 年 2 月，Casey Rodarmor 在 bitcoin-dev 邮件列表发出一份 BIP 草案：按挖出的顺序给每一聪编号，交易时按先进先出的规则把编号传给输出<a class="ref" href="#s1">[1]</a>。他写的 ord 在这套编号上加了铭文，把内容放进 Taproot 脚本路径花费的见证数据，记在某一聪上<a class="ref" href="#s3">[3]</a>。第一条主网铭文写于 2022 年 12 月 14 日；2023 年 1 月 20 日，ord 0.4.0 发布，Rodarmor 宣布铭文可以在主网用了，同一天申请了 BIP 编号<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <p>铭文写得进去，靠的是两次软分叉留下的空间：SegWit 让见证数据按四分之一计重<a class="ref" href="#s8">[8]</a>，Taproot 的脚本不再有 10,000 字节的上限，只受区块权重约束<a class="ref" href="#s9">[9]</a>。2023 年 2 月，Luxor 挖出的一个区块几乎被一张约 3.94 MB 的巫师图占满<a class="ref" href="#s22">[22]</a>。3 月 8 日，化名 domodata 的开发者推出 BRC-20，用写在铭文里的文本发行代币<a class="ref" href="#s21">[21]</a>。Li 等人引用 Glassnode 的数据称，截至 2024 年 1 月论文发表时，比特币上已有超过 5,500 万条铭文<a class="ref" href="#s21">[21]</a>。</p>
+        <p>公开反对铭文的人里，有 Bitcoin Core 的老贡献者 Luke Dashjr<a class="ref" href="#s30">[30]</a>。他在 Ordinals 的 BIP 申请下写道，这实质上是对比特币的攻击<a class="ref" href="#s7">[7]</a>；2023 年 9 月，他提交补丁，让 Core 的 <code>-datacarriersize</code> 也能限制铭文<a class="ref" href="#s13">[13]</a>。补丁进了 Bitcoin Knots<a class="ref" href="#s14">[14]</a>，这个问题还被登记为 CVE-2023-50428<a class="ref" href="#s15">[15]</a>；在 Core，补丁因争议太大在 2024 年 1 月被关闭<a class="ref" href="#s13">[13]</a>。2025 年 10 月，Core v30 反而取消了 OP_RETURN 数据的默认上限<a class="ref" href="#s17">[17]</a>。2026 年 8 月，想把数据限制写进共识规则的 BIP 110 进入强制信号期，执行它的节点分出一条链，挖了两个区块就停了<a class="ref" href="#s19">[19]</a><a class="ref" href="#s28">[28]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>给每一聪编号</h3>
+        <p>Rodarmor 2022 年 2 月 23 日的邮件写道，新挖出的聪按挖出的顺序编号，称为序数（ordinal numbers）；聪被花掉时，用一个简单的先进先出算法把输入的编号分给输出。任何时候都能查到某个编号在哪个输出里，这个输出的公钥可以用来签名，或者执行和这个编号有关的操作；可能的用途有用户账户、PKI 根、发行稳定币或 NFT。他写道，这个方案不需要改协议，但不同的应用和钱包可能都会用到，所以值得写成 BIP<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>从链下 NFT 到铭文</h3>
+        <p>Rodarmor 2024 年回忆，他起初设想的是链下的 NFT，问题很多：NFT 要在链外传送，又没有速率和内容大小的限制，没法架一台存下所有 NFT 的公开服务器。他转而找能把内容塞进区块链的地方。多数脚本类型受共识或标准性的大小限制，Taproot 脚本没有，于是成了载体；这种 NFT 起初叫 runes，后来改称铭文（inscriptions）。2022 年 12 月 14 日他写下第一条主网铭文；ord 钱包的 inscribe 命令起初在主网是关闭的，2023 年 1 月 9 日才打开<a class="ref" href="#s5">[5]</a>。ord 0.4.0 从 767,430 号区块开始索引主网铭文<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>SegWit 和 Taproot 留下的空间</h3>
+        <p><a href="2017-blocksize-war.html">区块大小之争</a>以 SegWit 软分叉收场。BIP 141 把区块上限改成权重不超过 4,000,000，权重等于不含见证数据的大小乘 3，再加上含见证数据的总大小<a class="ref" href="#s8">[8]</a>。换算下来，见证数据每字节算 1 个权重单位，其他数据每字节算 4 个。</p>
+        <p>Taproot 2021 年在 709,632 号区块激活<a class="ref" href="#s10">[10]</a>。它的脚本规则 BIP 342 取消了两条旧上限：脚本最多 10,000 字节，每个脚本最多 201 个非推送操作码。脚本只受区块权重的间接约束，每个栈元素最多 520 字节的限制保留。BIP 342 给的理由是，签名哈希不再直接包含脚本，签名检查花的 CPU 时间不再和脚本大小成正比<a class="ref" href="#s9">[9]</a>。ord 的文档写道，Taproot 脚本对内容的限制很少，又享受见证折扣，存铭文比较划算<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>OP_RETURN 和转发策略</h3>
+        <p>在此之前，往链上放数据的常见办法是 OP_RETURN 输出。Bitcoin Core v25 默认只转发数据不超过 80 字节的 OP_RETURN 输出，连同操作码一共 83 字节<a class="ref" href="#s12">[12]</a>。Core 贡献者 Murch 解释，OP_RETURN 是作为数据载体引入的，给更有害的嵌入方式提供一个替代；每笔标准交易只许一个、大小有限，挡不住人们这样用区块空间，但提高了开销和成本<a class="ref" href="#s13">[13]</a>。这些都属于节点的转发策略，共识规则里没有，下面“技术机制”一节讲两者的区别。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>加粗的条目是共识规则或 Bitcoin Core 的默认转发策略真正改变、铭文在主网可用、或者链真正分开的时刻，其余是提案、讨论和报道。</p>
+        <ol class="timeline">
+          <li class="key"><time>2021</time><div class="ev">Taproot 在 709,632 号区块激活<a class="ref" href="#s10">[10]</a>，tapscript 不再有 10,000 字节的脚本上限<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2022-02-23</time><div class="ev">Rodarmor 在 bitcoin-dev 邮件列表发出序数的 BIP 草案<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="key"><time>2022-12-14</time><div class="ev">Rodarmor 写下第一条主网铭文，Rijndael 随后写下第二条<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2023-01-09</time><div class="ev">ord 钱包的 inscribe 命令在主网打开<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="key"><time>2023-01-20</time><div class="ev">ord 0.4.0 发布<a class="ref" href="#s2">[2]</a>；Rodarmor 宣布铭文可以在主网用了，同一天申请 BIP 编号<a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2023-01-27</time><div class="ev">Robert Dickinson 在邮件列表问，能不能像 OP_RETURN 一样给铭文设大小上限；Andrew Poelstra 回复说看不出有原则的办法<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2023-02-02</time><div class="ev">CoinDesk 报道，Luxor 挖出的一个区块几乎被一张约 3.94 MB 的巫师图占满；Dashjr 说他做了一个不转发铭文的过滤器<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2023-02-14</time><div class="ev">Dashjr 在 BIP 申请下写道，Ordinals 实质上是对比特币的攻击<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2023-03-08</time><div class="ev">domodata 推出 BRC-20，第一个代币是 ORDI，总量 2,100 万<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2023-05-07</time><div class="ev">Binance 周末因拥堵暂停比特币提款，7 日晚（美东时间）恢复<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2023-09-05</time><div class="ev">Dashjr 向 Core 提交 PR #28408，让 <code>-datacarriersize</code> 也管新式的数据<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2023-09-25</time><div class="ev">Rodarmor 提出同质化代币协议 Runes<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2023-11</time><div class="ev">Bitcoin Knots 25.1 发布，收录 #28408，并把脚本大小的过滤扩到 Taproot<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2023-12-09</time><div class="ev">NVD 发布 CVE-2023-50428<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2024-01-05</time><div class="ev">Core 维护者 achow101 关闭 #28408，Core 的默认策略不变<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2024-04-20</time><div class="ev">Runes 随减半上线<a class="ref" href="#s25">[25]</a>；这一天比特币的平均手续费是 127.97 美元，创下纪录<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li><time>2025-06-06</time><div class="ev">31 位 Core 贡献者发表关于转发策略的声明<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="key"><time>2025-10</time><div class="ev">Core v30.0 发布，<code>-datacarriersize</code> 默认改为 100,000，一笔交易可以有多个 OP_RETURN 输出<a class="ref" href="#s17">[17]</a><a class="ref" href="#s26">[26]</a>。</div></li>
+          <li><time>2025-12-03</time><div class="ev">BIP 110 分配编号<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2026-03-04</time><div class="ev">BIP 编辑 kanzure 拒绝合并 Ordinals 的 BIP，不分配编号<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="key"><time>2026-08-08</time><div class="ev">BIP 110 在 961,632 号区块进入强制信号期，此前 2,016 个区块里只有 2.53% 发了信号<a class="ref" href="#s27">[27]</a>；执行它的节点拒绝不发信号的区块，链分开<a class="ref" href="#s29">[29]</a>。</div></li>
+          <li><time>2026-08-09</time><div class="ev">执行 BIP 110 的分支停在 961,633 号区块，只挖出两个区块；另一条链到了 961,721 号<a class="ref" href="#s28">[28]</a>。</div></li>
+          <li><time>2026-08-10</time><div class="ev">bips 仓库把 BIP 110 的状态改为 Closed<a class="ref" href="#s19">[19]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>这一节依次讲聪怎样编号，铭文怎样分两步写进区块，ord 怎样从见证数据里认出铭文，这样写为什么便宜、放得下，以及共识规则和转发策略的区别。</p>
+        <h3>给聪编号</h3>
+        <p>ord 的文档写道，聪按挖出的顺序编号，按先进先出的规则从交易的输入传到输出，编号和转移都依赖顺序，序数由此得名。编号也可以写成十进制，前一个数是挖出它的区块高度，后一个是它在区块里的偏移。比特币节点不知道这些编号，它们是 ord 这样的索引程序按公开的规则从链上数据推出来的；文档写道，序数理论不需要单独的代币、另一条链，也不需要改比特币<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>commit 和 reveal 两步</h3>
+        <p>Taproot 的脚本路径花费只能从已有的 Taproot 输出发起，所以写一条铭文要两笔交易<a class="ref" href="#s3">[3]</a>：</p>
+        <ol class="flow">
+          <li><b>commit 交易</b>建立一个 Taproot 输出，承诺了一个含铭文内容的脚本。</li>
+          <li><b>reveal 交易</b>花掉这个输出，脚本和内容随之出现在见证数据里。</li>
+          <li><b>记在一聪上</b>铭文记在 reveal 交易第一个输出的第一聪上。</li>
+          <li><b>按序数规则转移</b>这一聪可以转账、买卖，也可能被当作手续费付掉。</li>
+        </ol>
+        <h3>信封：OP_FALSE OP_IF … OP_ENDIF</h3>
+        <p>铭文的内容放在一个不会执行的条件分支里，ord 称为“信封”：用 <code>OP_FALSE OP_IF … OP_ENDIF</code> 包住任意数量的数据推送。OP_FALSE 压入一个空值，OP_IF 判为假，中间的推送全被跳过。文档写道，信封实际上什么都不做，不改变所在脚本的含义，可以和任何锁定脚本组合<a class="ref" href="#s3">[3]</a>。文档里一条文字铭文的写法：</p>
+<pre class="code"><code>OP_FALSE
+OP_IF
+  OP_PUSH "ord"
+  OP_1
+  OP_PUSH "text/plain;charset=utf-8"
+  OP_0
+  OP_PUSH "Hello, world!"
+OP_ENDIF</code></pre>
+        <p class="code-cap">出处：ordinals/ord 0.4.0，docs/src/inscriptions.md<a class="ref" href="#s3">[3]</a>。</p>
+        <p>先推入字符串 <code>ord</code>，和信封的其他用途区分开；<code>OP_1</code> 表示下一个推送是内容类型（MIME 类型），<code>OP_0</code> 表示之后的推送都是内容本身。Taproot 少有的限制之一是单个推送不能超过 520 字节，大的铭文要拆成很多个推送<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>ord 怎样认出铭文</h3>
+        <p>ord 0.4.0 只看交易第一个输入的见证数据。它在脚本里找一个空推送（OP_FALSE），后面紧跟 OP_IF 和三个字节 <code>ord</code>；OP_IF 后面不是 <code>ord</code>，就当作没有铭文。之后按标签逐个读字段，遇到表示正文的空标签，就把后面的推送拼起来，直到 OP_ENDIF<a class="ref" href="#s4">[4]</a>：</p>
+<pre class="code"><code><span class="c">// src/inscription.rs（节选）</span>
+const PROTOCOL_ID: &amp;[u8] = b"ord";
+const BODY_TAG: &amp;[u8] = &amp;[];
+const CONTENT_TYPE_TAG: &amp;[u8] = &amp;[1];
+
+<span class="c">// Inscription::from_transaction：只解析第一个输入的见证数据</span>
+InscriptionParser::parse(&amp;tx.input.get(0)?.witness).ok()
+
+<span class="c">// parse_script：逐条读指令，空推送（OP_FALSE）可能是信封的开头</span>
+if next == Instruction::PushBytes(&amp;[]) {
+  if let Some(inscription) = self.parse_inscription()? {
+    return Ok(inscription);
+  }
+}
+
+<span class="c">// parse_inscription：OP_IF 之后必须紧跟 "ord"</span>
+if self.advance()? == Instruction::Op(opcodes::all::OP_IF) {
+  if !self.accept(Instruction::PushBytes(PROTOCOL_ID))? {
+    return Err(InscriptionError::NoInscription);
+  }
+  <span class="c">// ……按标签读字段；遇到 BODY_TAG，把后面的推送拼成正文，直到 OP_ENDIF</span>
+  Instruction::PushBytes(BODY_TAG) =&gt; {
+    let mut body = Vec::new();
+    while !self.accept(Instruction::Op(opcodes::all::OP_ENDIF))? {
+      body.extend_from_slice(self.expect_push()?);
+    }
+    fields.insert(BODY_TAG, body);
+    break;
+  }</code></pre>
+        <p class="code-cap">出处：ordinals/ord 0.4.0，src/inscription.rs，节选，省略了外层的 loop 和 match，缩进有调整<a class="ref" href="#s4">[4]</a>。中文注释为本站所加。</p>
+        <p>共识规则只检查这笔花费是否有效，不管信封里装了什么。对节点来说，信封里的推送只是被跳过的数据；内容类型、内容本身、记在哪一聪上，都是 ord 自己的解读规则<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>为什么便宜</h3>
+        <p>按 BIP 141，交易的虚拟大小等于权重除以 4<a class="ref" href="#s8">[8]</a>。同样 1,000 字节，放在见证数据里算 1,000 个权重单位，约 250 虚拟字节；放在输出脚本里算 4,000 个权重单位，即 1,000 虚拟字节（本站按公式计算）。区块空间按每虚拟字节的出价竞争<a class="ref" href="#s13">[13]</a>，内容放在见证里，手续费约为四分之一，ord 的文档称之为见证折扣<a class="ref" href="#s3">[3]</a>。Knots 25.1 加了一个 <code>-datacarriercost</code> 选项，不让任意数据享受这项“segwit 折扣”<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>为什么放得下</h3>
+        <p>共识层面，tapscript 只受区块权重约束<a class="ref" href="#s9">[9]</a>。约 3.94 MB 的巫师图放在见证数据里，约合 394 万权重单位，没有超过 400 万的区块上限（本站按 BIP 141 的公式计算<a class="ref" href="#s8">[8]</a><a class="ref" href="#s22">[22]</a>）。转发策略层面，Core v25 给标准的 P2WSH 见证脚本设了 3,600 字节的上限，tapscript 的脚本本身没有这样的上限<a class="ref" href="#s12">[12]</a>。Knots 25.1 的发布说明写道，原来只限制 SegWit 之前和 SegWit v0 合约代码大小的过滤扩展到了 Taproot，默认 1,650 字节<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>共识规则和转发策略</h3>
+        <p>共识规则决定区块是否有效，所有全节点执行同一套，要改只能靠软分叉或硬分叉；区块权重的上限和 BIP 342 都属于这一层<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。转发策略只决定一个节点愿意把哪些未确认的交易放进内存池、转发给别人或者打包，每个节点可以自己设。不符合策略的交易叫非标准交易，矿工把它打进区块，区块照样有效<a class="ref" href="#s16">[16]</a><a class="ref" href="#s22">[22]</a>。Murch 写道，运行过滤补丁的节点照样要处理含有铭文的区块<a class="ref" href="#s13">[13]</a>。Core v25 里和铭文有关的策略有两条<a class="ref" href="#s12">[12]</a>：</p>
+<pre class="code"><code><span class="c">// src/policy/policy.h（v25.0）</span>
+/** The maximum weight for transactions we're willing to relay/mine */
+static constexpr unsigned int MAX_STANDARD_TX_WEIGHT{400000};
+
+<span class="c">// src/script/standard.h（v25.0）</span>
+/**
+ * Default setting for -datacarriersize. 80 bytes of data, +1 for OP_RETURN,
+ * +2 for the pushdata opcodes.
+ */
+static const unsigned int MAX_OP_RETURN_RELAY = 83;</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin v25.0，src/policy/policy.h、src/script/standard.h，节选<a class="ref" href="#s12">[12]</a>。</p>
+        <p>第一条把愿意转发和打包的交易限制在 400,000 个权重单位，约 100,000 虚拟字节。巫师图那笔交易远超这个数，CoinDesk 写道，这种非标准交易要直接找矿工处理<a class="ref" href="#s22">[22]</a>。第二条是 <code>-datacarriersize</code> 的默认值，Murch 写道，它指的是 OP_RETURN 输出里的数据<a class="ref" href="#s13">[13]</a>。铭文在见证数据里，不受它限制，Dashjr 的补丁要改的就是这一点<a class="ref" href="#s13">[13]</a>。</p>
+        <div class="note doubt"><span class="h">标准交易的上限是多少</span><p>CoinDesk 的报道写道，交易限制在 1 MB 以内，除非用户直接找矿工处理更大的非标准交易<a class="ref" href="#s22">[22]</a>。Core v25 的代码写的是权重不超过 400,000<a class="ref" href="#s12">[12]</a>。按 BIP 141 换算，全是非见证数据时交易最多 100,000 字节，几乎全是见证数据时接近 400,000 字节（本站计算<a class="ref" href="#s8">[8]</a>），都远小于 1 MB。本页按代码写。</p></div>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 516" role="img" aria-labelledby="ord-path-t ord-path-d">
+            <title id="ord-path-t">一条铭文怎样进入区块：转发策略和共识规则</title>
+            <desc id="ord-path-d">写一条铭文先发 commit 交易，建立一个承诺了铭文脚本的 Taproot 输出；reveal 交易花掉这个输出，内容随信封进入见证数据。符合转发策略的交易经内存池在节点之间转发，单笔权重不超过 400,000，节点还可以另设过滤；不符合的，例如约 3.94 MB 的巫师图，直接交给矿工。两条路最后都由矿工打包，全节点按共识规则验证区块，区块权重不超过 400 万，tapscript 没有脚本大小上限。</desc>
+            <defs>
+              <marker id="ord-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box" x="190" y="20" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="44" text-anchor="middle">commit 交易：建立一个 Taproot 输出</text>
+            <text class="d-t s" x="380" y="65" text-anchor="middle">输出承诺了一个含铭文内容的脚本</text>
+            <line class="d-line" x1="380" y1="78" x2="380" y2="110" marker-end="url(#ord-ah)"/>
+            <rect class="d-box" x="190" y="114" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="138" text-anchor="middle">reveal 交易：花掉这个输出</text>
+            <text class="d-t s" x="380" y="159" text-anchor="middle">见证数据里有 OP_FALSE OP_IF … OP_ENDIF</text>
+            <text class="d-t s halo" x="380" y="212" text-anchor="middle">各节点的转发策略（policy）</text>
+            <line class="d-line" x1="300" y1="172" x2="215" y2="246" marker-end="url(#ord-ah)"/>
+            <line class="d-line dash" x1="460" y1="172" x2="545" y2="246" marker-end="url(#ord-ah)"/>
+            <rect class="d-box" x="30" y="250" width="330" height="78" rx="3"/>
+            <text class="d-t b" x="195" y="274" text-anchor="middle">符合策略：经内存池和 P2P 转发</text>
+            <text class="d-t s" x="195" y="296" text-anchor="middle">标准交易单笔权重不超过 400,000</text>
+            <text class="d-t s" x="195" y="316" text-anchor="middle">节点还可以另设过滤，例如 Knots</text>
+            <rect class="d-box" x="400" y="250" width="330" height="78" rx="3"/>
+            <text class="d-t b" x="565" y="274" text-anchor="middle">不符合策略：直接交给矿工</text>
+            <text class="d-t s" x="565" y="296" text-anchor="middle">巫师图约 3.94 MB，超过标准上限</text>
+            <text class="d-t s" x="565" y="316" text-anchor="middle">不经过公开的内存池</text>
+            <line class="d-line" x1="195" y1="328" x2="300" y2="384" marker-end="url(#ord-ah)"/>
+            <line class="d-line dash" x1="565" y1="328" x2="460" y2="384" marker-end="url(#ord-ah)"/>
+            <text class="d-t s halo" x="380" y="360" text-anchor="middle">共识规则（consensus）</text>
+            <rect class="d-box" x="190" y="388" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="412" text-anchor="middle">矿工打包，全节点按共识规则验证</text>
+            <text class="d-t s" x="380" y="433" text-anchor="middle">区块权重不超过 400 万；tapscript 没有脚本大小上限</text>
+            <text class="d-t s" x="380" y="476" text-anchor="middle">转发策略各节点可以不同，只决定交易怎样到达矿工</text>
+            <text class="d-t s" x="380" y="498" text-anchor="middle">共识规则所有全节点一致，决定区块是否有效</text>
+          </svg>
+          </div>
+          <figcaption>一条铭文从写出到进区块的路径。纵向距离不按比例，虚线表示不经过公开内存池的路径。commit 和 reveal 据 ord 的文档<a class="ref" href="#s3">[3]</a>，标准交易的权重上限据 Core v25 源码<a class="ref" href="#s12">[12]</a>，Knots 的过滤据它的发布说明<a class="ref" href="#s14">[14]</a>，巫师图据 CoinDesk<a class="ref" href="#s22">[22]</a>，区块权重和 tapscript 的规则据 BIP 141 和 BIP 342<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</figcaption>
+        </figure>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <p>铭文 2023 年 1 月开始流行，3 月被拿来发代币，下半年争论从邮件列表转到了 Bitcoin Core 的代码仓库。</p>
+        <ol class="steps">
+          <li><b>2023 年 1 月：区块被填满</b>Rodarmor 回忆，铭文先是零星几条，然后越来越多，接着蜂拥而至，填满了每一个区块<a class="ref" href="#s5">[5]</a>。1 月 27 日，Robert Dickinson 在邮件列表上写道，序数方案很巧妙，但想到所有不修剪数据的节点将来要占的磁盘，他怀疑允许无限存储是否明智，问能否像 OP_RETURN 一样给铭文设大小上限<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>2 月：巫师图</b>CoinDesk 报道，独立开发者 Udi Wertheimer 说他用 Ordinals 铸造了一张巨大的巫师图。挖出这个区块的 Luxor 称它是“最大的比特币区块”；图约 3.94 MB，几乎占满了 4 MB 的区块，没有付交易手续费，可能在链外付了溢价。同一篇报道写道，Dashjr 说他做了一个简陋的“垃圾过滤器”，识别铭文，不让它们在网络上转发<a class="ref" href="#s22">[22]</a>。</li>
+          <li><b>3 月至 5 月：BRC-20</b>BRC-20 的实验文档写道，它只是一个好玩的实验性标准，演示可以用铭文建立链下的余额状态，不应被当作比特币上同质化代币的标准。它有三种操作：deploy 创建代币，mint 铸造，transfer 转账；余额要把这些铭文汇总起来才知道<a class="ref" href="#s20">[20]</a>。第一个 BRC-20 代币是 ORDI<a class="ref" href="#s21">[21]</a>。5 月的一个周末，Binance 因拥堵暂停比特币提款，周日晚恢复；CoinDesk 同一篇报道提到 PEPE 等迷因币正热，没有说拥堵来自哪类交易<a class="ref" href="#s23">[23]</a>。</li>
+          <li><b>2023 年 9 月至 2024 年 1 月：过滤补丁</b>9 月 5 日，Dashjr 提交 PR #28408，说明只有一句：让 <code>-datacarriersize</code> 对新式的数据携带方式也生效<a class="ref" href="#s13">[13]</a>。11 月，Knots 25.1 收录了这项改动<a class="ref" href="#s14">[14]</a>；12 月 9 日，NVD 发布 CVE-2023-50428<a class="ref" href="#s15">[15]</a>。Core 这边讨论了四个月。2024 年 1 月 5 日，维护者 achow101 写道，这个 PR 显然有争议，以现在的状态不可能得出各方都能接受的结论，随后把它关闭<a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>2024 年 4 月：Runes</b>Rodarmor 2023 年 9 月提出 Runes 时写道，他不确定再造一个比特币上的同质化代币协议是不是好主意，这类代币 99.9% 是骗局和迷因；但它们不会消失，好的协议能带来可观的手续费，如果占用链上空间少、鼓励负责任地管理 UTXO，比起造成 UTXO 激增的 BRC-20，可以减少危害<a class="ref" href="#s6">[6]</a>。Runes 在 2024 年 4 月减半时上线<a class="ref" href="#s25">[25]</a>。CoinDesk 报道，4 月 20 日平均每笔手续费 127.97 美元，矿工当天收入 1.078 亿美元，手续费占每块矿工收入的 75%，都是纪录<a class="ref" href="#s24">[24]</a>。</li>
+        </ol>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>ord 的作者</h3>
+        <p>ord 的 FAQ 写道，比特币网络最重要的事是让货币去中心化，其他用途都是次要的，包括序数理论。铭文增加对区块空间的需求，也就增加了比特币的安全预算；区块补贴减半到无足轻重以后，安全要靠手续费。铭文内容存在链上，对区块空间的需求没有上限，FAQ 称它是所有区块空间的“最后买家”。FAQ 还写道，稳定币可能让大的发行方影响比特币的开发，DeFi 可能因 MEV 让挖矿集中，数字艺术和收藏品不太可能产生强大到足以败坏比特币的实体；比特币用户可以不理会序数和铭文，不受影响<a class="ref" href="#s3">[3]</a>。对 Dashjr 的过滤器，Rodarmor 对 CoinDesk 说，它只是把铭文从单个 Core 节点的内存池里过滤掉，“我其实还告诉过他怎样找出铭文来过滤”<a class="ref" href="#s22">[22]</a>。</p>
+        <h3>主张过滤的一方</h3>
+        <p>Dashjr 2023 年 2 月在 BIP 申请下写道，这份提案在 BIP 仓库的范围之内，即使最后被社区拒绝；他又补了一句，这实质上是对比特币的攻击，他鼓励作者撤回并彻底放弃<a class="ref" href="#s7">[7]</a>。glozow 在 #28408 下把支持者的理由归成四类：铭文是垃圾数据，推高交易量和手续费，损害比特币的支付用途；它提高运行节点的成本，损害去中心化；用户想要这个选项，否则只能自己打补丁；<code>-datacarriersize</code> 本该管住所有的数据携带方式，SegWit 和 Taproot 引入新方式时没有跟上，是一个漏洞<a class="ref" href="#s13">[13]</a>。BIP 110 的动机一节写道，从 2022 年最早被利用的“铭文”hack 开始，往交易里嵌入任意数据成了一种趋势，给节点运营者带来大量不必要的负担<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>反对过滤的开发者</h3>
+        <p>Blockstream 的研究主管 Poelstra 2023 年 1 月回复 Dickinson 时写道，他看不出有什么合理的办法，能在不鼓励更糟的做法、不破坏正当用途的前提下，阻止人们在见证数据里存任意数据。禁止“无用”的数据，人们会把数据藏进假的签名或公钥这类“有用”的数据里，成本大约翻倍；限制“有用”的数据，例如一个见证最多 20 个签名，又会回到 Taproot 之前签名策略难以通用组合的老问题。他承认有一种说法有道理：这类数据会把比特币的手续费市场和拉高出货的炒作缠在一起；但从技术上看，他找不到有原则的办法阻止<a class="ref" href="#s11">[11]</a>。</p>
+        <p>Sjors 在 #28408 下写道，如果只有 Ocean 矿池用这个补丁，而 Ocean 一直是小矿池，补丁就没有作用；如果广泛部署，又很容易绕开，代码会越来越复杂，维护者每次都会被催着赶紧合并“阻止垃圾”的改动，迟早会意外引入拒绝服务的漏洞<a class="ref" href="#s13">[13]</a>。Ocean 由 Dashjr 在 2023 年参与创办<a class="ref" href="#s30">[30]</a>。Murch 写道，从过滤过的内存池造出的区块模板，奖励必然低于用全部交易造的；过滤铭文的矿工是在把收入让给不过滤的矿工，过滤的矿工越多，不过滤的收益越大<a class="ref" href="#s13">[13]</a>。2025 年 6 月，31 位 Core 贡献者联名写道，明知矿工反正会打包，却拒绝转发这些交易，会把用户推到别的通信渠道；绕开公开网络向矿工提交交易的做法会削弱挖矿的去中心化。声明写明，这不代表认可或纵容非金融的数据用途；作为抗审查的系统，比特币会被用在并非人人都赞同的地方<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>矿池</h3>
+        <p>Luxor 的研究主管 Colin Harper 对 CoinDesk 说，Luxor 按 FPPS 模式付给矿工报酬，按算力和一段时间里挖出的比特币与手续费的总值结算，和 Luxor 自己挖出多少区块无关；巫师图区块没装进去的交易会进后面的区块，波动会抵消，这个区块不影响矿工的收入<a class="ref" href="#s22">[22]</a>。2026 年执行 BIP 110 的分支，头两个区块由化名 Roughnecks 的挖矿团体用 Ocean 的 DATUM 协议挖出<a class="ref" href="#s28">[28]</a>。</p>
+        <h3>BIP 仓库</h3>
+        <p>有人在申请下对 Dashjr 说，接受或拒绝 BIP 应该只看是否符合 BIP 的规则，不看个人认为它对比特币是好是坏。他答道，难处在于“不符合比特币理念”这条规则，他不确定怎样适用，社区对它是否适用于这份提案也有争论。申请开了近三年，Rodarmor 多轮修改；2026 年 3 月 4 日，BIP 编辑 kanzure 写道，他拒绝把 Ordinals 合并进 BIP 仓库，不分配编号<a class="ref" href="#s7">[7]</a>。</p>
+        <div class="note doubt"><span class="h">这算不算漏洞</span><p>NVD 对 CVE-2023-50428 的说明写道，在 Bitcoin Core 26.0 及以前、Knots 25.1.knots20231115 以前的版本里，把数据伪装成代码（例如用 OP_FALSE OP_IF）就能绕过 datacarrier 的大小限制，2022 年和 2023 年铭文在实际中利用了这一点；说明随后注明，这是从 Bitcoin Knots 项目的角度看的漏洞，另一些人认为它“不是 bug”。NVD 的评分是 5.3（中）<a class="ref" href="#s15">[15]</a>。Murch 则写道，<code>-datacarriersize</code> 指的是 OP_RETURN 输出里的数据<a class="ref" href="#s13">[13]</a>。本页把两种说法并列，不下结论。</p></div>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>手续费和矿工收入</h3>
+        <p>ord 的 FAQ 把增加手续费列为铭文的好处<a class="ref" href="#s3">[3]</a>。Murch 2024 年 1 月写道，用户每周在铭文交易上付的手续费有数百个比特币；glozow 整理的反对理由里引了一条评论，说这个市场每天付几十个比特币的手续费<a class="ref" href="#s13">[13]</a>。Runes 上线那天，手续费占每块矿工收入的 75%<a class="ref" href="#s24">[24]</a>。Cointelegraph 引用 Dune 的数据称，Runes 上线不到两个月，手续费累计超过 2,500 个比特币，价值超过 1.63 亿美元；文章认为，减半把区块奖励从 6.25 个比特币降到 3.125 个之后，这类协议的手续费对矿工很重要<a class="ref" href="#s25">[25]</a>。</p>
+        <div class="note doubt"><span class="h">这几个数字不能直接比较</span><p>“每周数百个”和“每天几十个”是 PR 讨论里的估计，没有写口径和时段<a class="ref" href="#s13">[13]</a>；75% 是 2024 年 4 月 20 日按区块算的占比<a class="ref" href="#s24">[24]</a>；2,500 个比特币是约两个月的累计，只算 Runes<a class="ref" href="#s25">[25]</a>。本页分别列出，不做换算。</p></div>
+        <h3>区块里装了什么</h3>
+        <p>Li 等人引用 Glassnode 的数据称，比特币上已有超过 5,500 万条铭文，九成五以上是文本<a class="ref" href="#s21">[21]</a>。BRC-20 的 deploy、mint、transfer 每一步都是一条铭文<a class="ref" href="#s20">[20]</a>；Runes 的作者写道，BRC-20 带来了 UTXO 激增的不良后果<a class="ref" href="#s6">[6]</a>。单条铭文也可以很大，巫师图一条约 3.94 MB<a class="ref" href="#s22">[22]</a>。Dickinson 担心的是不修剪数据的节点要占的磁盘<a class="ref" href="#s11">[11]</a>，支持过滤的一方也把运行节点的成本列为理由<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>区块空间该拿来做什么</h3>
+        <p>2015 年到 2017 年的<a href="2017-blocksize-war.html">区块大小之争</a>，争的是上限该多大：一方要提高上限、压低手续费，另一方担心个人运行不起全节点。结果是 SegWit 给见证数据打折计重<a class="ref" href="#s8">[8]</a>。铭文用的正是这部分打了折的空间，争论于是变成了这些空间该装什么。glozow 整理的支持理由里，有人写道，比特币既然是货币，非货币的交易就该尽量减少<a class="ref" href="#s13">[13]</a>；ord 的 FAQ 则说，铭文带来手续费，也能吸引人来用比特币：“为了好玩和艺术而来，为了去中心化的数字货币留下”<a class="ref" href="#s3">[3]</a>。Poelstra 认为这类数据可能把手续费市场和炒作缠在一起，但从技术上挡不住<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>Core v30 放宽 OP_RETURN</h3>
+        <p>2025 年 10 月发布的 Bitcoin Core v30.0 把 <code>-datacarriersize</code> 的默认值提到 100,000。发布说明写道，这实际上取消了上限，因为交易会先碰到交易大小的上限；用 <code>-datacarriersize=83</code> 可以恢复旧的限制。一笔交易也可以有多个 OP_RETURN 输出，上限按这些输出的总和算<a class="ref" href="#s17">[17]</a>。代码里，默认值由标准交易的权重上限换算而来：</p>
+<pre class="code"><code><span class="c">// src/policy/policy.h（v30.0）</span>
+/**
+ * Default setting for -datacarriersize in vbytes.
+ */
+static const unsigned int MAX_OP_RETURN_RELAY =
+    MAX_STANDARD_TX_WEIGHT / WITNESS_SCALE_FACTOR;</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin v30.0，src/policy/policy.h，节选，换行有调整<a class="ref" href="#s17">[17]</a>。400,000 ÷ 4 = 100,000。</p>
+        <p>Cointelegraph 报道，v30 上线时社区意见分裂；它引用 BitRef 的数据称，当时有 5,114 个 Knots 节点，占全部比特币节点的 21.48%<a class="ref" href="#s26">[26]</a>。</p>
+        <h3>BIP 110：把限制写进共识规则</h3>
+        <p>BIP 110 由 Dathon Ohm 提出，2025 年 12 月 3 日分配编号，名为“临时减少数据软分叉”。它要在为期约一年的部署期里给区块加几条规则，其中包括：新的输出脚本超过 34 字节无效，OP_RETURN 例外，可到 83 字节；数据推送和脚本参数的见证项超过 256 字节无效；执行 OP_IF 或 OP_NOTIF 的 tapscript 无效，不论条件真假。激活之前创建的 UTXO 不受新规则约束<a class="ref" href="#s18">[18]</a>。铭文的信封要执行 OP_IF，按这条规则会无效（本站据规范推断）。激活门槛是 55%，低于 BIP 9 标准的 95%；达不到的话，961,632 至 963,647 号区块是强制信号期，最晚在 963,648 号锁定<a class="ref" href="#s18">[18]</a>。</p>
+        <p>2026 年 8 月 8 日，链到了 961,632 号区块，此前 2,016 个区块里只有 51 个发了信号，占 2.53%<a class="ref" href="#s27">[27]</a>。执行 BIP 110 的节点开始拒绝不发信号的区块，链在这里分开<a class="ref" href="#s29">[29]</a>。到 9 日，这个分支停在 961,633 号，只挖出两个区块；另一条链到了 961,721 号，相差 88 个区块<a class="ref" href="#s28">[28]</a>。10 日，bips 仓库把 BIP 110 的状态改为 Closed，改动的说明写道，BIP 110 由 Knots 在主网发布，进入强制信号期后分出一条新链，随后停滞<a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>放宽一条限制，要想到它会被怎样用。BIP 342 取消脚本大小上限，理由是签名检查的开销不再随脚本变大<a class="ref" href="#s9">[9]</a>；Rodarmor 选 Taproot 脚本做载体，正是因为它没有大小上限<a class="ref" href="#s5">[5]</a>。</li>
+            <li>计重规则决定数据放在哪里。见证数据按四分之一计重<a class="ref" href="#s8">[8]</a>，铭文就放进见证；Knots 后来加了选项，不让任意数据享受这项折扣<a class="ref" href="#s14">[14]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给节点运营者</span>
+          <ul>
+            <li>转发策略管得了自己的内存池，管不了区块。过滤铭文的节点照样要验证含铭文的区块，还会让自己的手续费估计变差<a class="ref" href="#s13">[13]</a>。</li>
+            <li>真要禁止一类交易，就得改共识规则，并让多数算力跟上。BIP 110 进入强制信号期时只有 2.53% 的区块发信号<a class="ref" href="#s27">[27]</a>，执行它的分支挖了两个区块就停了<a class="ref" href="#s28">[28]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给矿工和铭文用户</span>
+          <ul>
+            <li>非标准交易只要有矿工愿意打包，就能上链。巫师图超过了标准交易的上限，是直接交给矿工的<a class="ref" href="#s12">[12]</a><a class="ref" href="#s22">[22]</a>；Core 贡献者提醒，绕开公开网络向矿工提交交易，会削弱挖矿的去中心化<a class="ref" href="#s16">[16]</a>。</li>
+            <li>铭文和 BRC-20 的规则只由索引程序执行，比特币节点不检查。BRC-20 的余额要汇总铭文才知道<a class="ref" href="#s20">[20]</a>；ord 的 FAQ 也写道，比特币用户可以不理会序数和铭文<a class="ref" href="#s3">[3]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Casey Rodarmor，bitcoin-dev 邮件列表，《Draft-BIP: Ordinal Numbers》，2022-02-23（Internet Archive 存档）。<a href="https://web.archive.org/web/2022/https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2022-February/019975.html">web.archive.org</a></li>
+          <li id="s2">ordinals/ord，《0.4.0》发布页，2023-01-20（GitHub 发布时间；CHANGELOG 记为 2023-01-19）。<a href="https://github.com/ordinals/ord/releases/tag/0.4.0">github.com</a></li>
+          <li id="s3">ordinals/ord 0.4.0，docs/src/inscriptions.md、overview.md、faq.md。<a href="https://github.com/ordinals/ord/tree/0.4.0/docs/src">github.com</a></li>
+          <li id="s4">ordinals/ord 0.4.0，src/inscription.rs、src/chain.rs。<a href="https://github.com/ordinals/ord/blob/0.4.0/src/inscription.rs">github.com</a></li>
+          <li id="s5">Casey Rodarmor，《How Ordinals Came to Be》，2024-09-05。<a href="https://rodarmor.com/blog/how-ordinals-came-to-be/">rodarmor.com</a></li>
+          <li id="s6">Casey Rodarmor，《Runes》，2023-09-25。<a href="https://rodarmor.com/blog/runes/">rodarmor.com</a></li>
+          <li id="s7">bitcoin/bips，PR #1408《New BIP: Ordinal Numbers》及讨论，2023-01-20 至 2026-03-04。<a href="https://github.com/bitcoin/bips/pull/1408">github.com</a></li>
+          <li id="s8">Eric Lombrozo、Johnson Lau、Pieter Wuille，《BIP 141: Segregated Witness (Consensus layer)》。<a href="https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki">github.com</a></li>
+          <li id="s9">Pieter Wuille、Jonas Nick、Anthony Towns，《BIP 342: Validation of Taproot Scripts》，2020-01-19 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki">github.com</a></li>
+          <li id="s10">Bitcoin Optech，《Taproot》专题页，2026 年 11 月查阅。<a href="https://bitcoinops.org/en/topics/taproot/">bitcoinops.org</a></li>
+          <li id="s11">Andrew Poelstra，bitcoin-dev 邮件列表，《Ordinal Inscription Size Limits》（引述了 Robert Dickinson 的来信），2023-01-27（Internet Archive 存档）。<a href="https://web.archive.org/web/2023/https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2023-January/021372.html">web.archive.org</a></li>
+          <li id="s12">bitcoin/bitcoin v25.0，src/policy/policy.h、src/script/standard.h。<a href="https://github.com/bitcoin/bitcoin/blob/v25.0/src/policy/policy.h">github.com</a>（policy.h）、<a href="https://github.com/bitcoin/bitcoin/blob/v25.0/src/script/standard.h">github.com</a>（standard.h）</li>
+          <li id="s13">bitcoin/bitcoin，PR #28408《datacarriersize: Match more datacarrying》及讨论（luke-jr、Sjors、glozow、murchandamus、achow101 等），2023-09-05 至 2024-01-05。<a href="https://github.com/bitcoin/bitcoin/pull/28408">github.com</a></li>
+          <li id="s14">Bitcoin Knots，《25.1 Release Notes》（25.1.knots20231115），2023-11。<a href="https://github.com/bitcoinknots/bitcoin/blob/aed49ce8989334c364a219a6eb016a3897d4e3d7/doc/release-notes.md">github.com</a></li>
+          <li id="s15">NIST NVD，《CVE-2023-50428》，2023-12-09 发布。<a href="https://nvd.nist.gov/vuln/detail/CVE-2023-50428">nvd.nist.gov</a></li>
+          <li id="s16">Bitcoin Core，《Bitcoin Core development and transaction relay policy》，2025-06-06。<a href="https://bitcoincore.org/en/2025/06/06/relay-statement/">bitcoincore.org</a></li>
+          <li id="s17">Bitcoin Core，v30.0 发布说明（doc/release-notes.md）和 src/policy/policy.h，2025-10。<a href="https://github.com/bitcoin/bitcoin/blob/v30.0/doc/release-notes.md">github.com</a>（发布说明）、<a href="https://github.com/bitcoin/bitcoin/blob/v30.0/src/policy/policy.h">github.com</a>（policy.h）</li>
+          <li id="s18">Dathon Ohm，《BIP 110: Reduced Data Temporary Softfork》，2025-12-03 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0110.mediawiki">github.com</a></li>
+          <li id="s19">bitcoin/bips，PR #2245《BIP 110: update status to Closed》，2026-08-09 提交，08-10 合并。<a href="https://github.com/bitcoin/bips/pull/2245">github.com</a></li>
+          <li id="s20">《brc-20 experiment》（GitBook 文档），2026 年 11 月查阅。<a href="https://domo-2.gitbook.io/brc-20-experiment/">domo-2.gitbook.io</a></li>
+          <li id="s21">Ningran Li、Minfeng Qi、Qin Wang、Shiping Chen，《Bitcoin Inscriptions: Foundations and Beyond》，arXiv:2401.17581，2024-01-31。<a href="https://arxiv.org/abs/2401.17581">arxiv.org</a></li>
+          <li id="s22">CoinDesk（Frederick Munawa、George Kaloudis），《Giant Bitcoin 'Taproot Wizard' NFT Minted in Collaboration With Luxor Mining Pool》，2023-02-02（Yahoo Finance 转载页，页面标 2 月 3 日）。<a href="https://finance.yahoo.com/news/giant-bitcoin-taproot-wizard-nft-165023492.html">finance.yahoo.com</a></li>
+          <li id="s23">CoinDesk（Jocelyn Yang），《Bitcoin Falls Below $27.5K as Investors Weigh Meme Mania, Binance Congestion Issues》，2023-05-08。<a href="https://www.coindesk.com/markets/2023/05/08/bitcoin-falls-below-275k-as-investors-weigh-meme-mania-binance-congestion-issues">coindesk.com</a></li>
+          <li id="s24">CoinDesk（Bradley Keoun），《Bitcoin Miners Reap Windfall as 'Runes' Debut Sends Transaction Fees to Record Highs》，2024-04-21。<a href="https://www.coindesk.com/tech/2024/04/21/bitcoin-miners-reap-windfall-as-runes-debut-sends-transaction-fees-to-record-highs">coindesk.com</a></li>
+          <li id="s25">Cointelegraph（Zoltan Vardai），《Bitcoin Runes racks up over 2,500 BTC in fees under 2 months》，2024-06-17。<a href="https://cointelegraph.com/news/bitcoin-runes-earn-2500-btc-fees-2-months">cointelegraph.com</a></li>
+          <li id="s26">Cointelegraph（Brian Quarmby），《Bitcoin Core v30 goes live with controversial OP_RETURN change》，2025-10-13。<a href="https://cointelegraph.com/news/bitcoin-core-v30-controversial-op-return-function-now-live">cointelegraph.com</a></li>
+          <li id="s27">Cointelegraph（Ezra Reguerra），《Bitcoin’s BIP-110 enters mandatory signaling with miner support below 3%》，2026-08-08。<a href="https://cointelegraph.com/news/bitcoin-bip-110-mandatory-signaling">cointelegraph.com</a></li>
+          <li id="s28">Cointelegraph（Ezra Reguerra），《BIP-110 Bitcoin branch stalls after two blocks as gap widens》，2026-08-09。<a href="https://cointelegraph.com/news/bitcoin-bip-110-branch-stalls-miner-support">cointelegraph.com</a></li>
+          <li id="s29">Bitcoin Magazine，《BIP-110 Fork Stalls at Two Blocks as Bitcoin Miners Refuse to Follow》，2026-08-10。<a href="https://bitcoinmagazine.com/news/bip110-stalls-bitcoin-miners-do-not-follow">bitcoinmagazine.com</a></li>
+          <li id="s30">维基百科，《Luke Dashjr》。<a href="https://en.wikipedia.org/wiki/Luke_Dashjr">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

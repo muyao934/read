@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>智能合约与 EVM｜区块链基础知识</title>
+<meta name="description" content="字节码与存储、部署与地址、ABI、事件、gas、EVM 版本与“等价 / 兼容”">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="evm">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 09 章</p>
+    <h1>智能合约与 EVM</h1>
+    <p class="lede">合约在链上到底是什么、怎么部署、地址怎么来；调用一个函数时交易里写了什么；链下服务怎么靠事件知道链上发生了什么；EVM 怎么一步步执行、为什么写存储那么贵；以及“EVM 等价”和“EVM 兼容”到底差在哪。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">智能合约 = 链上一个地址里存着的一段字节码，加上它自己的一块存储；EVM 是执行这段字节码的虚拟机</p>
+  <p class="lead">你写的 Solidity 会被编译成字节码，部署后放在链上某个地址里。之后谁给这个地址发交易，所有节点都会用 EVM 执行同一段字节码，得出同一个结果，改同一块存储。USDC、桥、CCTP、CCIP，前面所有章节里的“合约”都是这个东西。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见说法里，对的部分</h3>
+      <ul>
+        <li>合约代码公开，任何人都能看、都能验证执行结果</li>
+        <li>合约按代码执行，没有人能在执行中途插手</li>
+        <li>同一份 Solidity 能部署到 Ethereum、Base、OP、BSC，Qtum 上大体也行</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>合约不会自己运行</b>。没有定时器，必须有人发交易调用它，代码才会执行</li>
+        <li><b>合约看不到链外的世界</b>，也看不到别的链。ethereum.org 原话：合约“不能从链外来源获取数据”，这是设计如此。所以需要预言机、需要桥</li>
+        <li><b>链上存的不是 Solidity 源码</b>，是编译后的字节码。区块浏览器上的源码，是开发者自己上传、再由浏览器重新编译核对的</li>
+        <li><b>“部署后不能改”只对单个合约成立</b>。用代理合约可以换逻辑（入门章、<a href="usdc.html">第 02 章</a>）</li>
+        <li><b>“EVM 兼容”不等于完全一样</b>：opcode 版本、gas 价格、地址规则、区块字段的含义，各链都可能不同（见下文）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="account">
+  <h2 class="eyebrow">合约在链上</h2>
+  <p class="sub">两种账户，一套字段</p>
+  <p class="lead">以太坊上的每个地址都是一个账户，有四个字段：<code>nonce</code>、<code>balance</code>、<code>codeHash</code>、<code>storageRoot</code>。普通账户（EOA）由私钥控制，codeHash 是空串的哈希；合约账户由代码控制，codeHash 指向它的字节码，storageRoot 是它那块存储的默克尔根。</p>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th></th><th>普通账户（EOA）</th><th>合约账户</th></tr></thead>
+    <tbody>
+      <tr><th>由谁控制</th><td>私钥</td><td>代码</td></tr>
+      <tr><th>能主动发交易吗</th><td>能</td><td>不能，只能在被调用时再去调用别的合约</td></tr>
+      <tr><th>有代码吗</th><td>没有（Pectra 后可以通过 EIP-7702 临时指向一段合约代码）</td><td>有，部署时写入</td></tr>
+      <tr><th>有存储吗</th><td>没有</td><td>有：2<sup>256</sup> 个槽，每个槽 32 字节</td></tr>
+    </tbody>
+  </table></div>
+  <h3>部署：一笔没有收款人的交易</h3>
+  <p>部署交易的 <code>data</code> 里放的是“初始化代码”：它执行一次（跑构造函数），返回值才是存进链上的“运行时代码”。新合约的地址在部署前就能算出来：</p>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th>方式</th><th>地址怎么算</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">CREATE</td><td><code>keccak256(rlp([部署者, 部署者的 nonce]))</code> 的后 20 字节</td><td>普通部署</td></tr>
+      <tr><td class="mono">CREATE2</td><td><code>keccak256(0xff ‖ 部署者 ‖ salt ‖ keccak256(初始化代码))</code> 的后 20 字节</td><td>EIP-1014。和 nonce 无关，所以能在多条链上部署到<b>同一个地址</b>。CCTP V2 的合约仓库里就有一个 <code>Create2Factory</code>，各链地址相同</td></tr>
+      <tr><td>Qtum</td><td><code>RIPEMD160(SHA256(txid ‖ 输出序号))</code></td><td>没有账户 nonce，规则完全不同（<a href="qtum.html">第 01 章</a>）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">EIP-170</span><h4>合约有大小上限</h4></div>
+      <p>运行时代码最多 <code>0x6000</code> = 24,576 字节；初始化代码最多 49,152 字节（EIP-3860）。链上读到：USDC 的实现合约 FiatToken 2.2 是 <b>23,464 字节</b>，已经很接近上限；它的代理合约只有 2,186 字节；CCTP 的 TokenMessengerV2 代理 2,175 字节；WBTC 4,582 字节。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Verify</span><h4>怎么确认链上跑的就是那份源码</h4></div>
+      <p>用同样的编译器版本和参数重新编译源码，比对字节码。<a href="usdc.html">第 02 章</a>提到，Bridged USDC Standard 要求第三方用 Solidity 0.6.12 编译、把编译元数据交给 Circle 核对，就是这个原因。</p></div>
+  </div>
+</section>
+
+<section id="calls">
+  <h2 class="eyebrow">调用</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>操作码</th><th>执行谁的代码</th><th>改谁的存储</th><th>被调用方看到的 <code>msg.sender</code></th><th>常见用途</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">CALL</td><td>被调用合约 B</td><td>B 的</td><td>A</td><td>普通调用；转 ETH</td></tr>
+      <tr><td class="mono">STATICCALL</td><td>B</td><td>不允许改任何状态</td><td>A</td><td><code>view</code> / <code>pure</code> 函数，比如查余额</td></tr>
+      <tr><td class="mono">DELEGATECALL</td><td>B</td><td><b>A 的</b></td><td>原来调用 A 的那个人</td><td>代理合约：数据在代理里，逻辑在实现合约里</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">被调用的合约 <code>revert</code> 时，它这一层的修改全部撤销；调用方如果不专门处理（Solidity 默认会把错误继续往上抛），整笔交易回滚，gas 照付。<a href="bridges.html">第 03 章</a>说桥“先标记已领、再铸币”是安全的，靠的就是这一点。</p>
+</section>
+<section id="abi">
+  <h2 class="eyebrow">ABI</h2>
+  <p class="lead">合约之间、钱包和合约之间，按 ABI（Application Binary Interface）约定的格式传数据。调用数据（calldata）的<b>前 4 字节</b>是函数选择器：函数签名（如 <code>transfer(address,uint256)</code>）的 Keccak-256 哈希的前 4 字节；后面每个参数占 32 字节。</p>
+  <div class="bit wide">
+    <div class="bh"><span class="term">Tool</span><h4>选择器、事件 topic、calldata</h4></div>
+    <p>输入函数或事件签名（只写类型，不写参数名和空格），算出选择器和 topic。下面再按 <code>transfer(address,uint256)</code> 拼一段完整的 calldata。Keccak-256 在浏览器里计算。</p>
+    <div class="tool">
+      <label for="abSig">签名<input id="abSig" type="text" spellcheck="false" value="transfer(address,uint256)"></label>
+      <div class="ctrl gap-6">
+        <button class="btn ghost" type="button" data-ab="transfer(address,uint256)">transfer</button>
+        <button class="btn ghost" type="button" data-ab="Transfer(address,address,uint256)">Transfer 事件</button>
+        <button class="btn ghost" type="button" data-ab="withdrawERC20(address,uint256,address,bytes32,uint256,uint8,bytes[])">Qtum 桥：withdrawERC20</button>
+        <button class="btn ghost" type="button" data-ab="DepositedERC20(address,uint256,string,string,uint8)">Qtum 桥：DepositedERC20 事件</button>
+      </div>
+      <div class="out" id="abOut" aria-live="polite"></div>
+      <div class="row">
+        <label for="abTo">transfer 的收款地址<input id="abTo" type="text" spellcheck="false" value="0x71C7656EC7ab88b098defB751B7401B5f6d8976F"></label>
+        <label for="abAmt">金额（USDC，6 位小数）<input id="abAmt" type="text" value="100"></label>
+      </div>
+      <div class="out" id="abCd" aria-live="polite"></div>
+    </div>
+  </div>
+  <p class="note">如果签名里写错一个字符（比如 <code>uint</code> 没写成 <code>uint256</code>），选择器就完全不同，调用会落到合约的“找不到函数”分支。</p>
+</section>
+
+<section id="events">
+  <h2 class="eyebrow">事件</h2>
+  <p class="lead">合约用 <code>emit</code> 写日志（底层是 LOG0–LOG4 操作码）。日志不进合约存储，合约自己也读不到，但节点会保存，链下服务可以用 <code>eth_getLogs</code> 按条件查。<b>桥的 Validator、区块浏览器、钱包的余额变动提醒，全都靠这个。</b></p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>部分</th><th>内容</th><th>一条真实的 USDC Transfer 日志（以太坊区块 26,292,306）</th></tr></thead>
+    <tbody>
+      <tr><td><code>address</code></td><td>发出日志的合约</td><td class="mono">0xA0b8…eB48（USDC）</td></tr>
+      <tr><td><code>topics[0]</code></td><td>事件签名的 Keccak-256</td><td class="mono">0xddf252ad…b3ef = keccak256("Transfer(address,address,uint256)")</td></tr>
+      <tr><td><code>topics[1]</code>、<code>[2]</code></td><td>标了 <code>indexed</code> 的参数，可以按它过滤</td><td class="mono">from、to，各补齐到 32 字节</td></tr>
+      <tr><td><code>data</code></td><td>没标 indexed 的参数，ABI 编码</td><td class="mono">0x…04c1 = 1217，按 6 位小数是 0.001217 USDC</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Qtum Bridge</span><h4>Qtum 桥的存款事件</h4></div>
+      <p><code>DepositedERC20(address token, uint256 amount, string receiver, string network, ERC20BridgingType operationType)</code>。topic0 是 <code>0xda9a7442…0684</code>（枚举在 ABI 里按 <code>uint8</code> 算）。它的参数<b>都没有标 indexed</b>，所以 Validator 只能按“桥合约地址 + topic0”查出全部存款，再在链下解码 data 逐条处理。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Caution</span><h4>日志也会被重组掉</h4></div>
+      <p>日志属于区块。区块被重组掉，日志也就不存在了，<code>eth_getLogs</code> 的结果会变。所以链下服务不能看到日志就签名，要等区块达到足够的确认程度（<a href="ethereum.html">第 05 章</a>）。</p></div>
+  </div>
+</section>
+
+<section id="evm">
+  <h2 class="eyebrow">EVM 内部</h2>
+  <p class="lead">ethereum.org：EVM 是一台深度 1024 的栈机器，每项 256 位。执行时有三类地方放数据，价格差别非常大。</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>位置</th><th>生命周期</th><th>读 / 写的 gas</th></tr></thead>
+    <tbody>
+      <tr><td>栈</td><td>一次调用内</td><td>大多数运算 3 gas（如 <code>ADD</code>、<code>PUSH1</code>）</td></tr>
+      <tr><td>内存（memory）</td><td>一次调用内，按字节寻址</td><td><code>MSTORE</code> 3 gas + 内存扩展费</td></tr>
+      <tr><td>临时存储（transient）</td><td>一笔交易内，结束后清空</td><td><code>TSTORE</code> / <code>TLOAD</code> 各 100 gas（Cancun，EIP-1153）</td></tr>
+      <tr><td>存储（storage）</td><td><b>永久</b>，属于这个合约</td><td><code>SLOAD</code>：首次 2100，再读 100（EIP-2929）；<code>SSTORE</code> 把 0 改成非 0：20,000 + 首次访问 2,100</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bit wide"><div class="anim" data-anim="evm"></div></div>
+  <p class="note">这就是为什么“转一笔 USDC”要 4 万多 gas、“转 ETH”只要 21,000：ERC-20 转账至少要读写两个存储槽（双方余额），还要写一条日志。</p>
+</section>
+<section id="versions">
+  <h2 class="eyebrow">版本</h2>
+  <p class="sub">EVM 也在升级：编译目标要和链对得上</p>
+  <p class="lead">每次以太坊硬分叉都可能给 EVM 加新操作码或预编译。Solidity 编译时有个 <code>evmVersion</code> 参数，决定能用哪些操作码。当前文档里默认是 <code>osaka</code>。<b>如果目标链还没支持某个操作码，按新版本编译的合约部署上去就会失败或行为异常。</b></p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>以太坊升级 / Solidity evmVersion</th><th>EVM 层面加了什么</th></tr></thead>
+    <tbody>
+      <tr><td>Shanghai / <code>shanghai</code></td><td><code>PUSH0</code>（EIP-3855）：代码更小、更省 gas</td></tr>
+      <tr><td>Dencun / <code>cancun</code></td><td><code>TSTORE</code> / <code>TLOAD</code>、<code>MCOPY</code>、<code>BLOBHASH</code>、<code>BLOBBASEFEE</code>；<code>SELFDESTRUCT</code> 基本失效（EIP-6780）</td></tr>
+      <tr><td>Pectra / <code>prague</code></td><td>BLS12-381 预编译（EIP-2537）、EIP-7702 账户代码委托</td></tr>
+      <tr><td>Fusaka / <code>osaka</code></td><td><code>CLZ</code>（数前导零，EIP-7939）；P256VERIFY 预编译（地址 <code>0x100</code>）</td></tr>
+    </tbody>
+  </table></div>
+  <h3>实测：这几条链都支持哪些新操作码（2026-10-28）</h3>
+  <p>方法：用 <code>eth_call</code> 在每条链上直接执行一小段只含该操作码的字节码，看能不能跑、结果对不对。</p>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th></th><th>PUSH0</th><th>TSTORE / TLOAD</th><th>MCOPY</th><th>CLZ</th></tr></thead>
+    <tbody>
+      <tr><td>Ethereum</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td>Base</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td>OP Mainnet</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td></tr>
+      <tr><td>BSC</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓</td><td class="y">✓（2026-04-28 Mendel 升级，BEP-654）</td></tr>
+      <tr><td>Qtum</td><td colspan="4">发布说明写明 EVM 已到 Pectra（<a href="qtum.html">第 01 章</a>），没有可用的公共 <code>eth_*</code> RPC，未做链上实测；按源码：Qtum Core 把 EVM 版本最高映射到 <code>EVMC_PRAGUE</code>，而它用的 evmone 只在 <code>EVMC_OSAKA</code> 才启用 CLZ，所以 <b>CLZ 在 Qtum 上不可用</b>；PUSH0、TSTORE、MCOPY 属于更早的版本，可用</td></tr>
+    </tbody>
+  </table></div>
+  <h3>预编译合约：放在固定地址上的“内置函数”</h3>
+  <p>有些运算用 EVM 字节码写太贵，就由节点原生实现，放在固定的小地址上，调用它们和调用普通合约一样。以太坊 Osaka 规范里的列表：</p>
+  <div class="tbl"><table class="mw-620">
+    <thead><tr><th>地址</th><th>功能</th><th>和本板块的关系</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">0x01</td><td>ecrecover：从签名恢复地址</td><td>Qtum 桥、CCTP 验签都靠它（第 03、04 章）</td></tr>
+      <tr><td class="mono">0x02 / 0x03</td><td>SHA-256 / RIPEMD-160</td><td>比特币、Qtum 的地址算法（第 01、08 章）</td></tr>
+      <tr><td class="mono">0x04、0x05</td><td>identity、modexp</td><td>—</td></tr>
+      <tr><td class="mono">0x06–0x08</td><td>alt_bn128 加法、乘法、配对</td><td>很多 ZK 证明在链上验证时用</td></tr>
+      <tr><td class="mono">0x09</td><td>blake2f</td><td>—</td></tr>
+      <tr><td class="mono">0x0a</td><td>KZG 点值验证（Dencun）</td><td>验证 blob 内容（第 05、06 章）</td></tr>
+      <tr><td class="mono">0x0b–0x11</td><td>BLS12-381 一组运算（Pectra）</td><td>BLS 签名，比如 BSC 的快速最终性投票用的就是 BLS（<a href="bsc.html">第 07 章</a>）</td></tr>
+      <tr><td class="mono">0x100</td><td>P256VERIFY（Osaka）</td><td>验证 secp256r1 签名（手机安全芯片、通行密钥常用的曲线）；BSC 在 Haber 升级里更早加了同类预编译</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="equiv">
+  <h2 class="eyebrow">关键结论</h2>
+  <p class="lead">“等价”指尽量做到和以太坊逐项一致，以太坊上能跑的合约和工具，不改就能用；“兼容”指能跑 EVM 合约，但在某些地方行为不同。下面这张表把前面各章讲过的差异放在一起。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th></th><th>Ethereum</th><th>Base / OP Mainnet</th><th>BSC</th><th>Qtum</th></tr></thead>
+    <tbody>
+      <tr><th>定位</th><td>基准</td><td>OP 文档自称“EVM equivalent”</td><td>兼容，按 BEP 逐项跟进</td><td>兼容，经 AAL 跑在 UTXO 上</td></tr>
+      <tr><th>新操作码</th><td>到 Osaka</td><td>到 Osaka（实测）</td><td>到 Osaka 的大部分（实测 CLZ 可用）</td><td>到 Pectra（Prague），没有 CLZ；blob 相关操作码返回 0</td></tr>
+      <tr><th>区块字段</th><td>—</td><td><code>block.coinbase</code> 是排序器的收费地址，通常不变；<code>block.prevrandao</code> 取 L1 的值</td><td>0.45 秒一块，<code>block.timestamp</code> 精度按秒</td><td>32 秒一块</td></tr>
+      <tr><th><code>tx.origin</code></th><td>—</td><td>L1 合约触发的存款交易里，是 L1 地址的<b>别名</b></td><td>—</td><td>—</td></tr>
+      <tr><th>gas 定价</th><td>EIP-1559</td><td>L2 执行费 + L1 数据费</td><td>验证者定价，10% 销毁</td><td>以 satoshi 计，最低价由链上治理设定</td></tr>
+      <tr><th><code>msg.value</code> 单位</th><td>wei（18 位）</td><td>wei</td><td>wei</td><td><b>satoshi（8 位）</b></td></tr>
+      <tr><th>合约地址</th><td>CREATE / CREATE2</td><td>同以太坊</td><td>同以太坊</td><td><b>txid + 输出序号</b></td></tr>
+      <tr><th>谁能当调用者</th><td>任何账户</td><td>同以太坊</td><td>同以太坊</td><td><b>只有 P2PKH / P2PK 地址</b>，或合约</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li>ethereum.org：<a href="https://ethereum.org/en/developers/docs/evm/" rel="noopener">EVM</a>（栈深 1024、256 位、临时存储）、<a href="https://ethereum.org/en/developers/docs/evm/opcodes/" rel="noopener">Opcodes</a>（gas、CREATE / CREATE2 公式、CALL 系列）、<a href="https://ethereum.org/en/developers/docs/accounts/" rel="noopener">Accounts</a>、<a href="https://ethereum.org/en/developers/docs/smart-contracts/" rel="noopener">Smart contracts</a>（24KB、不能获取链外数据）、<a href="https://ethereum.org/en/developers/docs/smart-contracts/anatomy/" rel="noopener">Anatomy</a>、<a href="https://ethereum.org/en/developers/docs/smart-contracts/deploying/" rel="noopener">Deploying</a>。注：截至查询时 Opcodes 页面还没有列出 CLZ</li>
+    <li>EIP 原文：<a href="https://eips.ethereum.org/EIPS/eip-170" rel="noopener">170</a>、<a href="https://eips.ethereum.org/EIPS/eip-3860" rel="noopener">3860</a>、<a href="https://eips.ethereum.org/EIPS/eip-1014" rel="noopener">1014</a>、<a href="https://eips.ethereum.org/EIPS/eip-2929" rel="noopener">2929</a>、<a href="https://eips.ethereum.org/EIPS/eip-2200" rel="noopener">2200</a></li>
+    <li>Solidity 文档：<a href="https://docs.soliditylang.org/en/latest/abi-spec.html" rel="noopener">ABI Specification</a>（函数选择器、事件 topic、packed 编码的歧义）、<a href="https://docs.soliditylang.org/en/latest/using-the-compiler.html" rel="noopener">Using the compiler</a>（各 evmVersion 的变化、默认 osaka）</li>
+    <li><a href="https://github.com/ethereum/execution-specs" rel="noopener">ethereum/execution-specs</a>：<code>src/ethereum/forks/osaka/vm/precompiled_contracts/__init__.py</code>（预编译地址）</li>
+    <li><a href="https://docs.optimism.io/stack/differences" rel="noopener">Optimism：Differences from Ethereum</a>（COINBASE、PREVRANDAO、ORIGIN 地址别名）；BNB Chain <a href="https://github.com/bnb-chain/BEPs/blob/master/BEPs/BEP-658.md" rel="noopener">BEP-658</a> 与 <a href="https://docs.bnbchain.org/announce/mendel-bsc/" rel="noopener">Mendel 升级公告</a></li>
+    <li>链上只读（2026-10-28）：在 Ethereum、Base、OP Mainnet、BSC 用 <code>eth_call</code> 执行 PUSH0 / TSTORE / MCOPY / CLZ 测试字节码；以太坊上 USDC Transfer 日志（<code>eth_getLogs</code>）；几个合约的 <code>eth_getCode</code> 长度</li>
+    <li><a href="https://github.com/qtumproject/bridge-evm-contracts/tree/a351a067f6ba06640c6ec000701fa86b1dd954d8" rel="noopener">bridge-evm-contracts @ a351a067</a>：<code>contracts/interfaces/handlers/IERC20Handler.sol</code>（DepositedERC20 事件定义）</li>
+  </ol>
+  <p>核查日期 2026-10-28。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // 一小段字节码：60 02 60 03 01 60 00 55 00 = 把 2 + 3 存进存储槽 0
+  const op = (t, on) => `<span class="ch ${on ? '' : 'out'}" style="--c:var(${on ? '--accent' : '--muted'})">${t}</span>`;
+  const OPS = ['PUSH1 02', 'PUSH1 03', 'ADD', 'PUSH1 00', 'SSTORE', 'STOP'];
+  const ops = i => Object.fromEntries(OPS.map((t, j) => ['o' + j, {h:op(t, j === i)}]));
+  const g = n => `<span class="cell">gas ${n.toLocaleString('en-US')}</span>`;
+  A.evm = {h:300,
+    b:[['code',2,4,96,28,'字节码 0x600260030160005500'],['stk',2,38,46,58,'栈（底 → 顶）'],['sto',52,38,46,58,'存储（永久）']],
+    it:[
+      ...OPS.map((t, j) => ({id:'o' + j, h:op(t, false), x:[9, 25, 39, 53, 69, 86][j], y:[16, 24, 16, 24, 16, 24][j]})),
+      {id:'s0', h:chip('2','--btc'), x:25, y:86, hide:1}, {id:'s1', h:chip('3','--btc'), x:25, y:74, hide:1}, {id:'s2', h:chip('0','--btc'), x:25, y:74, hide:1},
+      {id:'slot', h:'<span class="cell">槽 0 = 0</span>', x:75, y:60},
+      {id:'gas', h:g(0), x:75, y:80}],
+    s:[
+      {c:'这段字节码做一件事：算 2 + 3，把结果存进这个合约的存储槽 0。EVM 从第一个字节开始，一条条往下执行。', lit:['code']},
+      {c:'PUSH1 02：把 2 压栈。3 gas。', set:{...ops(0), s0:{hide:0}, gas:{h:g(3)}}, lit:['stk']},
+      {c:'PUSH1 03：把 3 压栈。3 gas。', set:{...ops(1), s1:{hide:0}, gas:{h:g(6)}}, lit:['stk']},
+      {c:'ADD：弹出栈顶两个数，相加，把 5 压回去。3 gas。所有运算都按 256 位整数、对 2^256 取模。', set:{...ops(2), s1:{hide:1}, s0:{h:chip('5','--accent')}, gas:{h:g(9)}}, lit:['stk']},
+      {c:'PUSH1 00：把存储槽编号 0 压栈。3 gas。', set:{...ops(3), s2:{hide:0}, gas:{h:g(12)}}, lit:['stk']},
+      {c:'SSTORE：栈顶是槽号 0，下面是值 5，写进存储。这个槽原来是 0、现在改成非 0，又是本笔交易第一次访问它：20,000 + 2,100 = 22,100 gas。',
+       set:{...ops(4), s0:{hide:1}, s2:{hide:1}, slot:{h:'<span class="cell" style="color:var(--ok)">槽 0 = 5</span>'}, gas:{h:'<span class="cell" style="color:var(--warn)">gas 22,112</span>'}}, lit:['sto']},
+      {c:'STOP：结束。前面四条运算一共只花了 12 gas，一次写存储花了 22,100。这就是为什么合约开发要尽量少写存储：栈上算很便宜，永久保存很贵。', set:{...ops(5)}, lit:['sto','stk']},
+    ]};
+  Guide.mount(A);
+  // Keccak-256（与第 02、04 章核对选择器用的实现相同）
+  const RC = [], ROT = [[0,36,3,41,18],[1,44,10,45,2],[62,6,43,15,61],[28,55,25,21,56],[27,20,39,8,14]];
+  { let r = 1n; for (let i = 0; i < 24; i++) { let c = 0n; for (let j = 0; j < 7; j++) { r = ((r << 1n) ^ ((r >> 7n) * 0x71n)) % 256n; if (r & 2n) c ^= 1n << ((1n << BigInt(j)) - 1n); } RC.push(c); } }
+  const M = (1n << 64n) - 1n, rotl = (x, n) => n ? ((x << BigInt(n)) | (x >> BigInt(64 - n))) & M : x;
+  function f(A){
+    for (let rd = 0; rd < 24; rd++) {
+      const C = [0,1,2,3,4].map(x => A[x] ^ A[x+5] ^ A[x+10] ^ A[x+15] ^ A[x+20]);
+      for (let x = 0; x < 5; x++) { const D = C[(x+4)%5] ^ rotl(C[(x+1)%5], 1); for (let y = 0; y < 25; y += 5) A[x+y] ^= D; }
+      const B = new Array(25);
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) B[y + 5*((2*x+3*y)%5)] = rotl(A[x+5*y], ROT[x][y]);
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 25; y += 5) A[x+y] = B[x+y] ^ ((~B[(x+1)%5+y] & M) & B[(x+2)%5+y]);
+      A[0] ^= RC[rd];
+    }
+  }
+  function keccak256(bytes){
+    const rate = 136, p = new Uint8Array(Math.ceil((bytes.length + 1) / rate) * rate);
+    p.set(bytes); p[bytes.length] ^= 0x01; p[p.length - 1] ^= 0x80;
+    const A = new Array(25).fill(0n);
+    for (let o = 0; o < p.length; o += rate) {
+      for (let i = 0; i < rate / 8; i++) { let v = 0n; for (let b = 7; b >= 0; b--) v = (v << 8n) | BigInt(p[o + i*8 + b]); A[i] ^= v; }
+      f(A);
+    }
+    let out = ''; for (let i = 0; i < 4; i++) for (let b = 0; b < 8; b++) out += Number((A[i] >> BigInt(8*b)) & 0xffn).toString(16).padStart(2, '0');
+    return out;
+  }
+  // ABI 小工具：选择器 / topic / calldata（Keccak-256 在浏览器里算）
+  const kc = s => keccak256(new TextEncoder().encode(s));
+  const abSig = document.getElementById('abSig'), abOut = document.getElementById('abOut');
+  const abTo = document.getElementById('abTo'), abAmt = document.getElementById('abAmt'), abCd = document.getElementById('abCd');
+  function abRun(){
+    const s = abSig.value.trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*\(.*\)$/.test(s)) { abOut.innerHTML = '<span style="color:var(--warn)">格式应为 名字(类型1,类型2)，例如 transfer(address,uint256)</span>'; return; }
+    const h = kc(s);
+    const warn = /\s/.test(s) || /\buint\b|\bint\b/.test(s) ? '<span style="color:var(--warn)">注意：签名里不能有空格；uint / int 要写成 uint256 / int256，否则哈希完全不同</span>' : '';
+    abOut.innerHTML = `<span>当作函数：选择器 <b>0x${h.slice(0, 8)}</b>（哈希的前 4 字节）</span>
+      <span>当作事件：topic0 <b style="word-break:break-all">0x${h}</b></span>${warn}`;
+  }
+  function cdRun(){
+    const to = abTo.value.trim().replace(/^0x/i, ''), amt = abAmt.value.trim();
+    const m = amt.match(/^(\d*)(?:\.(\d{0,6}))?$/);
+    if (!/^[0-9a-fA-F]{40}$/.test(to)) { abCd.innerHTML = '<span style="color:var(--warn)">收款地址应为 0x 加 40 位十六进制</span>'; return; }
+    if (!m || (!m[1] && !m[2])) { abCd.innerHTML = '<span style="color:var(--warn)">金额应为数字，最多 6 位小数</span>'; return; }
+    const raw = BigInt((m[1] || '0') + (m[2] || '').padEnd(6, '0'));
+    const w1 = to.toLowerCase().padStart(64, '0'), w2 = raw.toString(16).padStart(64, '0');
+    abCd.innerHTML = `<span class="m">transfer(address,uint256) 的完整 calldata（${4 + 32 + 32} 字节）：</span>
+      <span style="word-break:break-all"><b>0x${kc('transfer(address,uint256)').slice(0, 8)}</b> · 选择器</span>
+      <span style="word-break:break-all">${w1} · 收款地址，左边补 0 到 32 字节</span>
+      <span style="word-break:break-all">${w2} · 金额 ${raw.toLocaleString('en-US')}（= ${amt} × 10^6）</span>`;
+  }
+  abSig.addEventListener('input', abRun);
+  document.querySelectorAll('[data-ab]').forEach(b => b.addEventListener('click', () => { abSig.value = b.dataset.ab; abRun(); }));
+  [abTo, abAmt].forEach(e => e.addEventListener('input', cdRun));
+  abRun(); cdRun();
+})();
+</script>
+</body>
+</html>

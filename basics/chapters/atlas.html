@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>跨链方案图鉴｜区块链基础知识</title>
+<meta name="description" content="LayerZero、Wormhole、Axelar、Hyperlane、Across 等逐个拆开；哪条链、哪个代币用哪种">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="atlas">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 03 章 · 附页</p>
+    <h1>跨链方案图鉴</h1>
+    <p class="lede">2026-10 主流跨链方案逐个拆开：谁来证明、合约怎么调、资产怎么动、谁在用、出过什么事，以及哪条链、哪个代币用的是哪一种。原理部分见<a href="bridges.html">第 03 章</a>。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="overview">
+  <h2 class="eyebrow">总览</h2>
+  <p class="lead">按<a href="bridges.html">第 03 章</a>的谱系分成五类。点上面的标签只看某一类。“Qtum”一列只写查到的证据：查到明确不支持的写“未列”，页面不全、无法判断的写“未查到”。</p>
+  <div class="chips" role="group" aria-label="按类别筛选" id="atFilter">
+    <button class="chip" data-f="all" aria-pressed="true">全部</button>
+    <button class="chip" data-f="central" aria-pressed="false">中心化 / 托管</button>
+    <button class="chip" data-f="native" aria-pressed="false">官方 / 原生桥</button>
+    <button class="chip" data-f="msg" aria-pressed="false">消息验证网络</button>
+    <button class="chip" data-f="liq" aria-pressed="false">流动性 / 意图</button>
+    <button class="chip" data-f="btc" aria-pressed="false">BTC</button>
+  </div>
+  <div class="tbl"><table class="mw-900" id="atTable">
+    <thead><tr><th>方案</th><th>谁来证明</th><th>资产怎么动</th><th>典型用户</th><th>事故</th><th>Qtum</th></tr></thead>
+    <tbody>
+      <tr data-c="central"><td><b>交易所充提</b></td><td>交易所内部账本</td><td>一条链充值，另一条链提现</td><td>Binance、Coinbase 等</td><td>—</td><td>看交易所是否上线 Qtum 提现</td></tr>
+      <tr data-c="central"><td><b>发行方多链原生发行</b></td><td>发行方</td><td>每条链各自铸币</td><td>USDT（Tether）、USDC（Circle Mint）</td><td>—</td><td>Tether、Circle 均未在 Qtum 发行</td></tr>
+      <tr data-c="central"><td><b>单一运营方的桥</b></td><td>项目方的服务器或少数密钥</td><td>锁定 → 铸造</td><td>Multichain（已倒闭）</td><td>2023-07，约 2.29 亿美元</td><td>—</td></tr>
+      <tr data-c="native"><td><b>Rollup 官方桥</b><br><span class="note">Arbitrum、OP、Base、zkSync、Starknet、Linea、Scroll</span></td><td>欺诈证明（乐观）或有效性证明（ZK）</td><td>以太坊上锁定，L2 上记账</td><td>各 L2 自己</td><td>—</td><td>不适用</td></tr>
+      <tr data-c="native"><td><b>Polygon PoS 桥</b></td><td>超过 2/3 质押的 Polygon 验证者签 checkpoint</td><td>锁定 → 铸造</td><td>Polygon PoS</td><td>—</td><td>不适用</td></tr>
+      <tr data-c="native"><td><b>Sui Bridge</b></td><td>Sui 验证者，转账门槛 33.34% 质押</td><td>锁定 → 铸造</td><td>Sui</td><td>—</td><td>不适用</td></tr>
+      <tr data-c="native"><td><b>NEAR Omni Bridge</b></td><td>进：以太坊轻客户端；出：MPC 链签名</td><td>锁定 → 铸造</td><td>NEAR</td><td>—</td><td>不适用</td></tr>
+      <tr data-c="native"><td><b>Avalanche Bridge</b></td><td>SGX 里的 Warden，4 个里要 3 个签；L2BEAT：“无法验证”</td><td>EOA 托管 → 铸造</td><td>Avalanche C-Chain</td><td>—</td><td>不适用</td></tr>
+      <tr data-c="native"><td><b>Gnosis Omnibridge</b></td><td>4-of-7 验证者多签</td><td>锁定 → 铸造</td><td>Gnosis Chain</td><td>—</td><td>不适用</td></tr>
+      <tr data-c="native"><td><b>IBC / IBC Eureka</b></td><td>两边互跑对方的轻客户端；以太坊上用 SP1 零知识证明</td><td>锁定 → 铸造（ICS-20）</td><td>Cosmos 生态；Eureka 连接以太坊</td><td>—</td><td>未查到</td></tr>
+      <tr data-c="msg"><td><b>LayerZero V2</b></td><td>应用自配 DVN 组合（X-of-Y-of-N）</td><td>OFT 销毁 → 铸造；OFT Adapter 锁定 → 铸造</td><td>USDT0、Ethena USDe、Stargate</td><td>—</td><td>未列（官方部署表）</td></tr>
+      <tr data-c="msg"><td><b>Wormhole</b></td><td>19 个 Guardian 里 13 个签 VAA</td><td>WTT 锁定 → 包装币；NTT 锁定或销毁 → 铸造</td><td>Solana 等非 EVM 链</td><td>2022-02，3.26 亿美元</td><td>未列（链 ID 表）</td></tr>
+      <tr data-c="msg"><td><b>Axelar</b></td><td>Axelar 链的 PoS 验证者投票</td><td>ITS：锁定 / 销毁 → 铸造</td><td>Squid 路由</td><td>—</td><td>未查到；可走 Amplifier 新链提案</td></tr>
+      <tr data-c="msg"><td><b>Hyperlane</b></td><td>应用自选 ISM（多签、聚合、可插拔）</td><td>Warp Route：抵押 → 合成</td><td>无许可部署的新链</td><td>—</td><td>不在 registry；可自行部署</td></tr>
+      <tr data-c="msg"><td><b>Chainlink CCIP</b><br><a class="chap-link" href="cctp-ccip.html#ccip">第 04 章</a></td><td>CCIP 2.0 Committee Verifier（16 个运营方）</td><td>四种代币池</td><td>Ronin 桥（2025 年迁入）、Synthetix、Aave</td><td>—</td><td>未确认</td></tr>
+      <tr data-c="msg"><td><b>Celer cBridge / IM</b></td><td>State Guardian Network（Tendermint 链）</td><td>池子 / 锁定 → 铸造</td><td>40+ 条链</td><td>—</td><td>未查到</td></tr>
+      <tr data-c="msg"><td><b>Circle CCTP</b><br><a class="chap-link" href="cctp-ccip.html#cctp">第 04 章</a></td><td>Circle 证明服务</td><td>销毁 → 铸造（原生 USDC）</td><td>USDC、EURC</td><td>—</td><td>未列</td></tr>
+      <tr data-c="liq"><td><b>Across</b></td><td>中继先垫付；事后由 UMA 乐观预言机结算</td><td>垫付 → 结算</td><td>以太坊与各 L2</td><td>—</td><td>未查到</td></tr>
+      <tr data-c="liq"><td><b>deBridge DLN</b></td><td>求解者按需垫付（“0-TVL”）</td><td>垫付 → 结算</td><td>含 Solana 在内 25+ 条链</td><td>—</td><td>未查到</td></tr>
+      <tr data-c="liq"><td><b>Stargate V2</b></td><td>建在 LayerZero V2 上</td><td>统一流动性池 + OFT</td><td>多链稳定币</td><td>—</td><td>未查到</td></tr>
+      <tr data-c="liq"><td><b>THORChain</b></td><td>节点用 TSS 共管金库，每片默认 20 个节点</td><td>原生资产互换，没有包装币</td><td>BTC ↔ ETH 等原生币兑换</td><td>—</td><td>未查到</td></tr>
+      <tr data-c="liq"><td><b>Orbiter</b></td><td>做市方垫付</td><td>垫付 → 结算</td><td>以太坊 L2</td><td>—</td><td>未列</td></tr>
+      <tr data-c="btc central"><td><b>WBTC</b></td><td>授权托管方（申请 + 确认两步）</td><td>托管 → 铸造</td><td>以太坊等</td><td>—</td><td>—</td></tr>
+      <tr data-c="btc central"><td><b>cbBTC</b></td><td>Coinbase 托管</td><td>托管 → 铸造</td><td>Base、以太坊等</td><td>—</td><td>—</td></tr>
+      <tr data-c="btc"><td><b>tBTC v2</b></td><td>100 个签名人里 51 个门限签名，双周轮换</td><td>托管 → 铸造</td><td>以太坊等</td><td>—</td><td>—</td></tr>
+      <tr data-c="btc"><td><b>Citrea Clementine</b></td><td>BitVM2：只要 N 个参与方里有 1 个诚实</td><td>锁定 → 铸造</td><td>Citrea（比特币 rollup）</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</section>
+<section id="central">
+  <h2 class="eyebrow">中心化 / 托管</h2>
+  <p class="sub">中心化方案：信任一家机构</p>
+  <p class="lead">中心化方案没有链上证明：<b>一家机构收下你的资产，再由它决定在另一条链上给你发多少</b>。“证明者”就是这家机构本身。听起来最不“区块链”，但它简单、快、便宜，而且是 BTC 这类不能跑合约的链最常见的出路。实际交易量里，很大一部分跨链其实是这一类。</p>
+  <div class="tbl"><table class="mw-860">
+    <thead><tr><th>类型</th><th>资产在谁手里</th><th>谁决定铸币 / 放款</th><th>怎么换回来</th><th>例子</th><th>主要风险</th></tr></thead>
+    <tbody>
+      <tr><td><b>交易所充提</b></td><td>交易所热钱包和冷钱包</td><td>交易所内部账本</td><td>在另一条链上提现</td><td>在 Binance 用 ERC20 充值、选 BEP20 提现</td><td>交易所挪用、被盗、冻结提现；选错网络</td></tr>
+      <tr><td><b>发行方多链原生发行</b></td><td>发行方的储备</td><td>发行方在每条链上各自铸币</td><td>向发行方赎回，或在交易所兑换</td><td>Tether 在 Ethereum、Tron、Solana、BSC、TON 等链上分别发行 USDT；Circle 通过 Circle Mint 给机构在各链铸 USDC</td><td>发行方本身；各链合约的管理权</td></tr>
+      <tr><td><b>托管包装币</b></td><td>托管方</td><td>托管方确认到账后铸币</td><td>通过授权商户赎回，托管方放出原币</td><td>WBTC、cbBTC、BSC 上的 Binance-Peg 资产</td><td>托管方挪用或被盗；铸币权被滥用</td></tr>
+      <tr><td><b>单一运营方的桥</b></td><td>项目方控制的地址或合约</td><td>项目方的服务器或少数密钥</td><td>项目方放款</td><td>Multichain（自称 MPC，实际 CEO 掌握所有密钥）</td><td>运营方作恶、跑路、被抓、被盗</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>拆开看：WBTC 是怎么铸出来、怎么换回去的</h3>
+  <p>WBTC 是最典型的托管包装币，它的合约是公开的（<code>WrappedBTC/bitcoin-token-smart-contracts</code>）。链上合约只做两件事：<b>记录请求</b>和<b>检查谁有权确认</b>。BTC 有没有真的到账，合约看不到，全靠托管方。</p>
+  <div class="bit wide"><div class="anim" data-anim="wbtc"></div></div>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>角色</th><th>谁</th><th>在 Factory 合约里能调用</th></tr></thead>
+    <tbody>
+      <tr><td>商户（merchant）</td><td>经过 KYC 的机构，用户通过它们直接铸造和赎回</td><td><code>addMintRequest(amount, btcTxid, btcDepositAddress)</code>、<code>cancelMintRequest</code>、<code>burn(amount)</code></td></tr>
+      <tr><td>托管方（custodian）</td><td>保管 BTC 的机构</td><td><code>confirmMintRequest</code>、<code>rejectMintRequest</code>、<code>confirmBurnRequest(requestHash, btcTxid)</code>，以及给每个商户设 BTC 充值地址</td></tr>
+      <tr><td>Controller 的 owner</td><td>治理多签</td><td>增减商户、更换托管方、更换 Factory、暂停</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>链上能看到的权限结构（2026-10-28 读取）</h3>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>代币</th><th>谁能决定铸币</th><th>链上读到的</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">WBTC（以太坊）</td><td>托管方确认商户请求</td><td>Controller 的 owner 是一个 <b>10 人里要 6 人签名</b>的多签合约；托管方地址是合约；48 个商户；累计 811 笔铸币请求、511 笔赎回；总量约 116,132 WBTC</td></tr>
+      <tr><td class="mono">cbBTC（以太坊、Base 同地址）</td><td>masterMinter（和 USDC 同一套 FiatToken 角色）</td><td>两条链上 masterMinter 都是同一个<b>普通地址（EOA）</b>，owner 也相同；8 位小数</td></tr>
+      <tr><td class="mono">Binance-Peg USDC（BSC）</td><td>合约 owner</td><td>代理合约，实现里有 <code>mint</code> / <code>burn</code>；owner 和代理管理员都是<b>普通地址</b>；18 位小数，总量约 15.9 亿</td></tr>
+      <tr><td class="mono">USDT（Tether）</td><td>Tether</td><td>官方“支持的协议”页面列出 Ethereum、Tron、Solana、BNB Smart Chain、TON、Aptos、NEAR 等，每条链各自发行</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">“EOA”只说明链上看到的是普通地址，看不出背后是硬件加密机、多方计算还是人工审批。Binance 关于 Binance-Peg 资产储备的页面本次无法访问（503），储备情况未核实。</p>
+
+  <h3>风险和常见的缓解手段</h3>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>风险</th><th>常见缓解</th><th>缓解不了什么</th></tr></thead>
+    <tbody>
+      <tr><td>机构挪用储备</td><td>定期储备证明、审计、牌照监管</td><td>报告之间的时间窗口；报告本身的可信度</td></tr>
+      <tr><td>热钱包被盗</td><td>冷热分离，热钱包只留少量周转</td><td>冷钱包审批流程被绕过</td></tr>
+      <tr><td>恶意或错误增发</td><td>铸币走“申请 + 确认”两步（如 WBTC）；铸币权放多签；额度上限</td><td>两步的角色由同一方控制时，等于一步</td></tr>
+      <tr><td>机构停摆（被查封、跑路）</td><td>多家托管（WBTC 现在是多机构托管）、公开赎回渠道</td><td>Multichain：所有钥匙在一个人手里</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="msg">
+  <h2 class="eyebrow">消息验证网络</h2>
+  <p class="sub">“谁来证明”交给一个独立网络</p>
+  <p class="lead">这类协议只负责一件事：让目标链相信“源链上的某个合约发出了这条消息”。资产怎么锁、怎么铸，由建在上面的代币标准（OFT、NTT、ITS、Warp Route）决定。</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">LayerZero V2</span><h4>应用自己挑验证者</h4></div>
+      <p><b>验证：</b>每个应用为每条路径配置一组 DVN（去中心化验证网络），格式是 X-of-Y-of-N：几个“必须”的 DVN 全部确认，再加上可选 DVN 里够数的确认。每个 DVN 独立检查消息的 <code>payloadHash</code>。</p>
+      <p><b>合约：</b>EndpointV2 不可升级、无需许可，核心方法 <code>quote</code> / <code>send</code> / <code>verify</code> / <code>lzReceive</code>。验证通过后谁都能调用 <code>lzReceive</code>，Executor 只是代付 gas 的服务。</p>
+      <p><b>代币：</b>OFT 新币用销毁 → 铸造；已有的币用 OFT Adapter 在原链锁定。<b>USDT0 就是在以太坊上把 USDT 锁进 OFT Adapter，再到各链铸 USDT0。</b>官方部署表 150+ 条链，含 BSC、Solana、Tron、Aptos、Sui，没有 Qtum。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Wormhole</span><h4>19 个 Guardian，13 个签名</h4></div>
+      <p><b>验证：</b>19 个 Guardian 节点观察各条链，对消息签名，凑够 13 个就成为一份 VAA（可验证动作批准）。有些链由部分 Guardian 代为观察，但最终都是标准的 13-of-19 多签。每个发送方可以选等待的最终性程度（consistency level），等得越少越快，也越可能遇到重组。</p>
+      <p><b>代币：</b>WTT（原 Token Bridge）锁定原币、在目标链发包装币；NTT 让发行方自己控制代币，源链可选“锁定模式”或“销毁模式”。</p>
+      <p><b>事故：</b>2022-02 Solana 侧签名验证被绕过，损失约 3.26 亿美元。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Axelar</span><h4>一条专门做跨链的 PoS 链</h4></div>
+      <p><b>验证：</b>Axelar 是一条 Cosmos SDK 链，它的验证者除了出块，还要投票确认各条外部链上的跨链请求，通过后由目标链的 Gateway 合约授权。</p>
+      <p><b>合约：</b>源链调用 Gateway 的 <code>callContract</code>（带币用 <code>callContractWithToken</code>）；目标链应用继承 <code>AxelarExecutable</code>，在 <code>_execute</code> 里写业务逻辑，执行前通过 <code>validateContractCall</code> 确认已被批准，同一份批准不能用两次。</p>
+      <p><b>代币：</b>Interchain Token Service（ITS）。新链接入可以走 Amplifier 提案流程。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Hyperlane</span><h4>谁都能部署，验证模块可插拔</h4></div>
+      <p><b>验证：</b>每个应用可以用 Mailbox 的默认 ISM（链间安全模块），也可以指定自己的：多签、聚合多个模块、限额、暂停等。</p>
+      <p><b>合约：</b>源链 <code>Mailbox.dispatch</code>；目标链 <code>Mailbox.process</code> 先调用 <code>ism.verify(metadata, message)</code>，通过后再调用接收合约的 <code>handle</code>。</p>
+      <p><b>代币：</b>Warp Route：抵押 → 合成（源链锁、目标链铸）、原生币 → 合成、原生币 → 抵押。<b>Qtum 不在官方 registry 里，但 Hyperlane 允许自行部署</b>。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Chainlink CCIP</span><h4><a href="cctp-ccip.html">第 04 章</a>展开</h4></div>
+      <p><b>验证：</b>CCIP 2.0（2026-09-28）里由 Cross-Chain Verifier 证明消息，默认是 16 个独立节点运营方组成的委员会；执行无需许可。</p>
+      <p><b>采用者：</b>Ronin 已接入 CCIP（CCIP 官方目录有 Ronin 主网的 Router 和链选择器），官方桥迁移到 CCIP；Synthetix、Aave 早期接入。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Celer</span><h4>cBridge + 消息总线</h4></div>
+      <p><b>验证：</b>各链上的 Message Bus 合约，配合一条基于 Tendermint 的中继链 State Guardian Network（SGN）。</p>
+      <p><b>规模：</b>cBridge 支持 40+ 条链和 L2。</p></div>
+  </div>
+  <h3>LayerZero 的 X-of-Y-of-N 是怎么工作的</h3>
+  <div class="bit wide"><div class="anim" data-anim="lzdvn"></div></div>
+</section>
+
+<section id="liquidity">
+  <h2 class="eyebrow">流动性 / 意图</h2>
+  <p class="lead">“意图”（intent）的意思是：用户只说“我在 A 链付 X，要在 B 链收到 Y”，由求解者或中继去想办法、先垫钱。用户几乎立刻到账，安全问题变成“垫付的人怎么可靠地拿回钱”。Across 已在生产环境支持 ERC-7683 意图标准。</p>
+  <div class="bit wide"><div class="anim" data-anim="across"></div></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Across</span><h4>中继垫付 + UMA 乐观结算</h4></div>
+      <p>源链 SpokePool <code>depositV3</code> → 中继在目标链 SpokePool 调用 <code>fillV3Relay</code> 用自己的钱付给用户 → Dataworker 汇总一段时间内所有链的成交，向以太坊上的 HubPool 提交一个根包（root bundle）并押保证金 → 挑战期内没人用 UMA 发起争议，就最终确定，通过官方桥把还款指令发到各链。</p></div>
+    <div class="bit"><div class="bh"><span class="term">deBridge DLN</span><h4>“0-TVL”</h4></div>
+      <p>不设共享流动性池，由互相竞争的求解者按需提供流动性，自称非托管、已处理 200 亿美元以上的跨链交易量，覆盖含 Solana 在内的 25+ 条链。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Stargate V2</span><h4>建在 LayerZero 上的流动性池</h4></div>
+      <p>以 LayerZero V2 为传输层，提供各链统一的原生资产流动性池（Hydra 机制、额度分配）；转账有单独发送的 Taxi 模式和拼车省钱的 Bus 模式。文档现已并入 LayerZero 文档。</p></div>
+    <div class="bit"><div class="bh"><span class="term">THORChain</span><h4>真·原生币互换</h4></div>
+      <p>节点用门限签名（TSS）共同管理各条链上的金库，按默认每 20 个节点一片分片；验证者轮换（churn）时把资产迁到新金库。用户付 BTC，从 ETH 金库收到真正的 ETH，没有包装币。</p></div>
+  </div>
+  <p class="note">聚合器（LI.FI / Jumper、Socket / Bungee、BNB Chain 官网的“桥”）自己不桥接，只帮你在上面这些路线里挑一条。BNB Chain 官方文档原话：“we do not operate the routes”。2024-01 Socket 的事故说明，聚合器合约上的无限授权本身就是风险。</p>
+</section>
+<section id="chains">
+  <h2 class="eyebrow">按链查</h2>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>链</th><th>官方 / 主流路线</th><th>谁来证明</th><th>L2BEAT 阶段 / 备注</th></tr></thead>
+    <tbody>
+      <tr><td>Arbitrum One</td><td>官方桥</td><td>BoLD 欺诈证明，挑战期约 6.4 天</td><td>Stage 1</td></tr>
+      <tr><td>OP Mainnet</td><td>官方桥</td><td>欺诈证明，3.5 天 + 3.5 天</td><td>Stage 1</td></tr>
+      <tr><td>Base</td><td>官方桥（源自 OP Stack）</td><td>TEE + ZK 证明，1–5 天</td><td>Stage 1，详见<a href="l2.html">第 06 章</a></td></tr>
+      <tr><td>zkSync Era</td><td>官方桥</td><td>有效性证明 + 1 天执行延迟</td><td>Stage 0</td></tr>
+      <tr><td>Starknet</td><td>StarkGate</td><td>STARK 证明</td><td>Stage 1；托管合约可由 2/4 多签升级</td></tr>
+      <tr><td>Linea</td><td>官方桥</td><td>SNARK 证明；每天提现上限 1 万 ETH</td><td>Stage 0</td></tr>
+      <tr><td>Scroll</td><td>官方桥</td><td>ZK 证明</td><td>Stage 0（2026-06 安全委员会被换成 3-of-4 团队多签，从 Stage 1 掉下来）</td></tr>
+      <tr><td>Polygon PoS</td><td>PoS 桥</td><td>超过 2/3 质押签的 checkpoint，约 30 分钟一次</td><td>侧链，非 rollup</td></tr>
+      <tr><td>Avalanche C-Chain</td><td>Avalanche Bridge</td><td>SGX Warden，3/4</td><td>外部无法验证 enclave 内部</td></tr>
+      <tr><td>BNB Smart Chain</td><td><b>没有官方信任最小化桥</b>；官网“桥”是聚合 Stargate、Celer、deBridge、Meson、LayerZero、Mayan 六条路线</td><td>取决于所选路线</td><td>独立 L1</td></tr>
+      <tr><td>Gnosis Chain</td><td>Omnibridge / AMB</td><td>4-of-7 验证者多签</td><td>Hashi 已弃用</td></tr>
+      <tr><td>NEAR</td><td>Omni Bridge</td><td>进：以太坊轻客户端；出：MPC</td><td>旧 Rainbow Bridge 出站有 4 小时挑战期</td></tr>
+      <tr><td>Sui</td><td>Sui Bridge</td><td>Sui 验证者，33.34% 质押</td><td>每 24 小时限额：入 1600 万、出 700 万美元</td></tr>
+      <tr><td>Ronin</td><td>Chainlink CCIP</td><td>CCIP 验证网络</td><td>从自有桥迁入 CCIP。迁移金额、以及 Ronin 2026 年迁为 OP Stack 链的说法<span class="unv">本次未能打开原始来源</span></td></tr>
+      <tr><td>Solana</td><td>没有官方桥；常用 Wormhole 等</td><td>13/19 Guardian 等</td><td>非 EVM</td></tr>
+      <tr><td>Cosmos Hub</td><td>IBC Eureka</td><td>SP1 轻客户端；初期 relayer 需许可</td><td>—</td></tr>
+      <tr><td>Bitcoin</td><td>没有原生桥</td><td>托管（WBTC、cbBTC）、门限签名（tBTC）、BitVM2（Clementine）</td><td>见下方 BTC 一节</td></tr>
+      <tr><td>Qtum</td><td>Qtum 桥（锁定 → 铸造）</td><td>Validator 多签</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="btc">
+  <h2 class="eyebrow">BTC</h2>
+  <p class="lead">Bitcoin Script 写不了“验证另一条链的证明就放款”这样的逻辑，所以 BTC 跨出去几乎都要把 BTC 交给某种看管方。区别在于看管方是谁、要几个人同时作恶才能偷走。</p>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th>方案</th><th>谁看管 BTC</th><th>要多少人作恶才能偷</th><th>来源</th></tr></thead>
+    <tbody>
+      <tr><td>WBTC</td><td>授权托管方（商户发起，托管方核验后铸造）</td><td>托管方</td><td>wbtc.network FAQ</td></tr>
+      <tr><td>cbBTC</td><td>Coinbase（官网原话：“backed 1:1 and held in custody by Coinbase”）</td><td>Coinbase</td><td>Coinbase 储备证明页 2026-10-29：储备 96,099.75 BTC，流通 96,049.26 cbBTC，并公布了托管的比特币地址</td></tr>
+      <tr><td>tBTC v2</td><td>随机选出的 100 个签名人，双周轮换；运营方按白名单权重选择</td><td>51 个</td><td>Threshold 文档</td></tr>
+      <tr><td>Citrea Clementine</td><td>BitVM2 运营方</td><td>N 个里只要 1 个诚实就安全；每笔固定 10 BTC（存入 10 BTC 铸 10 cBTC）</td><td>Citrea 文档</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Babylon 常被一起提起，但它是比特币质押协议，官方原话 “no wrapping or bridges”，不是桥。</p>
+</section>
+
+<section id="tokens">
+  <h2 class="eyebrow">按代币查</h2>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>代币</th><th>跨链方式</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">USDC</td><td>Circle CCTP</td><td>销毁 → 铸造原生 USDC；BSC 上没有原生 USDC</td></tr>
+      <tr><td class="mono">EURC</td><td>CCTP（2026-09 起，非 USDC 资产入口）</td><td>走 <code>CrossChainTokenService</code></td></tr>
+      <tr><td class="mono">USDT0</td><td>LayerZero OFT</td><td>以太坊上 USDT 锁进 OFT Adapter，各链铸 USDT0，1:1</td></tr>
+      <tr><td class="mono">USDe（Ethena）</td><td>LayerZero OFT</td><td>Ethena 官方地址表列出各链 OFT 合约</td></tr>
+      <tr><td class="mono">tBTC</td><td>Threshold 自有 + 各链桥</td><td>门限签名 51-of-100</td></tr>
+      <tr><td class="mono">Ronin 链上资产</td><td>Chainlink CCIP</td><td>2025 年从旧桥整体迁移</td></tr>
+      <tr><td class="mono">Qtum 上的 USDC.e</td><td>Qtum 桥</td><td>以太坊锁 USDC，Qtum 铸 USDC.e</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li>LayerZero 文档：<a href="https://docs.layerzero.network/v2/concepts/modular-security/security-stack-dvns" rel="noopener">Security Stack (DVNs)</a>、<a href="https://docs.layerzero.network/v2/concepts/protocol/layerzero-endpoint" rel="noopener">Endpoint</a>、<a href="https://docs.layerzero.network/v2/concepts/permissionless-execution/executors" rel="noopener">Executors</a>、<a href="https://docs.layerzero.network/v2/concepts/applications/oft-standard" rel="noopener">OFT</a>、<a href="https://docs.layerzero.network/v2/deployments/deployed-contracts" rel="noopener">部署表</a>；<a href="https://docs.stargate.finance/" rel="noopener">Stargate</a></li>
+    <li>Wormhole 文档：<a href="https://wormhole.com/docs/protocol/infrastructure/guardians/" rel="noopener">Guardians</a>、VAAs、NTT Architecture、WTT Overview</li>
+    <li>Axelar 文档：<a href="https://docs.axelar.dev/learn/" rel="noopener">Learn</a>、<a href="https://docs.axelar.dev/dev/general-message-passing/overview/" rel="noopener">GMP</a>、<a href="https://docs.axelar.dev/dev/send-tokens/interchain-tokens/intro/" rel="noopener">ITS</a></li>
+    <li>Hyperlane：<a href="https://docs.hyperlane.xyz/docs/protocol/ISM/modular-security" rel="noopener">ISM</a>、<a href="https://docs.hyperlane.xyz/docs/applications/warp-routes/overview" rel="noopener">Warp Routes</a>、<code>solidity/contracts/Mailbox.sol</code>（hyperlane-monorepo main）</li>
+    <li>Across：<a href="https://docs.across.to/introduction/security" rel="noopener">Security Model</a>、<a href="https://docs.across.to/guides/concepts/intent-lifecycle" rel="noopener">Intent Lifecycle</a>；<a href="https://docs.debridge.finance/" rel="noopener">deBridge 文档</a>；<a href="https://docs.thorchain.org/technical-documentation/technology/bifrost-tss-and-vaults" rel="noopener">THORChain：Bifrost, TSS and Vaults</a>；<a href="https://celer.network/" rel="noopener">Celer</a>；<a href="https://docs.usdt0.to/" rel="noopener">USDT0</a>；<a href="https://docs.ethena.fi/solution-design/key-addresses" rel="noopener">Ethena 地址表</a></li>
+    <li>L2BEAT 项目页（2026-10-28）：Arbitrum、OP Mainnet、zkSync Era、Starknet、Linea、Scroll、Polygon PoS、Avalanche Bridge、Gnosis、Ronin；<a href="https://docs.bnbchain.org/bnb-smart-chain/cross-chain-bridge/" rel="noopener">BNB Chain：Cross-chain bridge</a></li>
+    <li>Sui：<code>bridge/evm/contracts/utils/BridgeUtils.sol</code>；NEAR Omni Bridge 文档；Cosmos IBC / IBC Eureka 文档；SP1 Helios README</li>
+    <li>BTC：wbtc.network FAQ；Etherscan cbBTC 代币页；<a href="https://docs.threshold.network/tbtc-v2/wallet-generation" rel="noopener">tBTC v2 Wallet Generation</a>；Citrea Clementine 文档；Babylon 文档</li>
+    <li><a href="https://docs.chain.link/ccip/directory/mainnet/chain/ronin-mainnet" rel="noopener">CCIP 目录：Ronin</a>；<a href="https://docs.citrea.xyz/essentials/using-clementine" rel="noopener">Citrea：Using Clementine</a>（每笔固定 10 BTC）；<a href="https://blog.chain.link/ccip-mainnet-early-access/" rel="noopener">Chainlink：CCIP mainnet early access</a></li>
+    <li><a href="https://github.com/WrappedBTC/bitcoin-token-smart-contracts" rel="noopener">WrappedBTC/bitcoin-token-smart-contracts</a>（commit <code>41dc747</code>）：<code>ethereum/contracts/factory/Factory.sol</code>、<code>Members.sol</code>、<code>controller/Controller.sol</code>；<a href="https://wbtc.network/faq" rel="noopener">wbtc.network FAQ</a>；<a href="https://tether.to/en/supported-protocols/" rel="noopener">Tether：Supported Protocols</a></li>
+    <li>链上只读调用（2026-10-28，公共 RPC）：WBTC Controller / Members / Factory、多签 <code>required()</code> 与 <code>getOwners()</code>；cbBTC 的 <code>owner</code> / <code>masterMinter</code>（以太坊、Base）；BSC 上 Binance-Peg USDC 的 <code>getOwner</code>、EIP-1967 代理槽和实现合约字节码</li>
+  </ol>
+  <p>核查日期 2026-10-28。L2BEAT 阶段、链表和限额变化很快，以官方页面为准。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // LayerZero：应用自己配置的 X-of-Y-of-N
+  const dv = (t, on) => `<div class="keyi${on ? ' on' : ''}">${t}</div>`;
+  A.lzdvn = {h:290,
+    b:[['src',2,6,30,40,'源链 · 你的应用'],['dvn',35,6,30,88,'DVN（验证网络）'],['dst',68,6,30,40,'目标链 · EndpointV2'],
+       ['ex',2,54,30,40,'Executor'],['app',68,54,30,40,'目标链 · 你的应用']],
+    it:[
+      {id:'cfg', h:'<div class="lbl">必须：A、B<br>可选：C、D、E 里 1 个</div>', x:17, y:26},
+      {id:'msg', h:chip('payloadHash','--link'), x:17, y:40, hide:1},
+      {id:'a', h:dv('A'), x:43, y:24}, {id:'b', h:dv('B'), x:57, y:24}, {id:'rq', h:'<div class="lbl m">必须</div>', x:50, y:38},
+      {id:'c', h:dv('C'), x:40, y:62}, {id:'d', h:dv('D'), x:50, y:62}, {id:'e', h:dv('E'), x:60, y:62}, {id:'op', h:'<div class="lbl m">可选 · 至少 1 个</div>', x:50, y:78},
+      {id:'st', h:'<span class="cell">等待确认</span>', x:83, y:26, hide:1},
+      {id:'exl', h:'<div class="lbl m">代付 gas 的服务</div>', x:17, y:74},
+      {id:'rcv', h:'<span class="cell">lzReceive(…)</span>', x:83, y:74, hide:1}],
+    s:[
+      {c:'应用先为这条路径配好安全策略：DVN A、B 必须确认，C、D、E 里至少再有 1 个确认。不同应用、不同路径可以配得完全不同。', lit:['src','dvn']},
+      {c:'应用调用 EndpointV2.send 发出消息。每个 DVN 都要独立检查这条消息的 payloadHash。', set:{msg:{hide:0}, st:{hide:0}}, lit:['src']},
+      {c:'DVN A 和 C 检查无误，在目标链上确认。A 是必须的，C 是可选的。B 还没确认，所以消息还不能执行。',
+       set:{a:{h:dv('A', 1)}, c:{h:dv('C', 1)}, st:{h:'<span class="cell">A ✓ · B … · 可选 1/1</span>'}}, lit:['dvn','dst']},
+      {c:'DVN B 也确认了。必须的到齐，可选的也够 1 个，达到门槛，这条消息可以被提交为“已验证”。',
+       set:{b:{h:dv('B', 1)}, st:{h:'<span class="cell" style="color:var(--ok)">已验证</span>'}}, lit:['dst']},
+      {c:'Executor 调用 lzReceive，把消息交给目标链上的应用。这一步其实谁都能调用，Executor 只是帮你代付目标链的 gas。', set:{rcv:{hide:0}}, lit:['ex','app']},
+      {c:'反过来：如果 B 一直不确认，消息就一直卡着，可选 DVN 再多也没用。必须的 DVN 太少不安全，太多又容易卡住。配置就是在这两者之间取舍。',
+       set:{b:{h:dv('B')}, rcv:{hide:1}, st:{h:'<span class="cell" style="color:var(--warn)">卡住：缺 B</span>'}}, bad:['dvn']},
+    ]};
+  // Across：中继先垫付，UMA 乐观结算
+  A.across = {h:280,
+    b:[['org',2,6,30,40,'源链 SpokePool'],['rel',35,6,30,40,'中继（relayer）'],['dst',68,6,30,40,'目标链 SpokePool'],['hub',2,56,96,38,'以太坊 HubPool + UMA']],
+    it:[
+      {id:'u', h:chip('用户 100 USDC','--usdc'), x:17, y:28},
+      {id:'r', h:chip('中继自己的钱','--accent'), x:50, y:28},
+      {id:'fl', h:'<div class="lbl g">已成交</div>', x:83, y:40, hide:1},
+      {id:'bd', h:chip('根包 + 保证金','--link'), x:30, y:76, hide:1},
+      {id:'ck', h:'<div class="lbl m">挑战期</div>', x:60, y:76, hide:1},
+      {id:'rf', h:chip('还款给中继','--accent','out'), x:50, y:28, hide:1}],
+    s:[
+      {c:'用户想把 A 链上的 100 USDC 换到 B 链。'},
+      {c:'用户在 A 链的 SpokePool 调用 depositV3：钱存进源链合约，同时写明想在 B 链收到多少。', set:{u:{x:17, y:38}}, lit:['org']},
+      {c:'某个中继看到这笔存款，几秒内在 B 链的 SpokePool 调用 fillV3Relay，用自己的钱付给用户。订单被标为“已成交”，不会被付两次。用户这时已经到账。',
+       set:{r:{x:83, y:28}, fl:{hide:0}}, lit:['rel','dst']},
+      {c:'后台：Dataworker 把这段时间所有链上的存款和成交逐笔核对，打包成一个根包，提交到以太坊的 HubPool，并押上保证金。', set:{bd:{hide:0}}, lit:['hub']},
+      {c:'进入挑战期。任何人发现根包有错，都可以通过 UMA 的乐观预言机发起争议。', set:{ck:{hide:0}}, lit:['hub']},
+      {c:'挑战期过去没人争议，根包最终确定。还款指令通过各链官方桥发到 SpokePool，中继拿回本金和手续费，还可以选在哪条链收。',
+       set:{ck:{h:'<div class="lbl g">已确定</div>'}, rf:{hide:0}}, lit:['hub','rel']},
+      {c:'用户几乎不承担风险（已经到账）；垫付风险在中继身上。整个协议的安全性取决于：错误的根包能不能在挑战期内被发现。', lit:['org','dst']},
+    ]};
+  // WBTC：商户申请 + 托管方确认；赎回先销毁，再由托管方放 BTC
+  A.wbtc = {h:290,
+    b:[['btc',2,4,46,92,'Bitcoin'],['mb',4,14,42,30,'商户的 BTC 地址'],['cb',4,60,42,30,'托管方的 BTC 地址'],
+       ['eth',52,4,46,92,'Ethereum'],['fa',54,14,42,30,'Factory 合约（请求记录）'],['mw',54,60,42,30,'商户的以太坊钱包']],
+    it:[
+      {id:'b1', h:chip('1 BTC','--btc'), x:25, y:32},
+      {id:'rq', h:'<span class="cell">待处理：1 BTC · txid 9f3a…</span>', x:75, y:32, hide:1},
+      {id:'w1', h:chip('1 WBTC','--btc','wr'), x:75, y:78, hide:1},
+      {id:'b2', h:chip('1 BTC','--btc'), x:25, y:78, hide:1}],
+    s:[
+      {c:'商户是经过 KYC 的机构，普通用户通过它们直接铸造和赎回 WBTC。商户手里有 1 BTC。', lit:['mb']},
+      {c:'① 商户把 1 BTC 转到托管方给它分配的 BTC 充值地址。这一步发生在比特币链上，以太坊完全不知道。', set:{b1:{y:78}}, lit:['cb']},
+      {c:'② 商户在以太坊上调用 Factory.addMintRequest(amount, btcTxid, btcDepositAddress)，把这笔 BTC 交易的哈希登记上去。合约只检查充值地址是否就是托管方为这个商户设置的那个。',
+       set:{rq:{hide:0}}, lit:['fa']},
+      {c:'③ 托管方自己去比特币链上核对：这笔交易真的到账了吗？以太坊合约看不到比特币，这一步完全靠托管方。核对无误后调用 confirmMintRequest，Controller 给商户铸出 1 WBTC。',
+       set:{rq:{h:'<span class="cell" style="color:var(--ok)">已确认</span>'}, w1:{hide:0}}, lit:['cb','mw']},
+      {c:'④ 赎回：商户调用 Factory.burn(amount)。WBTC 先被转给 Controller 销毁，同时登记商户的 BTC 收款地址，请求状态为“待处理”。',
+       set:{w1:{hide:1}, rq:{h:'<span class="cell">待处理：赎回 1 BTC</span>'}}, lit:['mw','fa']},
+      {c:'⑤ 托管方从自己的 BTC 地址转 1 BTC 给商户，再调用 confirmBurnRequest(requestHash, btcTxid)，把这笔比特币交易哈希写回以太坊。',
+       set:{b1:{hide:1}, b2:{hide:0, y:32}, rq:{h:'<span class="cell" style="color:var(--ok)">已放款 · txid 4c1e…</span>'}}, lit:['mb','fa']},
+      {c:'注意顺序：赎回时 WBTC 是先销毁的，BTC 后放。如果托管方一直不放款，商户在链上什么都不剩。合约能做的只是“记账 + 检查谁有权确认”，真正的信任全在托管方身上。', bad:['cb']},
+    ]};
+  Guide.mount(A);
+  // 总览表按类别筛选
+  const rows = document.querySelectorAll('#atTable tbody tr');
+  document.querySelectorAll('#atFilter .chip').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#atFilter .chip').forEach(x => x.setAttribute('aria-pressed', x === b));
+    rows.forEach(r => r.hidden = b.dataset.f !== 'all' && !r.dataset.c.split(' ').includes(b.dataset.f));
+  }));
+})();
+</script>
+</body>
+</html>

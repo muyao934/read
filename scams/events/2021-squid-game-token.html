@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Squid Game 代币：只能买不能卖｜区块链诈骗与骗局</title>
+<meta name="description" content="2021 年 10 月，匿名团队借 Netflix《鱿鱼游戏》的热度在 BNB Chain 上发行 SQUID 代币。一周里币价从约 1 美分涨到 2,800 多美元，买家却卖不出去；11 月 1 日开发者换走池子里的 BNB，币价几分钟内归零，据 Gizmodo 估计卷走约 338 万美元。本页讲白皮书里的“反倾销”规则、改过名字的可升级代理合约和识别方法。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-squid-game-token">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　<a href="../index.html#cat-rug">跑路与拉盘</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Squid Game 代币：只能买不能卖</h1>
+    <p class="lede">2021 年 10 月，一个匿名团队借 Netflix 剧集《鱿鱼游戏》的名气，在 BNB Chain 上发行了 SQUID 代币，说它是一款边玩边赚游戏的门票。一周里，SQUID 在 CoinMarketCap 上从约 1 美分涨到 2,800 多美元，买家却发现卖不出去。11 月 1 日，开发者把交易池里的 BNB 全部换走，币价几分钟内跌到不到 1 美分；据 Gizmodo 估计，他们卷走约 338 万美元。到 2026 年 11 月，没有找到有人因此被起诉的报道。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">SQUID 是 BNB Chain 上的一种代币，只在 PancakeSwap 等去中心化交易所交易。项目方的白皮书说，SQUID 是一款仿照《鱿鱼游戏》的在线游戏的门票，玩家交入场费，赢家拿奖池<a class="ref" href="#s12">[12]</a>。它和 Netflix 没有关系<a class="ref" href="#s8">[8]</a>。</p>
+        <p>10 月 28 日改版的白皮书加了一条“反倾销”规则：买入才能攒到卖出额度，想自由卖出，还要持有项目方另发的 Marbles 代币<a class="ref" href="#s13">[13]</a>。10 月 29 日起，推特上陆续有人说卖不掉 SQUID<a class="ref" href="#s5">[5]</a>，CoinMarketCap 在币种页面上挂出警告<a class="ref" href="#s6">[6]</a>，Gizmodo 直接称它是骗局<a class="ref" href="#s1">[1]</a>。币价照样上涨，BBC、Business Insider 等媒体报道了涨幅<a class="ref" href="#s2">[2]</a>。</p>
+        <p>2021 年 11 月 1 日（UTC），SQUID 从约 2,861 美元跌到三分之一美分，前后不到 10 分钟<a class="ref" href="#s5">[5]</a>。Gizmodo 估计开发者卷走约 338 万美元<a class="ref" href="#s2">[2]</a>；Wired 和 Forbes 报道，钱经混币器 Tornado Cash 转走<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。网站和社交账号当天消失<a class="ref" href="#s3">[3]</a>。</p>
+        <p>SQUID 的合约是一份可升级代理，函数名改过：管理员调用 <code>approveTo</code> 就能换掉代币的全部逻辑<a class="ref" href="#s15">[15]</a>。项目方请来的 Coinscope“审计”给了 92 分，报告里也写着“合约包含代理函数”<a class="ref" href="#s14">[14]</a>。美国消费者金融保护局（CFPB）2022 年 11 月的报告用这起事件举例，说明有的代币“被明确写成只能买、不能卖”<a class="ref" href="#s16">[16]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>一部剧和一波“蹭名气”的币</h3>
+        <p>《鱿鱼游戏》2021 年 9 月在 Netflix 上线，讲一群负债累累的人为奖金参加致命的儿童游戏。Netflix 告诉 CNN，到 10 月它已被 1.11 亿个账户观看，是 Netflix 有史以来规模最大的剧集首播<a class="ref" href="#s8">[8]</a>。同一时期，以狗为主题的 Shiba Inu 不到一个月涨了约 900%，挤进市值前十<a class="ref" href="#s5">[5]</a>。</p>
+        <p>借影视作品的名字发币并不新鲜。Gizmodo 写道，同年早些时候有一种叫 Mando 的币用了 Disney+ 剧集《曼达洛人》的图片，结果也是卷款跑路<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>谁都能发币、建池子</h3>
+        <p>在 BNB Chain 上发一种代币，只要部署一份合约；再往 PancakeSwap 存一笔 BNB 和代币，就有了交易池，任何人都能来买。这和 2017 年的 ICO 一脉相承：ERC-20 统一了代币接口以后，发币只要部署一份合约，见大事记的<a href="../../milestones/events/2017-ico-boom.html">ICO 狂潮</a>。新加坡 Openmining 的 Jinnan Ouyang 对 BBC 说，新币可以在创建当天就上去中心化交易所，没有监管，也没有尽职调查，“你可能在从任何怀有任何目的的人手里买币”<a class="ref" href="#s4">[4]</a>。PISA Research 的 Patrick McCorry 对 Wired 说，匿名团队的新项目普遍有这种风险<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>项目方怎样包装</h3>
+        <p>项目网站 squidgame.cash 2021 年 10 月 12 日注册<a class="ref" href="#s14">[14]</a>。白皮书说，Squid Game 是一个“边玩边赚”的平台，设六关游戏，入场费从第一关的 456 枚 SQUID 涨到第六关的 15,000 枚 SQUID 加一个 NFT；入场费的 10% 进开发者钱包，90% 进奖池，“加入的人越多，奖池就越大”<a class="ref" href="#s12">[12]</a>。白皮书还特意说明，游戏“显然不会有致命的后果”，玩家只会体验到“赢得奖励的喜悦和输钱的悲伤”<a class="ref" href="#s10">[10]</a>。</p>
+        <p>网站贴着团队成员的照片和名字。Coinscope 的报告写，这些人没有附上任何社交账号的链接<a class="ref" href="#s14">[14]</a>。Gizmodo 发现，网站上还有一段 Elon Musk 的“背书”，其实是他在谈这部剧；Telegram 频道不让外人发言，推特账号不让人回复<a class="ref" href="#s1">[1]</a>。白皮书的营销一节写，会让表情包“刷满”各个社交平台，计划和 200 多个社群、100 位网红合作，搞 5 次以上空投<a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span>其他</span></p>
+        <ol class="timeline">
+          <li><time>2021-09</time><div class="ev">《鱿鱼游戏》在 Netflix 上线<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2021-10-12</time><div class="ev">squidgame.cash 注册，注册信息设了隐私保护<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2021-10-13</time><div class="ev">白皮书初版成稿：写了预售价、挂牌价和三年流动性锁定，没有任何卖出限制<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>2021-10-20</time><div class="ev">14:30 UTC 在 DxSale 预售，每 BNB 换 80 万枚 SQUID；后来的白皮书说“1 秒卖光”<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk"><time>2021-10-21</time><div class="ev">14:30 UTC 在 PancakeSwap 挂牌，每 BNB 换 70 万枚<a class="ref" href="#s13">[13]</a>。同日，代理合约的源码在 BscScan 提交验证<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2021-10-26</time><div class="ev">SQUID 约 0.012 美元<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk key"><time>2021-10-28</time><div class="ev">白皮书改版，加入“反倾销”规则和 Marbles 代币：卖出要靠买入攒额度，或者持有 Marbles<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2021-10-29</time><div class="ev">推特上有人说卖不掉，有人回复要先买 marbles<a class="ref" href="#s5">[5]</a>。CoinMarketCap 警告用户无法在 PancakeSwap 卖出<a class="ref" href="#s6">[6]</a>。Gizmodo 称它是骗局，当时 4.46 美元<a class="ref" href="#s1">[1]</a>；Business Insider 报道它涨到 9.19 美元<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2021-10-30</time><div class="ev">13.60 美元<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2021-10-31</time><div class="ev">到这天晚上，涨幅超过 310,000%<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>2021-11-01</time><div class="ev">推特以“异常活动”为由限制项目账户<a class="ref" href="#s3">[3]</a><a class="ref" href="#s6">[6]</a>。开发者换走池子里的 BNB，SQUID 从约 2,861 美元几分钟内跌到不到 1 美分<a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2021-11-01</time><div class="ev">开发者在 Telegram 说不再运营项目<a class="ref" href="#s7">[7]</a>；网站、白皮书和社交账号下线<a class="ref" href="#s3">[3]</a>。CertiK 发警报，估计卷走 210 万美元以上<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2021-11-02</time><div class="ev">BBC 引 Gizmodo，开发者卷走约 338 万美元<a class="ref" href="#s4">[4]</a>。《华盛顿邮报》发给开发者的邮件被退回<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2021-12-16</time><div class="ev">Chainalysis 估计，2021 年 rug pull 骗走超过 28 亿美元的加密资产<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2022-11</time><div class="ev">CFPB 的投诉报告以 SQUID 为例，说明“只能买不能卖”的代币<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2024-12-27</time><div class="ev">第二季上线次日，PeckShield 警告一批同名骗局代币<a class="ref" href="#s19">[19]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>SQUID 只有一个像样的交易池：PancakeSwap 上的 SQUID-BNB 池。买家付的 BNB 进了池子，想卖出时却被规则挡住；开发者手里握着大量 SQUID，还握着合约的管理员权限。11 月 1 日，开发者把 SQUID 卖进池子，换走了买家存进去的 BNB。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 410" role="img" aria-labelledby="sq-flow-t sq-flow-d">
+            <title id="sq-flow-t">SQUID 买家的 BNB 怎样被换走</title>
+            <desc id="sq-flow-d">买家用 BNB 在 PancakeSwap 的 SQUID-BNB 池里买入 SQUID，价格只涨不跌。买家想卖出时，白皮书的“反倾销”规则要求先攒够卖出额度或持有 Marbles 代币，多数人卖不出去，BNB 留在池里越积越多。匿名开发者持有大量 SQUID，还掌握代理合约的管理员权限。2021 年 11 月 1 日，开发者把 SQUID 卖进池子，换走约 338 万美元的 BNB，据报道随后经 Tornado Cash 转出。池子见底，SQUID 几分钟内跌到不到 1 美分。</desc>
+            <defs>
+              <marker id="sq-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="sq-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="40" y="20" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="200" y="46" text-anchor="middle">买家</text>
+            <text class="d-t s" x="200" y="68" text-anchor="middle">用 BNB 买入 SQUID，价格只涨不跌</text>
+            <rect class="d-box atk" x="400" y="20" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="560" y="46" text-anchor="middle">匿名开发者</text>
+            <text class="d-t s" x="560" y="68" text-anchor="middle">持有大量 SQUID，掌握代理合约的管理员权限</text>
+            <rect class="d-box" x="190" y="150" width="380" height="64" rx="3"/>
+            <text class="d-t b" x="380" y="176" text-anchor="middle">PancakeSwap 上的 SQUID-BNB 池</text>
+            <text class="d-t s" x="380" y="198" text-anchor="middle">买家付的 BNB 留在池里，越积越多</text>
+            <rect class="d-box" x="40" y="290" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="200" y="316" text-anchor="middle">买家想卖出</text>
+            <text class="d-t s" x="200" y="338" text-anchor="middle">没有卖出额度或 Marbles，就卖不了</text>
+            <rect class="d-box atk" x="400" y="290" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="560" y="316" text-anchor="middle">11 月 1 日：池里的 BNB 被换走</text>
+            <text class="d-t s" x="560" y="338" text-anchor="middle">约 338 万美元，据报道经 Tornado Cash 转出</text>
+            <line class="d-line" x1="240" y1="84" x2="330" y2="146" marker-end="url(#sq-ah)"/>
+            <line class="d-line atk" x1="520" y1="84" x2="430" y2="146" marker-end="url(#sq-ah-atk)"/>
+            <line class="d-line dash" x1="330" y1="214" x2="240" y2="286" marker-end="url(#sq-ah)"/>
+            <line class="d-line atk" x1="430" y1="214" x2="520" y2="286" marker-end="url(#sq-ah-atk)"/>
+            <text class="d-t s" x="268" y="118" text-anchor="end">存入 BNB</text>
+            <text class="d-t s atk" x="492" y="118" text-anchor="start">卖出大量 SQUID</text>
+            <text class="d-t s" x="268" y="256" text-anchor="end">卖出被拒</text>
+            <text class="d-t s atk" x="492" y="256" text-anchor="start">换走 BNB</text>
+            <text class="d-t s" x="380" y="392" text-anchor="middle">池子见底，SQUID 几分钟内跌到不到 1 美分，买家手里的币换不回钱</text>
+          </svg>
+          </div>
+          <figcaption>红色是开发者一方和被卷走的钱，虚线表示多数买家卖不出去。卖出规则据 10 月 28 日的白皮书<a class="ref" href="#s13">[13]</a>，开发者换走池中 BNB 的方式据 Wired 采访的 Patrick McCorry<a class="ref" href="#s5">[5]</a>，金额据 Gizmodo<a class="ref" href="#s2">[2]</a>，Tornado Cash 据 Wired 和 Forbes<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</figcaption>
+        </figure>
+        <h3>白皮书里的卖出规则</h3>
+        <p>10 月 13 日成稿的初版白皮书只写了预售价和挂牌价，没有提到任何卖出限制<a class="ref" href="#s12">[12]</a>。10 月 28 日，也就是挂牌一周后，网站换上新版白皮书，多出“How to Sell SQUID?”一节<a class="ref" href="#s13">[13]</a>。两版的差别如下：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>项目</th><th>10 月 13 日初版<a class="ref" href="#s12">[12]</a></th><th>10 月 28 日新版<a class="ref" href="#s13">[13]</a></th></tr></thead>
+          <tbody>
+            <tr><td>预售</td><td>10 月 20 日 14:30 UTC，DxSale，每 BNB 80 万枚</td><td>同左，另写“1 秒卖光”</td></tr>
+            <tr><td>挂牌</td><td>PancakeSwap，每 BNB 70 万枚</td><td>同左，写明 10 月 21 日 14:30 UTC</td></tr>
+            <tr><td>卖出规则</td><td>没有</td><td>买入按 2:1 释放卖出额度；卖出上限是池中买入总额的一半</td></tr>
+            <tr><td>Marbles</td><td>只是第四关游戏的名字</td><td>另一种代币，持有才能“自由交易 SQUID”，卖出时自动烧掉</td></tr>
+            <tr><td>交易池</td><td>没有限制</td><td>只支持 SQUID-BNB 池，给 SQUID 建其他池子的用户“会受到惩罚”</td></tr>
+            <tr><td>流动性锁定</td><td>在 DxSale 锁三年，2024 年 10 月 20 日解锁</td><td>同左</td></tr>
+            <tr><td>机器人</td><td>机器人的交易自动加入黑名单</td><td>同左</td></tr>
+          </tbody>
+        </table></div>
+        <p>新版白皮书把卖出限制叫作“创新的反倾销机制”。原文写：“在市场上买入，会按 2:1 的比例释放卖出额度。此外，卖出 SQUID 的上限是池中买入总额的 1/2，所以池子里没有卖出额度了，即使连续小额买入两次，你也不能再卖。”<a class="ref" href="#s13">[13]</a> 白皮书没有说明额度怎样计算、记在哪里，也没有给出合约代码。按这段话，卖出能力取决于买入，买家要想卖，得先再买。</p>
+        <p>另一条路是 Marbles。白皮书说它仿照 Axie Infinity 的 SLP，是 BNB Chain 上的另一种代币，“持有 Marbles 的人有权自由交易 SQUID”；每次卖出 SQUID，钱包里的 Marbles 会被自动烧掉一部分，Marbles-WBNB 池里也烧掉等量的 Marbles<a class="ref" href="#s13">[13]</a>。白皮书没写 Marbles 从哪里来，只说“不用暴力地拿到 Marbles 是 Squid Game 的关键”。Wired 采访的一名买家说，10 月 29 日他在推特上看到有人解释，Marbles 要通过项目方组织的付费游戏获得<a class="ref" href="#s5">[5]</a>。也就是说，想把 SQUID 卖掉，先要再付钱给项目方。</p>
+        <p>新版白皮书还要求用户只用 PancakeSwap 的 SQUID-BNB 池，在设置里打开“Disable Multihops”，并警告给 SQUID 建其他池子的用户会“受到惩罚”<a class="ref" href="#s13">[13]</a>。这几条一起堵住了绕开主池卖出的路。</p>
+        <p>CNET 写道，这条“反倾销”规则写在白皮书里，名义上是为了保证币价健康上涨，实际效果是买了就卖不掉<a class="ref" href="#s9">[9]</a>。只涨不跌的价格曲线也由此而来：Wired 采访的买家说，图上的价格从来没有往下走过，这是他后来才意识到的破绽<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>合约：一份改过名字的可升级代理</h3>
+        <p>SQUID 的合约地址是 <span class="addr">0x87230146E138d3F296a9a77e497A2A83012e9Bc5</span>。它的源码 2021 年 10 月 21 日在 BscScan 提交验证，Sourcify 也有完全匹配的记录<a class="ref" href="#s15">[15]</a>。实际部署的合约叫 <code>SQUID</code>，本身没有任何代币逻辑。它是一份 EIP-1967 格式的可升级代理：所有调用都通过 <code>delegatecall</code> 转给另一个“逻辑合约”执行，逻辑合约的地址存在一个固定的存储槽里，管理员可以随时换掉它。</p>
+        <p>通用的写法里，这几样东西叫 implementation、admin 和 <code>upgradeTo</code>。SQUID 的合约把它们改成了 game、sir 和 <code>approveTo</code>：</p>
+<pre class="code"><code><span class="c">// SQUID.sol，合约 SQUID（节选）</span>
+contract SQUID is ApprovedEngine {
+    constructor(
+        address _game,      <span class="c">// 逻辑合约地址（通用写法叫 implementation）</span>
+        address _sir        <span class="c">// 管理员地址（通用写法叫 admin）</span>
+    ) public payable ApprovedEngine(_game) {
+        assert(SIR_SLOT == bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1));
+        <span class="c">// ……把 _sir 写进 EIP-1967 的 admin 存储槽……</span>
+    }
+    modifier ifSir() {
+        if (msg.sender == _sir()) { _; } else { _fallback(); }
+    }
+    <span class="c">// 只有管理员能调用：换掉逻辑合约，作用等同通用写法的 upgradeTo</span>
+<span class="bad">    function approveTo(address newGame) external ifSir {</span>
+<span class="bad">        _approveTo(newGame);</span>
+<span class="bad">    }</span>
+}</code></pre>
+        <p class="code-cap">出处：BNB Chain 合约 0x87230146E138d3F296a9a77e497A2A83012e9Bc5 的验证源码（solc 0.6.12），经 Sourcify 取得<a class="ref" href="#s15">[15]</a>。<code>ifSir</code> 一行原文分几行写，这里合并；中文注释为本站所加。</p>
+        <p>父合约 <code>ApprovedEngine</code> 里，<code>_approveTo</code> 调用 <code>_setImplementation</code>，把新地址写进 <code>keccak256("eip1967.proxy.implementation") - 1</code> 这个存储槽，然后发出 <code>Upgraded</code> 事件；<code>Engine</code> 的 <code>fallback</code> 把每一次 <code>transfer</code>、<code>approve</code> 都转给这个地址执行<a class="ref" href="#s15">[15]</a>。所以，用户在区块浏览器上读到的验证源码，决定不了这枚代币实际怎样运作。管理员换一个逻辑合约，转账、卖出、黑名单的规则就全变了。</p>
+        <p>同一份源码文件里还附了一个 <code>SQUIDToken</code> 合约：<code>initialize</code> 给调用者铸造 8 亿枚 SQUID，在 PancakeSwap 建好 SQUID-BNB 交易对；转账前的检查 <code>_beforeTokenTransfer</code> 是空的，没有任何卖出限制<a class="ref" href="#s15">[15]</a>。代理在某个时刻实际指向哪一份逻辑合约、有没有换过，本站没有找到已发表的分析，这里不做推断。11 月 1 日 CertiK 的警报写的是“Token unverified contract”<a class="ref" href="#s9">[9]</a>，可能指的是没有公开源码的逻辑合约，也没有核实。</p>
+        <p>项目方挂在网站上的“审计报告”出自 Coinscope，总分 92/100，评为低风险的金牌。报告的合约部分只有两句：“合约代码已在 BscScan 公开并验证”，“合约包含代理函数”<a class="ref" href="#s14">[14]</a>。它查的是整数溢出、重入这些通用项目，没有说明代理意味着什么。报告开头的免责声明写，Coinscope 不保证项目不会撤走流动性、卖掉团队持有的币或采用任何其他退出骗局手段<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>“锁定三年”为什么没用</h3>
+        <p>两版白皮书都说，SQUID 的流动性会在 DxSale 锁三年，到 2024 年 10 月 20 日才解锁，用来防止池子被“突然改动”<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。锁住的是流动性凭证，也就是从池子里按份额取回资金的权利。它管不了另一种取钱的方法：把手里的 SQUID 卖进池子。</p>
+        <p>McCorry 对 Wired 解释，团队发行代币、自己持有大部分供应量，就能把这些币卖进池子，换成 BNB；“如果你持有那么多代币，基本上就可以通过交易把池子里的 BNB 全部拿走”<a class="ref" href="#s5">[5]</a>。买家的卖单被规则挡住，开发者的卖单没有被挡。池子里的 BNB 是买家一笔笔存进去的，开发者的 SQUID 是自己发行的。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>起盘：10 月 20 日至 26 日</h3>
+        <p>SQUID 10 月 20 日 14:30 UTC 在 DxSale 预售，每 BNB 换 80 万枚；第二天同一时刻在 PancakeSwap 挂牌，每 BNB 换 70 万枚，比预售价贵一些<a class="ref" href="#s13">[13]</a>。Gizmodo 找到一段 10 月 20 日发在 YouTube 上的空投宣传视频<a class="ref" href="#s1">[1]</a>。到 10 月 26 日（周二），SQUID 约 0.012 美元<a class="ref" href="#s10">[10]</a>。CNET 把上线日期写成 10 月 26 日、挂牌价写成 12 美分<a class="ref" href="#s9">[9]</a>，和白皮书、《卫报》都对不上，本页不采用。</p>
+        <h3>暴涨：10 月 27 日至 31 日</h3>
+        <p>10 月 27 日，推特上有人在一位加密货币博主的帖子下面回复，说 SQUID 已经涨了 1,000%，“最好在 1 美元之前买”，当时每枚 72 美分<a class="ref" href="#s5">[5]</a>。《印度斯坦时报》引 CoinMarketCap 的数据，周四到周五 24 小时里涨了 2,400%<a class="ref" href="#s11">[11]</a>。10 月 28 日，网站换上加了“反倾销”规则的新版白皮书<a class="ref" href="#s13">[13]</a>。</p>
+        <p>10 月 29 日，Business Insider 报道 SQUID 一周涨了 75,000% 以上，报 9.19 美元，还引用了白皮书里“预售 1 秒卖光”的说法<a class="ref" href="#s10">[10]</a>。Gizmodo 点名批评 BBC、Business Insider、Yahoo、Fortune 和 CNBC 不加分辨地报道涨幅<a class="ref" href="#s2">[2]</a>。英国加密财富平台 Dacxi 的 Katherine Wooller 对 Wired 说，这些报道没有指出 SQUID 和 Netflix 没有官方关系，给它披上了“不应有的体面外衣”<a class="ref" href="#s5">[5]</a>。10 月 30 日（周六）报 13.60 美元<a class="ref" href="#s11">[11]</a>；到 31 日晚上，涨幅超过 310,000%<a class="ref" href="#s3">[3]</a>。Wired 采访的买家说，他 10 月 31 日花 50 美元买了 marbles，想试试能不能把钱取出来；币价涨到约 600 美元时，他最初投入的 300 美元在账面上值 20 万美元<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>警告：10 月 29 日起</h3>
+        <p>10 月 29 日早上，推特的 $SQUID 话题下有人说卖不掉手里的币，另一些人回复说要先买 marbles<a class="ref" href="#s5">[5]</a>。同一天，Gizmodo 发文称 SQUID“明显是骗局”：钱能放进去，却没有证据能取出来<a class="ref" href="#s1">[1]</a>。CoinMarketCap 在 SQUID 的页面上挂出警告，说“收到多份报告，用户无法在 PancakeSwap 卖出这枚代币”，这个项目“不太可能和官方 IP 有关”，请用户“自行尽职调查，交易时保持谨慎”<a class="ref" href="#s6">[6]</a>；《华盛顿邮报》和 CNN 都写，它提醒交易者“极度谨慎”<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。警告没有挡住币价：Wired 采访的买家说，图上的价格一直在涨<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>卷款：11 月 1 日</h3>
+        <p>11 月 1 日，推特以“异常活动”为由限制了项目的账户<a class="ref" href="#s3">[3]</a><a class="ref" href="#s6">[6]</a>。SQUID 冲到约 2,861 美元后掉头。Gizmodo 写，美东时间约早上 5 点 40 分跌到 0<a class="ref" href="#s2">[2]</a>；Forbes 写，约早上 6 点、15 分钟之内跌到不到半美分<a class="ref" href="#s6">[6]</a>；Wired 写，10 分钟内跌到三分之一美分<a class="ref" href="#s5">[5]</a>。有人在直播中录下了崩盘的过程<a class="ref" href="#s9">[9]</a>。</p>
+        <p>开发者在 Telegram 发帖说，“Squid Game 开发者不想继续运营这个项目”，因为被“骗子”弄得“很沮丧”、“压力太大”。最后一条消息是：“再次为给你们带来的不便道歉……如果之后有什么奇怪的东西冒出来，别理它。谢谢。”<a class="ref" href="#s7">[7]</a> 网站、Medium 账号和白皮书随后下线<a class="ref" href="#s3">[3]</a><a class="ref" href="#s9">[9]</a>。11 月 2 日，《华盛顿邮报》发给开发者的邮件被退回<a class="ref" href="#s7">[7]</a>；Wired 发到白皮书上客服邮箱的采访请求也没有回音<a class="ref" href="#s5">[5]</a>。</p>
+        <div class="note doubt"><span class="h">崩盘的时刻</span><p>Gizmodo 的“美东约 5 点 40 分”和 Forbes 的“美东约 6 点”，折合 UTC 9 点 40 分到 10 点。Wired 写的是“UTC 下午 1 点 38 分刚过”<a class="ref" href="#s5">[5]</a>，比 Gizmodo 的发稿时间（UTC 11 点 10 分）还晚，和另两家对不上<a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>。几种说法都落在 2021 年 11 月 1 日（UTC），本站按这一天记。</p></div>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <p>开发者换走的是池子里的 BNB，也就是买家买入时付的钱。Wired 写，BscScan 上有 8 个地址各持有 1% 以上的 SQUID；其中一个被 Etherscan 标记为卷款的账户持有 5%，向另一个钱包转了 336 万美元<a class="ref" href="#s5">[5]</a>。Gizmodo 的报道把“卷走约 338 万美元”链到了 BscScan 上的地址 <span class="addr">0x34400280a169f4685193926a513618cf7fe7f0aa</span><a class="ref" href="#s2">[2]</a>。这个地址属于谁，没有公开的结论。</p>
+        <p>据 Forbes，用户在 11 月 1 日注意到钱包动向，开发者换出约 250 万美元的 BNB，并用 Tornado Cash 隐藏交易细节<a class="ref" href="#s6">[6]</a>。Wired 也写，骗子用 Tornado Cash 掩盖去向<a class="ref" href="#s5">[5]</a>。Tornado Cash 是一种混币器：大家把同样面额的币存进一个合约，再用另一个地址取出，链上就看不出存取的对应关系。美国财政部的海外资产控制办公室（OFAC）2022 年 8 月制裁了它，见大事记的<a href="../../milestones/events/2022-tornado-sanctions.html">OFAC 制裁 Tornado Cash</a>。</p>
+        <p>本站没有找到执法机构、Chainalysis、Elliptic 或 ZachXBT 等对这笔钱的后续追踪报告，也没有找到冻结或追回的报道。Chainalysis 写道，诈骗地址转出的加密资产大多最后流到主流交易所<a class="ref" href="#s17">[17]</a>，这是对 2021 年全部诈骗的统计，没有点名 SQUID。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>谁买了 SQUID</h3>
+        <p>买家是散户，多数通过推特、Telegram 和媒体报道知道 SQUID。项目的推特账号被限制前有 5.7 万多名关注者，Telegram 频道有 7.1 万多名订阅者<a class="ref" href="#s7">[7]</a>。Wired 写，BscScan 上共有 43,455 个地址和 SQUID 有关<a class="ref" href="#s5">[5]</a>。这是地址数，不是人数：一个人可以有多个地址，开发者自己的地址、交易池和合约也算在里面。没有机构公布过受害人数。</p>
+        <p>公开报道过的个案损失都不大。《卫报》转述，一名匿名投资者对 CoinMarketCap 说，他投了 5,000 美元，“全没了”<a class="ref" href="#s3">[3]</a>。Wired 采访的一名澳大利亚买家从 2017 年起交易加密货币，10 月 28 日买入 300 美元，账面上一度接近 100 万美元，最后亏掉 300 美元。他说自己不怪媒体，“想要去监管的人，出了这种事就没法抱怨”<a class="ref" href="#s5">[5]</a>。</p>
+        <p>康奈尔大学的经济学家 Eswar Prasad 对 BBC 说，这是恶意的加密货币推手引诱、利用天真散户的许多手法之一；公开的拉盘砸盘在加密世界很普遍，不少投资者明知风险也跳进去，想赶在崩盘前卖掉赚一笔<a class="ref" href="#s4">[4]</a>。SQUID 的规则恰好让散户卖不出去。</p>
+        <h3>各家的数字</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>说法</th><th>口径</th></tr></thead>
+          <tbody>
+            <tr><td>CertiK Skynet，11 月 1 日<a class="ref" href="#s9">[9]</a></td><td>卷走 210 万美元以上</td><td>当天的第一批估计，《卫报》和 CNN 也用这个数<a class="ref" href="#s3">[3]</a><a class="ref" href="#s8">[8]</a></td></tr>
+            <tr><td>Forbes，11 月 1 日<a class="ref" href="#s6">[6]</a></td><td>约 250 万美元</td><td>开发者换出的 BNB</td></tr>
+            <tr><td>《华盛顿邮报》，11 月 2 日<a class="ref" href="#s7">[7]</a></td><td>约 330 万美元</td><td>“据链上记录”</td></tr>
+            <tr><td>Wired，11 月 2 日<a class="ref" href="#s5">[5]</a></td><td>336 万美元</td><td>从项目里抽走、转到另一个钱包的金额</td></tr>
+            <tr><td>Gizmodo，11 月 1 日更新<a class="ref" href="#s2">[2]</a></td><td>约 338 万美元</td><td>最初估 210 万美元，后来更正；BBC 引用这个数<a class="ref" href="#s4">[4]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">市值不是损失</span><p>报道里的市值从几百万到几十亿美元都有。Business Insider 10 月 29 日写完全稀释市值约 7.22 亿美元<a class="ref" href="#s10">[10]</a>；《印度斯坦时报》10 月 30 日写市值超过 40 亿，没有注明币种<a class="ref" href="#s11">[11]</a>；Forbes 引 CoinMarketCap，15 分钟里抹掉 60 亿美元市值<a class="ref" href="#s6">[6]</a>；CNN 引 CoinMarketCap 却写，卷款前的市值只比 200 万美元多一点<a class="ref" href="#s8">[8]</a>。市值是最后一笔成交价乘以代币数量。SQUID 的大部分币卖不出去，池子里的 BNB 只有几百万美元，最后成交价再高，也换不出这么多钱。本站按约 338 万美元记这起事件的规模，它是被换走的买家资金，不代表买家的账面损失。</p></div>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>到 2026 年 11 月，本站没有找到任何国家的执法机构就 SQUID 起诉、逮捕、扣押或退赔的公开报道，开发者的身份没有公开。项目的网站注册信息设了隐私保护<a class="ref" href="#s14">[14]</a>，白皮书上的客服邮箱不回复<a class="ref" href="#s5">[5]</a>，网站上的团队成员只有照片和名字，没有附社交账号的链接<a class="ref" href="#s14">[14]</a>。</p>
+        <p>事发前后，出手的是平台和行业：推特限制了项目账户<a class="ref" href="#s3">[3]</a>，CoinMarketCap 在币种页面挂了警告<a class="ref" href="#s6">[6]</a>，CertiK 在卷款当天发了社区警报<a class="ref" href="#s9">[9]</a>。这些都没有法律效力，只能提醒后来的人。Netflix 告诉 CNN，它和这枚代币没有关系<a class="ref" href="#s8">[8]</a>。</p>
+        <p>SQUID 后来出现在监管机构的文件里。CFPB 2022 年 11 月的加密资产投诉报告写，相当一部分代币被认为是骗局，例如发生过 rug pull 的代币，以及“被明确写成只能买、不能卖”的代币；后一类的出处就是 Wired 关于 SQUID 的报道<a class="ref" href="#s16">[16]</a>。Chainalysis 估计，2021 年 rug pull 骗走超过 28 亿美元的加密资产，占全年诈骗收入的 37%，2020 年只占 1%；其中约九成来自土耳其交易所 <a href="2021-thodex.html">Thodex</a>，其余几乎都是 DeFi 项目，第二大的是 <a href="2021-anubisdao.html">AnubisDAO</a><a class="ref" href="#s17">[17]</a>。它把原因归结为：在以太坊等链上发一种新币便宜又容易，不经代码审计就能上去中心化交易所<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>同名代币卷土重来</h3>
+        <p>2024 年 12 月 26 日《鱿鱼游戏》第二季上线后，各条链上又冒出一批同名代币。区块链安全公司 PeckShield 12 月 27 日警告，骗局代币正在“到处流传”；其中一枚部署在 Base 上，最大的持有者就是部署者本人，上线以来已经跌了 99%。Solana 上也有类似的代币<a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">买之前先确认能卖</span>
+          <ul>
+            <li>SQUID 最大的破绽是买了卖不掉。Gizmodo 的建议是，买一种加密货币之前，最要紧的是先弄清楚买了以后能不能卖，价格倒在其次<a class="ref" href="#s2">[2]</a>。CoinMarketCap 的科普文章把这类合约单列为一种 rug pull：代币被写成只能买、不能卖，团队把自己的币卖给买家，买家永远拿不回钱<a class="ref" href="#s18">[18]</a>。</li>
+            <li>价格曲线只涨不跌，本身就是警报。正常的交易有买有卖，价格会来回波动；没人能卖，价格才会一路向上<a class="ref" href="#s5">[5]</a>。</li>
+            <li>“反倾销”“卖出额度”“持有某种代币才能卖”，说的都是同一件事：卖不卖得掉由项目方说了算。SQUID 要卖出，要么先再买，要么先拿到只在项目方付费游戏里才有的 Marbles<a class="ref" href="#s5">[5]</a><a class="ref" href="#s13">[13]</a>。</li>
+            <li>有人在社区里提醒“卖不掉”，或者数据网站挂出警告，就该当真。CoinMarketCap 的警告比崩盘早了三天<a class="ref" href="#s6">[6]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">规则、合约和“审计”</span>
+          <ul>
+            <li>挂牌以后才加出来的规则要格外小心。SQUID 的卖出限制不在 10 月 13 日的初版白皮书里，挂牌一周后才写进去<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。</li>
+            <li>合约“已验证”不等于规则看得见。SQUID 验证的是一份可升级代理，管理员调用 <code>approveTo</code> 就能换掉全部逻辑<a class="ref" href="#s15">[15]</a>。区块浏览器上看到 <code>delegatecall</code>、implementation、admin 这类结构，要问清楚谁能升级、能不能随时升级。</li>
+            <li>“审计”分数说明不了能不能卖。Coinscope 给 SQUID 打了 92 分，自己写明合约有代理函数，也写明不保证项目不会跑路<a class="ref" href="#s14">[14]</a>。</li>
+            <li>“流动性锁定”只管流动性凭证。团队手里握着大量代币时，照样可以把币卖进池子，把买家的钱换走<a class="ref" href="#s5">[5]</a>。要看的还有代币集中在谁手里：SQUID 有 8 个地址各持有 1% 以上<a class="ref" href="#s5">[5]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">包装上的破绽</span>
+          <ul>
+            <li>借热门 IP 的名字，却说不清和版权方是什么关系。CoinMarketCap 当时就提醒，SQUID 不太可能和官方 IP 有关<a class="ref" href="#s6">[6]</a>，Netflix 后来也说和它无关<a class="ref" href="#s8">[8]</a>。</li>
+            <li>网站域名刚注册几天，团队只有照片和名字，没有能核对的社交账号<a class="ref" href="#s14">[14]</a>；网站上放着名人的假背书，Telegram 不让发言，推特不让回复<a class="ref" href="#s1">[1]</a>。</li>
+            <li>白皮书错字连篇，还写着“加入的人越多，奖池就越大”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s12">[12]</a>。收益靠后来者的入场费，这是资金盘的说法。</li>
+            <li>媒体报道涨幅不代表项目可信。Gizmodo 和 Wired 都批评，主流媒体报道 SQUID 暴涨时没有核实它能不能卖、和 Netflix 有没有关系<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a>。下一部热门剧上线时，同样的套路还会再来：2024 年第二季上线第二天，PeckShield 就发出了警告<a class="ref" href="#s19">[19]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Gizmodo（Matt Novak），《New Squid Game Cryptocurrency Launches as Obvious Scam》，2021-10-29。<a href="https://gizmodo.com/new-squid-game-cryptocurrency-launches-as-obvious-scam-1847961584">gizmodo.com</a></li>
+          <li id="s2">Gizmodo（Matt Novak），《Squid Game Cryptocurrency Scammers Make Off With $3.3 Million》，2021-11-01。<a href="https://gizmodo.com/squid-game-cryptocurrency-scammers-make-off-with-2-1-m-1847972448">gizmodo.com</a></li>
+          <li id="s3">The Guardian（Lauren Aratani），《Squid Game cryptocurrency collapses in apparent scam》，2021-11-01。<a href="https://www.theguardian.com/technology/2021/nov/01/squid-game-cryptocurrency-scam-fears-investors">theguardian.com</a></li>
+          <li id="s4">BBC News，《Squid Game crypto token collapses in apparent scam》，2021-11-02。<a href="https://www.bbc.com/news/business-59129466">bbc.com</a></li>
+          <li id="s5">Wired UK（Chris Stokel-Walker），《How a Squid Game Crypto Scam Got Away With Millions》，2021-11-02（Internet Archive 存档）。<a href="https://web.archive.org/web/20231007165900/https://www.wired.co.uk/article/squid-game-crypto-scam">web.archive.org</a></li>
+          <li id="s6">Forbes（Jonathan Ponciano），《Viral Squid Game Cryptocurrency Crashes 100% In Minutes After Founders Reportedly Run Away With $2.5 Million》，2021-11-01（Internet Archive 存档）。<a href="https://web.archive.org/web/20231007165900/https://www.forbes.com/sites/jonathanponciano/2021/11/01/viral-squid-game-cryptocurrency-crashes-100-in-minutes-after-founders-reportedly-run-away-with-25-million/">web.archive.org</a></li>
+          <li id="s7">The Washington Post（Amy Cheng），《‘Squid Game’-inspired cryptocurrency that soared by 23 million percent now worthless after apparent scam》，2021-11-02（Internet Archive 存档）。<a href="https://web.archive.org/web/20231115064935/https://www.washingtonpost.com/world/2021/11/02/squid-game-crypto-rug-pull/">web.archive.org</a></li>
+          <li id="s8">CNN Business（Jordan Valinsky），《Squid Game crypto plunges to $0 after scammers steal $2.1 million from investors》，2021-11-01，WRAL 转载。<a href="https://www.wral.com/archive/19956137/">wral.com</a></li>
+          <li id="s9">CNET（Daniel Van Boom），《‘Squid Game’ cryptocurrency scams $2 million after creators vanish》，2021-11-01（美东时间），文中嵌入 CertiK Skynet 当天的警报。<a href="https://www.cnet.com/culture/squid-game-cryptocurrency-scams-2-million-after-creators-vanish/">cnet.com</a></li>
+          <li id="s10">Business Insider（Huileng Tan），《'Squid Game' cryptocurrency jumps over 75,000% in under a week》，2021-10-29。<a href="https://markets.businessinsider.com/news/currencies/squid-game-cryptocurrency-jumps-over-2000-percent-in-days-21-10">markets.businessinsider.com</a></li>
+          <li id="s11">Hindustan Times（Amit Chaturvedi），《Squid Game cryptocurrency Squid rises 1,00,000% in a week, warning issued》，2021-10-30。<a href="https://www.hindustantimes.com/business/squid-game-cryptocurrency-squid-rises-1-00-000-in-a-week-warning-issued-101635587776067.html">hindustantimes.com</a></li>
+          <li id="s12">Squid Game 项目方，白皮书初版（SquidGamesWhitepaper.pdf，PDF 创建于 2021-10-13），Internet Archive 2021-10-18 存档。<a href="https://web.archive.org/web/20211018024714/https://squidgame.cash/SquidGamesWhitepaper.pdf">web.archive.org</a></li>
+          <li id="s13">Squid Game 项目方，白皮书新版（SquidGameWhitepaper.pdf，PDF 创建于 2021-10-28），Internet Archive 2021-10-28 存档。<a href="https://web.archive.org/web/20211028193520/https://squidgame.cash/SquidGameWhitepaper.pdf">web.archive.org</a></li>
+          <li id="s14">Coinscope，《SQUID AUDIT: BEP-20 Token》，2021 年 10 月，项目网站发布，Internet Archive 2021-10-29 存档。<a href="https://web.archive.org/web/20211029172400/https://squidgame.cash/SQUIDAudit.pdf">web.archive.org</a></li>
+          <li id="s15">Sourcify，BNB Chain（chain 56）合约 0x87230146E138d3F296a9a77e497A2A83012e9Bc5 的验证源码 SQUID.sol（完全匹配；源码头注明 2021-10-21 提交 BscScan 验证），2026 年 11 月查阅。<a href="https://repo.sourcify.dev/56/0x87230146E138d3F296a9a77e497A2A83012e9Bc5">repo.sourcify.dev</a></li>
+          <li id="s16">美国消费者金融保护局（CFPB），《Complaint Bulletin: An analysis of consumer complaints related to crypto-assets》，2022 年 11 月。<a href="https://files.consumerfinance.gov/f/documents/cfpb_complaint-bulletin_crypto-assets_2022-11.pdf">files.consumerfinance.gov</a></li>
+          <li id="s17">Chainalysis，《The Biggest Threat to Trust in Cryptocurrency: Rug Pulls Put 2021 Cryptocurrency Scam Revenue Close to All-time Highs》，2021-12-16。<a href="https://www.chainalysis.com/blog/2021-crypto-scam-revenues/">chainalysis.com</a></li>
+          <li id="s18">CoinMarketCap Academy，《What Is a Rug Pull in Crypto?》，2026 年 11 月查阅。<a href="https://coinmarketcap.com/academy/article/what-is-a-rug-pull-in-crypto">coinmarketcap.com</a></li>
+          <li id="s19">Cointelegraph（Ezra Reguerra），《Squid Game token scams flood the crypto market》，2024-12-29。<a href="https://cointelegraph.com/news/squid-game-tokens-scam-alert-2024">cointelegraph.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

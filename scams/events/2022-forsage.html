@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forsage：把传销规则写进智能合约的矩阵盘｜区块链诈骗与骗局</title>
+<meta name="description" content="Forsage 2020 年在以太坊上线，参与者在智能合约里买“槽位”，钱一进合约就按代码转给上线。项目方说合约改不了、没人掌握资金。SEC 2022 年 8 月起诉 11 人，司法部 2023 年起诉四名创始人，称收进约 3.4 亿美元；一名创始人 2026 年从泰国被引渡到美国。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-forsage">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　<a href="../index.html#cat-ponzi">庞氏与传销</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Forsage：把传销规则写进智能合约的矩阵盘</h1>
+    <p class="lede">Forsage 2020 年 1 月在以太坊上线，后来扩到 Tron 和 BSC，自称“第一个百分之百去中心化的矩阵项目”。参与者花 ETH 在智能合约里买“槽位”，钱一进合约就按代码自动转给上线；拉来的人买同一级，钱再转给你。创始人说合约改不了、没有人掌握资金。美国 SEC 2022 年 8 月 1 日起诉 11 人，称它是“教科书式的金字塔和庞氏骗局”，交易总额超过 3 亿美元；司法部 2023 年起诉四名创始人，称收进约 3.4 亿美元，以太坊项目里超过一半的投资者没收到过一笔钱。到 2026 年 11 月，只有一名创始人被引渡到美国，还没有受审。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Forsage 由 Vladimir “Lado” Okhotnikov 等四名创始人 2019 年秋天开始搭建，网站 forsage.io 和以太坊上的第一批合约 2020 年 1 月 31 日前后上线<a class="ref" href="#s1">[1]</a>。它对外说自己是“以太坊和 Tron 网络上第一个智能合约营销矩阵”，合约是“自动执行的软件算法”，按条件在社区成员之间分配“伙伴奖励”<a class="ref" href="#s1">[1]</a>。参与者用 ETH 买矩阵里的“槽位”，买了以后，下线买同一级，钱就自动转进你的钱包<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</p>
+        <p>SEC 称，Forsage 没有卖过任何产品，除了投资者的钱没有别的收入；赚钱的主要办法是拉人，前面的人拿到的钱都来自后来的人<a class="ref" href="#s1">[1]</a>。司法部称，这套庞氏和金字塔结构就写在合约代码里；编号 1 的账户由创始人控制，不用投钱就能完整参与；以太坊上的 xGold 合约还把一部分钱转进创始人控制的账户<a class="ref" href="#s4">[4]</a>。Cornell Tech 等机构的研究者统计，到 2021 年 1 月参与以太坊主合约的约 104 万个地址里，88% 以上亏了钱<a class="ref" href="#s11">[11]</a>。</p>
+        <p>菲律宾 SEC 2020 年 6 月就发出警告，9 月下令停止；美国蒙大拿州 2021 年 3 月下停止令<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。2022 年 8 月 1 日 SEC 起诉四名创始人和七名美国推广人<a class="ref" href="#s2">[2]</a>，2023 年 2 月 22 日俄勒冈的联邦大陪审团以共谋电信欺诈起诉四名创始人<a class="ref" href="#s3">[3]</a>。七名推广人都已和 SEC 和解。创始人 Olena Oblamska 2026 年 5 月从泰国被引渡到美国，不认罪，审理改到 2027 年 3 月<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。Okhotnikov 2024 年在格鲁吉亚被缺席判处 10 年，人在迪拜<a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>四名创始人</h3>
+        <p>起诉书写，四人都是 Forsage 的创始人：Okhotnikov 住在格鲁吉亚，“指挥、管理和控制”Forsage 的运营；Olena Oblamska 化名 Lola Ferrari，住在印尼巴厘岛，自称 Forsage 的“女神”；Mikhail Sergeev 是“开发总监”；Sergey Maslakov 自称创造者之一<a class="ref" href="#s4">[4]</a>。SEC 起诉时还不知道 Ferrari 的真名，诉状里写作 Jane Doe<a class="ref" href="#s1">[1]</a>。Okhotnikov 在一次访谈里说，他和另外三人是 Forsage 背后的“智囊团”<a class="ref" href="#s1">[1]</a>。</p>
+        <p>ICIJ 写道，Okhotnikov 说自己为了不交俄罗斯的税搬到格鲁吉亚，在第比利斯的公寓里运营 Forsage，每天大部分时间在电脑前录 YouTube 视频；Forsage 在格鲁吉亚语里是“速度与激情”的意思<a class="ref" href="#s15">[15]</a>。SEC 称，被告们此前都参加过别的多层次营销项目<a class="ref" href="#s1">[1]</a>。Ferrari 在一次访谈里说，她和其他几人参加过“人人都亏钱的项目”，所以做了 Forsage，要“通过网络营销改变局面”<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>“矩阵盘”</h3>
+        <p>矩阵是传销奖金制度的一种：每个人下面只有固定的几个位置，填满就“出局”重开，多出来的人溢出给团队里的其他人。Forsage 用的 x3、x4 就是这种结构，营销材料里把溢出叫 spillover<a class="ref" href="#s1">[1]</a>。Kell 等人发现，同期在以太坊上运行的 Million.money、Doubleway.io 和已经停掉的 Bullrun.live 用着相似的宣传材料和后台界面；部署 Forsage 合约的地址收到的第一笔钱，来自部署 Million.money 的地址<a class="ref" href="#s11">[11]</a>。</p>
+        <p>Forsage 上线的时候正赶上新冠疫情。菲律宾 SEC 的官员对 ICIJ 的合作媒体说，Forsage 利用了疫情期间人人都想多挣点钱，“这非常具有剥削性”<a class="ref" href="#s15">[15]</a>。Cointelegraph 2020 年 8 月看到的一份招募帖，把它说成“在家工作”的智能合约赚币计划<a class="ref" href="#s20">[20]</a>。那一年也是以太坊上 DeFi 应用最热的时候，见大事记的<a href="../../milestones/events/2020-defi-summer.html">DeFi 之夏</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2019 年秋</time><div class="ev">四名创始人和一名程序员、一名网站开发者开始写以太坊合约、搭 forsage.io<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2020-01-31</time><div class="ev">forsage.io 上线，以太坊上的 x3、x4 合约开始收钱<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2020-05-14</time><div class="ev">官方视频“Forsage Overview: Earn Ethereum Daily!”发布，后来播放超过 31.9 万次<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2020-06-30</time><div class="ev">菲律宾 SEC 发公告：Forsage 没有注册，无权向公众招揽投资<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2020-07</time><div class="ev">以太坊 x3、x4 合约当月收进 252,007 ETH，占全部流入的 34.58%，是最高的一个月<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2020-09-06</time><div class="ev">Tron 版上线，每个矩阵 15 级<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2020-09-17</time><div class="ev">菲律宾 SEC 下令 Forsage 和 Forsage Philippines 停止招揽，9 月 30 日公布<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2021-01-03</time><div class="ev">以太坊上的 xGold 合约上线，当月收进 9,963 ETH，占它全部流入的 96%<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2021-03-22</time><div class="ev">蒙大拿州证券保险专员下停止令，蒙大拿成为美国第一个指控 Forsage 的州<a class="ref" href="#s4">[4]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2021-05-10</time><div class="ev">Kell、Juels 等人公开论文，统计以太坊主合约的 88% 以上地址亏损<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>2021-05-31</time><div class="ev">BSC 上的 BUSD 版上线；7 月 17 日加上 xXx，12 月 1 日加上 xGold<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2022-03-07</time><div class="ev">创始人分裂。Okhotnikov 被切断网站和 Telegram，另起 Meta Force，6 月 29 日上线<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2022-08-01</time><div class="ev">SEC 在伊利诺伊北区联邦法院起诉 11 人；推广人 Ellis、Theissen 当天同意和解<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2022-12-13</time><div class="ev">法院批准 Deering 的和解判决，七名美国推广人全部和解<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2023-02-07</time><div class="ev">法院对缺席的 Ferrari 和 Maslakov 作出缺席判决<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def key"><time>2023-02-22</time><div class="ev">俄勒冈的联邦大陪审团以共谋电信欺诈起诉四名创始人<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-03-28</time><div class="ev">应司法部申请，SEC 民事案的证据开示中止，等刑事案先审<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2024-03</time><div class="ev">格鲁吉亚法院以洗钱缺席判处 Okhotnikov 10 年<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def"><time>2026-02</time><div class="ev">泰国网络犯罪调查局在普吉岛逮捕 Oblamska<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def key"><time>2026-05-08</time><div class="ev">Oblamska 被引渡到美国；5 月 11 日在波特兰初次出庭，不认罪，羁押候审<a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2026-10</time><div class="ev">司法部受害者通知页更新：原定 11 月 10 日的审理改到 2027 年 3 月 9 日<a class="ref" href="#s6">[6]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>Forsage 没有平台账户，也没有“提现”按钮。参与者从自己的钱包把 ETH 转给合约，合约在同一笔交易里把钱转给另一个参与者。SEC 称，钱一付给合约，投资者就失去了对它的全部控制，转账不可撤销，合约按创始人写好的算法把钱转进别人的钱包<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>槽位和价格</h3>
+        <p>以太坊版有 x3、x4 两个矩阵，各 12 级，第 1 级 0.025 ETH，以后每级翻倍，第 12 级 51.2 ETH<a class="ref" href="#s1">[1]</a>。注册时两个矩阵的第 1 级一起开，要付 0.05 ETH；把一个矩阵的 12 级全部开完要 102.375 ETH<a class="ref" href="#s11">[11]</a>。ICIJ 写，0.05 ETH 当时约合 5 至 38 美元<a class="ref" href="#s15">[15]</a>。Tron 版每个矩阵 15 级，从 100 TRX 到 1,097,600 TRX；BSC 上的 BUSD 版 12 级，从 5 BUSD 到 9,900 BUSD<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>钱怎样分</h3>
+        <p>营销材料对 x3 的说法是：一轮有三个位置，“第一、第二个位置的钱 100% 进你的 ETH 钱包，第三个位置让这个槽位重新打开，钱给你的上线”。x4 一轮有六个位置：第一排两个位置的钱给你的上线，或溢出给团队里的别人；第二排的 3、4、5 号给你，6 号让槽位重开、钱给上线<a class="ref" href="#s1">[1]</a>。菲律宾 SEC 2020 年 7 月描述 x3 时，把第三个人的钱称为给上线的“再入场费”<a class="ref" href="#s8">[8]</a>。</p>
+        <p>还有一条规则推着人不停加钱。一个槽位转满一轮，如果你还没开下一级，这个槽位就被“冻结”，下线以后再交的钱会跳过你，交给再上面的人。买下一级才能解冻<a class="ref" href="#s11">[11]</a>。SEC 举过一个例子：A 开了第 4 级，他的下线 B 只开到第 3 级；B 的下线 C 开第 4 级时，钱会跳过 B，交给 A<a class="ref" href="#s1">[1]</a>。所以官方视频告诉大家，“开的槽位越多，赚的 ETH 越多”，能开多少就开多少，免得“错过”上线升级带来的收入和溢出<a class="ref" href="#s1">[1]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 560" role="img" aria-labelledby="fs-flow-t fs-flow-d">
+            <title id="fs-flow-t">Forsage x3：一笔钱进合约以后交给谁</title>
+            <desc id="fs-flow-d">从上到下依次是编号 1 的账户、你的上线 U、你、你的三个下线。你开通某一级时付的钱，由合约直接转给上线 U。三个下线开通同一级时，第 1 个和第 2 个的钱转给你；第 3 个的钱转给 U，你的这一级重开，进入下一轮。如果你还没开下一级，转满一轮后这一级被冻结，此后下线的钱跳过你往上交。合约往上找不到可以收钱的人时，钱交给编号 1 的账户，它永远不会被冻结，没有填推荐人的新人也都挂在它下面。</desc>
+            <defs>
+              <marker id="fs-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="fs-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="240" y="20" width="280" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="43" text-anchor="middle">编号 1 的账户</text>
+            <text class="d-t s" x="380" y="64" text-anchor="middle">创始人控制，12 级免费开通、永不冻结</text>
+            <rect class="d-box" x="240" y="120" width="280" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="143" text-anchor="middle">你的上线 U</text>
+            <text class="d-t s" x="380" y="164" text-anchor="middle">推荐你进来的人</text>
+            <rect class="d-box" x="240" y="232" width="280" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="255" text-anchor="middle">你</text>
+            <text class="d-t s" x="380" y="276" text-anchor="middle">开通第 1 级 0.025 ETH，逐级翻倍</text>
+            <rect class="d-box soft" x="30" y="372" width="210" height="56" rx="3"/>
+            <text class="d-t b" x="135" y="395" text-anchor="middle">第 1 个下线</text>
+            <text class="d-t s" x="135" y="416" text-anchor="middle">钱转给你</text>
+            <rect class="d-box soft" x="275" y="372" width="210" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="395" text-anchor="middle">第 2 个下线</text>
+            <text class="d-t s" x="380" y="416" text-anchor="middle">钱转给你</text>
+            <rect class="d-box soft" x="520" y="372" width="210" height="56" rx="3"/>
+            <text class="d-t b" x="625" y="395" text-anchor="middle">第 3 个下线</text>
+            <text class="d-t s" x="625" y="416" text-anchor="middle">钱转给 U，你这一级重开</text>
+            <line class="d-line atk" x1="380" y1="232" x2="380" y2="180" marker-end="url(#fs-ah-atk)"/>
+            <text class="d-t s" x="392" y="210">你付的钱转给 U</text>
+            <line class="d-line dash" x1="300" y1="120" x2="300" y2="80" marker-end="url(#fs-ah)"/>
+            <text class="d-t s" x="290" y="104" text-anchor="end">找不到收款人时一路往上</text>
+            <line class="d-line atk" x1="135" y1="372" x2="290" y2="292" marker-end="url(#fs-ah-atk)"/>
+            <line class="d-line atk" x1="380" y1="372" x2="380" y2="292" marker-end="url(#fs-ah-atk)"/>
+            <path class="d-line atk" d="M625,372 L625,148 L524,148" fill="none" marker-end="url(#fs-ah-atk)"/>
+            <text class="d-t s" x="380" y="466" text-anchor="middle">下线开哪一级，钱就按哪一级转；你没开这一级，钱跳过你</text>
+            <text class="d-t s" x="380" y="490" text-anchor="middle">转满一轮还没开下一级，这一级冻结，此后的钱也跳过你</text>
+            <text class="d-t s" x="380" y="514" text-anchor="middle">没填推荐人的新人，都挂在编号 1 的账户下面</text>
+          </svg>
+          </div>
+          <figcaption>据营销材料和 SEC 的描述<a class="ref" href="#s1">[1]</a>、Kell 等人对合约的分析<a class="ref" href="#s11">[11]</a>和本页引用的合约源码<a class="ref" href="#s12">[12]</a>。x4 多一排位置，规则更复杂，图里只画 x3。红色是参与者交进合约的钱。</figcaption>
+        </figure>
+        <h3>合约里写了什么</h3>
+        <p>以太坊主合约叫 <code>SmartMatrixForsage</code>，地址 <span class="addr">0x5acc84a3e955Bdd76467d3348077d003f00fFB97</span>，2020 年 1 月 31 日开始运行。Kell 等人分析的就是它在 Etherscan 上公开的源码<a class="ref" href="#s11">[11]</a>，Sourcify 也有字节码完全匹配的记录<a class="ref" href="#s12">[12]</a>。和分钱有关的是下面几段：</p>
+<pre class="code"><code><span class="c">// SmartMatrixForsage.sol（节选）</span>
+constructor(address ownerAddress) public {
+    levelPrice[1] = 0.025 ether;               <span class="c">// 第 1 级价格，以后每级翻倍</span>
+    for (uint8 i = 2; i &lt;= LAST_LEVEL; i++) {
+        levelPrice[i] = levelPrice[i-1] * 2;
+    }
+    owner = ownerAddress;                       <span class="c">// 部署时写入的 owner，就是编号 1</span>
+    <span class="c">// ……创建编号 1 的账户……</span>
+    for (uint8 i = 1; i &lt;= LAST_LEVEL; i++) {
+        users[ownerAddress].activeX3Levels[i] = true;   <span class="c">// 12 级全部开通，不用付钱</span>
+        users[ownerAddress].activeX6Levels[i] = true;
+    }
+}
+
+function() external payable {
+    if(msg.data.length == 0) {
+        return registration(msg.sender, owner); <span class="c">// 直接转 0.05 ETH 进来，上线自动设为 owner</span>
+    }
+    registration(msg.sender, bytesToAddress(msg.data));
+}
+
+function updateX3Referrer(address userAddress, address referrerAddress, uint8 level) private {
+    users[referrerAddress].x3Matrix[level].referrals.push(userAddress);
+    if (users[referrerAddress].x3Matrix[level].referrals.length &lt; 3) {
+        return sendETHDividends(referrerAddress, userAddress, 1, level);  <span class="c">// 第 1、2 个：钱给推荐人</span>
+    }
+    <span class="c">// 第 3 个：这一轮清空；推荐人还没开下一级，就把这一级冻结</span>
+    users[referrerAddress].x3Matrix[level].referrals = new address[](0);
+    if (!users[referrerAddress].activeX3Levels[level+1] &amp;&amp; level != LAST_LEVEL) {
+        users[referrerAddress].x3Matrix[level].blocked = true;
+    }
+    <span class="c">// ……推荐人不是 owner 时，把这一笔递归交给推荐人的上线；是 owner 时直接付给 owner……</span>
+}
+
+function findEthReceiver(address userAddress, address _from, uint8 matrix, uint8 level) private returns(address, bool) {
+    <span class="c">// ……</span>
+    if (users[receiver].x3Matrix[level].blocked) {   <span class="c">// 被冻结的人跳过，继续往上找</span>
+        emit MissedEthReceive(receiver, _from, 1, level);
+        receiver = users[receiver].x3Matrix[level].currentReferrer;
+    }
+    <span class="c">// ……</span>
+}</code></pre>
+        <p class="code-cap">出处：以太坊合约 0x5acc84a3e955Bdd76467d3348077d003f00fFB97 的验证源码（solc 0.5.16），经 Sourcify 取得<a class="ref" href="#s12">[12]</a>。节选，<code>findEthReceiver</code> 原文是一个 <code>while (true)</code> 循环，这里只留判断的几行；中文注释为本站所加。代码里第二个矩阵叫 X6，营销材料里叫 x4。</p>
+        <p>这几段说明三件事。第一，钱在同一笔交易里用 <code>send</code> 转走，合约里不留余额。第二，编号 1 的账户有别人没有的待遇：12 级免费开通、永远不会被冻结；合约往上找收款人时，最后总能落到它身上；没填推荐码的新人也挂在它下面。Kell 等人数到，有 9,220 个槽位的推荐人是这个账户，普通用户平均只有 4.14 个<a class="ref" href="#s11">[11]</a>。第三，合约里没有管理员提款、升级或暂停的函数，部署以后，这份代码确实改不了。</p>
+        <p>代码公开也不等于看得懂。Kell 等人写道，他们先手工审读源码，逻辑太绕，只好写了模拟器和可视化工具；一名专业的研究工程师花了几个星期才弄清楚它怎样运作<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>为什么“代码写死”不等于“不是庞氏”</h3>
+        <p>推广人的辩护集中在一点：没人能卷款跑路。Okhotnikov 2021 年说，Forsage“不积累资金，余额永远是零”，“所以它不可能是骗局”；Deering 说“没有人能拿走你的钱”<a class="ref" href="#s1">[1]</a>。Kell 等人统计的十个播放量最高的英语视频里，有四个说“没人能让 Forsage 停下来”，四个说合约不存钱所以安全<a class="ref" href="#s11">[11]</a>。</p>
+        <p>这些话回答的是钱会不会被卷走。判断庞氏，要看的是钱从哪里来。Forsage 的合约除了参与者转进来的钱，没有任何别的收入。SEC 和司法部的说法一致：前面的人拿到的每一笔，都是后面的人交的<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。代码把这条规则执行得更准时，没有改变它。余额永远是零，是因为钱一进来就已经转给了上线；后来的人交了钱，要等再后面的人进来才能回本。在 x3 里，一个人要招满三个下线、还得接着买下一级，才不会被跳过<a class="ref" href="#s11">[11]</a>。新人一少，最底下的人就拿不回钱。</p>
+        <p>“改不了”也只对已经部署的那一份合约成立。创始人可以随时部署新合约：Tron 版、两条链上的 xGold、BUSD 版、xXx，后来 Okhotnikov 又把 Meta Force 称为 Forsage 合约的“硬分叉”<a class="ref" href="#s1">[1]</a>。xGold 的源码没有公开<a class="ref" href="#s11">[11]</a>。SEC 称，以太坊上的 xGold 把参与者的钱自动转进一个不属于任何 Forsage 编号的钱包，这个钱包和 xGold 同一天部署，早期的交易全部转进了它，到 2022 年 6 月 29 日共收到 1,029.34 ETH<a class="ref" href="#s1">[1]</a>。网站、推荐链接、后台和培训材料也都由创始人掌握<a class="ref" href="#s1">[1]</a>。</p>
+        <p>改不了还有另一面：没有人能让它停下，也没有人能退钱。菲律宾 SEC 下停止令以后，合约照样收钱转钱。Kell 等人认为，智能合约跑在去中心化的系统上，执法机构很难拆掉它，这正是它适合做金字塔骗局的原因之一<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>起盘：2020 年上半年</h3>
+        <p>合约上线第二天，Maslakov 就在 Facebook 上说自己已经赚了约 2,000 美元，注册开放，“今天会很火”<a class="ref" href="#s1">[1]</a>。最热的官方视频说，每个槽位“无限次、永不过期”地产生收入，0.1 ETH 的槽位一次次带来 0.1 ETH<a class="ref" href="#s1">[1]</a>。Okhotnikov 在 2020 年 4 月的访谈里被问到 Forsage 卖什么产品，回答是“我更喜欢不要产品，把 100% 给伙伴……没有人是为了产品来 Forsage 的”<a class="ref" href="#s1">[1]</a>。网站教新人怎样注册钱包、怎样买 ETH。Kell 等人发现，98.89% 的 Forsage 用户在 Forsage 之前没有用过以太坊<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>高峰：2020 年 6 月至 8 月</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>时段</th><th class="n">以太坊 x3、x4 收进的 ETH</th><th class="n">占比</th></tr></thead>
+          <tbody>
+            <tr><td>2020 年 1 月至 5 月</td><td class="n">56,865</td><td class="n">7.8%</td></tr>
+            <tr><td>2020 年 6 月</td><td class="n">133,032</td><td class="n">18.3%</td></tr>
+            <tr><td>2020 年 7 月</td><td class="n">252,007</td><td class="n">34.6%</td></tr>
+            <tr><td>2020 年 8 月</td><td class="n">148,607</td><td class="n">20.4%</td></tr>
+            <tr><td>2020 年 9 月至 12 月</td><td class="n">126,680</td><td class="n">17.4%</td></tr>
+            <tr><td>2021 年 1 月至 4 月</td><td class="n">11,338</td><td class="n">1.6%</td></tr>
+            <tr><td>2021 年 5 月至 2022 年 4 月</td><td class="n">约 180</td><td class="n">0.02%</td></tr>
+          </tbody>
+        </table></div>
+        <p>表中数字据 SEC 起诉状的月度表，按时段相加由本站计算，合计 728,710 ETH、331 万多笔交易<a class="ref" href="#s1">[1]</a>。6 月到 8 月三个月占了约 73%。Kell 等人数到，2020 年 7 月平均每天新出现 10,798 个和 Forsage 有关的账户，而 2019 年除 12 月外，每个月平均每天最多 20 个；那年 6 月到 8 月的大部分时间，Forsage 是以太坊上交易笔数第二多的合约，仅次于 Tether<a class="ref" href="#s11">[11]</a>。8 月 1 日它单日收进约 370 万美元<a class="ref" href="#s11">[11]</a>。Cointelegraph 8 月 6 日写，菲律宾 SEC 警告一个月后，它在 dappstat 的排行里仍有 39 万用户，24 小时成交 311 万美元<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>警告和否认</h3>
+        <p>菲律宾 SEC 7 月 1 日的新闻稿说，Forsage 由 Lado Okhotnikov 领导，所谓智能合约等同于投资合约，奖金制度“类似庞氏骗局”<a class="ref" href="#s8">[8]</a>。Maslakov 8 月 17 日发视频说菲律宾的调查是“胡说”，“有常识的人都笑了”；Okhotnikov 说菲律宾 SEC“完全不懂智能合约怎样运作”<a class="ref" href="#s1">[1]</a>。美国的推广团体 Crypto Crusaders 也跟着否认：Martinez 说蒙大拿的停止令“没有依据”，监管机构“根本不懂加密货币”；Bowen 让大家发帖时别写 Forsage 的名字，因为别人一搜就会看到说它是庞氏骗局的视频和文章<a class="ref" href="#s1">[1]</a>。网站的常见问题里，也专门有一条否认自己是金字塔<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>换链续命：2020 年 9 月至 2021 年</h3>
+        <p>以太坊上的流入从 2020 年 9 月起明显减少<a class="ref" href="#s1">[1]</a>。Forsage 相继推出 Tron 版和 xGold，Tron 版的新人必须同时买 x3、x4 和 xGold<a class="ref" href="#s1">[1]</a>。到 2021 年 3 月，以太坊上已经几乎没有新钱。Okhotnikov 在视频里解释说，是以太坊手续费太高、Tron 交易困难，所以要做 BSC 版，让 Forsage“保持活跃”；SEC 认为这只是骗局的延续<a class="ref" href="#s1">[1]</a>。推广人 Ellis 为 BUSD 版设计了“3 get 3”：在他的 Telegram 频道登记，就自动给你分配三个下线，他说这样“我保证”你能拿到溢出<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>分裂和改名</h3>
+        <p>2022 年 3 月 7 日，创始人分成两派。Okhotnikov 被切断了网站和 Telegram 频道，只保住了官方 YouTube 频道。Ferrari 和 Sergeev 推出 Express Smart Game，沿用 BUSD 版的推荐关系；Okhotnikov 称它是“金字塔骗局”，自己另起 Meta Force，6 月 29 日上线，用 Telegram 机器人帮 Forsage 用户迁移槽位记录<a class="ref" href="#s1">[1]</a>。ICIJ 写，Meta Force 第一年据 TRM Labs 统计收进 5.74 亿美元，之后又有 Holiverse 和 Meta Whale；Okhotnikov 至少发起或参与了 16 个多层次营销项目；斯洛文尼亚的金融监管机构警告说，Forsage、Meta Force、Holiverse 和 Meta Whale 是同一个实体换了名字<a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <p>下面只转述执法文件、法院记录和研究者公布的结论，本站没有做链上取证。Forsage 没有资金池，钱进来就转给了别的参与者，所以“钱去了哪里”就是“谁拿到了钱”。</p>
+        <h3>集中在金字塔顶端</h3>
+        <p>Kell 等人统计到 2021 年 1 月 14 日：以太坊主合约的约 104 万个地址里，盈利的 123,979 个合计赚了 265,618.52 ETH；利润最多的是合约 owner，5,409.6 ETH，占全部利润的 2.04%；前五名合计 14,325.7 ETH；前 1,000 名拿走了一半利润<a class="ref" href="#s11">[11]</a>。利润最多的地址是 owner 部署的另一个合约，它收到的钱 99% 来自 Forsage 主合约<a class="ref" href="#s11">[11]</a>。起诉书的说法与此相符：编号 1 的账户本身是一个合约，把收到的钱自动分到四个钱包，再转进四名被告各自的个人钱包<a class="ref" href="#s4">[4]</a>。</p>
+        <p>Ferrari 2021 年 4 月说 Forsage 出了“50 个百万富翁”。司法部称，经区块链分析，当时在以太坊和 Tron 两个项目里，收到超过 100 万美元的只有编号 1 一个账户<a class="ref" href="#s4">[4]</a>。Okhotnikov 2022 年 4 月自己在视频里说，编号 1 没有上线，本该交给上线的那部分收入，“在旧的方案里由创始人拿走了”<a class="ref" href="#s1">[1]</a>。到 2022 年 5 月 10 日，三条链上的编号 1 分别直接招进约 4,427、7,338 和 10,956 人；以太坊上编号 1 至 5，SEC 认为属于创始人，每个至少赚了 481 ETH<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>SEC 统计的被告所得</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>被告</th><th>角色</th><th class="n">至少收到（美元）</th></tr></thead>
+          <tbody>
+            <tr><td>四名创始人</td><td>合计</td><td class="n">4,803,943</td></tr>
+            <tr><td>Okhotnikov、Sergeev</td><td>创始人，另外收到</td><td class="n">433,909</td></tr>
+            <tr><td>Ferrari</td><td>创始人，另外收到</td><td class="n">256,731</td></tr>
+            <tr><td>Maslakov</td><td>创始人，另外收到</td><td class="n">110,741</td></tr>
+            <tr><td>Hamlin</td><td>官方推广人</td><td class="n">565,828</td></tr>
+            <tr><td>Shepperd</td><td>Crypto Crusaders</td><td class="n">549,075</td></tr>
+            <tr><td>Martinez</td><td>Crypto Crusaders</td><td class="n">462,925</td></tr>
+            <tr><td>Bowen</td><td>Crypto Crusaders</td><td class="n">303,000</td></tr>
+            <tr><td>Deering</td><td>Crypto Crusaders</td><td class="n">267,075</td></tr>
+            <tr><td>Theissen</td><td>推广人，Crypto Crusaders</td><td class="n">130,118</td></tr>
+            <tr><td>Ellis</td><td>官方推广人</td><td class="n">72,405</td></tr>
+          </tbody>
+        </table></div>
+        <p>金额截至 2022 年 4 月 25 日，按收款时的币价折算<a class="ref" href="#s1">[1]</a>。这只是 SEC 能对应到被告的部分，xGold 转进非投资者钱包的 1,029.34 ETH 不在表里。</p>
+        <h3>格鲁吉亚的洗钱案</h3>
+        <p>ICIJ 和它的合作媒体 Studio Monitor 拿到的格鲁吉亚法院记录显示，Okhotnikov 的前合伙人 Petr Pak 作证说，Forsage 上线后他帮 Okhotnikov 把加密货币换成现金，存进两家格鲁吉亚银行的多个账户。SEC 起诉以后，银行开始追问这笔几年里存进来的 110 多万美元从哪里来，Okhotnikov 说来自他的“店”。格鲁吉亚法院认定他通过他本人和同伙的至少 53 个银行账户洗钱，没收了一辆雷克萨斯、两套第比利斯的公寓和五个车位，约值 100 万美元<a class="ref" href="#s15">[15]</a>。</p>
+        <p>司法部的起诉书附有没收条款<a class="ref" href="#s4">[4]</a>。本站没有找到美国扣押 Forsage 资金的公开记录，也没有找到 Chainalysis、Elliptic 等机构专门追踪 Forsage 资金去向的公开报告。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <p>SEC 引 Forsage 后台的数据说，到 2022 年 5 月 10 日，以太坊版至少有 1,056,932 名投资者，Tron 版 455,246 名，BUSD 版至少 434,992 名<a class="ref" href="#s1">[1]</a>。一个人可以有多个编号，这些数字不能直接当作人数。司法部称，以太坊项目约占 Forsage 全部投资的 70%；在这个项目里，超过 80% 的投资者拿回的 ETH 少于投入，超过 50% 从没收到过一笔付款<a class="ref" href="#s4">[4]</a>。Kell 等人的统计口径不同，是到 2021 年 1 月为止 88.2% 的地址净亏损，亏损地址合计亏了 305,785.44 ETH，平均每个 0.33 ETH，大多数在 0 到 0.25 ETH 之间<a class="ref" href="#s11">[11]</a>。</p>
+        <p>受害者分布在许多国家。Kell 等人根据社交媒体判断，组织者主要在俄罗斯，参与者主要在尼日利亚、南部非洲、菲律宾、委内瑞拉、印尼和印度；Facebook 上有 131 个 Forsage 群、40 万多名成员，Telegram 上 49 个频道、28 万多人<a class="ref" href="#s11">[11]</a>。美国最大的推广团体 Crypto Crusaders 的 YouTube 频道和 Facebook 群有 7.5 万多订阅者，Martinez 一个人的结构里至少有 4.5 万名“伙伴”；SEC 称，这个团体不许成员说 Forsage 的坏话，抱怨或不拉人就会被踢出群<a class="ref" href="#s1">[1]</a>。SEC 还称，被告们宣传的高收入并不代表大多数人的收益，财富集中在编号靠前的金字塔顶端<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="note doubt"><span class="h">一共收进多少钱</span><p>几个数字口径不同，不能相加，也都是投入额。司法部的“约 3.4 亿美元”是 Forsage 从投资者手里收进的钱<a class="ref" href="#s3">[3]</a>；SEC 的“超过 3 亿美元”是到 2022 年起诉时三条链上的交易总额<a class="ref" href="#s1">[1]</a>。Kell 等人只统计到 2021 年 1 月，四个官方合约第一年合计超过 2.67 亿美元，其中以太坊主合约约 2.25 亿美元，按每天的币价折算<a class="ref" href="#s11">[11]</a>。Forsage 网站的计数器 2021 年 5 月一度显示“增值后的总价值”29 亿美元<a class="ref" href="#s1">[1]</a>，这是项目自己的数字，按什么价格算没有说明。ICIJ 估计 Okhotnikov 五年里的多个项目合计收进约 10 亿美元，包括 Forsage 之后的 Meta Force 等<a class="ref" href="#s15">[15]</a>。本站规模采用司法部的数字。</p></div>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <h3>菲律宾和蒙大拿</h3>
+        <p>菲律宾 SEC 最先出手。2020 年 9 月 17 日的命令要求 Forsage 和 Forsage Philippines 停止以投资合约的形式出售证券、关闭网上宣传，冻结相关资产，点名十名菲律宾推广人。新闻稿说，Forsage 在 6 月的警告后继续招揽，还散布“不在 SEC 管辖范围内”的说法；命令里写，它“利用了庞氏骗局”<a class="ref" href="#s9">[9]</a>。菲律宾 SEC 的执法官员对 Cointelegraph 说，自称“去中心化”或在外国，不等于不受菲律宾法律管辖，Forsage“只是一个‘去中心化’的金融欺诈”<a class="ref" href="#s20">[20]</a>。SEC 起诉状写菲律宾 9 月 23 日结束调查<a class="ref" href="#s1">[1]</a>，本页用菲律宾 SEC 自己公布的日期。</p>
+        <p>2021 年 3 月 22 日，蒙大拿州证券保险专员下停止令<a class="ref" href="#s4">[4]</a>。专员 Troy Downing 说：“Forsage 并不掩饰自己是金字塔骗局。成员必须用以太坊付钱给上面的人，才能在金字塔上买到位置。”<a class="ref" href="#s10">[10]</a></p>
+        <h3>SEC 的民事诉讼</h3>
+        <p>2022 年 8 月 1 日，SEC 在伊利诺伊北区联邦法院起诉 11 人：四名创始人；Ellis、Hamlin、Theissen 三名官方推广人；Crypto Crusaders 的 Martinez、Deering、Bowen、Shepperd（Theissen 也属于这个团体），罪名是违反证券注册和反欺诈条款<a class="ref" href="#s2">[2]</a><a class="ref" href="#s1">[1]</a>。Ars Technica 写，四名创始人是俄罗斯人，其余七人在美国<a class="ref" href="#s21">[21]</a>；SEC 说 Crypto Crusaders 的成员分布在至少五个州<a class="ref" href="#s2">[2]</a>。SEC 认为，槽位和随之而来的收钱权利是投资合约，也就是证券<a class="ref" href="#s1">[1]</a>。SEC 加密资产和网络部门的代理负责人说：“骗子把骗局搬到智能合约和区块链上，也绕不开联邦证券法。”<a class="ref" href="#s2">[2]</a></p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>被告</th><th>结果</th><th>日期</th></tr></thead>
+          <tbody>
+            <tr><td>Ellis</td><td>和解，最终判决：返还、利息和罚款合计 68,770 美元</td><td>2022-08-08</td></tr>
+            <tr><td>Theissen、Hamlin、Bowen</td><td>和解，部分判决，金额待定</td><td>2022-08 至 09</td></tr>
+            <tr><td>Martinez、Shepperd、Deering</td><td>和解，部分判决，金额待定</td><td>2022-11 至 12</td></tr>
+            <tr><td>Ferrari、Maslakov</td><td>缺席判决，金额待定</td><td>2023-02-07</td></tr>
+            <tr><td>Sergeev</td><td>缺席判决，金额待定</td><td>2023-03-21</td></tr>
+            <tr><td>Okhotnikov</td><td>请律师应诉，申请驳回，未见判决</td><td>2022-11 起</td></tr>
+          </tbody>
+        </table></div>
+        <p>七名美国推广人都不承认也不否认指控，接受永久禁令，不得再违反相关证券法，不得参与靠拉人计酬的营销计划和加密资产证券的发行；Ellis 之外，返还和罚款的金额由法院以后根据 SEC 的申请确定<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a><a class="ref" href="#s16">[16]</a>。缺席的三名创始人被视为承认了诉状的指控<a class="ref" href="#s17">[17]</a><a class="ref" href="#s18">[18]</a>。2023 年 3 月，司法部申请介入，法院下令中止证据开示，等刑事案先审<a class="ref" href="#s19">[19]</a>。ICIJ 2025 年 11 月写，Okhotnikov 的美国律师仍在设法让法院驳回 SEC 的诉讼<a class="ref" href="#s15">[15]</a>。本站没有查到对他的判决。</p>
+        <h3>司法部的刑事案</h3>
+        <p>2023 年 2 月 22 日，俄勒冈的联邦大陪审团起诉 Okhotnikov、Oblamska、Sergeev、Maslakov，罪名是共谋电信欺诈，每人最高 20 年，附没收条款<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。司法部称，对合约代码的分析表明，投资者一买槽位，合约就把钱自动转给其他投资者，“前面的投资者用后面投资者的钱付”<a class="ref" href="#s3">[3]</a>。起诉书还列出被告事后的否认：SEC 起诉后，Okhotnikov 8 月 9 日发视频说 Forsage“没有受害者”，自己“丝毫没有触及美国的管辖”，“真正的骗局永远赢不了人心”<a class="ref" href="#s4">[4]</a>。</p>
+        <p>泰国网络犯罪调查局 2026 年 2 月在普吉岛 Chalong 的一处公寓逮捕 Oblamska，搜走手机、电脑和文件，当时没公布她的名字<a class="ref" href="#s22">[22]</a>。她 5 月 8 日被引渡到美国，11 日在波特兰初次出庭，不认罪，否认没收主张，法官下令羁押<a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a>。审理原定 7 月 14 日，后来改到 11 月 10 日<a class="ref" href="#s7">[7]</a>，司法部 10 月更新的受害者通知页又改到 2027 年 3 月 9 日<a class="ref" href="#s6">[6]</a>。</p>
+        <div class="note doubt"><span class="h">Oblamska 的国籍</span><p>2023 年起诉时的司法部新闻稿说四人“都是俄罗斯人”<a class="ref" href="#s3">[3]</a>，2026 年俄勒冈联邦检察官办公室的新闻稿称她为“乌克兰公民”<a class="ref" href="#s5">[5]</a>，KATU 和 ICIJ 也这样写<a class="ref" href="#s23">[23]</a><a class="ref" href="#s22">[22]</a>。官方文件没有解释前后不同的原因。</p></div>
+        <h3>格鲁吉亚</h3>
+        <p>ICIJ 写，Okhotnikov 被格鲁吉亚检方传讯后，把一箱电脑、手机和存储卡交给一名室内设计师带去土耳其；他说要去土耳其拍广告，两天后飞去迪拜，再没回来。2024 年 3 月，第比利斯的法院以洗钱罪缺席判他 10 年，检方签发了国际通缉令<a class="ref" href="#s15">[15]</a>。ICIJ 2026 年 5 月仍称他在迪拜<a class="ref" href="#s22">[22]</a>。他和 Kevin Spacey 合作拍了电影，合写剧本并主演；Variety 写，他否认美国的指控<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>到 2026 年 11 月</h3>
+        <p>四名创始人里只有 Oblamska 在美国羁押，还没有受审。Okhotnikov 在迪拜，Sergeev 和 Maslakov 起诉时据信在俄罗斯<a class="ref" href="#s4">[4]</a>，本站没有查到他们到案的报道。SEC 对缺席被告的判决金额还没有确定。本站没有找到向 Forsage 投资者退钱的报道；司法部的受害者通知页请投资者登记，可以提交受害影响陈述<a class="ref" href="#s6">[6]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">“去中心化”“合约改不了”回答的是另一个问题</span>
+          <ul>
+            <li>这类说法只说明没人能把资金池卷走。Forsage 根本没有资金池，钱一进来就转给了上线。该问的是收益从哪里来：除了新人交的钱，Forsage 没有任何收入<a class="ref" href="#s1">[1]</a>。Okhotnikov 说的“余额永远是零”<a class="ref" href="#s1">[1]</a>，恰好说明钱都已经在前面的人手里。</li>
+            <li>一份合约改不了，项目方可以再部署一份。Forsage 两年里换了三条链、推出 xGold、xXx，又“硬分叉”成 Meta Force<a class="ref" href="#s1">[1]</a>，xGold 连源码都没公开<a class="ref" href="#s11">[11]</a>。</li>
+            <li>改不了也意味着没人能叫停、没人能退钱。监管机构下了停止令，合约照样收钱<a class="ref" href="#s11">[11]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">先看分钱的规则对谁有利</span>
+          <ul>
+            <li>宣传说人人“地位平等”<a class="ref" href="#s4">[4]</a>，代码里编号 1 的账户却免费开通全部 12 级、永远不会被冻结，所有找不到上线的钱最后都落到它身上<a class="ref" href="#s12">[12]</a><a class="ref" href="#s11">[11]</a>。打开合约时，先找有没有这样的特殊账户。</li>
+            <li>一级的回报等于招满下线以后收回本钱，要多赚就得买更贵的下一级，不买还会被跳过<a class="ref" href="#s11">[11]</a>。这种设计逼着人越投越多，越晚进来的人越难回本。</li>
+            <li>“代码公开、完全透明”不等于你看得懂。研究者花了几个星期、写了模拟器才弄清楚<a class="ref" href="#s11">[11]</a>。没能力读懂，就别把“开源”当作安全的证据。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">这些话术要警惕</span>
+          <ul>
+            <li>专门找被骗过的人：Okhotnikov 说他们打出“厌倦了骗局？”的横幅，要把对别的项目失望的人拉过来<a class="ref" href="#s1">[1]</a>。</li>
+            <li>承诺稳定收入：“每周三到四位数，即时打进你的钱包”，“我保证”你能拿到溢出，“每个槽位无限次产生收入”<a class="ref" href="#s1">[1]</a>。还有编出来的“50 个百万富翁”<a class="ref" href="#s4">[4]</a>。</li>
+            <li>监管机构点名以后，推广人说监管“不懂加密货币”“不懂智能合约”，教大家发帖别写项目名，免得别人搜到负面报道<a class="ref" href="#s1">[1]</a>。这时更应该离开。</li>
+          </ul>
+        </div>
+        <p>同样靠层层拉人的资金盘，号称收益来自交易程序的见 <a href="2018-bitconnect.html">BitConnect</a> 和 <a href="2019-plustoken.html">PlusToken</a>；连区块链都没有的见 <a href="2017-onecoin.html">OneCoin</a>；号称收益来自挖矿、请演员扮演 CEO 的见 <a href="2022-hyperverse.html">HyperVerse</a>。ICIJ 把迪拜称为逃犯和加密骗子的避风港，举的例子之一就是 OneCoin 失踪的创办人 Ruja Ignatova<a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国证券交易委员会（SEC），《Complaint, SEC v. Vladimir Okhotnikov et al.》，No. 1:22-cv-03978（N.D. Ill.），2022-08-01。<a href="https://www.sec.gov/litigation/complaints/2022/comp-pr2022-134.pdf">sec.gov</a></li>
+          <li id="s2">SEC，《SEC Charges Eleven Individuals in $300 Million Crypto Pyramid Scheme》，新闻稿 2022-134，2022-08-01（同日诉讼公告 LR-25460）。<a href="https://www.sec.gov/newsroom/press-releases/2022-134">sec.gov</a></li>
+          <li id="s3">美国司法部，《Forsage Founders Indicted in $340M DeFi Crypto Scheme》，2023-02-22。<a href="https://www.justice.gov/archives/opa/pr/forsage-founders-indicted-340m-defi-crypto-scheme">justice.gov</a></li>
+          <li id="s4">俄勒冈联邦地区法院，《Indictment, United States v. Okhotnikov et al.》，No. 3:23-cr-00057，2023-02-22（经 CourtListener RECAP 取得）。<a href="https://storage.courtlistener.com/recap/gov.uscourts.ord.171875/gov.uscourts.ord.171875.1.0.pdf">courtlistener.com</a></li>
+          <li id="s5">美国俄勒冈区联邦检察官办公室，《Ukrainian National Extradited from Thailand to Face Conspiracy Charges》，2026-05-12。<a href="https://www.justice.gov/usao-or/pr/ukrainian-national-extradited-thailand-face-conspiracy-charges">justice.gov</a></li>
+          <li id="s6">美国司法部刑事司受害者通知项目，《United States v. Vladimir Okhotnikov, et al.》，2026-10-28 更新。<a href="https://www.justice.gov/criminal/criminal-vns/case/united-states-v-vladimir-okhotnikov-et-al">justice.gov</a></li>
+          <li id="s7">CourtListener，《United States v. Okhotnikov, 3:23-cr-00057 (D. Or.)》案卷，第 15–22 号文件，2026-05-11 至 2026-06-18。<a href="https://www.courtlistener.com/docket/66943552/united-states-v-okhotnikov/">courtlistener.com</a></li>
+          <li id="s8">菲律宾证券交易委员会，《SEC Warns Against Forsage, Other Schemes》，2020-07-01；另见同年 6 月 30 日的公告《Forsage》（Internet Archive 存档）。<a href="https://web.archive.org/web/20200706232028/https://www.sec.gov.ph/wp-content/uploads/2020/07/2020PressRelease_SEC-warns-against-Forsage-other-schemes.pdf">web.archive.org</a></li>
+          <li id="s9">菲律宾证券交易委员会，《SEC Issues Cease and Desist Order Against Forsage》，2020-09-30（Internet Archive 存档）。<a href="https://web.archive.org/web/20210629123208/https://www.sec.gov.ph/wp-content/uploads/2020/10/2020PressRelease_SEC-issues-cease-and-desist-order-against-Forsage.pdf">web.archive.org</a></li>
+          <li id="s10">蒙大拿州证券保险专员办公室，《Montana regulator issues cease and desist order against Forsage scam》，2021-04-07，转载 CoinGeek（Internet Archive 存档）。<a href="https://web.archive.org/web/20230208193847/https://csimt.gov/2021/04/07/montana-regulator-issues-cease-and-desist-order-against-forsage-scam/">web.archive.org</a></li>
+          <li id="s11">Tyler Kell、Haaroon Yousaf、Sarah Allen、Sarah Meiklejohn、Ari Juels，《Forsage: Anatomy of a Smart-Contract Pyramid Scheme》，arXiv:2105.04380，2021-05-10，2021-08-24 修订。<a href="https://arxiv.org/abs/2105.04380">arxiv.org</a></li>
+          <li id="s12">Sourcify，以太坊合约 0x5acc84a3e955Bdd76467d3348077d003f00fFB97（SmartMatrixForsage）的验证源码，creation 与 runtime 字节码完全匹配。<a href="https://sourcify.dev/server/v2/contract/1/0x5acc84a3e955Bdd76467d3348077d003f00fFB97?fields=sources">sourcify.dev</a></li>
+          <li id="s13">SEC 在 SEC v. Okhotnikov 案中提交的合意判决动议，第 5、17、29、62、67、79 号文件，2022-08-02 至 2022-12-09（GovInfo）。<a href="https://www.govinfo.gov/app/details/USCOURTS-ilnd-1_22-cv-03978">govinfo.gov</a></li>
+          <li id="s14">伊利诺伊北区联邦法院，《Final Judgment as to Defendant Samuel D. Ellis》，SEC v. Okhotnikov，2022-08-08。<a href="https://www.sec.gov/files/judg22-cv-03978ellis.pdf">sec.gov</a></li>
+          <li id="s15">ICIJ（Scilla Alecci、Fergus Shiel），《The Russian crypto guru's Hollywood gambit》，2025-11-17。<a href="https://www.icij.org/investigations/coin-laundry/holiverse-lado-forsage-cryptocurrency-scam/">icij.org</a></li>
+          <li id="s16">BehindMLM，《Ronald R. Deering settles Forsage Ponzi fraud with SEC》，2022-12-30。<a href="https://behindmlm.com/companies/forsage/ronald-r-deering-settles-forsage-ponzi-fraud-with-sec/">behindmlm.com</a></li>
+          <li id="s17">BehindMLM，《Default judg. against Forsage's Sergey Maslakov &amp; Lola Ferrari》，2023-02-10。<a href="https://behindmlm.com/companies/forsage/default-judg-against-forsages-sergey-maslakov-lola-ferrari/">behindmlm.com</a></li>
+          <li id="s18">BehindMLM，《Default judgment granted against Forsage's Mikhail Sergeev》，2023-04-01。<a href="https://behindmlm.com/companies/forsage/default-judgment-granted-against-forsages-mikhail-sergeev/">behindmlm.com</a></li>
+          <li id="s19">BehindMLM，《DOJ stays SEC's Forsage securities fraud civil case》，2023-04-01。<a href="https://behindmlm.com/companies/forsage/doj-stays-secs-forsage-securities-fraud-civil-case/">behindmlm.com</a></li>
+          <li id="s20">Cointelegraph（Marie Huillet），《One Month On, Forsage Continues Despite SEC's Ponzi Warnings》，2020-08-06。<a href="https://cointelegraph.com/news/one-month-on-forsage-continues-despite-secs-ponzi-warnings">cointelegraph.com</a></li>
+          <li id="s21">Ars Technica（Jon Brodkin），《SEC: Crypto fraudsters raised $300M with "textbook pyramid and Ponzi scheme"》，2022-08-02。<a href="https://arstechnica.com/tech-policy/2022/08/sec-crypto-fraudsters-raised-300m-with-textbook-pyramid-and-ponzi-scheme/">arstechnica.com</a></li>
+          <li id="s22">ICIJ（Fergus Shiel），《Alleged cryptocurrency Ponzi scheme 'goddess' extradited from Thailand to face conspiracy charges in US》，2026-05-17。<a href="https://www.icij.org/investigations/coin-laundry/alleged-cryptocurrency-ponzi-scheme-goddess-extradited-from-thailand-to-face-conspiracy-charges-in-us/">icij.org</a></li>
+          <li id="s23">KATU，《Ukrainian woman extradited to US in $340M crypto Ponzi case》，2026-05-13。<a href="https://katu.com/news/nation-world/ukrainian-woman-extradited-to-us-in-340m-crypto-ponzi-case-money-crime-police-investigation-pyramid-schem-mlm-online-crime">katu.com</a></li>
+          <li id="s24">Variety（Alex Ritman），《Kevin Spacey's Directorial Comeback Was Written by and Stars Russian Man Indicted for Allegedly Running Crypto Ponzi Scheme》，2025-08-27。<a href="https://variety.com/2025/film/global/kevin-spacey-film-writer-star-indicted-crypto-ponzi-scheme-1236495259/">variety.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

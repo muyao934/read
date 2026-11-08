@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>比特币 2013 年 3 月链分叉（0.8 与旧版本不兼容）｜区块链大事记</title>
+<meta name="description" content="2013 年 3 月 11 日，Bitcoin 0.8 接受了一个旧版本处理不了的大区块，链分成两条：Berkeley DB 的锁上限怎样变成共识规则，开发者和矿池怎样在 IRC 上决定回到 0.7，24 个区块作废，对 OKPay 的双花，0.8.1 的临时规则和 BIP 50。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2013-bitcoin-fork">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2013 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>比特币 2013 年 3 月链分叉（0.8 与旧版本不兼容）</h1>
+    <p class="lede">2013 年 3 月 11 日（UTC）晚上，Bitcoin 0.8 的节点接受了 225,430 号区块，0.7 及更早版本的一部分节点拒绝了它，链分成两条。0.8 把存区块索引的数据库从 Berkeley DB 换成了 LevelDB，旧版本给 Berkeley DB 设的锁数量上限，就这样在没人打算的情况下变成了一条共识规则。开发者在 IRC 上商议后，请大矿池退回 0.7，让旧规则的链胜出；第二天早上两条链在 225,454 号区块等长，0.8 链上的 24 个区块作废，其间有人对支付商 OKPay 双花了约 1 万美元。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">2013 年 2 月 19 日发布的 Bitcoin 0.8.0 改用 LevelDB 存交易和区块索引，Berkeley DB（BDB）只留给钱包文件<a class="ref" href="#s3">[3]</a>。0.7.2 及更早的版本在 BDB 里最多同时持有 10,000 把锁<a class="ref" href="#s6">[6]</a>。3 月 11 日，一个运行 0.8.0 的矿工产出了 225,430 号区块<a class="ref" href="#s2">[2]</a>，它的交易输入总数超过以往任何区块；0.8 节点能处理，一部分旧节点拒绝了它，链意外分叉<a class="ref" href="#s1">[1]</a>。</p>
+        <p>BIP 50 写道，0.8 那条链当时约有 60% 的算力，分叉不会自己合拢<a class="ref" href="#s1">[1]</a>。开发者在 #bitcoin-dev 上商议后，决定让所有版本都接受的旧链胜出，请矿工暂时回到 0.7<a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。BTC Guild 和 Slush 两家矿池把节点降级，旧链重新拿到多数算力<a class="ref" href="#s1">[1]</a>。Mt. Gox 暂停了比特币充值<a class="ref" href="#s14">[14]</a>，价格一度跌了 23%<a class="ref" href="#s15">[15]</a>。</p>
+        <p>据 Bitcoin Magazine，分叉持续了 24 个区块，在 225,454 号区块结束；0.8 链上作废的挖矿奖励约值 2.6 万美元，另有一笔约 1 万美元的双花，受害方是 OKPay<a class="ref" href="#s17">[17]</a><a class="ref" href="#s13">[13]</a>。3 月 18 日发布的 0.8.1 加了一条临时规则，到 5 月 15 日为止拒绝可能让旧节点锁不够用的区块，给旧版本两个月时间升级或改配置<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>；8 月 16 日，没打补丁的节点被分出了网络<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>0.8 换了什么</h3>
+        <p>0.8.0 的发布说明写道，LevelDB 是 Google 的开源非关系数据库，在 I/O 慢的机器上表现好得多，总体也更快；Pieter Wuille 对交易验证的方式做了很多优化，同步好的节点占用的内存和 I/O 少了很多，签名还能并行检查。从 0.7.2 或更早版本升级，第一次运行要重建索引，需要 30 分钟到几个小时<a class="ref" href="#s3">[3]</a>。3 月 11 日 UTC 凌晨，开发者 Luke Dashjr 在 IRC 上说，他统计到的节点里 38% 运行 0.8；Wuille 按可达性加权，算出约 47%<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>Berkeley DB 的锁</h3>
+        <p>BDB 改数据时要加锁，防止两处修改同时进行。锁的上限要由使用 BDB 的程序自己设定。BIP 50 引了 BDB 手册的建议：在高负载下运行程序，看锁统计里用到的最大值，再翻一倍<a class="ref" href="#s1">[1]</a>。0.7.2 打开数据库环境时，把锁和锁对象的上限都写死成 10,000<a class="ref" href="#s6">[6]</a>：</p>
+<pre class="code"><code><span class="c">// src/db.cpp，CDBEnv::Open（v0.7.2）</span>
+int nDbCache = GetArg("-dbcache", 25);
+dbenv.set_lg_dir(pathLogDir.string().c_str());
+dbenv.set_cachesize(nDbCache / 1024, (nDbCache % 1024)*1048576, 1);
+dbenv.set_lg_bsize(1048576);
+dbenv.set_lg_max(10485760);
+<span class="bad">dbenv.set_lk_max_locks(10000);</span>
+<span class="bad">dbenv.set_lk_max_objects(10000);</span>
+dbenv.set_errfile(fopen(pathErrorFile.string().c_str(), "a")); /// debug</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin v0.7.2，src/db.cpp，节选。pathErrorFile 是数据目录下的 db.log。</p>
+        <p>BIP 50 还指出，锁按页获取，需要多少把，取决于每个节点磁盘上 blkindex.dat 的具体排列，各节点并不相同。所以即使全网都运行 0.7.2，也可能出现一个节点产出的区块别的节点验证不了；处理重组同样要用锁，旧版本可能处理不了某些有效的重组<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>区块变大了</h3>
+        <p>BIP 50 写道，0.7 之前，没改过代码的挖矿节点自己产出的区块不超过 500,000 字节，这让问题一直没被触发；0.7 让这个目标大小可以配置，事发前一周，矿工被鼓励调高它<a class="ref" href="#s1">[1]</a>。源码里，0.6.3 打包时跳过会让区块达到 500,000 字节的交易；0.7.2 改用 <code>-blockmaxsize</code> 参数，默认 250,000 字节，最多可设到 999,000 字节<a class="ref" href="#s6">[6]</a>。共识规则允许的上限是 1,000,000 字节，这条上限的来历见<a href="2017-blocksize-war.html">区块大小之争</a>。测试网上处理过最大尺寸的区块，所以没人想到，更小的区块可能需要更多的锁<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>实现就是规范</h3>
+        <p>Bonneau 等人 2015 年的综述写道，比特币没有权威的正式规范，白皮书省略了很多技术细节，参考实现 bitcoind 被当作事实上的规范，其余的知识散在 BIP、论坛帖子、wiki、邮件列表和 IRC 记录里<a class="ref" href="#s21">[21]</a>。白皮书只写了“预先确定的数量”，2,100 万的总量、每四年减半写在 2009 年 1 月 v0.1 的发布公告和代码里<a class="ref" href="#s28">[28]</a><a class="ref" href="#s29">[29]</a>，见<a href="2009-bitcoin-genesis.html">比特币白皮书与创世区块</a>。中本聪 2010 年在论坛上说过<a class="ref" href="#s22">[22]</a>：</p>
+        <blockquote><p>我不认为第二个兼容的比特币实现会是好主意。设计的很多部分依赖所有节点步调一致、得出完全相同的结果，第二个实现会威胁到网络。</p><cite>中本聪，BitcoinTalk，2010 年 6 月 17 日</cite></blockquote>
+        <p>2013 年的分叉发生在同一个参考实现的两个版本之间，差别出在它们下面的数据库。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">双花与损失</span><span>其他事件（粗体为链分开、重新合一和规则生效、到期的时刻）</span></p>
+        <ol class="timeline">
+          <li><time>2013-02-19</time><div class="ev">0.8.0 发布，交易和区块索引改用 LevelDB<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="key"><time>03-11 晚</time><div class="ev">运行 0.8.0 的矿工产出 225,430 号区块。0.8 节点接受，一部分旧节点拒绝，链分成两条<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>03-11 23:27</time><div class="ev">IRC 上有人说，另一台主机报 225,431 个区块，区块浏览器只有 225,430 个<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>03-11 23:33</time><div class="ev">Wuille 判断这台节点的 BDB 锁用完了<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>03-12 00:05</time><div class="ev">Luke Dashjr 在自己旧节点的 db.log 里看到锁表用尽，问是不是意外的硬分叉<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>03-12 00:18</time><div class="ev">Wuille 在开发者邮件列表上警告，很多 0.7 节点卡在 225,430 号区块附近<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>03-12 00:31</time><div class="ev">IRC 上争论跟哪条链之后，BTC Guild 开始切回 0.7<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>03-12 00:50</time><div class="ev">Mt. Gox 发公告，暂停比特币充值<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>03-12 00:53</time><div class="ev">Wuille 在频道里说，大致决定让矿工暂时回到 0.7<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>03-12 01:01</time><div class="ev">Wuille 发第二封邮件，请矿工回到 0.7，0.8 上的商家停止处理交易<a class="ref" href="#s9">[9]</a>；01:29 在论坛发同样的公告<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>03-12 01:30</time><div class="ev">一笔付给 OKPay 的 211.9 BTC 进了 0.8 链的 225,446 号区块<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>03-12 02:05</time><div class="ev">旧链落后 13 个区块，这是 0.8 链领先最多的时候<a class="ref" href="#s12">[12]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>03-12 02:36</time><div class="ev">BTC Guild 的服务器全部切到 0.7<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>03-12 03:00</time><div class="ev">比特币跌破 37 美元，比周一早些时候低 23%<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>03-12 03:30</time><div class="ev">旧链开始追上来<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="atk"><time>03-12 05:01</time><div class="ev">发帖人另做的两笔交易花掉了付给 OKPay 那笔交易的两个输入，进了旧链的 225,446 号区块<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="key"><time>03-12 06:19</time><div class="ev">两条链在 225,454 号区块等长，此后旧链领先，0.8 节点重组到旧链，0.8 链上的 24 个区块作废<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>03-12 08:25</time><div class="ev">Mt. Gox 恢复充值<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>03-12 18:22</time><div class="ev">做双花的用户在论坛发帖说明经过<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>03-15</time><div class="ev">bitcoin.org 公布 5 月 15 日的升级期限<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>03-18</time><div class="ev">0.8.1 发布，加入临时规则和 225,430 号区块的检查点<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>03-20</time><div class="ev">BIP 50 编号，是 Gavin Andresen 写的复盘<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="key"><time>03-21 12:00</time><div class="ev">0.8.1 的临时规则开始执行<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="key"><time>05-15 00:00</time><div class="ev">临时规则到期，网络不再受旧的锁上限约束<a class="ref" href="#s7">[7]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>08-02</time><div class="ev">NVD 发布 CVE-2013-3220<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="key"><time>08-16</time><div class="ev">252,451 号区块被主网接受，没打补丁的节点被分出网络<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2015-01-10</time><div class="ev">BIP 66 编号，提出把签名限定为严格的 DER 编码，不再依赖 OpenSSL 的解析<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2016-11-01</time><div class="ev">bitcoin.org 宣布退役网络警报系统，2017 年 1 月 19 日发出最后一条警报<a class="ref" href="#s24">[24]</a>。</div></li>
+        </ol>
+        <div class="note doubt"><span class="h">时间和日期</span><p>本页的时间都是 UTC。按本站对照，bitcoinstats.com 的 IRC 存档比 UTC 晚 1 小时，存档里的时间加 1 小时才是 UTC：Wuille 在频道里贴的 debug.log 时间 00:00:10 出现在存档的 23:04，MagicalTux 转贴的 Andresen 发言带着日本时间 09:40:13（UTC 00:40），出现在存档的 23:44<a class="ref" href="#s11">[11]</a>；Bitcoin Magazine 写的 23:30 GMT、00:00 GMT，也比存档晚 1 小时<a class="ref" href="#s17">[17]</a>。Mt. Gox 公告上的 09:50，本站推断是日本时间<a class="ref" href="#s14">[14]</a>。日期有两种写法：bitcoin.org 和 0.8.1 的发布说明写 3 月 11 日<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>，维基百科写 12 日<a class="ref" href="#s25">[25]</a>。按北京时间，分叉在 12 日上午到下午；按美国中部时间，在 11 日傍晚到 12 日凌晨。0.8.0 的发布日期，bitcoin.org 写 2 月 19 日<a class="ref" href="#s3">[3]</a>，BitMEX Research 写 20 日<a class="ref" href="#s20">[20]</a>。</p></div>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>这一节回答三个问题：旧节点为什么会拒绝一个本来有效的区块，分开的两条链为什么不会自己合拢，回到旧链为什么能结束分叉。</p>
+        <h3>连接一个区块要改多少条索引</h3>
+        <p>0.7.2 用 BDB 存交易索引：每笔交易在磁盘上的位置，以及它的每个输出被哪笔交易花掉。节点接受一个新区块时，先开一个数据库事务，再由 ConnectBlock 逐笔检查交易，把这笔交易的索引和它花掉的前序交易的索引改动放进 mapQueuedChanges，最后逐条写回数据库<a class="ref" href="#s6">[6]</a>。所以一个区块要改的索引条目，大致是区块里的交易加上它们花掉的前序交易，去重以后的数目。源码注释写道，重组很耗数据库资源，因为它在一个数据库事务里完成<a class="ref" href="#s6">[6]</a>。Wuille 当晚在 IRC 上解释，这些锁只在连接一个区块的过程中持有，所以被拒绝的只是“太大”的区块<a class="ref" href="#s11">[11]</a>。</p>
+<pre class="code"><code><span class="c">// src/main.cpp，CBlock::ConnectBlock（v0.7.2）</span>
+// Write queued txindex changes
+for (map&lt;uint256, CTxIndex&gt;::iterator mi = mapQueuedChanges.begin();
+     mi != mapQueuedChanges.end(); ++mi)
+{
+<span class="bad">    if (!txdb.UpdateTxIndex((*mi).first, (*mi).second))</span>
+        return error("ConnectBlock() : UpdateTxIndex failed");
+}
+
+<span class="c">// src/main.cpp，CBlock::SetBestChainInner（v0.7.2）</span>
+// Adding to current best branch
+if (!ConnectBlock(txdb, pindexNew) || !txdb.WriteHashBestChain(hash))
+{
+    txdb.TxnAbort();
+<span class="bad">    InvalidChainFound(pindexNew);</span>
+    return false;
+}</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin v0.7.2，src/main.cpp，节选。英文注释为原文，for 语句的换行有调整。</p>
+        <p>锁不够时，BDB 的写入失败，UpdateTxIndex 返回失败，SetBestChainInner 回滚事务，调用 InvalidChainFound<a class="ref" href="#s6">[6]</a>。当晚 IRC 上贴出的旧节点日志正是“ConnectBlock() : UpdateTxIndex failed”；Luke Dashjr 自己节点的 db.log 里，对应的一行是“Lock table is out of available lock entries”<a class="ref" href="#s11">[11]</a>。Wuille 的第一封邮件也请大家去 db.log 里找这一句<a class="ref" href="#s8">[8]</a>。</p>
+        <p>InvalidChainFound 只记下这条无效链的累计工作量。它比当前的链多出 6 个区块以上时，0.7.2 在状态栏和 RPC 里显示：“显示的交易可能不正确，你可能需要升级，或者其他节点需要升级。”<a class="ref" href="#s6">[6]</a>Wuille 的论坛公告专门提醒，0.7 及更早的客户端可能提示需要升级，不要照做，旧链追上来以后提示就会消失<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>触发分叉的区块</h3>
+        <p>Andresen 当晚在 IRC 上说，这个区块 998,081 字节，有 1,700 多笔交易；Jeff Garzik 指出，以前有过 400 KB 以上的区块，测试网上也有过最大尺寸的区块，触发条件不只是大<a class="ref" href="#s11">[11]</a>。BIP 50 的说法是，它的交易输入总数超过以往任何区块<a class="ref" href="#s1">[1]</a>。Buterin 在 Bitcoin Magazine 上写道，它同时改变了 5,000 多笔交易的状态，要用 10,000 把以上的锁<a class="ref" href="#s17">[17]</a>。</p>
+        <ol class="flow">
+          <li><b>锁的上限</b>0.7.2 给 BDB 设了 10,000 把锁，这个数不在任何规则里。</li>
+          <li><b>一个大区块</b>225,430 号区块要改的索引比以往都多。</li>
+          <li><b>旧节点拒绝</b>锁用完，写索引失败，区块被当作无效。</li>
+          <li><b>链分成两条</b>0.8 用 LevelDB，没有这个上限，照常接受并在上面出块。</li>
+        </ol>
+        <h3>一条没人写下的规则</h3>
+        <p>BIP 50 的结论是<a class="ref" href="#s1">[1]</a>：</p>
+        <blockquote><p>BDB 锁的配置不够高，它就隐含地成了一条决定区块是否有效的网络共识规则，尽管这条规则不一致，也不安全，因为各节点用到的锁可能不同。</p><cite>BIP 50，“Root cause”一节</cite></blockquote>
+        <p>Wuille 当晚在 IRC 上说得更直接：原来有一条隐含的规则，“区块不能太大”，0.8 把它放宽了；新代码允许了旧代码不允许的东西，这就是硬分叉的条件；是 BDB，或者说他们对 BDB 的配置，替他们定下了这个条件<a class="ref" href="#s11">[11]</a>。</p>
+        <p>这件事后来有两个 CVE 编号。CVE-2013-3220 记在旧版本上：0.4.9rc2、0.5.8rc2、0.6.5rc2、0.7.3rc2 之前的版本和 wxBitcoin 没有考虑区块可能需要过多的数据库锁，攻击者可以用一个大区块让网络分裂，并获得一定的双花能力<a class="ref" href="#s18">[18]</a>。CVE-2013-3219 记在 0.8.0 上，Bitcoin Wiki 的摘要是“没有执行的区块协议规则”，0.8.1 修复<a class="ref" href="#s19">[19]</a>。同一处不一致，分叉两边各记了一个编号。</p>
+        <h3>两条链为什么不会自己合拢</h3>
+        <p>节点跟随工作量最大的有效链。0.8 节点认为两条链都有效，哪条工作量大就跟哪条；旧节点认为 0.8 链上的 225,430 号区块无效，那条链后面有多少工作量都不会跟过去<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。0.8 链约有 60% 的算力，分叉不会自己结束；只有旧链的累计工作量超过 0.8 链，0.8 节点才会重组到旧链上<a class="ref" href="#s1">[1]</a>。</p>
+        <p>被盗站的<a href="../../hacks/events/2010-bitcoin-overflow.html">比特币价值溢出漏洞</a>是相反的情形。2010 年的修复版 0.3.10 收紧了规则，属于软分叉<a class="ref" href="#s20">[20]</a>：修好的链在旧规则下同样有效，它一旦更长，旧节点也会跟过去。2013 年的 0.8 放宽了规则，旧节点拒绝新规则允许的区块，只有旧规则的链胜出，网络才能重新合一。BitMEX Research 统计的共识规则变更里，至少三次造成了能识别的链分裂，分别持续约 51、24 和 6 个区块，发生在 2010、2013 和 2015 年<a class="ref" href="#s20">[20]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <p>从 IRC 上第一次有人说区块数对不上，到两条链在 225,454 号区块等长，用了不到七个小时。</p>
+        <ol class="steps">
+          <li><b>3 月 11 日 23:27 至 12 日 00:13：发现</b>IRC 上有人说，另一台主机报出的区块数和区块浏览器不一样。Wuille 判断这台节点的 BDB 锁用完了，建议对方删掉数据库重试，或者升级到 0.8。00:00 前后又有人报告同样的错误，他开始怀疑是网络上的什么事触发的，比如一次大的重组。Luke Dashjr 在自己的旧节点上也看到锁表用尽。00:13，Wuille 去写邮件，Dashjr 去联系矿池<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>00:18：第一封邮件</b>Wuille 写道，很多 0.7 节点卡在 225,430 号区块附近，原因是 BDB 的锁条目用完，0.8 节点似乎没问题；如果问题普遍，就是紧急情况，可能出现几条由较小区块组成的分叉链。他当时给的办法是升级到 0.8，或者手动调高数据库的锁数，拿不准就先停止处理交易<a class="ref" href="#s8">[8]</a>。</li>
+          <li><b>00:22 至 00:53：跟哪条链</b>Andresen 先说，0.8 的链更长，多数算力在 0.8 上，“比特币第一条规则：多数算力胜出”。Dashjr 回应，选 0.8 就是硬分叉。Wuille 说他不同意多数算力胜出，这是硬分叉，光有多数不够；就算 90% 的算力在 0.8 上，所有用旧客户端的商家都会暴露在风险里，唯一理智的选择是做出一条现在人人都接受的链。BTC Guild 的运营者 Eleuthria 也说，非自愿的硬分叉不会因为占多数就获得正当性，00:31 开始把矿池切回 0.7。00:45 Andresen 表示同意，00:53 Wuille 在频道里说，大致决定让矿工暂时回到 0.7<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>00:50 至 01:29：通知</b>Mt. Gox 的公告请矿工至少暂时降级到 0.7.2，等正确的链比只有 0.8 认的链长，就恢复交易<a class="ref" href="#s14">[14]</a>。01:01，Wuille 的第二封邮件写道，两条链都有人在挖，0.8 那条长得更快；紧急讨论后，最好让多数算力回到 0.7 接受的旧链，那是所有客户端都会接受的唯一一条链；BTC Guild 正在切回 0.7<a class="ref" href="#s9">[9]</a>。01:29 他在论坛发了同样的公告<a class="ref" href="#s10">[10]</a>。Andresen 在 IRC 上写道，所有用 0.8 挖矿的人先停下，几小时后重新开始时，把 maxblocksize 设为 500k 或更小<a class="ref" href="#s12">[12]</a>。</li>
+          <li><b>01:30 至 03:00：差距最大</b>一笔 211.9 BTC 的付款进了 0.8 链<a class="ref" href="#s13">[13]</a>。02:05 前后，Eleuthria 说旧链落后 13 个区块<a class="ref" href="#s12">[12]</a>，Bitcoin Magazine 和 BitMEX Research 都把 13 个记为 0.8 链领先最多的时候<a class="ref" href="#s17">[17]</a><a class="ref" href="#s20">[20]</a>。02:36，BTC Guild 的服务器全部切到 0.7<a class="ref" href="#s12">[12]</a>。Ars Technica 写道，美国中部时间周一晚上 10 点前后（UTC 03:00），比特币从当天早些时候的 48 美元以上跌到不到 37 美元<a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>03:30 至 08:25：反超</b>Bitcoin Magazine 写道，两条链一度差不多同步增长，约 03:30 出现转折，旧链追到只落后 10 个区块，再到 8 个；06:19，两条链在 225,454 号区块长度相同，剩下的矿工几乎都放弃了另一条<a class="ref" href="#s17">[17]</a>。04:05 Ars Technica 发稿时，价格已回到约 46 美元<a class="ref" href="#s15">[15]</a>。05:01，旧链上那笔双花交易被确认<a class="ref" href="#s13">[13]</a>。08:25，Mt. Gox 恢复充值<a class="ref" href="#s14">[14]</a>。</li>
+        </ol>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 512" role="img" aria-labelledby="fork-svg-t fork-svg-d">
+            <title id="fork-svg-t">2013 年 3 月 11 日至 12 日：两条链分开又合一</title>
+            <desc id="fork-svg-d">225,429 号以前两条链相同。3 月 11 日晚，225,430 号出现两个不同的区块：0.8 节点接受约 998 KB、1,700 多笔交易的大区块，这条链约有 60% 的算力，长得更快；0.7 及更早的节点因为锁用完，把大区块当作无效，在另一个 225,430 号区块上继续出块。01:30，付给 OKPay 的交易进了 0.8 链的 225,446 号区块；02:05 前后 0.8 链最多领先 13 个区块。矿池从 00:31 起陆续切回 0.7，BTC Guild 02:36 全部切完，旧链约 03:30 起追上来；05:01，双花交易进了旧链的 225,446 号区块。06:19 两条链在 225,454 号等长，此后旧链领先，0.8 节点重组到旧链，0.8 链上的 24 个区块作废，付给 OKPay 的交易失效。</desc>
+            <defs>
+              <marker id="fork-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box" x="190" y="20" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="44" text-anchor="middle">225,429 号以前：同一条链</text>
+            <text class="d-t s" x="380" y="65" text-anchor="middle">3 月 11 日晚，225,430 号出现两个不同的区块</text>
+            <rect class="d-box soft" x="40" y="130" width="330" height="80" rx="3"/>
+            <text class="d-t b" x="205" y="154" text-anchor="middle">0.8 链：接受大区块</text>
+            <text class="d-t s" x="205" y="176" text-anchor="middle">约 998 KB、1,700 多笔交易</text>
+            <text class="d-t s" x="205" y="196" text-anchor="middle">约 60% 的算力，长得更快</text>
+            <rect class="d-box" x="390" y="130" width="330" height="80" rx="3"/>
+            <text class="d-t b" x="555" y="154" text-anchor="middle">旧链：0.7 及更早的规则</text>
+            <text class="d-t s" x="555" y="176" text-anchor="middle">锁用完，大区块被当作无效</text>
+            <text class="d-t s" x="555" y="196" text-anchor="middle">在另一个 225,430 号区块上继续出块</text>
+            <rect class="d-box soft" x="40" y="250" width="330" height="100" rx="3"/>
+            <text class="d-t b" x="205" y="274" text-anchor="middle">最多领先 13 个区块</text>
+            <text class="d-t s" x="205" y="296" text-anchor="middle">01:30 付给 OKPay 的交易进了 225,446 号</text>
+            <text class="d-t s" x="205" y="316" text-anchor="middle">02:05 前后差距最大</text>
+            <text class="d-t s" x="205" y="336" text-anchor="middle">矿池降级后，算力流走</text>
+            <rect class="d-box" x="390" y="250" width="330" height="100" rx="3"/>
+            <text class="d-t b" x="555" y="274" text-anchor="middle">矿池切回 0.7</text>
+            <text class="d-t s" x="555" y="296" text-anchor="middle">00:31 起陆续切换，02:36 BTC Guild 全部切完</text>
+            <text class="d-t s" x="555" y="316" text-anchor="middle">约 03:30 起追上来</text>
+            <text class="d-t s atk" x="555" y="336" text-anchor="middle">05:01 双花交易进了这条链的 225,446 号</text>
+            <rect class="d-box" x="190" y="402" width="380" height="80" rx="3"/>
+            <text class="d-t b" x="380" y="426" text-anchor="middle">06:19：两条链在 225,454 号等长</text>
+            <text class="d-t s" x="380" y="448" text-anchor="middle">此后旧链领先，0.8 节点重组到旧链上</text>
+            <text class="d-t s" x="380" y="468" text-anchor="middle">0.8 链的 24 个区块作废，付给 OKPay 的交易失效</text>
+            <line class="d-line dash" x1="330" y1="78" x2="215" y2="126" marker-end="url(#fork-ah)"/>
+            <line class="d-line" x1="430" y1="78" x2="545" y2="126" marker-end="url(#fork-ah)"/>
+            <line class="d-line dash" x1="205" y1="210" x2="205" y2="246" marker-end="url(#fork-ah)"/>
+            <line class="d-line" x1="555" y1="210" x2="555" y2="246" marker-end="url(#fork-ah)"/>
+            <line class="d-line dash" x1="215" y1="350" x2="300" y2="398" marker-end="url(#fork-ah)"/>
+            <line class="d-line" x1="545" y1="350" x2="460" y2="398" marker-end="url(#fork-ah)"/>
+            <text class="d-t s halo" x="250" y="104" text-anchor="end">0.8 节点接受</text>
+            <text class="d-t s halo" x="510" y="104">0.7 及更早拒绝</text>
+            <text class="d-t s halo" x="276" y="378">被放弃</text>
+            <text class="d-t s halo" x="484" y="378" text-anchor="end">旧链胜出</text>
+            <text class="d-t s" x="380" y="500" text-anchor="middle">0.8 节点认为两条链都有效，旧节点只认旧链，所以只有旧链胜出，网络才能合一</text>
+          </svg>
+          </div>
+          <figcaption>两条链分开和重新合一的过程。时间为 UTC，纵向位置大致按时间排列，不按比例；浅色框和虚线是后来被放弃的 0.8 链。区块的大小和交易数据据 Andresen 在 IRC 上的说法<a class="ref" href="#s11">[11]</a>，算力比例据 BIP 50<a class="ref" href="#s1">[1]</a>，OKPay 的两笔交易据发帖人的自述<a class="ref" href="#s13">[13]</a>，最多领先 13 个区块据 Bitcoin Magazine 和 BitMEX Research<a class="ref" href="#s17">[17]</a><a class="ref" href="#s20">[20]</a>，矿池切换的时间据 IRC 存档<a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>，等长的时刻据 Bitcoin Magazine<a class="ref" href="#s17">[17]</a>。</figcaption>
+        </figure>
+        <div class="note doubt"><span class="h">分叉持续了多少个区块、多长时间</span><p>Bitcoin Magazine 写道，分叉持续 24 个区块、约 6 小时，在 225,454 号区块结束<a class="ref" href="#s17">[17]</a>；BitMEX Research 写“至少 24 个区块”<a class="ref" href="#s20">[20]</a>；Bonneau 等人的综述也写 24 个<a class="ref" href="#s21">[21]</a>。分叉结束后不久，IRC 上有用户说被放弃的链是 25 个区块<a class="ref" href="#s12">[12]</a>。维基百科的分叉列表写 24 个，引的是 BIP 50<a class="ref" href="#s26">[26]</a>，但 BIP 50 本身没有写这个数<a class="ref" href="#s1">[1]</a>。按 Bitcoin Magazine 自己给出的时刻，从 23:30 前后被发现到 06:19 等长，将近 7 个小时；大区块是什么时候挖出的，本页没有找到出处。本页用 24 个区块。</p></div>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>开发者</h3>
+        <p>Wuille 最先判断出是锁的问题，先后发了两封邮件和一篇论坛公告；两封邮件相隔 43 分钟，建议从“升级到 0.8”改成了“回到 0.7”<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。Andresen 起草了网络警报，设成转发 15 分钟、4 小时后过期<a class="ref" href="#s12">[12]</a>。Gregory Maxwell 在频道里告诉不挖矿的用户：先别动，不要接受新的付款，另一条链反超时，节点会自己重组<a class="ref" href="#s12">[12]</a>。BIP 50 把“该在的人都在 IRC 上，或者能直接联系上”列为做对了的事<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>矿池</h3>
+        <p>BIP 50 写道，Marek Palatinus（Slush）和 BTC Guild 的 Michael Marsee（Eleuthria）很快把节点降回 0.7，让旧链重新成为主链，尽管这让他们牺牲了相当多的钱<a class="ref" href="#s1">[1]</a>。Eleuthria 在 IRC 上说，BTC Guild 有 10.7 TH/s，要在节点之间拷贝整条区块链，切换约需 45 分钟；他还暂停了矿池付款，免得更多付款消失<a class="ref" href="#s11">[11]</a>。Slush 说他的矿池有 6 个区块作废。Eleuthria 提到，按 PPLNS 结算的矿工会为作废的区块拿到报酬，Slush 说要改自己的数据库，不给作废的区块付钱<a class="ref" href="#s12">[12]</a>。Bitcoin Magazine 写道，能这样受控地切回 0.7，是因为 70% 以上的算力在少数矿池和 ASIC 矿工手里，可以逐个联系<a class="ref" href="#s17">[17]</a>。</p>
+        <h3>交易所和商家</h3>
+        <p>Mt. Gox 的公告说，已充值和在途的币都安全；暂停充值，是因为这种状况让攻击者更容易发动比特币本来能防住的攻击<a class="ref" href="#s14">[14]</a>。它在 IRC 上说已经停止导入新区块，也考虑过暂停交易，觉得作用不大<a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>。Bitcoin Magazine 写道，BitcoinStore、BitPay、SatoshiDice 和 Mt. Gox 都停了充值；BitPay 的 Tony Gallippi 说，是 safe mode 提醒了他们，服务器切到 0.7 链后很快恢复<a class="ref" href="#s17">[17]</a>。SatoshiDice 在 IRC 上说，下注照收，暂不处理<a class="ref" href="#s11">[11]</a>。BIP 50 把交易所充值和 BitPay 付款很快暂停、又很快恢复，也列为做对了的事<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>普通用户</h3>
+        <p>bitcoin.org 的警报页告诉既不挖矿、也不做生意的用户：什么都不用做，不管运行哪个版本，软件都会自动切到正确的链，币是安全的<a class="ref" href="#s2">[2]</a>。Wuille 的论坛帖后来加进了另一位用户写的说明：普通用户升级、降级都没有区别，只有矿工需要动手；坚持现在就处理交易的话，最好等 30 个以上的确认<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>损失</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>项目</th><th>数量</th><th>出处和说明</th></tr></thead>
+          <tbody>
+            <tr><td>作废的挖矿奖励</td><td>24 个区块，每个 25 BTC</td><td>Bitcoin Magazine 估计约值 2.6 万美元<a class="ref" href="#s17">[17]</a>；BIP 50 说降级的两家矿池牺牲了相当多的钱<a class="ref" href="#s1">[1]</a></td></tr>
+            <tr><td>对 OKPay 的双花</td><td>211.9093 BTC</td><td>发帖人说约值 1 万美元，BTC-e 给他记了 9,800 美元<a class="ref" href="#s13">[13]</a></td></tr>
+            <tr><td>其他交易</td><td>基本不受影响</td><td>Bitcoin Magazine 写道，被放弃的链上的交易也进了新链<a class="ref" href="#s17">[17]</a></td></tr>
+          </tbody>
+        </table></div>
+        <h3>那笔双花</h3>
+        <p>做双花的论坛用户自述：他在不知道分叉的情况下，通过 OKPay 的比特币支付给 BTC-e 充值，付了 211.9093 BTC，交易 01:30 进了 0.8 链的 225,446 号区块，BTC-e 给他记了 9,800 美元。后来他发现旧链一直没有确认这笔交易，就用 raw transaction API 另做了两笔交易，花掉原交易的两个输入，05:01 它们进了旧链的 225,446 号区块<a class="ref" href="#s13">[13]</a>。旧链胜出后，付给 OKPay 的交易失效，它要花的币已经在旧链上被花掉<a class="ref" href="#s13">[13]</a>。BIP 50 写道，做这件事的人是在试验能不能做到，没有恶意；两边节点听到这些交易的顺序相同，双花仍然成功，原因很可能是矿池节点降级时清空了内存池<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>价格</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>发稿时间（UTC）</th><th>记录</th></tr></thead>
+          <tbody>
+            <tr><td>Ars Technica</td><td>3 月 12 日 04:05</td><td>周一早些时候 48 美元以上，晚上不到 37 美元，跌 23%；发稿时约 46 美元<a class="ref" href="#s15">[15]</a></td></tr>
+            <tr><td>The Verge</td><td>3 月 12 日 06:28</td><td>一度跌破 37 美元，跌掉近四分之一，很快回到离高点几美元；注明消息来自 Ars Technica 和 Mt. Gox<a class="ref" href="#s16">[16]</a></td></tr>
+            <tr><td>Bitcoin Magazine</td><td>3 月 13 日 13:14</td><td>跌 24%，很快收回；发稿时 44 至 46 美元，前一天 48 美元<a class="ref" href="#s17">[17]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>维基百科把 23% 的跌幅记为 Mt. Gox 上的价格<a class="ref" href="#s25">[25]</a>，Ars Technica 原文没有写是哪家交易所<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>谁说了算</h3>
+        <p>Ars Technica 当时写道，这是对比特币去中心化治理的一次考验：没有哪个人或机构能命令矿工放弃 0.8 分支，开发者只能说服多数算力自愿降级<a class="ref" href="#s15">[15]</a>。Bitcoin Magazine 引了一篇俄文文章，说这件事表明再周密的系统也受极少数人的意志左右，尤其是矿池运营者；Buterin 不同意，他写道，矿工可以几乎立刻换矿池，2011 年 Deepbit 几次超过 50% 的算力，每次都有大批矿工转走。他还主张多个实现并存：分叉时如果有五个实现在用，认错链的只会是其中一个，错的链一开始就弱得多<a class="ref" href="#s17">[17]</a>。这和中本聪 2010 年的看法相反<a class="ref" href="#s22">[22]</a>。多个实现并存，后来的一个例子是 Solana：Jump 为它开发另一个验证者客户端 Firedancer，2024 年 9 月先在主网上线了过渡版本 Frankendancer<a class="ref" href="#s27">[27]</a>，经过见<a href="2021-solana-outage.html">Solana 多次全网停机</a>。</p>
+        <p>Bonneau 等人 2015 年把这件事当作规则因修 bug 而改变的例子：更新的客户端放弃了 24 个区块的分叉，在两个月里暂时不产出更大的区块，让旧客户端升级；最后修 bug 的一方胜出，没打补丁的客户端被排除在外，尽管可以说它们执行的才是原来的规则<a class="ref" href="#s21">[21]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>0.8.1：两个月的临时规则</h3>
+        <p>3 月 18 日发布的 0.8.1 相对 0.8.0 只有两处改动：一条从 3 月 21 日执行到 5 月 15 日的区块接受规则，防止接受在 0.8 以前的节点上验证不了的区块；一个编译进程序的检查点，设在 225,430 号区块，发布说明称它是“3 月 11 日链分叉的第一个区块”<a class="ref" href="#s4">[4]</a>。BIP 50 把规则写成“拒绝可能占用超过 10,000 把锁的区块”，并把自己产出的区块限制在 500,000 字节以内<a class="ref" href="#s1">[1]</a>。代码里，锁的数目换成了一个能直接算的条件：区块里的交易加上它们引用的前序交易，去重后的 txid 不超过 4,500 个<a class="ref" href="#s7">[7]</a>。</p>
+<pre class="code"><code><span class="c">// src/main.cpp，CBlock::CheckBlock（v0.8.1）</span>
+// Special short-term limits to avoid 10,000 BDB lock limit:
+if (GetBlockTime() &gt;= 1363867200 &amp;&amp; // start enforcing 21 March 2013, noon GMT
+    GetBlockTime() &lt; 1368576000)  // stop enforcing 15 May 2013 00:00:00
+{
+    // Rule is: #unique txids referenced &lt;= 4,500
+    // ... to prevent 10,000 BDB lock exhaustion on old clients
+    set&lt;uint256&gt; setTxIn;
+    for (size_t i = 0; i &lt; vtx.size(); i++)
+    {
+        setTxIn.insert(vtx[i].GetHash());
+        if (i == 0) continue; // skip coinbase txin
+        BOOST_FOREACH(const CTxIn&amp; txin, vtx[i].vin)
+            setTxIn.insert(txin.prevout.hash);
+    }
+    size_t nTxids = setTxIn.size();
+<span class="good">    if (nTxids &gt; 4500)</span>
+<span class="good">        return error("CheckBlock() : 15 May maxlocks violation");</span>
+}
+
+<span class="c">// src/main.cpp，CreateNewBlock（v0.8.1）</span>
+// Special compatibility rule before 15 May: limit size to 500,000 bytes:
+if (GetAdjustedTime() &lt; 1368576000)
+    nBlockMaxSize = std::min(nBlockMaxSize, (unsigned int)(MAX_BLOCK_SIZE_GEN));
+
+<span class="c">// src/checkpoints.cpp（v0.8.1）</span>
+(225430, uint256("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932"))</code></pre>
+        <p class="code-cap">出处：bitcoin/bitcoin v0.8.1，src/main.cpp 和 src/checkpoints.cpp，节选。英文注释为原文，缩进有调整。main.h 里 MAX_BLOCK_SIZE_GEN 是 MAX_BLOCK_SIZE 的一半，即 500,000 字节。</p>
+        <p>BitMEX Research 把这条规则算作一次临时的软分叉，4,500 个 txid 比 10,000 把锁更严<a class="ref" href="#s20">[20]</a>。检查点的哈希和 Wuille 第二封邮件里旧链的 225,430 号区块相同<a class="ref" href="#s9">[9]</a>；0.8.1 遇到这个高度上哈希不同的区块就拒绝<a class="ref" href="#s7">[7]</a>，升级后的节点不会再跟 0.8 那条链。</p>
+        <h3>旧版本的补丁和 5 月 15 日的期限</h3>
+        <p>BIP 50 的另一半是给旧版本发补丁：执行同样的规则，并把锁的上限提到 537,000<a class="ref" href="#s1">[1]</a>。NVD 列出的修复版本是 0.4.9rc2、0.5.8rc2、0.6.5rc2 和 0.7.3rc2<a class="ref" href="#s18">[18]</a>；Bitcoin Wiki 记载，更早的 wxBitcoin 没有修复<a class="ref" href="#s19">[19]</a>。3 月 15 日，bitcoin.org 发布《15 May 2013 Upgrade Deadline》：旧版本的用户要在 5 月 15 日前升级到 0.8.0 或更新的版本，或者换成打了补丁的版本，或者在数据目录里建一个 DB_CONFIG 文件，写上 <code>set_lk_max_locks 537000</code>；什么都不做的话，节点会和网络不同步，收不到款，还可能被双花<a class="ref" href="#s5">[5]</a>。</p>
+        <p>同一页对矿工的提醒正好相反：不能升级的出块者，5 月 15 日之前不要调高锁数，否则可能产出或延长与网络其他部分不兼容的区块。页面解释，调查发现即使全网都运行旧版本，这个 bug 也会发生，所以只能要求所有人升级或绕过<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>按日期放宽规则</h3>
+        <p>临时规则在 5 月 15 日 00:00 UTC 到期<a class="ref" href="#s7">[7]</a>。Bitcoin Wiki 把这一天记为“去掉 txid 限制的硬分叉”<a class="ref" href="#s19">[19]</a>，BitMEX Research 称它是一次按日期触发的硬分叉<a class="ref" href="#s20">[20]</a>。没打补丁的节点真正被分出去，是三个月后：BIP 50 写道，2013 年 8 月 16 日，252,451 号区块被主网接受，未打补丁的节点被分出网络<a class="ref" href="#s1">[1]</a>。BitMEX Research 的表格对此写得更保留，日期写“5 月 15 日或 8 月 16 日”，说 8 月“可能”产出了违反原来 10,000 把锁规则的区块<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>警报和监测</h3>
+        <p>BIP 50 列出的已完成事项还有：核对谁持有警报系统的密钥，让他们互相有联系方式、时区能错开覆盖；给 bitcoind 加 <code>-alertnotify</code>，收到适用于本机的警报就执行指定的命令；预先生成 52 条测试警报，每周在测试网定时广播，方便服务商测试自己的通知脚本；检测到足够长的侧链也发警报，矿池可以据此自动暂停付款<a class="ref" href="#s1">[1]</a>。这套警报系统后来被撤掉。bitcoin.org 2016 年 11 月宣布退役。公告写道，这套系统由中本聪创建，曾用来通知意外分叉这类事件；它只有一把密钥，给出去就收不回，也无法知道警报是谁发的，是一个很大的中心化来源。2017 年 1 月 19 日发出最后一条警报，2018 年 7 月 3 日公开了密钥和相关漏洞<a class="ref" href="#s24">[24]</a>。</p>
+        <h3>外部库也在定规则</h3>
+        <p>2015 年，Wuille 在 BIP 66 里写道，参考实现依赖 OpenSSL 验证签名，等于让 OpenSSL 隐含地定义了区块有效性规则；OpenSSL 不是为共识设计的，不保证各版本之间 bug 也一致，它的改动已经影响过比特币软件。BIP 66 把有效的签名限定为严格的 DER 编码，让共识规则不再依赖 OpenSSL 的签名解析，并说要把 OpenSSL 完全移出共识代码，就需要这样的改动<a class="ref" href="#s23">[23]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>共识规则的范围比写下来的大。0.7 的 10,000 把锁不在任何规则里，却决定了区块是否有效，BIP 50 称它是不一致、不安全的规则<a class="ref" href="#s1">[1]</a>。</li>
+            <li>换存储层也是共识改动。0.8 只换了索引数据库<a class="ref" href="#s3">[3]</a>，却放宽了规则<a class="ref" href="#s11">[11]</a>。</li>
+            <li>资源用尽和区块无效要分开处理。0.7.2 写索引失败就回滚，把这条链当作无效<a class="ref" href="#s6">[6]</a>，一次本地的数据库错误变成了链的分裂。</li>
+            <li>测试要覆盖病态的区块。测试网上处理过最大尺寸的区块，没人想到更小的区块需要更多的锁；BIP 50 建议在测试网上用机器人生成大量随机交易<a class="ref" href="#s1">[1]</a>。</li>
+            <li>外部库也会定规则。BIP 66 指出，OpenSSL 隐含地定义了签名是否有效<a class="ref" href="#s23">[23]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给矿工和矿池</span>
+          <ul>
+            <li>普通的升级也可能变成硬分叉。0.8 链一度约有 60% 的算力，旧节点照样不跟<a class="ref" href="#s1">[1]</a>。</li>
+            <li>多数算力不等于有效的链。当晚“多数算力胜出”的说法没有被采纳，因为用旧客户端的商家会暴露在风险里<a class="ref" href="#s11">[11]</a>。</li>
+            <li>回滚的代价落在回滚的人身上。BTC Guild 和 Slush 降级牺牲了相当多的钱<a class="ref" href="#s1">[1]</a>，0.8 链上 24 个区块的奖励作废<a class="ref" href="#s17">[17]</a>。</li>
+            <li>调大参数之前，先确认旧节点验证得了。事发前一周矿工被鼓励调高区块的目标大小<a class="ref" href="#s1">[1]</a>，0.8.1 又把自己产出的区块限制回 500,000 字节<a class="ref" href="#s7">[7]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所和商家</span>
+          <ul>
+            <li>分叉期间的确认不可靠。被双花的付款在 0.8 链上已经确认，BTC-e 也已入账<a class="ref" href="#s13">[13]</a>。</li>
+            <li>要能自动停下来。BitPay 靠 safe mode 发现了问题<a class="ref" href="#s17">[17]</a>；BIP 50 之后，bitcoind 可以用 <code>-alertnotify</code> 通知运营者，出现长侧链时也会发警报<a class="ref" href="#s1">[1]</a>。</li>
+            <li>新版本的软件可以放在运行多数版本的节点后面，这是 Michael Gronager 的建议，记在 BIP 50 里<a class="ref" href="#s1">[1]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Gavin Andresen，《BIP 50: March 2013 Chain Fork Post-Mortem》，2013-03-20 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0050.mediawiki">github.com</a></li>
+          <li id="s2">bitcoin.org，《11/12 March 2013 Chain Fork Information》，2013-03-11（最后更新 2013-05-16）。<a href="https://bitcoin.org/en/alert/2013-03-11-chain-fork">bitcoin.org</a></li>
+          <li id="s3">Bitcoin Core，《Bitcoin Core version 0.8.0 released》，2013-02-19。<a href="https://bitcoin.org/en/release/v0.8.0">bitcoin.org</a></li>
+          <li id="s4">Bitcoin Core，《Bitcoin Core version 0.8.1 released》，2013-03-18。<a href="https://bitcoin.org/en/release/v0.8.1">bitcoin.org</a></li>
+          <li id="s5">bitcoin.org，《15 May 2013 Upgrade Deadline》，2013-03-15（最后更新 2013-05-10，Internet Archive 存档）。<a href="https://web.archive.org/web/2013/http://bitcoin.org/may15.html">web.archive.org</a></li>
+          <li id="s6">bitcoin/bitcoin，v0.6.3 和 v0.7.2 标签下的 src/main.h、src/main.cpp、src/db.cpp。<a href="https://github.com/bitcoin/bitcoin/tree/v0.6.3/src">github.com</a>（v0.6.3）、<a href="https://github.com/bitcoin/bitcoin/tree/v0.7.2/src">github.com</a>（v0.7.2）</li>
+          <li id="s7">bitcoin/bitcoin，v0.8.1 标签下的 src/main.h、src/main.cpp、src/checkpoints.cpp。<a href="https://github.com/bitcoin/bitcoin/tree/v0.8.1/src">github.com</a></li>
+          <li id="s8">Pieter Wuille，bitcoin-development 邮件列表，《Warning: many 0.7 nodes break on large number of tx/block; fork risk》，2013-03-12 00:18 UTC（Internet Archive 存档）。<a href="https://web.archive.org/web/2016/https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2013-March/002235.html">web.archive.org</a></li>
+          <li id="s9">Pieter Wuille，bitcoin-development 邮件列表，同一主题的第二封邮件，2013-03-12 01:01 UTC（Internet Archive 存档）。<a href="https://web.archive.org/web/2016/https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2013-March/002236.html">web.archive.org</a></li>
+          <li id="s10">Pieter Wuille，BitcoinTalk，《Alert: chain fork caused by pre-0.8 clients dealing badly with large blocks》，2013-03-12。<a href="https://bitcointalk.org/index.php?topic=152030.0">bitcointalk.org</a></li>
+          <li id="s11">BitcoinStats，《Transcript for #bitcoin-dev 2013/03/11》（Internet Archive 存档）。<a href="https://web.archive.org/web/2013/http://bitcoinstats.com/irc/bitcoin-dev/logs/2013/03/11">web.archive.org</a></li>
+          <li id="s12">BitcoinStats，《Transcript for #bitcoin-dev 2013/03/12》（Internet Archive 存档）。<a href="https://web.archive.org/web/2013/http://bitcoinstats.com/irc/bitcoin-dev/logs/2013/03/12">web.archive.org</a></li>
+          <li id="s13">BitcoinTalk，《A successful DOUBLE SPEND US$10000 against OKPAY this morning.》，2013-03-12。<a href="https://bitcointalk.org/index.php?topic=152348.0">bitcointalk.org</a></li>
+          <li id="s14">Mt. Gox，《Bitcoin blockchain issue - bitcoin deposits temporarily suspended》，2013-03-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20140209083022/https://mtgox.zendesk.com/entries/21477395-Bitcoin-blockchain-issue-bitcoin-deposits-temporarily-suspended">web.archive.org</a></li>
+          <li id="s15">Ars Technica，《Major glitch in Bitcoin network sparks sell-off; price temporarily falls 23%》，2013-03-12。<a href="https://arstechnica.com/business/2013/03/major-glitch-in-bitcoin-network-sparks-sell-off-price-temporarily-falls-23/">arstechnica.com</a></li>
+          <li id="s16">The Verge，《Technical problems cause Bitcoin to plummet from record high, Mt. Gox suspends deposits》，2013-03-12。<a href="https://www.theverge.com/2013/3/12/4092898/technical-problems-cause-bitcoin-to-plummet-from-record-high">theverge.com</a></li>
+          <li id="s17">Bitcoin Magazine，Vitalik Buterin，《Bitcoin Network Shaken by Blockchain Fork》，2013-03-13。<a href="https://bitcoinmagazine.com/technical/bitcoin-network-shaken-by-blockchain-fork-1363144448">bitcoinmagazine.com</a></li>
+          <li id="s18">NIST NVD，《CVE-2013-3220》，2013-08-02 发布。<a href="https://nvd.nist.gov/vuln/detail/CVE-2013-3220">nvd.nist.gov</a></li>
+          <li id="s19">Bitcoin Wiki，《Common Vulnerabilities and Exposures》，2026 年 11 月查阅。<a href="https://en.bitcoin.it/wiki/Common_Vulnerabilities_and_Exposures">en.bitcoin.it</a></li>
+          <li id="s20">BitMEX Research，《A complete history of Bitcoin's consensus forks》，2017-12-28（Internet Archive 存档）。<a href="https://web.archive.org/web/2020/https://blog.bitmex.com/bitcoins-consensus-forks/">web.archive.org</a></li>
+          <li id="s21">Joseph Bonneau、Andrew Miller、Jeremy Clark、Arvind Narayanan、Joshua A. Kroll、Edward W. Felten，《SoK: Research Perspectives and Challenges for Bitcoin and Cryptocurrencies》，IEEE S&amp;P，2015。<a href="https://www.jbonneau.com/doc/BMCNKF15-IEEESP-bitcoin.pdf">jbonneau.com</a></li>
+          <li id="s22">中本聪（satoshi），BitcoinTalk，《Re: Transactions and Scripts: DUP HASH160 ... EQUALVERIFY CHECKSIG》，2010-06-17。<a href="https://bitcointalk.org/index.php?topic=195.msg1611#msg1611">bitcointalk.org</a></li>
+          <li id="s23">Pieter Wuille，《BIP 66: Strict DER signatures》，2015-01-10 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki">github.com</a></li>
+          <li id="s24">bitcoin.org，《Alert System Retirement》，2016-11-01（含 2017、2018 年的更新）。<a href="https://bitcoin.org/en/alert/2016-11-01-alert-retirement">bitcoin.org</a></li>
+          <li id="s25">维基百科，《History of bitcoin》。<a href="https://en.wikipedia.org/wiki/History_of_bitcoin">en.wikipedia.org</a></li>
+          <li id="s26">维基百科，《List of bitcoin forks》。<a href="https://en.wikipedia.org/wiki/List_of_bitcoin_forks">en.wikipedia.org</a></li>
+          <li id="s27">CoinDesk（Danny Nelson，Yahoo 转载），《Jump's 'Frankendancer' Validator Client Is Live on Solana Mainnet》，2024-09-20。<a href="https://finance.yahoo.com/news/jumps-frankendancer-validator-client-live-075025308.html">finance.yahoo.com</a></li>
+          <li id="s28">Satoshi Nakamoto，《Bitcoin: A Peer-to-Peer Electronic Cash System》，PDF 生成于 2009-03-24（首发 2008-10-31）。<a href="https://bitcoin.org/bitcoin.pdf">bitcoin.org</a></li>
+          <li id="s29">Satoshi Nakamoto，cryptography 邮件列表，《Bitcoin v0.1 released》，2009-01-08。<a href="https://www.metzdowd.com/pipermail/cryptography/2009-January/014994.html">metzdowd.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

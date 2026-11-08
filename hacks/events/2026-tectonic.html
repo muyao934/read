@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tectonic 价格操纵与 Cronos 回滚｜区块链被盗事件编年史</title>
+<meta name="description" content="2026 年 8 月 Cronos 上的借贷协议 Tectonic 被人以虚高的 TONIC 作抵押借走约 1.204 亿美元，Cronos 停链并回滚 1 小时 54 分钟的交易：抵押额度的计算方式、各方金额为何不同、回滚的决策与代价。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2026-tectonic">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2026 年　/　十亿美元级失守与信任链</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Tectonic 价格操纵与 Cronos 回滚</h1>
+    <p class="lede">攻击者在流动性很薄的 DEX 上拉高 Tectonic 治理代币 TONIC 的价格，再以虚高的 TONIC 作抵押，一笔交易从 9 个借贷市场借走约 1.204 亿美元。Cronos 的验证者随即停链，并把链状态恢复到攻击前，丢弃了 1 小时 54 分钟里的全部交易。这是一条公链为了一个应用的损失改写自己历史的少见案例，也再次说明喂价准确不等于这个价格可以拿来放贷。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Tectonic 是 Cronos 上最大的借贷协议，代码分叉自 Compound。它允许用户把自己的治理代币 TONIC 存入作抵押，抵押率 20%，而 TONIC 的价格来自协议自己的喂价合约，价格源只有 VVS Finance 和 Crypto.com Exchange 两处<a class="ref" href="#s17">[17]</a>。攻击前一周，TONIC 的成交额只有约 30.6 万美元<a class="ref" href="#s6">[6]</a>。</p>
+        <p>2026 年 8 月 30 日 12:38（UTC），攻击者开始在很薄的 DEX 流动性上推高 TONIC 的价格；约 11 分钟后，一笔交易以虚高的抵押品从 9 个市场借出约 1.204 亿美元<a class="ref" href="#s1">[1]</a>。合约本身按设计运行，没有被利用的代码漏洞。问题出在协议接受了一个可以被廉价推动的价格，又没有任何上限约束能借出多少。</p>
+        <p>14:32:47，Cronos 验证者停止出块。经验证者共识，链状态被恢复到攻击前的最后一个区块，丢弃了 10,961 个区块、1 小时 54 分钟的交易，约 1.112 亿美元被撤销；停链前已经跨链转走的约 919 万美元不受回滚影响，至今没有追回<a class="ref" href="#s1">[1]</a>。事发当天流传的“约 7,500 万美元”，是链上研究者按攻击者地址余额做的早期估算，后被官方数字取代。攻击者身份至今没有公开认定。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Tectonic 于 2021 年 12 月在 Cronos 上线，DefiLlama 从 2021 年 12 月 27 日开始记录它的锁仓量<a class="ref" href="#s20">[20]</a>。它的文档写明协议是 Compound 的分叉：用户存入资产得到 tToken（如 tUSDC、tTONIC），以 tToken 作抵押借出其他资产。治理代币 TONIC 总量 500 万亿枚。合约经过 Cronos Labs 安全团队以及 SlowMist、BlockSec 的审计<a class="ref" href="#s17">[17]</a>。</p>
+        <p>Cronos 是 Crypto.com 支持的 EVM 兼容链，采用 Tendermint 共识，验证者数量上限为 100 个<a class="ref" href="#s6">[6]</a>。验证者集合小，是这次能在几个小时内协调停链和回滚的前提。</p>
+        <p>攻击前，Tectonic 的锁仓量约 1.217 亿美元，活跃借款约 8,270 万美元，接近 Cronos 上所有 DeFi 应用存款总额的一半<a class="ref" href="#s9">[9]</a>。按 TRM Labs 的统计，TONIC 从 2022 年 2 月起就以 20% 的抵押率作为主池抵押品；攻击前一周它只成交了约 30.6 万美元，8 月 29 日当天约 1.8 万美元，整个 8 月用户存入的 TONIC 抵押品不到 2.6 万美元<a class="ref" href="#s6">[6]</a>。</p>
+        <p>同类攻击在几天前刚发生过。8 月 27 日，Base 上的借贷协议 Moonwell 被人拉高流动性很差的 MAMO 代币作抵押，损失约 870 万美元<a class="ref" href="#s8">[8]</a>。链上研究者 Weilin Li 把 Tectonic 称为近期第三起“Mango 式”的拉高后借款攻击<a class="ref" href="#s4">[4]</a>，这个说法指的是 2022 年的 <a href="2022-mango-markets.html">Mango Markets</a> 事件。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-12</time><div class="ev">Tectonic 在 Cronos 上线，TONIC 随后以 20% 的抵押率进入主池<a class="ref" href="#s6">[6]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2026-08-27</time><div class="ev">Base 上的 Moonwell 因 MAMO 代币被拉高作抵押损失约 870 万美元<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>08-30 12:38:52</time><div class="ev">区块 90,896,188 产出，这是后来被认定为“攻击前最后一个区块”的高度<a class="ref" href="#s1">[1]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>08-30 12:38:56</time><div class="ev">攻击者部署合约，开始在很薄的 DEX 流动性上推高 TONIC 的价格<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>08-30 12:49:39</time><div class="ev">一笔交易以虚高的 TONIC 作抵押，从 9 个市场借出约 1.204 亿美元<a class="ref" href="#s1">[1]</a>。随后部分资产被换成 USDC 和 CRO，经跨链桥转往以太坊<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>08-30 13:25</time><div class="ev">按 Cronos post-mortem 的时间线，团队在这时确认链上活动异常。post-mortem 的概要部分则写 Tectonic 在 12:49 发现异常，两处说法不同<a class="ref" href="#s1">[1]</a>。The Block 的报道称团队在攻击后约 36 分钟发现异常<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def key"><time>08-30 14:32:47</time><div class="ev">验证者在区块 90,907,150 停止出块。TRM Labs 用三家节点服务商和一个独立公共节点核对了这个高度<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。最后一笔跨链转出在停链前 83 秒完成<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>08-30 14:38–14:40</time><div class="ev">Cronos 宣布发现 Tectonic 被攻击、网络已暂停；两分钟后 Tectonic 提醒用户在确认安全前不要与协议交互<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>08-30 15:06–15:16</time><div class="ev">Weilin Li 发布初步分析，先估算约 6,600 万美元，找到另一个地址后改为约 7,500 万美元。Crypto.com CEO Kris Marszalek 表示 Crypto.com App 和交易所不受影响<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def key"><time>08-30 23:49:01</time><div class="ev">经过几轮协调，所有验证者用同一个补丁版本从区块 90,896,188 的状态重启，从 90,896,189 开始出块，账户余额回到攻击前<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>08-31 00:15</time><div class="ev">PeckShield 发布估算：约 7,400 万美元，其中约 600 万美元已到以太坊<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>08-31 13:31</time><div class="ev">Cronos 公开宣布网络已恢复，节点运营者需升级到 Cronos v1.7.8 并使用新快照。Tectonic 宣布分阶段重开，第一阶段只开放取款和还款<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2026-09-03</time><div class="ev">据 PeckShield，与攻击有关的以太坊地址把约 2,658.9 枚 ETH（约 665 万美元）存入 Tornado Cash<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def key"><time>2026-09-08</time><div class="ev">Cronos 发布 post-mortem：借出约 1.204 亿美元，回滚撤销约 1.112 亿美元，约 919 万美元（7.6%）在停链前离开 Cronos，没有追回<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2026-09-09</time><div class="ev">DefiLlama 记录的 Tectonic 锁仓量从约 1.21 亿美元降到约 2,245 万美元<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2026-10-31</time><div class="ev">链上读取显示，TONIC 的抵押率已改为 0，TONIC 市场的存款和借款均已暂停。锁仓量约 1,883 万美元<a class="ref" href="#s20">[20]</a><a class="ref" href="#s21">[21]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次没有被利用的代码漏洞。Tectonic 按 Compound 的规则计算借款额度：账户里每种抵押品的数量乘以预言机价格，再乘以该资产的抵押率，加总就是可借额度；借款总值不超过额度，借款就被允许。Tectonic 的文档称自己是 Compound 的分叉<a class="ref" href="#s17">[17]</a>，部署版本有自己的改动（例如增加了存款上限），下面引用的是上游 Compound 的源码<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>借款前的两道检查</h3>
+<pre class="code"><code><span class="c">// Comptroller.sol，borrowAllowed（节选）</span>
+uint borrowCap = borrowCaps[cToken];
+// Borrow cap of 0 corresponds to unlimited borrowing
+<span class="bad">if (borrowCap != 0) {   <span class="c">// 上限为 0 时，这段检查整个被跳过</span></span>
+    uint totalBorrows = CToken(cToken).totalBorrows();
+    uint nextTotalBorrows = add_(totalBorrows, borrowAmount);
+    require(nextTotalBorrows &lt; borrowCap, "market borrow cap reached");
+}
+
+<span class="c">// 剩下的约束只有一条：借款总值不超过下面算出的抵押额度</span>
+(Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(borrower,
+    CToken(cToken), 0, borrowAmount);
+
+<span class="c">// Comptroller.sol，getHypotheticalAccountLiquidityInternal 的循环体（节选）</span>
+vars.collateralFactor = Exp({mantissa: markets[address(asset)].collateralFactorMantissa});
+vars.exchangeRate = Exp({mantissa: vars.exchangeRateMantissa});
+
+// Get the normalized price of the asset
+<span class="bad">vars.oraclePriceMantissa = oracle.getUnderlyingPrice(asset);   <span class="c">// 喂价合约给出的现价</span></span>
+if (vars.oraclePriceMantissa == 0) {
+    return (Error.PRICE_ERROR, 0, 0);
+}
+vars.oraclePrice = Exp({mantissa: vars.oraclePriceMantissa});
+
+// Pre-compute a conversion factor from tokens -> ether (normalized price value)
+<span class="bad">vars.tokensToDenom = mul_(mul_(vars.collateralFactor, vars.exchangeRate),</span>
+<span class="bad">                          vars.oraclePrice);   <span class="c">// 抵押率 × 兑换率 × 价格</span></span>
+
+// sumCollateral += tokensToDenom * cTokenBalance
+vars.sumCollateral = mul_ScalarTruncateAddUInt(vars.tokensToDenom, vars.cTokenBalance,
+                                               vars.sumCollateral);</code></pre>
+        <p class="code-cap">来源：compound-finance/compound-protocol 仓库 master 分支 contracts/Comptroller.sol 第 367–375 行与第 742–756 行（该文件最近一次修改为提交 a3214f6，2022-06-07），去掉了缩进，两处长行做了折行<a class="ref" href="#s18">[18]</a>。Tectonic 部署的是自己的分叉版本，细节可能不同。</p>
+        <p>这段计算本身没有错，问题在输入。<code>getUnderlyingPrice</code> 返回的是喂价合约此刻的报价，代码不关心这个价格背后有多少真实买盘；抵押率是治理设定的固定比例，不随市场深度变化。价格涨 100 倍，额度就涨 100 倍。</p>
+        <p>借款上限本来可以兜底，但它在 Compound 里是可选项，设为 0 就是不限。本站在攻击前最后一个区块读取了 Tectonic 主池的 18 个市场：包括 USDC、USDT、WETH、WBTC、CRO 和 TONIC 在内的 15 个市场借款上限都是 0，另外 3 个市场的上限被设成极小值，相当于停止借款<a class="ref" href="#s21">[21]</a>。只要抵押额度够，一个账户可以一次借空任何一个开放的市场。</p>
+        <h3>TONIC 的价格从哪里来</h3>
+        <p>Tectonic 没有用第三方预言机网络给 TONIC 定价。它的文档说明，所有资产的价格由 Tectonic 的内部喂价维护；TONIC/USD 的价格源只列了两个：Cronos 上的 DEX VVS Finance 和 Crypto.com Exchange<a class="ref" href="#s17">[17]</a>。链上的 TONIC/USD 喂价合约提供 Chainlink 风格的 <code>latestRoundData</code> 接口，12 位小数，在攻击前最后一个区块的报价约为 0.0000000106 美元，最近一次更新在 12:19:37（UTC），本站抽查的前两次更新分别相隔约 1 小时 27 分和 59 分<a class="ref" href="#s21">[21]</a>。</p>
+        <p>当市场很薄时，“正确的价格”本身就很便宜。Halborn 统计，攻击前几天 TONIC 的流动性只有约 134 万美元<a class="ref" href="#s11">[11]</a>。预言机服务商 RedStone 的联合创始人 Marcin Kazmierczak 在事后接受采访时认为，这不是预言机故障：</p>
+        <blockquote>
+          <p>预言机没有报错，它如实报告了自己读取的那个池子在当时的 TONIC 价格。报告一个价格，和判断这个价格能不能拿来放贷，是两件不同的事，Tectonic 的设计把它们混在了一起。</p>
+          <cite>Marcin Kazmierczak（RedStone 联合创始人），接受 crypto.news 采访，2026-09-01，本站译文<a class="ref" href="#s8">[8]</a></cite>
+        </blockquote>
+        <h3>攻击前后的 TONIC 市场参数</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>参数（tTONIC 市场）</th><th>攻击前（区块 90,896,188）</th><th>2026-10-31</th></tr></thead>
+            <tbody>
+              <tr><td>抵押率</td><td>20%</td><td>0%</td></tr>
+              <tr><td>借款上限</td><td>0（不限）</td><td>约 2.45 万亿枚 TONIC</td></tr>
+              <tr><td>存款上限</td><td>50 万亿枚 TONIC</td><td>50 万亿枚 TONIC</td></tr>
+              <tr><td>存款、借款开关</td><td>开放</td><td>均已暂停</td></tr>
+              <tr><td>市场规模</td><td>约 8.13 万亿枚，按喂价约 8.6 万美元</td><td>不适用</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>表中数据是本站通过 Cronos 公共 RPC 只读查询受害协议合约得到的<a class="ref" href="#s21">[21]</a>。一个按喂价只值约 8.6 万美元的市场，抵押率是 20%，背后可以借出的资产却不设上限。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 570" role="img" aria-labelledby="tect-path-t tect-path-d">
+            <title id="tect-path-t">Tectonic 攻击路径与资金去向</title>
+            <desc id="tect-path-d">攻击者在 VVS Finance 上流动性很薄的 TONIC 池里买入、推高价格。Tectonic 的 TONIC/USD 喂价合约以 VVS Finance 和 Crypto.com Exchange 为价格源，跟随了这个价格。攻击者把 TONIC 存入 Tectonic 主池作抵押，主池按虚高的价格乘以 20% 抵押率计算额度，各市场又没有借款上限，于是一笔交易从 9 个市场借出约 1.204 亿美元。其中约 919 万美元在停链前跨链离开 Cronos，没有追回；约 1.112 亿美元在停链时仍在 Cronos 上，被状态回滚撤销。</desc>
+            <defs>
+              <marker id="tect-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="tect-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="tect-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="190" height="64" rx="4"/>
+            <text class="d-t b" x="115" y="46" text-anchor="middle">攻击者合约</text>
+            <text class="d-t s" x="115" y="68" text-anchor="middle">12:38:56 部署</text>
+            <rect class="d-box soft" x="300" y="20" width="190" height="64" rx="4"/>
+            <text class="d-t b" x="395" y="46" text-anchor="middle">VVS Finance</text>
+            <text class="d-t s" x="395" y="68" text-anchor="middle">TONIC 流动性约 134 万美元</text>
+            <rect class="d-box soft" x="550" y="20" width="190" height="64" rx="4"/>
+            <text class="d-t b" x="645" y="46" text-anchor="middle">Crypto.com Exchange</text>
+            <text class="d-t s" x="645" y="68" text-anchor="middle">另一个价格源</text>
+            <rect class="d-box" x="300" y="150" width="190" height="64" rx="4"/>
+            <text class="d-t b" x="395" y="176" text-anchor="middle">TONIC/USD 喂价合约</text>
+            <text class="d-t s" x="395" y="198" text-anchor="middle">Tectonic 内部维护</text>
+            <rect class="d-box" x="180" y="290" width="430" height="80" rx="4"/>
+            <text class="d-t b" x="395" y="316" text-anchor="middle">TectonicSocket 主池</text>
+            <text class="d-t s" x="395" y="340" text-anchor="middle">可借额度 = 抵押品数量 × 喂价 × 抵押率</text>
+            <text class="d-t s" x="395" y="360" text-anchor="middle">TONIC 抵押率 20%，各市场借款上限为 0（不限）</text>
+            <rect class="d-box atk" x="180" y="410" width="430" height="50" rx="4"/>
+            <text class="d-t b" x="395" y="432" text-anchor="middle">9 个借贷市场被借空</text>
+            <text class="d-t s" x="395" y="452" text-anchor="middle">一笔交易借出约 1.204 亿美元</text>
+            <rect class="d-box atk" x="60" y="500" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="210" y="524" text-anchor="middle">跨链转出约 919 万美元</text>
+            <text class="d-t s" x="210" y="544" text-anchor="middle">停链前离开 Cronos，没有追回</text>
+            <rect class="d-box ok" x="430" y="500" width="300" height="56" rx="4"/>
+            <text class="d-t b" x="580" y="524" text-anchor="middle">约 1.112 亿美元留在 Cronos</text>
+            <text class="d-t s" x="580" y="544" text-anchor="middle">被状态回滚撤销</text>
+            <line class="d-line atk" x1="210" y1="52" x2="298" y2="52" marker-end="url(#tect-ah-atk)"/>
+            <text class="d-t atk halo" x="254" y="44" text-anchor="middle">① 买入拉高</text>
+            <line class="d-line atk" x1="395" y1="84" x2="395" y2="148" marker-end="url(#tect-ah-atk)"/>
+            <text class="d-t atk halo" x="405" y="121">② 喂价跟随 DEX 现价</text>
+            <path class="d-line" d="M645,84 V182 H492" marker-end="url(#tect-ah)"/>
+            <text class="d-t s" x="655" y="136">价格源</text>
+            <path class="d-line atk" d="M115,84 V318 H178" marker-end="url(#tect-ah-atk)"/>
+            <text class="d-t atk halo" x="123" y="200">③ 存入 TONIC 作抵押</text>
+            <line class="d-line atk" x1="395" y1="214" x2="395" y2="288" marker-end="url(#tect-ah-atk)"/>
+            <text class="d-t atk halo" x="405" y="256">④ 按虚高的价格计算额度</text>
+            <line class="d-line atk" x1="395" y1="370" x2="395" y2="408" marker-end="url(#tect-ah-atk)"/>
+            <text class="d-t atk halo" x="405" y="394">⑤ 12:49:39</text>
+            <line class="d-line atk" x1="290" y1="460" x2="290" y2="498" marker-end="url(#tect-ah-atk)"/>
+            <text class="d-t atk halo" x="282" y="484" text-anchor="end">⑥ 停链前</text>
+            <line class="d-line def" x1="500" y1="460" x2="500" y2="498" marker-end="url(#tect-ah-def)"/>
+            <text class="d-t def halo" x="508" y="484">⑦ 停链、回滚</text>
+          </svg>
+          </div>
+          <figcaption>图 1：攻击路径和资金去向。红色是被利用的环节，蓝色是链级处置。编号表示逻辑关系，不是严格的时间顺序，推高价格和存入抵押品在实际中可能交替进行。Tectonic 的合约每一步都按设计执行，失守的是价格来源的深度、固定的抵押率和缺失的借款上限。</figcaption>
+        </figure>
+        <h3>哪一步本可以拦住</h3>
+        <p>合约逻辑没有问题，能拦住的是风险参数和价格保护。Kazmierczak 认为最有效的单项措施是按“实际能卖出多少”设定借款上限，即使喂价涨 100 倍，上限也能把损失框住；他也提醒，单靠拉长 TWAP 窗口不够，20 分钟涨 100 倍的资产本就不该以有意义的规模充当抵押品<a class="ref" href="#s8">[8]</a>。TRM 给了一个对照：攻击中借出的约 7,500 万美元，是 TONIC 攻击前一周成交额的 245 倍<a class="ref" href="#s6">[6]</a>。</p>
+<pre class="code"><code><span class="c">// 示意：给长尾抵押品加两道与市场深度挂钩的限制（不是 Tectonic 的代码）</span>
+function collateralValue(Asset a, uint amount) internal view returns (uint) {
+    uint spot = oracle.price(a);
+    uint twap = oracle.twap(a, 1 hours);
+<span class="good">    // 一：现价相对一小时均价偏离过大时，不给这个资产新增额度</span>
+<span class="good">    if (spot &gt; twap * (100 + maxDeviationPct[a]) / 100) return 0;</span>
+    uint value = amount * min(spot, twap) / 1e18;
+<span class="good">    // 二：单一资产计入的抵押价值，不超过按链上深度估算的可变现金额</span>
+<span class="good">    return min(value, liquidationDepthUsd[a]) * collateralFactor[a] / 1e18;</span>
+}</code></pre>
+        <p class="code-cap">示意代码，省略了单位换算和预言机失效处理。按资产分别设置借款上限（Compound 的 <code>borrowCaps</code>）是更简单的第三道限制，Tectonic 当时没有启用。</p>
+        <div class="note doubt">
+          <span class="h">两处没有定论的地方</span>
+          <p>一是定性。DefiLlama 的攻击数据库把这起事件归为“Token &amp; Share Accounting / Donation Attack”，金额记为 1.2447 亿美元<a class="ref" href="#s20">[20]</a>。“捐赠攻击”通常指把底层代币直接转进份额合约、抬高每份额的兑换率；Cronos 的 post-mortem 和 TRM、Halborn、Bitquery 的分析描述的都是推高 TONIC 的市场价格，没有提到这种操作<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。DefiLlama 没有公开分类依据，本页以官方描述为准。</p>
+          <p>二是数量。crypto.news 转述 Weilin Li 的统计，攻击仓位里约有 364.6 万亿枚 TONIC<a class="ref" href="#s8">[8]</a>。这超过 TONIC 总量 500 万亿枚的 70%，也远超 TONIC 市场 50 万亿枚的存款上限。如果这个数字指的是 tTONIC 份额，按攻击前约 0.135 的兑换率折算约为 49.4 万亿枚 TONIC，恰好接近存款上限，但没有来源这样说明。Coinpedia 转述的另一份归档节点分析给出的是完全不同的仓位数字，并称喂价在一个区块内跳涨了 6.46 倍<a class="ref" href="#s15">[15]</a>。回滚后，攻击交易已不在公开浏览器上，只能借助 Cronos 提供的归档快照核实。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击交易所在的区块已被回滚丢弃。下面按 Cronos 的 post-mortem 和已发表的链上分析转述，只写到结论层面。</p>
+        <ol class="steps">
+          <li><b>推高 TONIC 价格（12:38:56 起）</b>攻击者部署合约，开始在很薄的 DEX 流动性上推高 TONIC 的价格<a class="ref" href="#s1">[1]</a>。按 Bitquery 的分析，攻击者先存入约 500 万美元的本金，再用借来的资金买入 TONIC，同时反复借出、存入 TONIC 放大仓位<a class="ref" href="#s10">[10]</a>。涨幅说法不一：Weilin Li、TRM 和 Halborn 说约 20 分钟涨了约 100 倍，Bitquery 说接近 300 倍<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>一笔交易借空 9 个市场（12:49:39）</b>以虚高的 TONIC 作抵押，借出约 1.204 亿美元<a class="ref" href="#s1">[1]</a>。Bitquery 统计这笔交易有 11 次转出，涉及稳定币、BTC、ETH 等资产<a class="ref" href="#s10">[10]</a>。</li>
+          <li><b>换币、跨链</b>一部分借来的 USDC 和其他资产（先换成 CRO）经跨链桥转往以太坊。Bitquery 在以太坊上追踪到 4 个钱包共约 830 万美元，其中约 630 万美元以 USDC 到账后换成 ETH；28 笔 CRO 跨链转账的最后一笔在停链前 83 秒完成<a class="ref" href="#s10">[10]</a>。Cronos 的官方统计是停链前共有约 919 万美元离开网络<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>其余资产留在 Cronos</b>Weilin Li 称，约 6,000 万美元被存进了一个 DEX 池，他推测是为了避免被拉黑；另一个地址上还有约 800 万美元<a class="ref" href="#s4">[4]</a>。这些资产在停链时还在 Cronos 上，后来被回滚撤销。</li>
+        </ol>
+        <p>从借款到停链隔了约 1 小时 43 分钟，其间离开 Cronos 的只占借出总额的约 7.6%<a class="ref" href="#s1">[1]</a>。这个比例决定了回滚能挽回多少。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>这起事件前后出现过至少六个金额，差别来自统计对象和时点。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源（时间，UTC）</th><th class="n">金额（美元）</th><th>统计的是什么</th></tr></thead>
+            <tbody>
+              <tr><td>Weilin Li（08-30 15:06）</td><td class="n">约 6,600 万</td><td>一个 Cronos 地址上的约 6,000 万，加上已到以太坊的约 600 万<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>Weilin Li（08-30 15:09）</td><td class="n">约 7,500 万</td><td>又找到一个约 800 万的地址；TRM、Halborn 和多数媒体沿用这个数<a class="ref" href="#s4">[4]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>PeckShield（08-31 00:15）</td><td class="n">约 7,400 万</td><td>三个地址的余额相加<a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>Coinpedia 转述的归档节点分析（08-30）</td><td class="n">约 1.195 亿</td><td>65 分钟内从借贷池流出的总额<a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>Bitquery（08-31 之后）</td><td class="n">约 1.204 亿</td><td>攻击交易的借款总额；以太坊上追踪到约 830 万<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>Cronos post-mortem（09-08）</td><td class="n">约 1.204 亿</td><td>借款总额；约 1.112 亿被撤销，约 919 万离开网络<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>DefiLlama（未注明）</td><td class="n"><span class="dispute">约 1.2447 亿</span></td><td>没有说明口径<a class="ref" href="#s20">[20]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>早期的 6,600 万到 7,500 万美元统计的是停链那一刻几个地址上还剩多少，1.204 亿美元统计的是那笔交易借出了多少，两者不能直接相减。本站的损失金额采用官方的 1.204 亿美元，实际没有追回的是约 919 万美元。</p>
+        <h3>停链时还在 Cronos 上的部分</h3>
+        <ol class="flow">
+          <li class="atk"><b>借出约 1.204 亿美元</b>一笔交易，9 个市场</li>
+          <li class="doubt"><b>停链时约 92% 仍在链上</b>区块 90,907,150 之后不再出块</li>
+          <li class="def"><b>状态恢复到区块 90,896,188</b>丢弃 10,961 个区块</li>
+          <li class="ok"><b>约 1.112 亿美元被撤销</b>各市场余额回到攻击前</li>
+        </ol>
+        <h3>停链前已经离开的部分</h3>
+        <ol class="flow">
+          <li class="atk"><b>跨链转出约 919 万美元</b>USDC 和换成 CRO 的资产，经跨链桥到以太坊</li>
+          <li class="atk"><b>在以太坊换成 ETH</b>TRM 记为约 2,592 枚 ETH<a class="ref" href="#s6">[6]</a></li>
+          <li class="atk"><b>2026-09-03 进入 Tornado Cash</b>PeckShield 记为约 2,658.9 枚 ETH<a class="ref" href="#s16">[16]</a></li>
+          <li class="doubt"><b>没有追回</b>Cronos 称这部分超出了回滚的范围</li>
+        </ol>
+        <p>TRM 和 PeckShield 给出的 ETH 数量相差约 67 枚，来源没有解释原因。</p>
+        <p>回滚还带来两个容易被忽略的结果。第一，按 Bitquery 的说法，攻击者约 500 万美元的本金在回滚点之前就已转入，因此也随回滚一起被“恢复”了；没有公开信息说明这笔钱后来是否被冻结<a class="ref" href="#s10">[10]</a>。第二，919 万美元离开 Cronos 时，跨链桥已经在以太坊一侧放出了资产，而 Cronos 一侧对应的交易随回滚消失。这笔差额最终由谁承担，Cronos 只说在和交易所、跨链桥等合作方对账<a class="ref" href="#s1">[1]</a>。回滚后，Tectonic 的 USDC 市场从只剩 3 美分恢复到约 5,420 万美元<a class="ref" href="#s10">[10]</a>，这与本站在区块 90,896,188 读到的约 5,433 万美元现金余额一致<a class="ref" href="#s21">[21]</a>。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>Tectonic 和 Cronos 的 DeFi</h3>
+        <p>Tectonic 攻击前约占 Cronos DeFi 存款的一半<a class="ref" href="#s9">[9]</a>。DefiLlama 的数据显示，它的锁仓量 8 月 30 日约 1.217 亿美元，31 日（停链期间、回滚前的数据）只剩约 302 万美元，9 月 1 日随回滚回到约 1.214 亿美元，9 月 9 日降到约 2,245 万美元，此后一直在 1,900 万到 2,200 万美元之间<a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a>。9 月 9 日的下降发生在 Tectonic 宣布先开放取款之后；DefiLlama 的数据本身不能说明取走的是谁的钱。</p>
+        <h3>回滚的代价</h3>
+        <p>恢复状态意味着这 1 小时 54 分钟里的每一笔交易都被撤销，不管是否与攻击有关；交易恢复后，各应用里未平的仓位按新的价格重新计算<a class="ref" href="#s1">[1]</a>。被丢弃的区块和交易在公开浏览器上已经查不到，只能通过 Cronos 提供的归档快照核对。基础设施服务商 Tatum 需要从区块 90,896,188 开始重放全部链上数据，跨链桥、交易所和索引服务都要做同样的对账<a class="ref" href="#s9">[9]</a>。</p>
+        <p>停链本身也波及所有人。约 9 小时里，Cronos 上的转账、合约交互和跨链桥全部停止<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>。Crypto.com 的 App 和交易所照常运行，Marszalek 所说的“资金安全”指的是这些中心化服务里的资产，不包括存在 Tectonic 里的资金<a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <h3>2026 年的价格操纵攻击</h3>
+        <p>TRM 统计，2026 年截至 8 月底已发生 32 起价格操纵攻击，超过以往任何一年；这类攻击在全部黑客事件中的占比从 2022 年的约 1/17 升到约 1/8。TRM 把 Tectonic 列为有记录以来第三大的价格操纵事件，排在 2025 年 5 月的 <a href="2025-cetus.html">Cetus</a> 和 2022 年 10 月的 <a href="2022-mango-markets.html">Mango Markets</a> 之后<a class="ref" href="#s6">[6]</a>。手法本身并不新：2020 年的 <a href="2020-bzx-flash-loan.html">bZx</a> 用 DEX 现价给抵押品定价，2021 年的 <a href="2021-cream-finance.html">Cream Finance</a> 用份额价格给抵押品定价，都是同一类问题的早期案例。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>为什么选择回滚</h3>
+        <p>按 TRM 的归纳，停链之后验证者有三个选项：按停链时的状态重启，冻结攻击者地址，或者把链恢复到攻击前<a class="ref" href="#s6">[6]</a>。Cronos 选了第三个。它在 post-mortem 里这样解释：</p>
+        <blockquote>
+          <p>这是一个艰难的决定，是和验证者一起作出的，要在用户对一条链的最终性预期和处于风险中的资金之间权衡。恢复状态意味着丢弃 1 小时 54 分钟已结算的交易。另一个选项，即不恢复状态直接重启，会让借出的资产留在攻击者手里。</p>
+          <cite>Cronos Network，Incident Post-Mortem，2026-09-08，本站译文<a class="ref" href="#s1">[1]</a></cite>
+        </blockquote>
+        <p>停链和恢复都要通过验证者共识，在活跃验证者集合中达到安全门槛。重启要求每个验证者从同一个状态运行同一个补丁版本，团队和验证者连夜协调了几轮才成功<a class="ref" href="#s1">[1]</a>。Cronos 也承认这段时间的沟通做得不好<a class="ref" href="#s1">[1]</a>：链在 8 月 30 日 23:49 已经恢复出块，8 月 31 日 05:24 的公告仍写着“还在暂停”，正式的恢复公告到 13:31 才发出<a class="ref" href="#s2">[2]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 300" role="img" aria-labelledby="tect-rb-t tect-rb-d">
+            <title id="tect-rb-t">Cronos 停链与状态恢复时间轴</title>
+            <desc id="tect-rb-d">2026 年 8 月 30 日（UTC）。12:38:52 产出区块 90,896,188，随后攻击开始；12:49:39 一笔交易借出约 1.204 亿美元；13:25 团队确认异常；14:32:47 验证者在区块 90,907,150 停链。停链约 9 小时后，23:49:01 链从区块 90,896,188 的状态重启，从 90,896,189 开始出块。其间的 10,961 个区块、1 小时 54 分钟的交易被丢弃。</desc>
+            <rect class="d-box atk" x="76" y="34" width="459" height="36" rx="2"/>
+            <text class="d-t atk b" x="305" y="57" text-anchor="middle">被丢弃：10,961 个区块，1 小时 54 分钟</text>
+            <rect class="d-box soft" x="535" y="34" width="183" height="36" rx="2"/>
+            <text class="d-t s" x="626" y="57" text-anchor="middle">停链约 9 小时</text>
+            <line class="d-line" x1="40" y1="92" x2="584" y2="92"/>
+            <line class="d-line" x1="600" y1="92" x2="730" y2="92"/>
+            <line class="d-line" x1="580" y1="100" x2="588" y2="84"/>
+            <line class="d-line" x1="596" y1="100" x2="604" y2="84"/>
+            <line class="d-line def" x1="76" y1="78" x2="76" y2="106"/>
+            <line class="d-line atk" x1="119" y1="78" x2="119" y2="106"/>
+            <line class="d-line" x1="262" y1="78" x2="262" y2="106"/>
+            <line class="d-line def" x1="535" y1="78" x2="535" y2="106"/>
+            <line class="d-line def" x1="718" y1="78" x2="718" y2="106"/>
+            <text class="d-t b" x="76" y="126" text-anchor="middle">①</text>
+            <text class="d-t b atk" x="119" y="126" text-anchor="middle">②</text>
+            <text class="d-t b" x="262" y="126" text-anchor="middle">③</text>
+            <text class="d-t b def" x="535" y="126" text-anchor="middle">④</text>
+            <text class="d-t b def" x="718" y="126" text-anchor="middle">⑤</text>
+            <text class="d-t s m" x="82" y="144" text-anchor="end">12:38</text>
+            <text class="d-t s m" x="113" y="144" text-anchor="start">12:49</text>
+            <text class="d-t s m" x="262" y="144" text-anchor="middle">13:25</text>
+            <text class="d-t s m" x="535" y="144" text-anchor="middle">14:32</text>
+            <text class="d-t s m" x="718" y="144" text-anchor="middle">23:49</text>
+            <text class="d-t" x="40" y="182">① 12:38:52 区块 <tspan class="m">90,896,188</tspan>，后来的恢复点；4 秒后攻击开始</text>
+            <text class="d-t atk" x="40" y="206">② 12:49:39 一笔交易借出约 1.204 亿美元</text>
+            <text class="d-t" x="40" y="230">③ 13:25:00 团队确认链上活动异常</text>
+            <text class="d-t def" x="40" y="254">④ 14:32:47 验证者在区块 <tspan class="m">90,907,150</tspan> 停链</text>
+            <text class="d-t def" x="40" y="278">⑤ 23:49:01 从 <tspan class="m">90,896,188</tspan> 的状态重启，从 <tspan class="m">90,896,189</tspan> 开始出块</text>
+          </svg>
+          </div>
+          <figcaption>图 2：停链与状态恢复，时间为 2026-08-30（UTC）。14:40 之后的横轴做了压缩，不按比例。红色区间内的交易在重启后全部消失，包括与攻击无关的交易。时间和区块号来自 Cronos 的 post-mortem<a class="ref" href="#s1">[1]</a>。</figcaption>
+        </figure>
+        <h3>Tectonic 的处置</h3>
+        <p>网络恢复后，Tectonic 宣布分阶段重开：第一阶段只开放取款和还款，存款和借款保持暂停，并称会发布完整的 post-mortem<a class="ref" href="#s3">[3]</a>。截至 2026 年 10 月底，本站没有找到 Tectonic 自己发布的 post-mortem，也没有找到针对未追回部分的赔偿方案。链上读取显示，TONIC 市场的抵押率已改为 0，存款和借款均已暂停，并新设了约 2.45 万亿枚 TONIC 的借款上限<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>没有追回的 919 万美元</h3>
+        <p>这部分在停链前已经到了以太坊，Cronos 的回滚管不到。Cronos 称正在与主要合作方合作，对账完成后会公布被撤销时段的更多细节<a class="ref" href="#s1">[1]</a>。9 月 3 日，据 PeckShield，相关地址把约 2,658.9 枚 ETH 存入 Tornado Cash<a class="ref" href="#s16">[16]</a>。TRM 表示没有证据支持把这起攻击归因于任何已知团伙<a class="ref" href="#s6">[6]</a>；截至 10 月底，本站没有查到公开的执法行动或嫌疑人信息。</p>
+        <h3>链级干预的先例</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th class="n">时间</th><th>链上做了什么</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2016-the-dao.html">The DAO</a></td><td class="n">2016-07</td><td>经过数周的公开辩论，以太坊在区块 1,920,000 硬分叉，把相关合约的余额转进退款合约；反对者延续原链，成为 Ethereum Classic<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td><a href="2022-bnb-bridge.html">BNB Chain 跨链桥</a></td><td class="n">2022-10</td><td>BNB Chain 逐个联系当时 26 个活跃验证者停链，资金处置交由后续的链上治理投票<a class="ref" href="#s22">[22]</a></td></tr>
+              <tr><td><a href="2025-cetus.html">Sui / Cetus</a></td><td class="n">2025-05</td><td>攻击者账户里的资金被冻结；经代表 90.9% 质押的验证者投票，通过协议升级把资金转入多签托管，不需要攻击者签名<a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td><a href="2026-kelpdao.html">KelpDAO</a></td><td class="n">2026-04</td><td>Arbitrum 安全委员会冻结了价值约 7,500 万美元的 ETH，其余资金被转走<a class="ref" href="#s6">[6]</a></td></tr>
+              <tr><td>Harmony</td><td class="n">2026-08</td><td>伪造 ONE 代币事件后回滚到 8 月 11 日 23:25（UTC），丢弃 109,126 笔普通交易和 315 笔质押交易，理由是选择性恢复会造成不一致的状态<a class="ref" href="#s24">[24]</a></td></tr>
+              <tr><td>Cronos / Tectonic</td><td class="n">2026-08</td><td>停链约 9 小时，恢复到攻击前最后一个区块，丢弃 10,961 个区块<a class="ref" href="#s1">[1]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>同期也有选择不回滚的例子。FinanceFeeds 提到，Flow 在另一起攻击后放弃了已提出的回滚方案，原因是担心改写历史会削弱人们对网络最终性的信心<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>争议</h3>
+        <p>支持者的理由很直接：处置有效，很可能让 Tectonic 的存款人免于损失几乎全部资金<a class="ref" href="#s9">[9]</a>。批评集中在三点。第一，如果一小群验证者可以按需改写历史，这条链和一个“多了几道手续的数据库”还有什么区别<a class="ref" href="#s9">[9]</a>。第二，The DAO 分叉经过了数周的公开辩论，这次的决定在约 9 小时内由团队和验证者连夜作出，事前没有公开的规则<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>。第三，100 个验证者的上限让协调干预变得可行，同时也说明这条链的最终性在紧急情况下取决于验证者共识<a class="ref" href="#s14">[14]</a>。Halborn 的评价是，回滚抹掉了大部分损失，代价是降低了人们对 Cronos 账本不可篡改的信任<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给借贷协议</span>
+          <ul>
+            <li>抵押品的计入价值要和可变现深度挂钩。抵押率是固定比例，市场深度不是；一个按喂价只值几万美元的市场，不该支撑数千万美元的借款。</li>
+            <li>借款上限不要默认不限。Compound 系协议里 <code>borrowCaps</code> 为 0 就是不限，这次 15 个开放市场全是 0。</li>
+            <li>协议自己的治理代币不是普通抵押品。把它列为抵押品能提高代币用途和锁仓量，风险却要等到有人测试时才暴露<a class="ref" href="#s8">[8]</a>。</li>
+            <li>喂价要有异常保护：短时间内相对均价偏离过大，就暂停以该资产新增借款。</li>
+            <li>风险参数要定期复核。TONIC 的抵押率从 2022 年沿用到 2026 年，其间它的成交量早已萎缩到每天一两万美元<a class="ref" href="#s6">[6]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给公链和基础设施</span>
+          <ul>
+            <li>紧急停链和状态恢复的规则要事前写好：谁能发起、需要多少验证者同意、恢复到哪个区块、怎样对外公告。临时决定的处置，哪怕结果有效，也会留下合法性争议。</li>
+            <li>停链只管得住本链。这次约 919 万美元在停链前经跨链桥离开，最后一笔在停链前 83 秒完成<a class="ref" href="#s10">[10]</a>。跨链桥需要能在本链出现异常时自行暂停的机制。</li>
+            <li>回滚会撤销无关用户的交易。交易所、跨链桥和索引服务要事先准备重放和对账流程，归档快照要能公开核对。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Cronos Network，《Cronos Network Incident Post-Mortem》，X 长文，2026-09-08。<a href="https://x.com/CronosNetwork/status/2097131718948094299">x.com</a></li>
+          <li id="s2">Cronos Network 在 X 上的公告：停链（2026-08-30 14:38）、仍在暂停（08-31 05:24）、恢复出块（08-31 13:31）。<a href="https://x.com/CronosNetwork/status/2094072333434769703">停链</a>　<a href="https://x.com/CronosNetwork/status/2094295199346573593">暂停中</a>　<a href="https://x.com/CronosNetwork/status/2094417832394301499">恢复</a></li>
+          <li id="s3">Tectonic 在 X 上的公告：事件提醒（2026-08-30 14:40）、分阶段重开（08-31 14:56）。<a href="https://x.com/TectonicFi/status/2094072821630799989">事件提醒</a>　<a href="https://x.com/TectonicFi/status/2094439214133993487">分阶段重开</a></li>
+          <li id="s4">Weilin Li（@hklst4r），关于 Tectonic 被攻击的初步分析，X，2026-08-30 15:06 与 15:09。<a href="https://x.com/hklst4r/status/2094079327176466563">第一条</a>　<a href="https://x.com/hklst4r/status/2094080149369000151">第二条</a></li>
+          <li id="s5">Kris Marszalek（Crypto.com CEO），关于 Tectonic 事件的声明，X，2026-08-30 15:16。<a href="https://x.com/kris/status/2094081766109982764">x.com</a></li>
+          <li id="s6">TRM Labs，《Number of Price-Manipulation Attacks Hits All-Time High as USD 75 Million Is Stolen From Tectonic》，2026-08-31。<a href="https://www.trmlabs.com/resources/blog/number-of-price-manipulation-attacks-hits-all-time-high-as-usd-75-million-is-stolen-from-tectonic">trmlabs.com</a></li>
+          <li id="s7">PeckShieldAlert，关于 Tectonic 被攻击约 7,400 万美元的提醒，X，2026-08-31 00:15。<a href="https://x.com/PeckShieldAlert/status/2094217367434015065">x.com</a></li>
+          <li id="s8">crypto.news，《Tectonic’s $75M exploit was not an oracle failure, RedStone co-founder says》，2026-09-01。<a href="https://crypto.news/tectonics-75m-dollars-exploit-not-an-oracle-failure/">crypto.news</a></li>
+          <li id="s9">crypto.news，《Cronos rolled back its own chain to undo a $75 million hack. that should terrify you.》，2026-09-03。<a href="https://crypto.news/cronos-rolled-back-chain-75-million-hack-tectonic/">crypto.news</a></li>
+          <li id="s10">Cointelegraph，《Cronos Rollback Erases $111M of $120M Tectonic Exploit Transfers》（2026-08-31 首发，09-07 更新，含 Bitquery 的分析）与《Cronos Confirms $9.2M Escaped as Rollback Reversed $111M》（2026-09-08）。<a href="https://cointelegraph.com/news/cronos-network-halt-tectonic-exploit-75-million">第一篇</a>　<a href="https://cointelegraph.com/news/cronos-tectonic-rollback-111m-9m-escaped">第二篇</a></li>
+          <li id="s11">Halborn，《Explained: The Tectonic Hack (August 2026)》，2026-09-03。<a href="https://www.halborn.com/blog/post/explained-the-tectonic-hack-august-2026">halborn.com</a></li>
+          <li id="s12">The Block，《Cronos says $9.2 million remains unrecovered after Tectonic exploit, chain rollback》，2026-09-08。<a href="https://www.theblock.co/news/ecosystems/2026-09-08-cronos-post-mortem-413724">theblock.co</a></li>
+          <li id="s13">Decrypt，《Cronos Erased Two Hours of Transactions to Reverse $111 Million DeFi Exploit》，2026-09-08。<a href="https://decrypt.co/377686/cronos-erased-two-hours-transactions-defi-exploit">decrypt.co</a></li>
+          <li id="s14">FinanceFeeds，《Cronos Recovers $111.2M, $9.19M Gone in Tectonic Exploit》，2026-09-08。<a href="https://financefeeds.com/cronos-recovers-111-2m-after-rolling-back-tectonic-exploit/">financefeeds.com</a></li>
+          <li id="s15">Coinpedia，《Cronos Blockchain Pauses After Tectonic Lending Exploit, $119.5M at Risk》，2026-08-30。<a href="https://coinpedia.org/news/cronos-blockchain-pauses-after-tectonic-lending-exploit-119-5m-at-risk/">coinpedia.org</a></li>
+          <li id="s16">Cryptopolitan，《Tectonic attacker moves escaped ETH into Tornado Cash》（转述 PeckShield），2026-09-04，经 MSN 转载。<a href="https://www.msn.com/en-us/news/other/tectonic-attacker-moves-escaped-eth-into-tornado-cash/ar-AA2bwK2A">msn.com</a></li>
+          <li id="s17">Tectonic 文档：《Price Oracle》《Money Market Parameters》《TONIC Token》《External Audits》《Smart Contracts &amp; Security》。<a href="https://tectonic.gitbook.io/docs/developer/price-oracle">喂价</a>　<a href="https://tectonic.gitbook.io/docs/protocol/money-market-parameters">市场参数</a>　<a href="https://tectonic.gitbook.io/docs/protocol/tonic-token">TONIC</a>　<a href="https://tectonic.gitbook.io/docs/developer/smart-contracts-and-security/external-audits">审计</a></li>
+          <li id="s18">Compound Labs，compound-protocol 仓库 contracts/Comptroller.sol（master 分支，最近一次修改为提交 a3214f6）。<a href="https://github.com/compound-finance/compound-protocol/blob/master/contracts/Comptroller.sol">github.com</a></li>
+          <li id="s19">BleepingComputer，《Cronos blockchain restarts after $74 million Tectonic exploit》，2026-08-31。<a href="https://www.bleepingcomputer.com/news/security/cronos-blockchain-restarts-after-74-million-tectonic-exploit/">bleepingcomputer.com</a></li>
+          <li id="s20">DefiLlama，Tectonic 协议页（锁仓量历史）与 Hacks 数据库中的 Tectonic 条目。<a href="https://defillama.com/protocol/tectonic">协议页</a>　<a href="https://defillama.com/hacks">Hacks</a></li>
+          <li id="s21">本站通过 Cronos 公共 RPC（evm.cronos.org）的只读查询，2026-10-31：TectonicSocket 主池 <span class="addr">0xb3831584acb95ed9ccb0c11f677b5ad01deaeec0</span>、tTONIC <span class="addr">0xfe6934fdf050854749945921faa83191bccf20ad</span>、TONIC/USD 喂价合约 <span class="addr">0x14f753940720C1Fa4247Cd464C7EA28c806d123F</span> 在区块 90,896,188 与最新区块的状态。<span class="src-note">只读取受害协议的公开参数，没有解析攻击交易。</span></li>
+          <li id="s22">BNB Chain，《BNB Chain Ecosystem Update》，2022-10-07。<a href="https://www.bnbchain.org/en/blog/bnb-chain-ecosystem-update">bnbchain.org</a></li>
+          <li id="s23">Sui Foundation，《Response to the Cetus Incident – Onchain Community Vote》，2025-05-27。<a href="https://blog.sui.io/cetus-incident-response-onchain-community-vote/">blog.sui.io</a></li>
+          <li id="s24">Cointelegraph，《Harmony plans rollback, wiping 109,000 transactions after ONE exploit》，2026-08-17。<a href="https://cointelegraph.com/news/harmony-plans-rollback-transactions-one-exploit">cointelegraph.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

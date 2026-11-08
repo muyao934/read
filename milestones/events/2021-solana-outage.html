@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solana 多次全网停机（2021–2024）｜区块链大事记</title>
+<meta name="description" content="2021 年 9 月 14 日 Solana 主网停了约 17 小时：代币发售引来的机器人交易怎样压停一条高吞吐的链，写锁、投票和分叉各起了什么作用，验证者怎样在 Discord 上协调从同一个 slot 重启，第一次重启为什么因 u64 溢出失败；以及 2022 年至 2024 年的另外几次停机和后来的 QUIC、优先费、Firedancer。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-solana-outage">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Solana 多次全网停机（2021–2024）</h1>
+    <p class="lede">2021 年 9 月 14 日，Solana 上的一次代币发售引来大量机器人交易，主网从 12:12 UTC 起不再产生新的 root，停了约 17 小时。验证者在 Discord 上商定从同一个 slot 重启，第一次重启又撞上一个整数溢出的 bug。此后到 2024 年 2 月，主网又有四次完全停止出块、一次只出投票区块，每次都要靠验证者人工协调重启；这几次停机先后促成了 QUIC、按质押加权的服务质量、优先费和第二个客户端 Firedancer。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Solana 没有内存池，客户端把交易直接发给当前和下一个出块者（leader）<a class="ref" href="#s2">[2]</a>；2021 年时，leader 对交易一律先到先得，不看来源<a class="ref" href="#s8">[8]</a>。9 月 14 日 12:00 UTC，Grape Protocol 在 Raydium 上发售代币，机器人发出的交易灌满网络，12:12 起主网不再产生新的 root<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。官方初步报告说，网络离线 17 小时，没有资金损失<a class="ref" href="#s1">[1]</a>。</p>
+        <p>Jump Crypto 的复盘写道，一个机器人的交易对 18 个账户加了写锁，其中有全局的 SPL Token 程序，相关交易只能排队执行；处理管线堵住以后，leader 没把投票交易打进区块，共识很可能因此停下<a class="ref" href="#s2">[2]</a>。验证者 15:02 商定从 96,542,804 号 slot 重启；20:19 第一次重启凑齐了 80% 的质押，却因为一个 bug 失败：计算在线质押的比例时先乘以 100，超出了 u64 的上限<a class="ref" href="#s2">[2]</a>。v1.6.25 修好这一处，第二次重启成功，9 月 15 日 05:30 网络恢复全部功能<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>Helius 统计，2020 年 12 月到 2024 年 2 月主网停了 7 次，两次源于垃圾交易，五次源于客户端 bug<a class="ref" href="#s25">[25]</a>。2021 年 9 月之后的几次是：2022 年 4 月 30 日 <a href="2021-beeple.html">NFT</a> 铸造机器人造成约 7 小时停机<a class="ref" href="#s8">[8]</a>，6 月 1 日持久随机数交易的 bug 造成 4.5 小时停机<a class="ref" href="#s9">[9]</a>，9 月 30 日一个热备节点重复出块引出分叉选择的 bug，停了约 8 小时<a class="ref" href="#s10">[10]</a>，2023 年 2 月 25 日一个异常大的区块让网络只出投票区块将近 20 小时<a class="ref" href="#s12">[12]</a>，2024 年 2 月 6 日 JIT 缓存的无限循环让网络停了约 5 小时<a class="ref" href="#s13">[13]</a>。到 2026 年 11 月 2 日，主网已连续 1,000 天没有全网停机<a class="ref" href="#s30">[30]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>一条为速度设计的链</h3>
+        <p>Solana 的第一个区块产生于 2020 年 3 月 16 日<a class="ref" href="#s31">[31]</a>。到 2020 年 12 月，主网已处理 5,000 万个区块、70 亿笔交易，仍挂着 Beta 的标签<a class="ref" href="#s7">[7]</a>。2021 年 6 月，Solana Labs 向 Andreessen Horowitz 和 Polychain Capital 领投的一组基金出售了价值 3.14 亿美元的 SOL；SOL 这一年涨了近 12,000%<a class="ref" href="#s31">[31]</a>。CNBC 后来写道，按 Solana 官网的数据，它每秒能处理 5 万笔交易，平均每笔费用 0.00025 美元<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>2020 年 12 月的第一次停机</h3>
+        <p>2020 年 12 月 4 日 13:46 UTC，主网停止确认新区块。一个验证者同时开了两个实例，在同一个 slot 发出两个不同的区块；节点内部按 slot 编号标识区块，分不清这两个，网络分成三个少数分区，互相补不齐数据<a class="ref" href="#s7">[7]</a>。393 个验证者在 6 小时内重启了网络，大部分时间花在等质押重新上线<a class="ref" href="#s7">[7]</a>。复盘写道：“找到 bug 并不足以让网络恢复……这和定义公链的去中心化、抗审查分不开。”<a class="ref" href="#s7">[7]</a></p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>时间为 UTC。加粗的条目是主网停止出块或恢复出块的时刻，其余是补丁发布、协调和报道。</p>
+        <ol class="timeline">
+          <li><time>2020-03-16</time><div class="ev">主网产生第一个区块<a class="ref" href="#s31">[31]</a>。</div></li>
+          <li class="key"><time>2020-12-04</time><div class="ev">13:46 主网停止确认新区块，6 小时内从 53,180,900 号 slot 重启<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2021-09-04</time><div class="ev">1.6 分支合入“降级交易里程序 id 的写锁”，带功能开关，尚未启用<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>09-14 12:00</time><div class="ev">Grape Protocol 在 Raydium 上发售代币，机器人交易涌入<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="key"><time>09-14 12:12</time><div class="ev">主网不再产生新的 root<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>09-14 14:10</time><div class="ev">v1.6.23 发布，限制交易转发和加锁<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>09-14 15:02</time><div class="ev">验证者商定从 96,542,804 号 slot 重启<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>09-14 18:26</time><div class="ev">v1.6.24 发布，修重启的问题，并去掉写锁改动的功能开关<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>09-14 20:19</time><div class="ev">第一次重启凑齐 80% 的质押，因 bug 失败<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>09-15 01:20</time><div class="ev">v1.6.25 发布，只修一处：等待超级多数时活跃质押的 u64 溢出<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>09-15 02:00</time><div class="ev">第二次重启的说明发出<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="key"><time>09-15 05:30</time><div class="ev">网络恢复全部功能<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2022-01-06 至 23</time><div class="ev">高计算量交易和大量重复交易让网络变慢，状态页记为性能下降和网络不稳定；1.8.12、1.8.14 先后发布<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="key"><time>2022-04-30</time><div class="ev">约 20:30 停止出块，5 月 1 日 03:30 恢复。原因是 NFT 铸造机器人的交易<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2022-04-30 21:56</time><div class="ev">Metaplex 合并“机器人税”补丁<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="key"><time>2022-06-01</time><div class="ev">约 16:30 停止出块，21:00 恢复。原因是持久随机数交易的 bug<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="key"><time>2022-09-30</time><div class="ev">22:41 停止出块，10 月 1 日 06:57 恢复。原因是重复区块和分叉选择的 bug<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="key"><time>2023-02-25</time><div class="ev">05:46 起只出投票区块，26 日 01:28 恢复处理用户交易<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="key"><time>2024-02-06</time><div class="ev">09:53 最终确认停止，14:55 恢复。原因是 JIT 缓存的无限重编译<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2024-08-08</time><div class="ev">一个能让 leader 崩溃的漏洞，补丁先私下分发，20:00 前超过 67% 的网络打上补丁<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2024-09-20</time><div class="ev">Jump 在 Breakpoint 大会上说，混合版客户端 Frankendancer 已在主网运行<a class="ref" href="#s27">[27]</a>。</div></li>
+          <li><time>2026-08-04</time><div class="ev">从头重写的 Firedancer 发布第一个主网版本<a class="ref" href="#s28">[28]</a>。</div></li>
+          <li><time>2026-11-02</time><div class="ev">主网连续 1,000 天没有全网停机<a class="ref" href="#s30">[30]</a>。</div></li>
+        </ol>
+        <div class="note doubt"><span class="h">2021 年 9 月那次停了多久</span><p>官方初步报告写“离线 17 小时”，又写网络在停顿后不到 18 小时恢复全部功能<a class="ref" href="#s1">[1]</a>。按 Jump 记的 12:12 和官方的 05:30，是 17 小时 18 分<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>；Fortune 写“将近 18 小时”<a class="ref" href="#s23">[23]</a>，维基百科写约 17 小时<a class="ref" href="#s31">[31]</a>。Business Insider 写道，Solana 团队在美东时间 2:00 前后（UTC 06:00）发推说重启完成<a class="ref" href="#s6">[6]</a>。按北京时间，停机从 14 日 20:12 到 15 日 13:30；按美东夏令时，从 14 日 08:12 到 15 日 01:30，开始的日期三处相同，本站记为 2021 年 9 月 14 日。Solana 的状态页只记了 2022 年以后的事件，这次停机不在里面<a class="ref" href="#s14">[14]</a>。</p></div>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>这一节回答三个问题：高吞吐的链为什么会被一次发售压停，停下以后为什么不能自己恢复，重启为什么要等 80% 的质押。</p>
+        <h3>没有内存池，发交易几乎没有成本</h3>
+        <p>Solana 没有内存池。客户端把交易直接发给当前 leader 的交易处理单元（TPU），没处理完的、发给了非当前 leader 的交易，会被自动转发给下一个 leader，这套机制叫 Gulf Stream<a class="ref" href="#s2">[2]</a>。2022 年 4 月的报告写道，此前 leader 对交易一律先到先得，不看来源，用户也没有办法表达交易有多急<a class="ref" href="#s8">[8]</a>。Grape 的发售同样先到先得，参数事先公开。Jump 写道，很多机器人抢着发交易，等于对主网发动了一次分布式拒绝服务攻击，很可能是无意的<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Jump 自己的主验证者收到的原始交易数据超过 1 Gbps、每秒 12 万个包，和体量型 DDoS 几乎无法区分。leader 之间还在互相转发处理不完的交易，RPC 节点和钱包、机器人在交易失败后也会自动重试，进一步放大了流量<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>写锁让并行变成排队</h3>
+        <p>Solana 的交易要事先声明读哪些账户、写哪些账户。读可以重叠、并行执行，写不行<a class="ref" href="#s8">[8]</a>。Jump 写道，一个机器人的交易对 18 个账户加了写锁，其中有管理 SPL 代币的全局程序和 Serum 程序；所有用到这些账户的交易都不能并行执行，网络消化洪流的能力因此大降。Jump 说，允许这样做是个 bug，对全局程序加写锁没有意义<a class="ref" href="#s2">[2]</a>。修复已经写好：9 月 4 日合入 1.6 分支，带功能开关；9 月 14 日的 v1.6.24 去掉了开关，重启以后无条件生效<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>投票也是交易</h3>
+        <p>验证者的投票是链上交易，经 gossip 传播，再由 leader 打进区块<a class="ref" href="#s2">[2]</a>。处理管线堵住以后，leader 没能把投票交易打进区块，Jump 认为共识很可能因此停下<a class="ref" href="#s2">[2]</a>。Solana 当时在 Twitter 上的说法是：交易灌满了处理队列，网络关键消息又没有优先级，网络开始分叉<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>没有 root，分叉都留在内存里</h3>
+        <p>验证者投票支持一条分叉以后，要在一段锁定期内坚持这个选择，当时是 32 个 slot；锁定期满、得到三分之二以上质押支持的区块成为 root，按 Finalized 级别查询只能看到 root<a class="ref" href="#s2">[2]</a>。停顿期间没有新的 root，节点要把每条分叉的状态都留在内存里，以备回退。Jump 的 RPC 节点集群内存占用从约 5 TiB 涨到约 7 TiB；一些低于推荐配置的节点内存耗尽<a class="ref" href="#s2">[2]</a>。官方初步报告写道，转发队列的内存无限增长，打进区块的交易又很耗资源，出块者自动提出了多条分叉；验证者内存耗尽崩溃，重启后追不上网络<a class="ref" href="#s1">[1]</a>。</p>
+        <div class="note doubt"><span class="h">内存耗尽是原因还是结果</span><p>官方初步报告把内存溢出放在因果链的前面：它让许多验证者崩溃，网络先变慢，最后停顿<a class="ref" href="#s1">[1]</a>。Jump 的看法相反：节点内存耗尽时网络已经停了，这在当时造成了不必要的混乱<a class="ref" href="#s2">[2]</a>。峰值流量的数字也不一样：Solana 在 Twitter 上说交易负载峰值每秒 40 万笔<a class="ref" href="#s6">[6]</a>，Jump 写的是部分节点每秒收到 30 万笔以上，并说明这只统计了向公共指标服务器上报数据的验证者，也不包括在操作系统网络栈里就被丢弃的交易<a class="ref" href="#s2">[2]</a>。</p></div>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 476" role="img" aria-labelledby="sol-svg-t sol-svg-d">
+            <title id="sol-svg-t">2021 年 9 月 14 日：从一次代币发售到全网停顿，以及后来的改动</title>
+            <desc id="sol-svg-d">左列从上到下是停机的因果链：机器人抢 Grape 的发售，部分节点每秒收到 30 万笔以上的交易；leader 互相转发、RPC 和应用不断重试，放大流量；一个机器人给 18 个账户加写锁，包括 SPL Token 程序，交易只能排队；投票交易打不进区块，没有新的 root，分叉留在内存里；12:12 起停止产生 root，节点内存耗尽，要 80% 的质押协调重启。右列是对应的改动：QUIC 替代 UDP，按质押加权分配带宽；v1.6.23 起限制转发，1.8 起 RPC 重试可调；v1.6.24 起不再给程序账户加写锁；后来的版本让投票交易优先；v1.10 的节点更耐内存压力。</desc>
+            <defs>
+              <marker id="sol-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <text class="d-t b" x="190" y="24" text-anchor="middle">9 月 14 日发生了什么</text>
+            <text class="d-t b" x="570" y="24" text-anchor="middle">后来的改动</text>
+            <rect class="d-box" x="20" y="44" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="190" y="70" text-anchor="middle">机器人抢 Grape 的发售</text>
+            <text class="d-t s" x="190" y="92" text-anchor="middle">部分节点每秒收到 30 万笔以上的交易</text>
+            <rect class="d-box" x="20" y="132" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="190" y="158" text-anchor="middle">转发和重试放大流量</text>
+            <text class="d-t s" x="190" y="180" text-anchor="middle">leader 互相转发，RPC 和应用不断重试</text>
+            <rect class="d-box" x="20" y="220" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="190" y="246" text-anchor="middle">写锁让交易排队</text>
+            <text class="d-t s" x="190" y="268" text-anchor="middle">一个机器人给 18 个账户加写锁，含 SPL Token 程序</text>
+            <rect class="d-box" x="20" y="308" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="190" y="334" text-anchor="middle">投票挤不进区块</text>
+            <text class="d-t s" x="190" y="356" text-anchor="middle">没有新的 root，分叉都留在内存里</text>
+            <rect class="d-box" x="20" y="396" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="190" y="422" text-anchor="middle">12:12 起停止产生 root</text>
+            <text class="d-t s" x="190" y="444" text-anchor="middle">节点内存耗尽，要 80% 的质押协调重启</text>
+            <rect class="d-box soft" x="400" y="44" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="570" y="70" text-anchor="middle">入口按来源限流</text>
+            <text class="d-t s" x="570" y="92" text-anchor="middle">QUIC 替代 UDP，按质押加权分配带宽</text>
+            <rect class="d-box soft" x="400" y="132" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="570" y="158" text-anchor="middle">限制转发，重试可调</text>
+            <text class="d-t s" x="570" y="180" text-anchor="middle">v1.6.23 起限制转发，1.8 起可调 RPC 重试</text>
+            <rect class="d-box soft" x="400" y="220" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="570" y="246" text-anchor="middle">不再给程序账户加写锁</text>
+            <text class="d-t s" x="570" y="268" text-anchor="middle">v1.6.24 去掉功能开关，重启后生效</text>
+            <rect class="d-box soft" x="400" y="308" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="570" y="334" text-anchor="middle">投票交易优先</text>
+            <text class="d-t s" x="570" y="356" text-anchor="middle">后来的版本给投票单独的优先级</text>
+            <rect class="d-box soft" x="400" y="396" width="340" height="64" rx="3"/>
+            <text class="d-t b" x="570" y="422" text-anchor="middle">节点更耐内存压力</text>
+            <text class="d-t s" x="570" y="444" text-anchor="middle">v1.10 的测试节点在主网多撑 2,000 个 slot</text>
+            <line class="d-line" x1="190" y1="108" x2="190" y2="128" marker-end="url(#sol-ah)"/>
+            <line class="d-line" x1="190" y1="196" x2="190" y2="216" marker-end="url(#sol-ah)"/>
+            <line class="d-line" x1="190" y1="284" x2="190" y2="304" marker-end="url(#sol-ah)"/>
+            <line class="d-line" x1="190" y1="372" x2="190" y2="392" marker-end="url(#sol-ah)"/>
+            <line class="d-line dash" x1="360" y1="76" x2="396" y2="76" marker-end="url(#sol-ah)"/>
+            <line class="d-line dash" x1="360" y1="164" x2="396" y2="164" marker-end="url(#sol-ah)"/>
+            <line class="d-line dash" x1="360" y1="252" x2="396" y2="252" marker-end="url(#sol-ah)"/>
+            <line class="d-line dash" x1="360" y1="340" x2="396" y2="340" marker-end="url(#sol-ah)"/>
+            <line class="d-line dash" x1="360" y1="428" x2="396" y2="428" marker-end="url(#sol-ah)"/>
+          </svg>
+          </div>
+          <figcaption>左列大致按因果排列，不按时间比例，据 Jump 的复盘和官方初步报告<a class="ref" href="#s2">[2]</a><a class="ref" href="#s1">[1]</a>；右列浅色框是后来的改动，多数在 2022 年上线，版本号据发布说明和提交记录<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>、2022 年 4 月的报告<a class="ref" href="#s8">[8]</a>和 Helius 的整理<a class="ref" href="#s25">[25]</a>。</figcaption>
+        </figure>
+        <h3>重启：从同一个 slot、各自的账本出发</h3>
+        <p>Jump 写道，确定一个安全的重启 slot 要靠人在链下达成共识；节点停下来，等人来处理<a class="ref" href="#s2">[2]</a>。Helius 写道，这种协调在 Solana Tech Discord 的 #mb-validators 频道公开进行<a class="ref" href="#s25">[25]</a>。Anza 的重启文档把步骤写得很具体<a class="ref" href="#s19">[19]</a>：</p>
+        <ol class="flow">
+          <li><b>商定 slot</b>各验证者比对自己看到的最新乐观确认 slot，取更大的那个。</li>
+          <li><b>本地做快照</b>用 ledger-tool 从自己的账本在这个 slot 做快照、标记硬分叉，得到新的 shred 版本和 bank hash。</li>
+          <li><b>停在这个 slot</b>带上 --wait-for-supermajority 和 --expected-bank-hash 启动，等别人跟上。</li>
+          <li><b>等够 80%</b>gossip 里看到 80% 的质押上线，节点才恢复投票和出块。</li>
+        </ol>
+        <p>快照要从自己的账本做，不从别人那里下载；Jump 的说法是“谁都别信”<a class="ref" href="#s2">[2]</a>。门槛是 80%，高于共识需要的三分之二，Jump 解释，这样重启后即使有节点分叉或马上掉线，网络仍有余量继续运行<a class="ref" href="#s2">[2]</a>。这里的“硬分叉”指在重启的 slot 上打标记，节点因此换用新的 shred 版本<a class="ref" href="#s19">[19]</a>；没按说明重启的节点版本对不上，代码把它们单独列出，质押不算在线<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>第一次重启为什么失败</h3>
+        <p>v1.6.24 的验证者在重启时每秒统计一次 gossip 里看得到的质押，占全网活跃质押的比例够 80% 才放行<a class="ref" href="#s4">[4]</a>：</p>
+<pre class="code"><code><span class="c">// core/src/validator.rs（v1.6.24）</span>
+const WAIT_FOR_SUPERMAJORITY_THRESHOLD_PERCENT: u64 = 80;
+
+<span class="c">// wait_for_supermajority：每秒统计一次</span>
+let gossip_stake_percent = get_stake_percent_in_gossip(&amp;bank, &amp;cluster_info, i % 10 == 0);
+if gossip_stake_percent &gt;= WAIT_FOR_SUPERMAJORITY_THRESHOLD_PERCENT {
+    break;
+}
+
+<span class="c">// get_stake_percent_in_gossip 的返回值，质押以 lamport 计</span>
+<span class="bad">online_stake * 100 / total_activated_stake</span>
+
+<span class="c">// v1.6.25（#19892）：先用 f64 算比例</span>
+<span class="good">let online_stake_percentage = (online_stake as f64 / total_activated_stake as f64) * 100.;</span>
+<span class="good">online_stake_percentage as u64</span></code></pre>
+        <p class="code-cap">出处：solana-labs/solana v1.6.24 和 v1.6.25，core/src/validator.rs，节选，注释为本站所加。1 SOL 等于 10 亿 lamport（sdk/program/src/native_token.rs）。</p>
+        <p>u64 最多表示约 1.84 × 10<sup>19</sup> 个 lamport，合约 184 亿 SOL。按本站推算，先乘以 100，在线质押超过约 1.84 亿 SOL 就会溢出。Jump 写道，这套流程以前演练过很多次，但此后通胀新增了太多 SOL，乘以 100 以后超出了 u64 的上限，节点报告的活跃质押因此忽高忽低<a class="ref" href="#s2">[2]</a>。v1.6.25 只改了这一处<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <h3>停下来，还是继续出块</h3>
+        <p>Helius 写道，Solana 把安全放在活性前面：遇到极端的网络压力或共识故障，宁可停链，也不冒账本状态损坏的风险<a class="ref" href="#s25">[25]</a>。<a href="2013-bitcoin-fork.html">比特币 2013 年 3 月的链分叉</a>走的是另一条路：链没有停，两条链同时出块，开发者在 IRC 上请两家大矿池降级，旧规则的链靠算力追上来，24 个区块作废，其间有一笔双花成功。两次恢复都靠链下协调；比特币要说服的是少数几家矿池，Solana 要让 80% 的质押回到同一个 slot 和同一个 bank hash，2021 年 9 月参与的验证者有 1,000 多个<a class="ref" href="#s1">[1]</a>。</p>
+        <p>停链也有代价。2020 年 12 月那次，最后一个 root 是 53,180,900 号 slot，最后一个乐观确认的区块在 53,180,935 号；网络从 root 重启，丢掉了中间乐观确认过的状态。官方说这 32 个区块里没有转账，只有 Serum 的 market crank，并把“不再硬分叉掉乐观确认区块”的重启流程列为改进项<a class="ref" href="#s7">[7]</a>。现在的流程从最新的乐观确认 slot 开始<a class="ref" href="#s19">[19]</a>；2023 年 2 月重启时选了比原计划更早的 slot，官方说没有已确认的用户交易被回滚或受影响<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <p>从发售开始到网络恢复全部功能，用了 17 个半小时。官方说，其中 14 个小时花在写补丁、协调 1,000 多个验证者升级和重启上<a class="ref" href="#s1">[1]</a>。</p>
+        <ol class="steps">
+          <li><b>12:00 至 12:12：停顿</b>12:00 发售开始，机器人交易随即涌入<a class="ref" href="#s2">[2]</a>。12:11，验证者社区注意到交易激增、网络变慢，设法帮网络恢复，没有成功<a class="ref" href="#s1">[1]</a>。12:12，主网不再产生新的 root。网络停顿以后，交易洪流也没有停<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>12:12 至 15:02：诊断和商定</b>弄清情况后，社区提议从最后确认的 slot 硬分叉重启<a class="ref" href="#s1">[1]</a>。14:10，v1.6.23 发布，改动是限制交易转发和限制交易加锁<a class="ref" href="#s3">[3]</a>。15:02，验证者商定从 96,542,804 号 slot 重启<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>18:26 至 20:19：第一次重启</b>18:26，v1.6.24 发布，修复重启的问题<a class="ref" href="#s3">[3]</a>。19:21，第一次重启的说明发出。20:19，在线质押达到 80%，重启却失败了；一些节点报告的活跃质押忽高忽低<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>9 月 15 日 01:17 至 02:00：修溢出</b>01:17，修复溢出的提交合入<a class="ref" href="#s4">[4]</a>；01:20，只含这一处改动的 v1.6.25 发布<a class="ref" href="#s3">[3]</a>；02:00，第二次重启的说明发出<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>02:00 至 05:30：第二次重启</b>官方说，补丁发布后两个半小时内，网络完成升级并达成共识；05:30 恢复全部功能<a class="ref" href="#s1">[1]</a>。Solana 在 Twitter 上说，验证者社区升级到 1.6.25 后完成了重启，dapp、区块浏览器和配套系统还要几个小时才能恢复<a class="ref" href="#s6">[6]</a>。</li>
+        </ol>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>Solana Labs 的工程师</h3>
+        <p>三个补丁版本里，前两个处理洪流、写锁和重启的问题，第三个处理重启时的溢出<a class="ref" href="#s3">[3]</a>。官方说，重启由社区主导，用的是协议文档里写好的重启框架<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>验证者</h3>
+        <p>1,000 多个验证者参与了升级和重启。他们各自在本地应用升级、校验账本，再继续出块<a class="ref" href="#s1">[1]</a>。重启要至少 80% 的活跃质押在同一个 slot 上回来<a class="ref" href="#s1">[1]</a>，任何一方都不能替别人启动节点。</p>
+        <h3>Jump Crypto 等外部团队</h3>
+        <p>Jump Crypto 和它旗下的 Certus One 写道，他们和 Chorus One、Neodyme、Solana Labs、P2P 以及一千多个验证者和 RPC 运营者一起通宵处理。Jump 用自己的流量分析工具查看主验证者的流量，发现来源端口均匀分布在客户端常用的 3 万多个端口上，说明大部分流量由客户端直接发出<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>官方的说法</h3>
+        <p>初步报告强调没有资金损失，并拿 AWS 作比：中心化网络崩溃，用户只能相信 Amazon 会把它恢复到正确的状态；区块链即使完全失去活性，也由各个验证者自己恢复状态、继续出块，不依赖受信任的第三方<a class="ref" href="#s1">[1]</a>。报告说社区正在写详细的技术复盘和根因分析，几周内发布<a class="ref" href="#s1">[1]</a>；本站没有找到这份报告。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>七次停机</h3>
+        <p>按需要验证者协调重启的事件计，主网 2020 年至 2024 年停了七次。时长按各次官方报告的起止时刻：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>日期（UTC）</th><th>时长</th><th>起因</th><th>恢复</th></tr></thead>
+          <tbody>
+            <tr><td>2020-12-04</td><td>约 6 小时</td><td>一个验证者开了两个实例，同一个 slot 出了不同的区块<a class="ref" href="#s7">[7]</a></td><td>393 个验证者从 root 重启，丢掉其后的乐观确认状态<a class="ref" href="#s7">[7]</a></td></tr>
+            <tr><td>2021-09-14</td><td>约 17 小时</td><td>代币发售引来的机器人交易<a class="ref" href="#s1">[1]</a></td><td>第二次重启成功，升级到 1.6.25<a class="ref" href="#s2">[2]</a></td></tr>
+            <tr><td>2022-04-30</td><td>约 7 小时</td><td>NFT 铸造机器人，每秒 600 万个请求<a class="ref" href="#s8">[8]</a></td><td>协调重启<a class="ref" href="#s8">[8]</a></td></tr>
+            <tr><td>2022-06-01</td><td>约 4.5 小时</td><td>失败的持久随机数交易被处理两次，节点结果不一致<a class="ref" href="#s9">[9]</a></td><td>升级到 1.9.28 或 1.10.23，暂停这类交易<a class="ref" href="#s9">[9]</a></td></tr>
+            <tr><td>2022-09-30</td><td>约 8 小时</td><td>热备节点和主节点用同一身份出块，触发分叉选择的 bug<a class="ref" href="#s10">[10]</a></td><td>协调重启，之后打补丁<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>2023-02-25</td><td>将近 20 小时，只出投票区块</td><td>异常大的区块被反复转发，Turbine 饱和<a class="ref" href="#s12">[12]</a></td><td>降级到 1.13.6 后重启<a class="ref" href="#s11">[11]</a></td></tr>
+            <tr><td>2024-02-06</td><td>约 5 小时</td><td>旧 loader 部署的程序在 JIT 缓存里无限重编译<a class="ref" href="#s13">[13]</a></td><td>升级到 1.17.20 后重启<a class="ref" href="#s13">[13]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">停了几次，一共多久</span><p>按上表，2021 年至 2024 年完全停止出块的五次合计约 42 小时，加上 2023 年 2 月只出投票区块的约 20 小时，约 62 小时（本站加总）。各家记的单次时长不一：2022 年 4 月那次，官方报告写 20:30 至 03:30，状态页写重启在 03:00 完成<a class="ref" href="#s8">[8]</a><a class="ref" href="#s14">[14]</a>，Helius 写 8 小时<a class="ref" href="#s25">[25]</a>；2022 年 9 月那次，官方起止是 22:41 至 06:57<a class="ref" href="#s10">[10]</a>，Helius 写 8.5 小时<a class="ref" href="#s25">[25]</a>，维基百科写 6 小时<a class="ref" href="#s31">[31]</a>；2023 年 2 月那次，Helius 写将近 19 小时<a class="ref" href="#s25">[25]</a>，CryptoSlate 写 18 小时<a class="ref" href="#s24">[24]</a>。次数的口径也不同：CryptoSlate 引用 CryptoManiaks 的统计，说 2021 年 9 月以来停了 9 次、超过 150 小时，不含 2024 年 2 月那次，没有说明怎样计数<a class="ref" href="#s24">[24]</a>。2022 年 1 月的两段拥堵，状态页记为性能下降和网络不稳定<a class="ref" href="#s14">[14]</a>，Helius 记为没有停机、交易成功率最多下降 70%<a class="ref" href="#s25">[25]</a>，本页不计入。</p></div>
+        <h3>价格</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>停机</th><th>报道</th><th>记录</th></tr></thead>
+          <tbody>
+            <tr><td>2021 年 9 月</td><td>Business Insider，9 月 15 日</td><td>约 160.50 美元，24 小时跌约 5%；前一周创 200 美元以上的纪录<a class="ref" href="#s6">[6]</a></td></tr>
+            <tr><td>2022 年 6 月</td><td>CNBC，6 月 1 日</td><td>当天跌超过 12%，一个月里第二次停机<a class="ref" href="#s21">[21]</a></td></tr>
+            <tr><td>2022 年 6 月</td><td>CoinDesk（Fortune 转载），6 月 2 日</td><td>停机前已在下跌，美东晚上 8:30 前后跌近 13%，39.98 美元<a class="ref" href="#s22">[22]</a></td></tr>
+            <tr><td>2024 年 2 月</td><td>CryptoSlate，2 月 9 日</td><td>停机后跌到六天低点 93.75 美元，发稿时 105.46 美元<a class="ref" href="#s24">[24]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>2022 年的 SOL 价格还受 <a href="2022-terra-ust.html">Terra 崩盘</a>和 <a href="2022-ftx.html">FTX 倒闭</a>的影响，Alameda 当时持有大量 SOL。单次停机的影响只能从当天的涨跌看。</p>
+        <h3>交易所和托管方</h3>
+        <p>2022 年 6 月那次，Binance、Coinbase、Crypto.com 都报告了 Solana 充提的问题。Solana Labs 的传播负责人 Austin Federa 说，持久随机数交易以前占比极小，最近在交易所里多了起来；验证者说，这类交易暂停以后，用离线签名的托管方可能在补丁上线之前动不了资金<a class="ref" href="#s22">[22]</a>。</p>
+        <h3>去中心化之争</h3>
+        <p>CNBC 写道，过去一年半的多次停机暴露了 Solana 又快又便宜背后的取舍<a class="ref" href="#s21">[21]</a>。2022 年 9 月那次之后，Fortune 引用 Molly White 的评论：一个节点就能让整个网络下线，对一个号称去中心化的网络来说有点惊人<a class="ref" href="#s23">[23]</a>。2024 年 8 月补丁私下分发之后，Solana 基金会执行董事 Dan Albert 在韩国区块链周上回应：不要把协调能力和中心化混为一谈，全世界有 1,500 个出块节点，由几乎同样多的人运营<a class="ref" href="#s20">[20]</a>。</p>
+        <p>同一时期 Solana 上也有几起大额被盗，比如 <a href="../../hacks/events/2022-wormhole.html">Wormhole 签名验证绕过</a>和 <a href="../../hacks/events/2022-mango-markets.html">Mango Markets 价格操纵</a>。它们出在跨链桥和应用合约上，链照常出块，和本页的停机是两类事。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>垃圾交易：入口限流和优先费</h3>
+        <p>2022 年 4 月 30 日那次，官方说没有拒绝服务攻击的证据：机器人想抢 Candy Machine 程序铸造的新 NFT，价格固定，谁先调用谁得，发大量交易就有利可图。投票交易落不了地，早先的区块无法最终确认，废弃的分叉清理不掉，验证者内存耗尽。请求量是 2021 年 9 月的 10,000%，网络撑的时间更长，官方认为这反映了此前的改进<a class="ref" href="#s8">[8]</a>。Metaplex 前一天提交的补丁在停机期间合并：对开售前铸造、售罄后铸造等失败情形收 0.01 SOL 的“机器人税”，余额不够就全部扣走<a class="ref" href="#s16">[16]</a>。据 Helius，头几天机器人一共亏掉 426 SOL 以上<a class="ref" href="#s25">[25]</a>。</p>
+        <p>同一份报告提出三项长期改动<a class="ref" href="#s8">[8]</a>：交易入口改用 QUIC，原来的协议基于 UDP，没有连接、流控和回执，无法约束滥用的来源；按质押加权的服务质量，质押占 0.5% 的节点至少能向 leader 发送 0.5% 的包；优先费，计算预算程序新增一条指令，交易可以附加费用，费用与申请的计算单元之比决定执行的先后。2022 年 10 月的报告写道，QUIC 已在多数验证者和 RPC 节点上运行，仍兼容 UDP，计划从 1.13.4 起成为默认；按质押加权的服务质量与 QUIC 并行开发，先于 QUIC 启用<a class="ref" href="#s17">[17]</a>。</p>
+        <p>官方强调这和以太坊的全局费市场不同。Solana 的交易事先声明要写哪些账户，抢同一个账户的交易超出上限，就顺延到下一个区块，写别的账户的交易照常打包；报告把这称为“街区费”，与“全局费”相对<a class="ref" href="#s8">[8]</a>。以太坊按整个区块定价，做法见 <a href="2021-eip1559.html">EIP-1559</a>。</p>
+        <h3>共识层的 bug</h3>
+        <p>2022 年 6 月那次，一笔持久随机数交易在区块哈希还算新时提交，被当作普通交易处理；交易失败，nonce 没有前进。用户重新提交后，它又作为持久随机数交易进了区块。近期交易缓存里已没有前一次记录的验证者接受了这个区块，其余的拒绝；接受的超过 33%，不到 66%，共识无法推进<a class="ref" href="#s9">[9]</a>。1.9.28 和 1.10.23 在 135,986,379 号 slot 以后禁用了这类交易<a class="ref" href="#s9">[9]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <p>2022 年 9 月那次，一个运营者的热备节点出了故障，和主节点用同一个身份同时出块，出的区块不同。这种情况至少持续了 24 小时，此前的重复区块网络都正常处理了；到 153,139,221 号 slot 遇到一个边缘情形，分叉选择逻辑的 bug 让出块者不能在已确认的区块上继续出块<a class="ref" href="#s10">[10]</a>。验证者运营方 Stakewiz 的解释是，验证者“卡”在错误的分叉上，切不回最重的那条<a class="ref" href="#s23">[23]</a>。修复在 v1.10.40 和 v1.13.2 里，10 月 7 日 90% 的质押打上补丁<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>2023 年 2 月：一个过大的区块</h3>
+        <p>一个故障的验证者广播了一个异常大的区块，它接在很早以前的父区块上，很可能用虚拟 tick 填满了中间的时间。恢复 shred 不带父 slot 的信息，过滤不掉；网络上的 shred 转发服务又把它们转回 Turbine 树，形成环路，去重过滤器饱和<a class="ref" href="#s12">[12]</a>。区块传播退回到慢得多的 Block Repair；验证者最近投票的 slot 领先最终确认 400 个 slot（约 160 秒）以上时，leader 只打包投票，进入 vote-only 模式<a class="ref" href="#s12">[12]</a>。验证者起初怀疑刚升级的 1.14，降级到 1.13.6 重启<a class="ref" href="#s11">[11]</a>。1.13.7 和 1.14.17 换成按 logistic 曲线饱和的概率型去重过滤器，容量更大，也能并行<a class="ref" href="#s12">[12]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <h3>2024 年 2 月：JIT 缓存的无限循环</h3>
+        <p>验证者执行交易前要对用到的程序做 JIT 编译，结果放在缓存里。1.16 用 LoadedPrograms 取代 ExecutorsCache，为每个程序记下从哪个 slot 起生效。旧 loader 部署的程序没有部署 slot，缓存给它们记 0；观察到部署指令时，缓存插入一条带真实 slot 的记录，它没被交易引用过，容易被驱逐，驱逐后留下一条带着这个 slot 的“未加载”记录。下次有交易引用这个程序，重新编译的结果记在 slot 0，排在“未加载”记录后面，缓存永远看不到它，每一轮都重编译一次<a class="ref" href="#s13">[13]</a>。</p>
+        <p>单靠这一点，只会卡住执行这笔交易的 leader，区块发不出去。1.16 的 LoadedPrograms 还没有协作加载，不会陷入这种情形，触发交易因此被打进区块、传给全网；当时 95% 以上的质押运行 1.17，几乎所有验证者在重放这个区块时陷入死循环，没人投票，共识停止<a class="ref" href="#s13">[13]</a>。这个 bug 一周前已让 devnet 停过一次<a class="ref" href="#s13">[13]</a>，CryptoSlate 写道，开发者当时只修了两个触发条件中的一个<a class="ref" href="#s24">[24]</a>。修法是把“禁止用旧 loader 部署”回移到 1.17，重启时立即生效<a class="ref" href="#s13">[13]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <h3>2024 年 8 月：先打补丁，再公开</h3>
+        <p>8 月 5 日，外部研究者向 Anza 报告了一个影响 Agave 和 Jito 客户端的漏洞：ELF 检查没有验证 .text 段的对齐，CALL_REG 跳到未对齐的代码会让验证者进程崩溃，攻击者可以一个个打垮 leader，直到网络停下<a class="ref" href="#s18">[18]</a>。公开补丁就等于公开漏洞，所以核心贡献者先私下通知大质押的运营者，约定时间再发说明；几位社区成员公开贴出这条通知的哈希，供收信人核实真伪。8 日 14:00 分发补丁，20:00 前超过 67% 的网络打上补丁<a class="ref" href="#s18">[18]</a>。验证者 Laine 9 日公开细节以后，私下协调的做法引来了对去中心化的质疑<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>第二个客户端</h3>
+        <p>Solana 基金会的网络健康报告写道，有了多个客户端，一个客户端里的 bug 不太可能同时出现在其他独立实现里，全网停机的可能性就小了<a class="ref" href="#s26">[26]</a>。2024 年 9 月 20 日，Jump 的首席科学官 Kevin Bowers 在新加坡的 Breakpoint 大会上说，Frankendancer 已在主网运行，它把 Jump 的新组件和现有的验证者软件拼在一起；完全独立的 Firedancer 还在测试网上<a class="ref" href="#s27">[27]</a>。Frankendancer 的第一个主网版本当天发布；Firedancer 2026 年 6 月发布测试网 v1.0.0，发布说明写的是“用 C 从头重写”，8 月 4 日发布第一个主网版本<a class="ref" href="#s28">[28]</a>。以太坊在 <a href="2022-the-merge.html">The Merge</a> 之后，共识层和执行层各有几个独立的客户端。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>时点</th><th>客户端分布</th><th>出处</th></tr></thead>
+          <tbody>
+            <tr><td>2025 年 4 月 17 日</td><td>Agave 和 Jito 约 92%，Firedancer（混合版 Frankendancer）约 7%，34 个验证者</td><td>Solana 基金会<a class="ref" href="#s26">[26]</a></td></tr>
+            <tr><td>2026 年 10 月</td><td>Jito-Solana 约 63%，Harmonic 约 26%，两者都基于 Agave 的代码</td><td>Fidelity 的研究部门，据 Crypto Briefing<a class="ref" href="#s29">[29]</a></td></tr>
+            <tr><td>2026 年 10 月 16 日</td><td>Firedancer 约 15%</td><td>Jump 的说法，据 CoinCentral<a class="ref" href="#s30">[30]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>后两行出自不同的来源，相加超过 100%；Firedancer 的 15% 也没有分开混合版和完整版。据 Crypto Briefing 转述，Fidelity 的报告提醒，Jito-Solana 和 Harmonic 共用 Agave 的底层代码，那里的一个缺陷可能同时影响网络的大部分<a class="ref" href="#s29">[29]</a>。</p>
+        <h3>2024 年 2 月以后</h3>
+        <p>状态页上最后一次主网停机就是 2024 年 2 月 6 日那次<a class="ref" href="#s14">[14]</a>。到 2026 年 11 月 2 日，主网连续 1,000 天没有全网停机；2026 年 8 月 12 日的一次路由故障影响了服务约 29% 质押的基础设施，出块没有停，30 多分钟后恢复<a class="ref" href="#s30">[30]</a>。据 Crypto Briefing 转述，Fidelity 的报告认为 Solana 两年多没有重大停机，同时指出集中的风险：一家托管商约占 29% 的质押，约 40% 的质押在法兰克福和阿姆斯特丹<a class="ref" href="#s29">[29]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>共识消息要有自己的通道。2021 年 9 月，投票交易和普通交易走同一条处理管线，管线堵住，共识跟着停下；后来的版本让投票交易优先<a class="ref" href="#s2">[2]</a>。</li>
+            <li>写锁的范围要收紧。一个机器人锁住 SPL Token 程序，相关交易全网排队；补丁让程序账户不再被加写锁<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a>。</li>
+            <li>恢复流程也要按真实规模测试。等待 80% 质押的代码演练过多次，质押增多以后乘以 100 溢出，第一次重启因此失败<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</li>
+            <li>一套代码就是一个单点。2024 年 2 月，95% 以上的质押运行 1.17，几乎所有验证者卡在同一个区块上<a class="ref" href="#s13">[13]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给验证者运营者</span>
+          <ul>
+            <li>热备节点不能和主节点同时用同一个身份出块，2022 年 9 月的停机由此触发<a class="ref" href="#s10">[10]</a>。</li>
+            <li>重启时从自己的账本做快照，核对 slot 和 bank hash，不用别人做好的快照<a class="ref" href="#s2">[2]</a><a class="ref" href="#s19">[19]</a>。</li>
+            <li>关键补丁可能先私下分发。2024 年 8 月，收信人靠公开贴出的消息哈希核实真伪<a class="ref" href="#s18">[18]</a>。</li>
+            <li>自己加在网络上的服务也会放大故障。2023 年 2 月，shred 转发服务让重复的数据在 Turbine 树里循环<a class="ref" href="#s12">[12]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给应用、交易所和托管方</span>
+          <ul>
+            <li>先到先得的发售会招来机器人。固定价格、谁先调用谁得的铸造，让发大量交易有利可图<a class="ref" href="#s8">[8]</a>；Metaplex 改为向失败的机器人交易收费<a class="ref" href="#s16">[16]</a>。</li>
+            <li>重试要有退避。拥堵时 RPC 节点和应用不断重试，旧交易一直留在网络里；1.8 起可以调整 RPC 的重试方式，比如更快让交易过期、按指数退避<a class="ref" href="#s2">[2]</a><a class="ref" href="#s25">[25]</a>。</li>
+            <li>按金额选确认级别。Jump 写道，大额的跨链和交易所转账可以用 Finalized，交易机器人可以用 Confirmed；按当时的实现，推翻 Confirmed 的区块至少要罚没约 4.6% 的活跃质押<a class="ref" href="#s2">[2]</a>。</li>
+            <li>停链时要能停下充提，也要为少用的功能备好退路。2022 年 6 月重启时持久随机数交易被暂停，用离线签名的托管方可能动不了资金<a class="ref" href="#s9">[9]</a><a class="ref" href="#s22">[22]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Solana，《9-14 Network Outage Initial Overview》，2021-09（Internet Archive 2021-09-20 存档）。<a href="https://web.archive.org/web/20210920161757/https://solana.com/news/9-14-network-outage-initial-overview">web.archive.org</a></li>
+          <li id="s2">Jump Crypto（Certus One），《Reflections on the Sept 14 Solana Outage》，2021-10-22（Internet Archive 存档）。<a href="https://web.archive.org/web/2022/https://jumpcrypto.com/reflections-on-the-sept-14-solana-outage/">web.archive.org</a></li>
+          <li id="s3">solana-labs/solana，v1.6.23、v1.6.24、v1.6.25 的发布说明，2021-09-14 至 15。<a href="https://github.com/solana-labs/solana/releases/tag/v1.6.25">github.com</a></li>
+          <li id="s4">solana-labs/solana，v1.6.24 和 v1.6.25 标签下的 core/src/validator.rs，及 PR #19892《Use f64 for stake math in get_stake_percent_in_gossip》，2021-09-15。<a href="https://github.com/solana-labs/solana/compare/v1.6.24...v1.6.25">github.com</a></li>
+          <li id="s5">solana-labs/solana，v1.6.22 至 v1.6.24 的提交记录，含 #19637《Demote write locks on transaction program ids》、#19877《Remove demote_program_write_locks feature》，2021-09。<a href="https://github.com/solana-labs/solana/compare/v1.6.22...v1.6.24">github.com</a></li>
+          <li id="s6">Business Insider（Camomile Shumba，Yahoo 转载），《Solana says it is back up and running after a surge in transactions caused the network to crash the day before》，2021-09-15（Internet Archive 存档）。<a href="https://web.archive.org/web/20211113084133/https://news.yahoo.com/solana-says-back-running-surge-094958370.html">web.archive.org</a></li>
+          <li id="s7">Solana，《Mainnet Beta Stall - Postmortem》，2020-12（Internet Archive 存档）。<a href="https://web.archive.org/web/20210422180615/https://solana.com/news/mainnet-beta-stall---postmortem/">web.archive.org</a></li>
+          <li id="s8">Solana，《04-30-22 Solana Mainnet Beta Outage Report and Mitigation》，2022-05（Internet Archive 存档）。<a href="https://web.archive.org/web/20220503000844/https://solana.com/news/04-30-22-solana-mainnet-beta-outage-report-mitigation">web.archive.org</a></li>
+          <li id="s9">Solana，《06-01-22 Solana Mainnet Beta Outage Report》，2022-06（Internet Archive 存档）。<a href="https://web.archive.org/web/20220605143549/https://solana.com/news/06-01-22-solana-mainnet-beta-outage-report-2">web.archive.org</a></li>
+          <li id="s10">Solana，《09-30-22 Solana Mainnet Beta Outage Report》，2022-10（Internet Archive 存档）。<a href="https://web.archive.org/web/20221007100724/https://solana.com/news/09-30-22-solana-mainnet-beta-outage-report">web.archive.org</a></li>
+          <li id="s11">Solana，《02-25-23 Solana Mainnet Beta Outage Report》初版，2023-02（Internet Archive 2023-02-28 存档）。<a href="https://web.archive.org/web/20230228045228/https://solana.com/news/02-25-23-solana-mainnet-beta-outage-report">web.archive.org</a></li>
+          <li id="s12">Solana，《02-25-23 Solana Mainnet Beta Outage Report》更新版，2023-03-23 以后（文中引用当天发布的 1.13.7 和 1.14.17；Internet Archive 存档）。<a href="https://web.archive.org/web/2024/https://solana.com/news/02-25-23-solana-mainnet-beta-outage-report">web.archive.org</a></li>
+          <li id="s13">Anza（Solana 转载），《02-06-24 Solana Mainnet Beta Outage Report》，2024-02（Internet Archive 存档）。<a href="https://web.archive.org/web/20240209151830/https://solana.com/news/02-06-24-solana-mainnet-beta-outage-report">web.archive.org</a></li>
+          <li id="s14">Solana Status，事件记录（incidents.json、history.json），2026 年 11 月查阅。<a href="https://status.solana.com/history">status.solana.com</a></li>
+          <li id="s15">solana-labs/solana，v1.8.12、v1.8.14、v1.9.28、v1.10.23、v1.10.40、v1.13.2、v1.13.7、v1.14.17、v1.17.20 的发布说明，2022–2024。<a href="https://github.com/solana-labs/solana/releases">github.com</a></li>
+          <li id="s16">Metaplex，metaplex-program-library PR #417《Its time we did something about bots》，2022-04-29 提交，04-30 合并。<a href="https://github.com/metaplex-foundation/metaplex-program-library/pull/417">github.com</a></li>
+          <li id="s17">Solana，《Network Performance Report: October 2022》，2022-10（Internet Archive 存档）。<a href="https://web.archive.org/web/20221031193959/https://solana.com/news/network-performance-report-october-2022">web.archive.org</a></li>
+          <li id="s18">Anza，《Agave Network Patch: Root Cause Analysis》，2024-08-15。<a href="https://www.anza.xyz/blog/agave-network-patch-root-cause-analysis">anza.xyz</a></li>
+          <li id="s19">Anza，《Restarting a Solana Cluster》（Agave 文档），2026 年 11 月查阅。<a href="https://docs.anza.xyz/operations/guides/restart-cluster">docs.anza.xyz</a></li>
+          <li id="s20">Cointelegraph（Ezra Reguerra），《Solana Foundation defends decentralization amid patch coordination claims》，2024-09-03。<a href="https://cointelegraph.com/news/solana-defends-decentralization-amid-coordination-concerns">cointelegraph.com</a></li>
+          <li id="s21">CNBC（MacKenzie Sigalos），《Solana suffered its second outage in a month, sending price plunging》，2022-06-01（美东时间；Internet Archive 存档）。<a href="https://web.archive.org/web/20220718184039/https://www.cnbc.com/2022/06/01/solana-suffered-its-second-outage-in-a-month-sending-price-plunging.html">web.archive.org</a></li>
+          <li id="s22">CoinDesk（Fortune 转载），《Solana suffered a four-hour blackout due to a bug in how the blockchain processes offline transactions》，2022-06-02（Internet Archive 存档）。<a href="https://web.archive.org/web/20221005223953/https://fortune.com/2022/06/02/solana-shutdown-longest-time-offline-transaction-durable-nonce/">web.archive.org</a></li>
+          <li id="s23">Fortune（Taylor Locke），《Solana back online after latest outage》，2022-10-01（Internet Archive 存档）。<a href="https://web.archive.org/web/20221002001444/https://fortune.com/crypto/2022/10/01/solana-back-online-after-latest-outage/">web.archive.org</a></li>
+          <li id="s24">CryptoSlate（Mike Dalton），《Solana outage was caused by infinite loop bug previously seen on devnet》，2024-02-09。<a href="https://cryptoslate.com/solana-outage-was-caused-by-infinite-loop-bug-previously-seen-on-devnet/">cryptoslate.com</a></li>
+          <li id="s25">Helius（Lostin），《A Complete History of Solana Outages: Causes, Fixes, and Lessons Learnt》，2025-02-23。<a href="https://www.helius.dev/blog/solana-outages-complete-history">helius.dev</a></li>
+          <li id="s26">Solana 基金会，《Solana Network Health Report: June 2025》，2025-06（Internet Archive 存档）。<a href="https://web.archive.org/web/20250623225333/https://solana.com/news/network-health-report-june-2025">web.archive.org</a></li>
+          <li id="s27">CoinDesk（Danny Nelson，Yahoo 转载），《Jump's 'Frankendancer' Validator Client Is Live on Solana Mainnet》，2024-09-20。<a href="https://finance.yahoo.com/news/jumps-frankendancer-validator-client-live-075025308.html">finance.yahoo.com</a></li>
+          <li id="s28">firedancer-io/firedancer，发布记录（Frankendancer Mainnet v0.113.20007、Firedancer Testnet v1.0.0、Firedancer Mainnet v1.1.3 等），2024–2026。<a href="https://github.com/firedancer-io/firedancer/releases">github.com</a></li>
+          <li id="s29">Crypto Briefing（Estefano Gomez），《Fidelity report finds Solana resilient but flags concentration in stake, hosting and clients》，2026-10-17。<a href="https://cryptobriefing.com/fidelity-report-solana-resilience-concentration-risks/">cryptobriefing.com</a></li>
+          <li id="s30">CoinCentral（Maxwell Mutuma），《Solana Reaches 1,000-Day Uptime Milestone Amid Growth》，2026-11-02。<a href="https://coincentral.com/solana-reaches-1000-day-uptime-milestone-amid-growth/">coincentral.com</a></li>
+          <li id="s31">维基百科，《Solana (blockchain platform)》。<a href="https://en.wikipedia.org/wiki/Solana_(blockchain_platform)">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>比特币价值溢出漏洞｜区块链被盗事件编年史</title>
+<meta name="description" content="2010 年 8 月比特币区块 74638 里的一笔交易利用金额求和的整数溢出凭空造出约 1,844 亿枚 BTC：漏洞代码、0.3.10 补丁、软分叉与链重组的完整经过。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2010-bitcoin-overflow">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2010 年　/　交易所的荒野时代</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>比特币价值溢出漏洞</h1>
+    <p class="lede">2010 年 8 月 15 日，比特币区块 74638 里出现了一笔交易，两个输出各约 922 亿枚 BTC，合计约为 2,100 万总量上限的 8,800 倍。原因是客户端在把输出金额相加时没有检查整数溢出。中本聪当天发布补丁，升级后的节点另起一条链，第二天反超了包含这笔交易的旧链，这些凭空产生的币随之作废。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">比特币节点在接受一笔交易前要检查两件事：每个输出不能是负数，输出总额不能超过输入总额。当时的代码对单个输出做了非负检查，但把所有输出加起来时用的是有符号 64 位整数，没有检查溢出。两个都接近上限的正数相加后回绕成了一个负数，“输出总额小于输入”这一检查因此被绕过。</p>
+        <p>这笔交易只花掉了 0.5 BTC 的输入，却在两个地址上记入了各约 922 亿枚 BTC，矿工还多拿到 0.01 BTC 的“手续费”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。从区块产生到论坛上有人发现异常，大约过了一小时；从发现到中本聪把修复提交到代码库，大约三个半小时<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>修复版本 0.3.10 收紧了交易规则，属于软分叉：新规则下有效的区块，旧节点同样认为有效。升级的节点从区块 74637 重新出块，新链在第二天反超旧链，没有升级的节点也按“最长链”规则自动切换过去<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。这笔交易的编号后来定为 CVE-2010-5139<a class="ref" href="#s8">[8]</a>。造出这笔交易的人至今身份不明，也没有人公开认领。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>2010 年 8 月，比特币主网运行了一年半。客户端由中本聪维护，代码放在 SourceForge 的 SVN 仓库里，Gavin Andresen、Jeff Garzik 等少数开发者参与修改。讨论几乎都集中在 bitcointalk 论坛，挖矿就是运行客户端自带的“生成”功能，用普通电脑的 CPU 或显卡出块。当时没有正式的安全公告渠道，也没有内置的警报机制。按 Decrypt 的回顾，补丁发布那天一枚比特币约值 0.07 美元<a class="ref" href="#s11">[11]</a>。同年 5 月 22 日，Laszlo Hanyecz 在 BitcoinTalk 论坛报告，他用 1 万枚比特币换到了两个披萨<a class="ref" href="#s13">[13]</a>，见大事记的<a href="../../milestones/events/2010-pizza-day.html">比特币披萨日</a>。</p>
+        <p>比特币的总量约束靠两条规则维持：新币只能由每个区块的 coinbase 交易按固定数额发行，当时是每块 50 BTC；其他交易的输出总额不能超过输入总额，差额作为手续费归矿工。只要这两条成立，2,100 万的上限就自然成立。但在 0.3.10 之前，代码里并没有“任何金额不得超过 2,100 万 BTC”这样的显式检查，常量 <code>MAX_MONEY</code> 是这次补丁才加上的<a class="ref" href="#s5">[5]</a>。</p>
+        <p>客户端里另有一种叫“检查点锁定”的机制：代码中写死了若干历史区块的哈希，例如区块 74000，与之冲突的链会被直接拒绝<a class="ref" href="#s6">[6]</a>。这原本是防止有人重写早期历史的手段，在这次事件中成了修复方案的一部分。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk key"><time>2010-08-15 17:05</time><div class="ev">区块 74638 被挖出，其中包含溢出交易 <span class="addr">1d5e512a…65333c9</span>，coinbase 输出为 50.51 BTC<a class="ref" href="#s2">[2]</a>。区块时间戳为 1281891957（UTC 17:05:57）。</div></li>
+          <li class="def"><time>18:08</time><div class="ev">Jeff Garzik 在论坛发帖《Strange block 74638》，贴出区块内容，指出“value out”异常<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>19:25</time><div class="ev">用户 lfm 另开帖《overflow bug SERIOUS》，判断这是利用整数溢出构造的负数总额，呼吁尽快修复<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>20:28</time><div class="ev">Gavin Andresen 提交临时补丁：拒绝单个超过 2,100 万 BTC 的输出<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>21:09–21:10</time><div class="ev">中本聪在论坛贴出初步修改，并请大家暂停挖矿：“我们可能需要绕开当前这条链重做一条分支，大家挖得越少，这件事就越快。”<a class="ref" href="#s3">[3]</a></div></li>
+          <li class="def key"><time>21:35</time><div class="ev">中本聪提交 SVN 修订 132，加入 <code>MAX_MONEY</code> 和输出求和的溢出检查，版本号改为 310<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>22:21</time><div class="ev">修订 133 加入“回扫检查”，拒绝任何包含区块 74638 这一哈希的链<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>23:36</time><div class="ev">中本聪贴出 0.3.10 的 Windows 与 Linux 下载链接，建议用户换用较早的区块快照后再升级<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2010-08-16 02:16</time><div class="ev">中本聪发帖《Version 0.3.10 - block 74638 overflow PATCH!》正式公告新版本<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>02:22</time><div class="ev">中本聪称新链已出 14 个块，他连接的节点里过半已升级，“我认为算力可能已经超过坏链了”<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="key"><time>12:59</time><div class="ev">中本聪确认新链“大约在 74689 附近”反超旧链，此后升级无需删除区块文件，客户端会自动重组<a class="ref" href="#s3">[3]</a>。Bitcoin Wiki 记载的反超高度为 74691<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>17:51–20:55</time><div class="ev">后续提交让客户端在断开坏链后清除它，并在连接区块时再做一次完整检查，防止旧版本放进来的坏块留在本地<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2010-08 下旬</time><div class="ev">客户端加入警报系统，开发者可以向所有节点推送安全提示<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2012-08-06</time><div class="ev">美国国家漏洞库发布 CVE-2010-5139<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>2018-09-17</time><div class="ev">Bitcoin Core 收到 CVE-2018-17144 的报告，这是比特币第二个已知的增发漏洞，在被利用之前修复<a class="ref" href="#s10">[10]</a>。</div></li>
+        </ol>
+        <p>以上时间为 UTC。论坛帖子的时间按 bitcointalk 页面显示的 UTC 时间换算，提交时间取自 Git 记录。</p>
+      </section>
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>比特币的金额以“聪”（satoshi，1 BTC = 10<sup>8</sup> 聪）为单位，存在有符号 64 位整数 <code>int64</code> 里，最大值约为 922.3 亿 BTC。正常交易的金额远小于这个数，开发者也就没有考虑相加会不会越界。修复前，和金额有关的检查分在三个地方，每一处单独看都没有错：</p>
+<pre class="code"><code><span class="c">// main.h（修复前），CTransaction::CheckTransaction：交易的基本检查</span>
+// Check for negative values
+foreach(const CTxOut&amp; txout, vout)
+    if (txout.nValue &lt; 0)          <span class="c">// 只检查每个输出不是负数</span>
+        return error("CTransaction::CheckTransaction() : txout.nValue negative");
+
+<span class="c">// main.h（修复前），CTransaction::GetValueOut：计算输出总额</span>
+int64 nValueOut = 0;
+foreach(const CTxOut&amp; txout, vout)
+{
+    if (txout.nValue &lt; 0)
+        throw runtime_error("CTransaction::GetValueOut() : negative value");
+<span class="bad">    nValueOut += txout.nValue;     <span class="c">// 有符号 64 位相加，越界后回绕成负数</span></span>
+}
+return nValueOut;
+
+<span class="c">// main.cpp（修复前），CTransaction::ConnectInputs：输入减输出就是手续费</span>
+// Tally transaction fees
+int64 nTxFee = nValueIn - GetValueOut();
+<span class="bad">if (nTxFee &lt; 0)                    <span class="c">// 输出总额是负数时，手续费反而是正数</span></span>
+    return error("ConnectInputs() : %s nTxFee &lt; 0", ...);</code></pre>
+        <p class="code-cap">来源：bitcoin/bitcoin 仓库提交 4bd188c（SVN r131，修复前的最后一个版本）中 main.h 第 474–477、520–527 行与 main.cpp 第 1011–1014 行，去掉了一层缩进，最后一行的参数从略。英文注释是原有的，中文注释是本站加的。</p>
+        <p>区块 74638 里的那笔交易恰好落在这三处检查的缝隙里。论坛上的分析者当天就把数字算清楚了<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>：</p>
+        <ol class="flow">
+          <li class="atk"><b>两个输出各约 922 亿 BTC</b>输入只有 0.5 BTC；每个输出单看都是正数，通过非负检查</li>
+          <li class="atk"><b>求和越界</b>两者之和超过 <code>int64</code> 上限，回绕为 −0.01 BTC</li>
+          <li class="atk"><b>手续费 0.51 BTC</b>0.5 −（−0.01）≥ 0，检查通过</li>
+          <li class="atk"><b>写入区块 74638</b>矿工的 coinbase 记为 50.51 BTC</li>
+        </ol>
+        <p>每个输出只比 <code>int64</code> 的上限小约 0.005 BTC。原帖的第二条回复就指出，922 亿这个数正是 2<sup>63</sup>/10<sup>8</sup>，也就是有符号 64 位整数的上限<a class="ref" href="#s2">[2]</a>。两者相加后超出上限，结果按补码回绕成一个很小的负数。在节点看来，这只是一笔多付了 0.01 BTC 手续费的普通交易。矿工按规则把 50 BTC 补贴和 0.51 BTC 手续费都记进 coinbase，其中 0.01 BTC 在任何地方都没有来源。</p>
+        <div class="note">
+          <span class="h">逐个检查为什么不够</span>
+          <p>“每个输出都不是负数”是对单个元素的约束，“输出总额不超过输入”是对总和的约束。前者成立并不能推出后者成立，因为总和是在固定宽度的整数里算出来的，可能越界。要守住总和的约束，必须在求和过程中每一步都检查，或者用不会静默回绕的运算。</p>
+        </div>
+        <h3>补丁改了什么</h3>
+        <p>中本聪在 SVN 修订 132 中做了三处改动：新增常量 <code>MAX_MONEY</code>，即 2,100 万 BTC；<code>CheckTransaction</code> 对每个输出和累计值都检查上限；<code>ConnectInputs</code> 对输入一侧做同样的检查<a class="ref" href="#s5">[5]</a>。</p>
+<pre class="code"><code><span class="c">// main.h（修复后，SVN r132）</span>
+<span class="good">static const int64 MAX_MONEY = 21000000 * COIN;</span>
+
+<span class="c">// CTransaction::CheckTransaction</span>
+// Check for negative or overflow output values
+int64 nValueOut = 0;
+foreach(const CTxOut&amp; txout, vout)
+{
+    if (txout.nValue &lt; 0)
+        return error("CTransaction::CheckTransaction() : txout.nValue negative");
+<span class="good">    if (txout.nValue &gt; MAX_MONEY)</span>
+<span class="good">        return error("CTransaction::CheckTransaction() : txout.nValue too high");</span>
+<span class="good">    nValueOut += txout.nValue;</span>
+<span class="good">    if (nValueOut &gt; MAX_MONEY)     <span class="c">// 每加一次就检查累计值</span></span>
+<span class="good">        return error("CTransaction::CheckTransaction() : txout total too high");</span>
+}</code></pre>
+        <p class="code-cap">来源：bitcoin/bitcoin 仓库提交 d4c6b90《fix for block 74638 overflow output transaction》，2010-08-15 21:35:24 UTC。同一提交还在 main.cpp 的 <code>ConnectInputs</code> 里对输入金额和输入总额加了相同的上限检查，并把版本号从 309 改为 310。</p>
+        <p>这个写法能杜绝溢出，是因为每个加数不超过 <code>MAX_MONEY</code>，加之前的累计值也不超过 <code>MAX_MONEY</code>，两者之和最多约 4,200 万 BTC，离 <code>int64</code> 的上限差四个数量级，加法本身不可能越界。今天 Bitcoin Core 的 <code>src/consensus/tx_check.cpp</code> 里仍是这三个检查，注释直接写着“see CVE-2010-5139”，只是累计值的判断换成了 <code>MoneyRange()</code><a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>造出这笔交易的人没有留下任何公开说明，下面只按论坛讨论、Bitcoin Wiki 和中本聪当时的帖子，概括已知的经过。</p>
+        <ol class="steps">
+          <li><b>准备一笔小额输入</b>交易花掉的是 0.5 BTC。Bitcoin Wiki 记载，这 0.5 BTC 看起来来自一个水龙头（当时向新用户免费发放少量比特币的网站），此后一直没有再动过<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>构造官方客户端不会生成的交易</b>官方钱包不会造出金额接近 <code>int64</code> 上限的输出。论坛上有人推测，构造者用的是自行修改过的客户端<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>交易被打包</b>当时所有节点都会认为这笔交易有效，它在区块 74638 里得到确认。出块的矿工因此多拿了 0.01 BTC。没有公开证据表明这个矿工和交易的构造者是同一个人。</li>
+          <li><b>旧节点反复把它放回新块</b>补丁发布后，没有升级的节点仍把这笔交易留在内存池里，每出一个新块都试图把它重新打包，因而不断制造出新节点会拒绝的区块。重启节点可以清空内存池，但交易会被其他旧节点再次广播过来<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>随旧链一起消失</b>新链反超后，这笔交易不在最长链上，两个地址上的“余额”也就不存在了<a class="ref" href="#s1">[1]</a>。现有公开资料没有显示这些币在旧链存续的不到一天里被转移或兑换过。</li>
+        </ol>
+        <p>与这本编年史中的大多数事件不同，这次没有任何人的币被偷走。被破坏的是整个系统最基本的承诺：总量不超过 2,100 万。如果这条链没有被放弃，这 1,844 亿枚 BTC 会和其他币一样可以流通，比特币的稀缺性也就不复存在。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>区块 74638 中，溢出交易和 coinbase 交易涉及的金额如下<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">金额（BTC）</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>溢出交易的输入</td><td class="n">0.5</td><td>真实存在的币，来自交易 <span class="addr">237fe834…705d39</span> 的第 0 个输出</td></tr>
+              <tr><td>输出 1</td><td class="n">92,233,720,368.54275808</td><td>付给地址哈希以 <span class="addr">B7A7…</span> 开头的地址</td></tr>
+              <tr><td>输出 2</td><td class="n">92,233,720,368.54275808</td><td>付给地址哈希以 <span class="addr">1512…</span> 开头的地址</td></tr>
+              <tr><td>coinbase 输出</td><td class="n">50.51</td><td>50 BTC 区块补贴加 0.51 BTC“手续费”，其中 0.01 BTC 没有来源</td></tr>
+              <tr><td>凭空产生的总量</td><td class="n">184,467,440,737.09551616</td><td>两个输出加多出的 0.01 BTC，恰好等于 2<sup>64</sup> 聪</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>这笔交易随旧链一起被放弃后，Bitcoin Wiki 记载那 0.5 BTC 的输入在最长链上仍是未花费状态<a class="ref" href="#s1">[1]</a>。这次真正蒙受损失的，是在旧链上出块的矿工：从区块 74638 开始，他们在旧链上挖到的每一块都不在最长链上，每块 50 BTC 的补贴一并作废。旧链上的普通交易不受影响。中本聪在回答一位用户时说，这些交易“会被重新纳入修复后的链”，两边都能看到，只是确认数会跳回 0 重新计算<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>总量上限第一次写进代码</h3>
+        <p>在这之前，2,100 万的上限只是发行规则推出来的结果，代码里没有任何地方直接检查它；这条发行规则是 2009 年 1 月 v0.1 定下的<a class="ref" href="#s16">[16]</a>，见大事记的<a href="../../milestones/events/2009-bitcoin-genesis.html">比特币白皮书与创世区块</a>。补丁之后，“任何金额和金额之和都必须落在 0 到 2,100 万 BTC 之间”成了一条显式的共识规则，并一直保留到今天<a class="ref" href="#s12">[12]</a>。中本聪在事后几天又给客户端加了警报系统。事发当晚有用户提出，大多数人不看论坛，客户端里应该有能显示紧急警告的地方，中本聪回复说自己早就想做，只是没时间<a class="ref" href="#s3">[3]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <h3>同一类漏洞后来又出现过</h3>
+        <p>2018 年，比特币又出现了一个可以增发的共识漏洞 CVE-2018-17144。两次的处理方式差别很大，可以看出八年间应急流程的变化：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th></th><th>2010：CVE-2010-5139</th><th>2018：CVE-2018-17144</th></tr></thead>
+            <tbody>
+              <tr><td>根因</td><td>输出金额求和时整数溢出</td><td>同一交易内重复花费同一输入，一次性能优化去掉了检查<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>怎么发现的</td><td>漏洞被利用后，论坛用户发现异常区块</td><td>匿名研究者先按拒绝服务漏洞报告，开发者约 3 小时后确认它也能用来增发</td></tr>
+              <tr><td>是否被利用</td><td>是，区块 74638</td><td>披露时未发现利用</td></tr>
+              <tr><td>修复速度</td><td>发现后约 3.5 小时提交代码，约 5.5 小时提供二进制下载</td><td>报告后约 7 小时公开补丁，约 30 小时发布正式版本</td></tr>
+              <tr><td>处置方式</td><td>软分叉，并放弃已经包含溢出交易的那段链</td><td>补丁发布时只公开拒绝服务问题，私下联络矿工升级；三天后有人在论坛泄露真实影响，开发者随即全面披露，当时估计过半算力已升级</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>整数溢出也在智能合约里反复出现。2018 年的 <a href="2018-beautychain-bec.html">BeautyChain（BEC）</a>是同一类错误：乘积越界后变成 0，绕过了余额检查。智能合约领域直到 Solidity 0.8 把溢出检查内置进编译器，才把这类问题大体堵住。</p>
+        <h3>靠升级丢弃已确认区块的先例</h3>
+        <p>这次事件开了一个先例：发现链上历史违反了协议的根本承诺时，社区可以通过发布新客户端、让新链超过旧链的方式，把已经确认的区块整段作废。六年后 <a href="2016-the-dao.html">The DAO</a> 事件里关于“要不要改写历史”的争论，在这里还没有出现。这次作废的是明显违反规则的增发，而不是合约按规则执行出的结果，当时论坛上讨论的是怎样尽快修复，而不是该不该修复<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>三层修复</h3>
+        <ol class="steps">
+          <li><b>收紧规则</b>SVN 修订 132 加入 <code>MAX_MONEY</code> 与求和检查，任何包含超额输出的交易都无效<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>拒绝那一段链</b>修订 133 在 <code>AcceptBlock</code> 中加入回扫：沿着新区块往回检查到区块 74000，如果路径上出现区块 74638 的那个哈希，就拒绝这个区块<a class="ref" href="#s6">[6]</a>。这样即使有人在旧链上继续出块，升级的节点也不会接到它后面。</li>
+          <li><b>自动清理本地数据</b>最初的升级步骤要求用户手动删除区块文件，再从一个较早的快照重新同步。8 月 16 日的提交让客户端启动时自动找出坏块、退回分叉点并删除坏链，还在连接每个区块时再做一次完整检查，注释写着“以防旧版本放进了坏块”<a class="ref" href="#s7">[7]</a>。中本聪说，前一天他知道自己没法既快又稳地写好这段代码，所以先用了手动方案<a class="ref" href="#s3">[3]</a>。</li>
+        </ol>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 280" role="img" aria-labelledby="ovf-fork-t ovf-fork-d">
+            <title id="ovf-fork-t">区块 74638 前后的分叉与重组</title>
+            <desc id="ovf-fork-d">两条链从区块 74637 分开。上面是未升级节点延续的旧链，从包含溢出交易的区块 74638 开始，一直出块到约 74678 后被放弃。下面是升级到 0.3.10 的节点重新出块的新链，在区块 74689 到 74691 附近反超旧链。旧节点随后按最长链规则切换到新链。</desc>
+            <defs>
+              <marker id="ovf-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="ovf-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="ovf-ah-def" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head def"/></marker>
+            </defs>
+            <text class="d-t s" x="170" y="36">未升级的节点（0.3.9 及更早）</text>
+            <text class="d-t s" x="170" y="268">升级到 0.3.10 的节点</text>
+            <rect class="d-box" x="20" y="118" width="110" height="54" rx="4"/>
+            <text class="d-t b" x="75" y="141" text-anchor="middle">74637</text>
+            <text class="d-t s" x="75" y="160" text-anchor="middle">共同的父块</text>
+            <path class="d-line atk" d="M130,132 C150,132 150,75 168,75" marker-end="url(#ovf-ah-atk)"/>
+            <path class="d-line def" d="M130,158 C150,158 150,215 168,215" marker-end="url(#ovf-ah-def)"/>
+            <rect class="d-box atk" x="170" y="50" width="110" height="50" rx="4"/>
+            <text class="d-t b" x="225" y="72" text-anchor="middle">74638</text>
+            <text class="d-t s" x="225" y="90" text-anchor="middle">含溢出交易</text>
+            <line class="d-line atk" x1="280" y1="75" x2="318" y2="75" marker-end="url(#ovf-ah-atk)"/>
+            <rect class="d-box atk" x="320" y="50" width="110" height="50" rx="4"/>
+            <text class="d-t b" x="375" y="72" text-anchor="middle">74639 …</text>
+            <text class="d-t s" x="375" y="90" text-anchor="middle">旧节点继续出块</text>
+            <line class="d-line atk" x1="430" y1="75" x2="468" y2="75" marker-end="url(#ovf-ah-atk)"/>
+            <rect class="d-box atk" x="470" y="50" width="120" height="50" rx="4"/>
+            <text class="d-t b" x="530" y="72" text-anchor="middle">约 74678</text>
+            <text class="d-t s" x="530" y="90" text-anchor="middle">08-16 凌晨所见</text>
+            <line class="d-line dash" x1="590" y1="75" x2="640" y2="75"/>
+            <text class="d-t s" x="648" y="80">被放弃</text>
+            <rect class="d-box def" x="170" y="190" width="110" height="50" rx="4"/>
+            <text class="d-t b" x="225" y="212" text-anchor="middle">74638′</text>
+            <text class="d-t s" x="225" y="230" text-anchor="middle">按新规则重出</text>
+            <line class="d-line def" x1="280" y1="215" x2="318" y2="215" marker-end="url(#ovf-ah-def)"/>
+            <rect class="d-box def" x="320" y="190" width="110" height="50" rx="4"/>
+            <text class="d-t b" x="375" y="212" text-anchor="middle">74639′ …</text>
+            <text class="d-t s" x="375" y="230" text-anchor="middle">新链逐块追赶</text>
+            <line class="d-line def" x1="430" y1="215" x2="468" y2="215" marker-end="url(#ovf-ah-def)"/>
+            <rect class="d-box ok" x="470" y="190" width="120" height="50" rx="4"/>
+            <text class="d-t b" x="530" y="212" text-anchor="middle">74689–74691</text>
+            <text class="d-t s" x="530" y="230" text-anchor="middle">08-16 白天反超</text>
+            <line class="d-line dash" x1="530" y1="102" x2="530" y2="186" marker-end="url(#ovf-ah)"/>
+            <text class="d-t s halo" x="545" y="150">旧节点按最长链规则切换</text>
+            <text class="d-t s" x="225" y="150" text-anchor="middle">08-15 23:36 发布 0.3.10</text>
+          </svg>
+          </div>
+          <figcaption>图 1：区块 74638 前后的分叉。红色是包含溢出交易的旧链，蓝色和绿色是升级节点重新出块的新链。新链累积的工作量超过旧链后，旧节点自动切换，旧链上的区块全部作废。旧链被放弃前到达的确切高度没有公开记录，74678 是中本聪当时看到的高度。</figcaption>
+        </figure>
+        <h3>为什么当时能丢弃已确认的区块</h3>
+        <p>一是这次修复属于软分叉。新规则只是比旧规则更严，新链上的每个区块，旧节点也认为有效。所以只要升级节点的算力超过一半，新链迟早会更长，没升级的节点会自己切换过去，不需要所有人同时动作。中本聪当晚的说法是：一旦过半算力升级、好链反超坏链，0.3.10 节点会让坏交易很难再得到确认<a class="ref" href="#s3">[3]</a>。2017 年 8 月在比特币上生效的 SegWit 也是软分叉<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>，经过见大事记的<a href="../../milestones/events/2017-blocksize-war.html">比特币区块大小之争（BCH 分叉与 SegWit 激活）</a>。</p>
+        <p>二是网络很小，协调集中在一处。几乎所有用户都在同一个论坛上，运行同一个客户端，中本聪一句“请暂停挖矿”就能让相当一部分算力停下来。有用户提供了旧的区块快照，帮大家更快重新同步<a class="ref" href="#s3">[3]</a>。</p>
+        <p>三是作废的东西很少。坏链只延续了约 50 个区块，不到一天。旧链上的普通交易会被重新打包进新链，真正消失的只有溢出交易本身和旧链上的出块奖励。</p>
+        <p>这三个条件今天都不成立。节点和矿池分布在全世界，交易所和托管机构按确认数自动入账，作废一天的区块意味着撤销大量真实的付款。2018 年的 CVE-2018-17144 说明了现在的做法：在被利用之前修复，先联络矿工和大型服务商升级，再公开细节<a class="ref" href="#s10">[10]</a>。</p>
+        <div class="note doubt">
+          <span class="h">两处记载不一致</span>
+          <p>反超高度：中本聪在 8 月 16 日 12:59 的帖子里说“大约在 74689 附近”，Bitcoin Wiki 记载为 74691<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。修复版本：中本聪当时发布的补丁版本是 0.3.10，而 NVD 的描述写的是“0.3.11 之前的版本受影响”，Bitcoin Wiki 的漏洞表也把修复版本记为 0.3.11<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。本页按当时的发布帖叙述。</p>
+        </div>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给写金额处理代码的开发者</span>
+          <ul>
+            <li>对单个值的检查保证不了总和。凡是有“总额不超过某值”的约束，就要在累加的每一步检查，或者用发生越界就报错的加法，而不是事后检查结果。</li>
+            <li>系统的根本不变量要写成代码里的显式断言。“总量不超过 2,100 万”在 2010 年之前只存在于设计里，代码里没有任何一处直接检查它。</li>
+            <li>只把金额限制在一个远小于整数类型上限的范围内，加法本身就不可能越界。<code>MAX_MONEY</code> 比 <code>int64</code> 的上限小四个数量级，累计值每次都和它比较，这样的写法比单纯换更宽的整数类型可靠。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议维护者</span>
+          <ul>
+            <li>要有能触达所有节点的紧急渠道。2010 年只能靠论坛和邮件列表，警报系统是事后才补上的。</li>
+            <li>修复要考虑已经被坏数据污染的节点。最初的补丁只能拦住新的坏块，本地已有的坏链要靠用户手动删除；第二天的提交才让客户端自动识别并清理。</li>
+            <li>能在被利用前发现的漏洞，处理代价小得多。2018 年的增发漏洞没有造成任何链重组，靠的就是在被利用之前完成修复。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所和其他接收方</span>
+          <ul>
+            <li>入账逻辑可以加一层与协议无关的合理性检查，例如单笔金额超过总供应量时直接暂停入账。</li>
+            <li>确认数只在链不被大规模重组时有意义。共识层出现问题时，最先要做的是暂停充值和提现，而不是等待更多确认。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Bitcoin Wiki，《Value overflow incident》。<a href="https://en.bitcoin.it/wiki/Value_overflow_incident">en.bitcoin.it</a></li>
+          <li id="s2">jgarzik 等，《Strange block 74638》，bitcointalk 论坛，2010-08-15 起。<a href="https://bitcointalk.org/index.php?topic=822.0">bitcointalk.org</a></li>
+          <li id="s3">lfm、Gavin Andresen、satoshi 等，《overflow bug SERIOUS》，bitcointalk 论坛，2010-08-15 至 08-16，含中本聪的修复说明、升级步骤与反超确认。<a href="https://bitcointalk.org/index.php?topic=823.0">bitcointalk.org</a></li>
+          <li id="s4">satoshi，《Version 0.3.10 - block 74638 overflow PATCH!》，bitcointalk 论坛，2010-08-16。<a href="https://bitcointalk.org/index.php?topic=827.0">bitcointalk.org</a></li>
+          <li id="s5">Satoshi Nakamoto，提交 d4c6b90《fix for block 74638 overflow output transaction》（SVN r132），2010-08-15。<a href="https://github.com/bitcoin/bitcoin/commit/d4c6b90ca3f9b47adb1b2724a0c3514f80635c84">github.com</a></li>
+          <li id="s6">Satoshi Nakamoto，提交 85de7d7《scanback check to prevent adding to the 74638 overflow chain》（SVN r133），2010-08-15。<a href="https://github.com/bitcoin/bitcoin/commit/85de7d7c0cbb1e9aa311606644b697674c84f6f9">github.com</a></li>
+          <li id="s7">bitcoin/bitcoin 仓库 2010-08-15 至 08-28 的提交记录，包括 Gavin Andresen 的《Quick fix: bad block 74,652》、《erase the bad chain after disconnecting it》、《do an extra CheckBlock in ConnectBlock》与《alert system》。<a href="https://github.com/bitcoin/bitcoin/commits/master/?since=2010-08-15&amp;until=2010-08-29">github.com</a></li>
+          <li id="s8">美国国家标准与技术研究院（NIST）国家漏洞库，CVE-2010-5139，2012-08-06 发布。<a href="https://nvd.nist.gov/vuln/detail/CVE-2010-5139">nvd.nist.gov</a></li>
+          <li id="s9">Bitcoin Wiki，《Common Vulnerabilities and Exposures》。<a href="https://en.bitcoin.it/wiki/Common_Vulnerabilities_and_Exposures">en.bitcoin.it</a></li>
+          <li id="s10">Bitcoin Core，《CVE-2018-17144 Full Disclosure》，2018-09-20。<a href="https://bitcoincore.org/en/2018/09/20/notice/">bitcoincore.org</a></li>
+          <li id="s11">Robert Stevens，《The Day Someone Created 184 Billion Bitcoin》，Decrypt，2020-08-26。<a href="https://decrypt.co/39750/184-billion-bitcoin-anonymous-creator">decrypt.co</a></li>
+          <li id="s12">Bitcoin Core 源码，src/consensus/tx_check.cpp 与 src/consensus/amount.h（截至 2026-08 的 master 分支）。<a href="https://github.com/bitcoin/bitcoin/blob/master/src/consensus/tx_check.cpp">github.com</a></li>
+          <li id="s13">BitcoinTalk 论坛，laszlo 发起的帖子《Pizza for bitcoins?》（topic 137），2010-05-18 起。<a href="https://bitcointalk.org/index.php?topic=137.0">bitcointalk.org</a></li>
+          <li id="s14">Eric Lombrozo、Johnson Lau、Pieter Wuille，《BIP 141: Segregated Witness (Consensus layer)》，2015-12-21 编号。<a href="https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki">github.com</a></li>
+          <li id="s15">BitMEX Research，《A complete history of Bitcoin's consensus forks》，2017-12-28（Internet Archive 存档）。<a href="https://web.archive.org/web/2020/https://blog.bitmex.com/bitcoins-consensus-forks/">web.archive.org</a></li>
+          <li id="s16">Satoshi Nakamoto，cryptography 邮件列表，《Bitcoin v0.1 released》，2009-01-08。<a href="https://www.metzdowd.com/pipermail/cryptography/2009-January/014994.html">metzdowd.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

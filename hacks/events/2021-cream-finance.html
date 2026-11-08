@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cream Finance 第三次被攻击｜区块链被盗事件编年史</title>
+<meta name="description" content="2021 年 10 月 Cream Finance 被人把 Yearn yUSD 金库的份额价格在一笔交易里翻倍，借空以太坊 v1 市场约 1.3 亿美元：预言机代码、金库份额价格为何能被直接转账抬高、前两次事故与后续偿还。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-cream-finance">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　DeFi 之夏与闪电贷</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Cream Finance 第三次被攻击</h1>
+    <p class="lede">2021 年 10 月 27 日，攻击者在一笔交易里把 Yearn yUSD 金库的每份额价格从约 1.001 推到约 2.002。Cream 直接用这个价格给抵押品估值，攻击者手里的抵押品随之翻倍，Cream 以太坊 v1 市场约 1.3 亿美元的可借资产被借空。这是 Cream 当年的第三起事故，也让“份额价格能被直接转账抬高”成了借贷协议上架金库代币前必须回答的问题。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Cream 是 Compound 的分叉，允许用户以 Yearn 的金库份额 yUSD 作抵押。它的预言机给 yUSD 定价的方式是：底层资产 yCrv 的价格乘以金库自报的 <code>pricePerShare</code><a class="ref" href="#s3">[3]</a>。而 <code>pricePerShare</code> 等于金库资产除以份额总量，任何人直接把 yCrv 转进金库，它就会立刻上涨；Yearn 说明这是有意的设计，用来接收捐赠和空投<a class="ref" href="#s2">[2]</a>。</p>
+        <p>攻击者用闪电贷在两个地址之间反复存借，攒下约 15 亿美元的 crYUSD 抵押品；再赎回大部分金库份额，把份额总量压到约 800 万份，然后直接转入约 800 万美元的 yCrv。份额不变、资产翻倍，<code>pricePerShare</code> 从 1.000996 变成 2.001993<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。Cream 看到的抵押品价值翻倍，攻击者用多出来的额度借空了以太坊 v1 市场。主体操作在一笔交易里完成，清算人没有介入的机会。</p>
+        <p>攻击约一小时后，Cream 提交了让 yvToken 估值直接回退的修复<a class="ref" href="#s4">[4]</a>。Yearn 追回了攻击者转进金库的约 942 万美元并交给 Cream<a class="ref" href="#s2">[2]</a>，其余资产没有追回。2022 年 3 月 Cream 上线了按名单领取的还款合约；同月的社区提案则称，以太坊上的 Cream 存款人遭受了全部损失<a class="ref" href="#s15">[15]</a><a class="ref" href="#s17">[17]</a>。截至 2026 年 10 月，本站没有查到攻击者被公开认定或起诉的信息。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Cream（C.R.E.A.M. Finance）2020 年 8 月 3 日在以太坊上线借贷市场<a class="ref" href="#s14">[14]</a>。团队当时称，Cream 是“没有改动智能合约代码”的 Compound 分叉，并请 Compound 担任技术与安全顾问，团队代币的 25% 分给了 Compound<a class="ref" href="#s14">[14]</a>。此后 Cream 扩展到 BSC 和 Fantom，又推出面向协议之间借贷的 Iron Bank（即 C.R.E.A.M. V2）。它的定位是给长尾资产提供借贷市场，早期文档就把 yVault 列为 yyCRV、yETH 的第三方价格来源<a class="ref" href="#s15">[15]</a>，也就是说，金库自报的份额价格从一开始就被当作预言机使用。</p>
+        <p>2021 年 10 月之前，Cream 已经出过两次事。2 月 13 日，合作方 Alpha Homora V2 被攻击，攻击者经它从 Iron Bank 借走约 3,800 万美元的 ETH 和稳定币；这笔债务由 Alpha Homora 承担，双方约定用 Alpha 的部分储备按月偿还，并锁定 5,000 万枚 ALPHA 作担保<a class="ref" href="#s12">[12]</a>。3 月 15 日，Cream 的 GoDaddy 账户凭证泄露，域名被劫持<a class="ref" href="#s13">[13]</a>。</p>
+        <p>8 月 30 日，Cream 第一次被直接攻击。AMP 代币实现了 ERC-777 式的转账钩子，攻击者在钩子里重入 <code>borrow</code>；Cream 在 post-mortem 中承认，问题出在自己接入 AMP 的方式<a class="ref" href="#s11">[11]</a>。损失口径不一：Cream 当天公布为 418,311,571 枚 AMP 和 1,308.09 枚 ETH，按 The Record 的折算约 2,900 万美元<a class="ref" href="#s10">[10]</a>；post-mortem 计入一名模仿者后合计 462,079,976 枚 AMP 和 2,804.96 枚 ETH<a class="ref" href="#s11">[11]</a>；DefiLlama 记为 1,880 万美元<a class="ref" href="#s18">[18]</a>。Cream 承诺拿出 20% 的协议费用偿还这笔损失<a class="ref" href="#s11">[11]</a>。</p>
+        <div class="note">
+          <span class="h">“第三次”怎么算</span>
+          <p>媒体把 2 月、8 月和 10 月的三起事件合称为 Cream 当年的第三次被黑<a class="ref" href="#s9">[9]</a>。Cream 自己的说法不同：8 月的 AMP 事件是它“第一次被直接攻击”<a class="ref" href="#s11">[11]</a>，2 月的损失发生在 Alpha Homora 的合约上。</p>
+        </div>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2020-08-03</time><div class="ev">Cream 在以太坊上线借贷市场<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="atk"><time>2021-02-13</time><div class="ev">Alpha Homora V2 被攻击，经 Iron Bank 损失约 3,800 万美元<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>2021-03-15</time><div class="ev">Cream 的域名被劫持<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk"><time>2021-08-30</time><div class="ev">AMP 重入攻击，Cream 第一次被直接攻击<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk key"><time>2021-10-27 13:54</time><div class="ev">攻击交易上链，yUSD 金库的 <code>pricePerShare</code> 从 1.000996 变成 2.001993，Cream 以太坊 v1 市场被借空<a class="ref" href="#s2">[2]</a>。时间为 UTC，下同。</div></li>
+          <li class="def"><time>10-27 14:21</time><div class="ev">Yearn 组建应急小组<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def key"><time>10-27 14:56</time><div class="ev">Cream 向代码仓库提交修复：<code>getYvTokenPrice</code> 一律回退，yvToken 不再能被估值<a class="ref" href="#s4">[4]</a>。随后 Cream 暂停以太坊 v1 市场的全部交互，crToken 被锁定不能转账<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>10-27 15:15</time><div class="ev">Yearn 治理关闭了 5 个在 Cream 上作抵押品的金库的新存款，作为预防<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>10-27 20:01</time><div class="ev">Yearn 部署专门回收这笔转入资产的 yRecover 策略，20:56 挂到 yUSD 金库上<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>10-28 11:06</time><div class="ev">yRecover 策略执行，份额价格恢复到攻击前，攻击者转入的资产被收回（Yearn 记为 8,431,514 yUSD，约 942 万美元）<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>10-29 18:49</time><div class="ev">回收的资金转给 Cream 多签，以及两名在价格虚高时存入的用户<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2021-10-31</time><div class="ev">Cream 发布 post-mortem，称已修复漏洞、只有以太坊 v1 市场受影响，承诺先做部分偿还，并提出 10% 的赏金<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2021-11-02</time><div class="ev">Yearn 曾把同类风险披露给 Aave，Aave 这天完成修复<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2022-03-04</time><div class="ev">Cream 文档新增两个还款合约：CRETH2Repayment 和 USDCRepayment<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>2022-03-21</time><div class="ev">Snapshot 提案：停付 AMP 事件剩余的白帽赏金 1,932.15 ETH，改为分给 10 月事件中受损的以太坊存款人。投票全部赞成<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2022-03 至 04</time><div class="ev">Cream 文档删除 Iron Bank 页面（03-24），宣布停止 CRETH2 项目（04-07）<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">DefiLlama 记录的 Cream Lending 以太坊锁仓量不到 2,000 美元<a class="ref" href="#s18">[18]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>先统一名称。本页沿用 Cream post-mortem 的叫法：yUSD 是 Yearn 金库“Curve Y Pool yVault”的份额代币，yCrv 是它的底层资产，即 Curve Y 池（yDAI/yUSDC/yUSDT/yTUSD）的 LP 代币；crYUSD 是用户把 yUSD 存进 Cream 后拿到的凭证<a class="ref" href="#s1">[1]</a>。本站通过以太坊公共 RPC 读取了这个金库的 <code>name()</code>、<code>symbol()</code>、<code>token()</code> 和 <code>apiVersion()</code>，结果分别是 Curve Y Pool yVault、yUSD、Curve Y 池 LP 代币和 0.3.5。Yearn 的披露和部分分析把底层叫作 yUSD、把份额叫作 yUSDVault，读原文时要注意<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <h3>Cream 怎样给 yUSD 定价</h3>
+        <p>Cream 的借款额度沿用 Compound 的算法：抵押品数量乘以预言机价格，再乘以抵押率。区别在价格从哪里来。Cream 的 <code>PriceOracleProxy</code> 按资产类型分流：LP 代币走“公平价格”公式，Curve LP 代币用池子的 virtual price，Yearn 金库份额则交给 <code>getYvTokenPrice</code><a class="ref" href="#s3">[3]</a>：</p>
+<pre class="code"><code><span class="c">// PriceOracleProxy.sol（提交 7ae4ccd，攻击发生时的版本），getYvTokenPrice</span>
+function getYvTokenPrice(address token) internal view returns (uint256) {
+    YvTokenInfo memory yvTokenInfo = yvTokens[token];
+    require(yvTokenInfo.isYvToken, "not a Yvault token");
+
+    uint256 pricePerShare;
+    address underlying;
+    if (yvTokenInfo.version == YvTokenVersion.V1) {
+        pricePerShare = YVaultV1Interface(token).getPricePerFullShare();
+        underlying = YVaultV1Interface(token).token();
+    } else {
+<span class="bad">        pricePerShare = YVaultV2Interface(token).pricePerShare();   <span class="c">// 金库自报的份额价格</span></span>
+        underlying = YVaultV2Interface(token).token();
+    }
+
+    uint256 underlyingPrice;
+    if (crvTokens[underlying].isCrvToken) {
+        underlyingPrice = getCrvTokenPrice(underlying);   <span class="c">// yCrv 按 Curve virtual price 计价</span>
+    } else {
+        underlyingPrice = getTokenPrice(underlying);
+    }
+<span class="bad">    return mul_(underlyingPrice, Exp({mantissa: pricePerShare}));</span>
+<span class="c">    // 直接相乘：没有上限，没有和上一刻比较，也没有时间平均</span>
+}</code></pre>
+        <p class="code-cap">来源：CreamFi/compound-protocol 仓库提交 7ae4ccd，contracts/PriceOracle/PriceOracleProxy.sol 第 223–244 行，去掉了一层缩进<a class="ref" href="#s3">[3]</a>。Yearn 的披露引用的正是这一行<a class="ref" href="#s2">[2]</a>。yUSD 金库是 0.3.5 版的 v2 金库，走的是 <code>pricePerShare()</code> 分支。</p>
+        <h3>份额价格为什么能被直接转账抬高</h3>
+        <p>再看 yUSD 金库自己怎样计算 <code>pricePerShare</code>：</p>
+<pre class="code"><code><span class="c"># Vault.vy（yearn-vaults v0.3.5）</span>
+@view
+@internal
+def _totalAssets() -> uint256:
+    # See note on `totalAssets()`.
+<span class="bad">    return self.token.balanceOf(self) + self.totalDebt   <span class="c"># 金库地址上的余额直接计入</span></span>
+
+@view
+@internal
+def _shareValue(shares: uint256) -> uint256:
+    ...   <span class="c"># 省略：扣除尚在释放期的 lockedProfit</span>
+    freeFunds: uint256 = self._totalAssets()
+    ...
+    return (
+        precisionFactor
+       * shares
+<span class="bad">        * freeFunds          <span class="c"># 份额价格 = 可用资产 ÷ 份额总量</span></span>
+<span class="bad">        / self.totalSupply</span>
+        / precisionFactor
+    )
+
+@view
+@external
+def pricePerShare() -> uint256:
+    return self._shareValue(10 ** self.decimals)</code></pre>
+        <p class="code-cap">来源：yearn/yearn-vaults 仓库 v0.3.5 标签，contracts/Vault.vy 第 768–772 行、第 881–911 行、第 1111–1119 行，省略了 lockedProfit 的计算和 <code>pricePerShare</code> 的文档注释<a class="ref" href="#s5">[5]</a>。</p>
+        <p><code>self.token.balanceOf(self)</code> 是金库地址上的 yCrv 余额。正常存款会按当时的价格铸出份额，资产和份额同比增加，价格不变；但如果有人不经过 <code>deposit</code>、直接把 yCrv 转给金库，资产增加而份额不变，价格就涨了。Yearn 在披露里写明，这是为了让金库能接收捐赠和空投而保留的设计<a class="ref" href="#s2">[2]</a>。<code>lockedProfit</code> 机制只让策略上报的收益逐步释放，管不到这种直接转账。</p>
+        <p>直接转账能把价格推多高，取决于份额总量有多小。攻击前 yUSD 金库的份额总量约 1,100 万份，而这些份额在 Cream 上既能借出也能作抵押<a class="ref" href="#s2">[2]</a>。攻击者先借来大部分份额并赎回，让总量只剩约 800 万份，再转入约 800 万美元的 yCrv，价格就翻了一倍。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 420" role="img" aria-labelledby="cream-pps-t cream-pps-d">
+            <title id="cream-pps-t">yUSD 份额价格在一笔交易里翻倍</title>
+            <desc id="cream-pps-d">yUSD 的份额价格等于金库可用资产除以份额总量。攻击前约 1,100 万份，价格约 1.001。攻击者赎回大部分份额后，总量约 800 万份、资产约 800 万美元，价格约 1。直接转入约 800 万美元 yCrv 后，份额不变、资产约 1,600 万美元，价格约 2.002。Cream 的预言机读到新价格，攻击者约 15 亿美元的 crYUSD 被估值为约 30 亿美元。</desc>
+            <defs>
+              <marker id="cream-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="cream-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box soft" x="160" y="16" width="440" height="40" rx="4"/>
+            <text class="d-t b" x="380" y="41" text-anchor="middle">pricePerShare = 金库可用资产 ÷ 份额总量</text>
+            <rect class="d-box" x="20" y="96" width="220" height="104" rx="4"/>
+            <text class="d-t b" x="130" y="122" text-anchor="middle">① 攻击前</text>
+            <text class="d-t s" x="130" y="148" text-anchor="middle">份额总量约 1,100 万份</text>
+            <text class="d-t s m" x="130" y="176" text-anchor="middle">≈ 1.000996</text>
+            <rect class="d-box" x="270" y="96" width="220" height="104" rx="4"/>
+            <text class="d-t b" x="380" y="122" text-anchor="middle">② 赎回大部分份额后</text>
+            <text class="d-t s" x="380" y="148" text-anchor="middle">约 800 万份，资产约 800 万美元</text>
+            <text class="d-t s m" x="380" y="176" text-anchor="middle">≈ 1</text>
+            <rect class="d-box atk" x="520" y="96" width="220" height="104" rx="4"/>
+            <text class="d-t b" x="630" y="122" text-anchor="middle">③ 直接转入 yCrv 后</text>
+            <text class="d-t s" x="630" y="148" text-anchor="middle">份额不变，资产约 1,600 万美元</text>
+            <text class="d-t s m atk" x="630" y="176" text-anchor="middle">≈ 2.001993</text>
+            <line class="d-line" x1="240" y1="148" x2="268" y2="148" marker-end="url(#cream-ah)"/>
+            <line class="d-line atk" x1="490" y1="148" x2="518" y2="148" marker-end="url(#cream-ah-atk)"/>
+            <text class="d-t s" x="255" y="222" text-anchor="middle">攻击者赎回</text>
+            <text class="d-t atk s" x="505" y="222" text-anchor="middle">绕过 deposit，不铸份额</text>
+            <line class="d-line atk" x1="630" y1="200" x2="630" y2="270" marker-end="url(#cream-ah-atk)"/>
+            <text class="d-t atk halo" x="620" y="250" text-anchor="end">getYvTokenPrice 读到新价格</text>
+            <rect class="d-box atk" x="200" y="272" width="540" height="64" rx="4"/>
+            <text class="d-t b" x="470" y="298" text-anchor="middle">Cream 眼中的抵押品：约 15 亿美元 crYUSD → 约 30 亿美元</text>
+            <text class="d-t s" x="470" y="320" text-anchor="middle">多出的额度用来还闪电贷，再借空以太坊 v1 市场</text>
+            <rect class="d-box soft" x="20" y="360" width="720" height="40" rx="4"/>
+            <text class="d-t s" x="380" y="385" text-anchor="middle">① 到 ③ 和借款都在同一笔交易里完成，价格跳变与借款之间没有可供清算人介入的区块</text>
+          </svg>
+          </div>
+          <figcaption>图 1：份额价格怎样被翻倍。红色是被利用的环节。数字来自 Cream 的 post-mortem 和 Yearn 的披露<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>，取约数。问题不在除法本身，而在 Cream 把一个任何人都能单方面改变的数当作了抵押品价格。</figcaption>
+        </figure>
+        <h3>为什么清算救不了</h3>
+        <p>正常情况下价格变化有一个过程，抵押不足的仓位会在过程中被清算。这里价格在一笔交易里翻倍，借款紧跟着发生，中间没有一个区块的空档。Mudit Gupta 指出，用时间加权均价或其他带延迟的定价，就能避免这种原子化的跳变被立刻计入额度<a class="ref" href="#s6">[6]</a>。他还认为，这次真正的问题是治理：Cream 上架了一个价格能在一笔交易里翻倍的抵押品<a class="ref" href="#s6">[6]</a>。</p>
+        <div class="note doubt">
+          <span class="h">这算不算预言机操纵</span>
+          <p>Cream 把它描述为“经济攻击和预言机攻击的混合”<a class="ref" href="#s1">[1]</a>。Mudit Gupta 的看法相反：金库份额的价值确实翻了倍，预言机报告的是真实值，不存在价格操纵<a class="ref" href="#s6">[6]</a>。两种说法描述的是同一个事实：预言机如实读取了一个可以被单方面推高的数字。</p>
+        </div>
+        <h3>修复：一行 revert</h3>
+<pre class="code"><code><span class="c">// 提交 679352c（2021-10-27 14:56 UTC），PriceOracleProxy.sol 的全部改动</span>
+ function getYvTokenPrice(address token) internal view returns (uint256) {
+     YvTokenInfo memory yvTokenInfo = yvTokens[token];
+     require(yvTokenInfo.isYvToken, "not a Yvault token");
+<span class="good">+    revert("yvToken freeze");   <span class="c">// 所有 yvToken 一律无法估值</span></span></code></pre>
+        <p class="code-cap">来源：CreamFi/compound-protocol 仓库提交 679352c，在攻击交易约一小时后提交<a class="ref" href="#s4">[4]</a>。</p>
+        <p>这个修复没有改进估值方法，只是让所有 Yearn 金库份额不能再被计价，相当于把这类抵押品整体下架。Cream 同时停止了所有“可封装代币”的存借，包括全部 PancakeSwap LP 代币<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面按 Cream 的 post-mortem 和 Yearn 的披露转述攻击的结构<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>，金额取约数。Mudit Gupta 指出，受区块 gas 上限所限，攻击分成了几笔交易，主体在其中一笔里完成<a class="ref" href="#s6">[6]</a>。</p>
+        <ol class="steps">
+          <li><b>用闪电贷堆出抵押品</b>攻击者用两个地址分别从 MakerDAO 闪电借出约 5 亿美元的 DAI、从 Aave 闪电借出约 20 亿美元的 ETH。DAI 经 Curve 和 Yearn 换成 yUSD 存进 Cream；ETH 作为抵押品，用来在 Cream 上借出 yUSD。两个地址之间反复存借之后，一个地址手里有约 15 亿美元的 crYUSD 和约 5 亿美元的 yUSD。</li>
+          <li><b>压低份额总量</b>攻击者赎回手里的 yUSD，金库份额总量降到约 800 万份，此时份额价格约为 1。</li>
+          <li><b>直接转账抬价</b>攻击者把约 800 万美元的 yCrv 直接转给 yUSD 金库。份额不变，资产翻倍，份额价格从 1.000996 变成 2.001993，Cream 眼中的 crYUSD 抵押品从约 15 亿美元变成约 30 亿美元。</li>
+          <li><b>还贷并借空市场</b>攻击者用多出来的额度借出约 20 亿美元的 ETH，归还另一个地址的闪电贷，再赎回 yUSD 归还 DAI 闪电贷；剩下约 10 亿美元的虚高额度用来借走 Cream 以太坊 v1 市场里所有可借的资产。</li>
+        </ol>
+        <p>Halborn 指出，这次损失的上限其实是 Cream 当时可借出的资产总量。攻击者手里约 10 亿美元的虚高额度远远用不完，如果市场里有更多资产，损失会更大<a class="ref" href="#s7">[7]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>金额有两个口径：Cream 称被转走约 1.3 亿美元的资产<a class="ref" href="#s1">[1]</a>，Yearn 估计为 <span class="dispute">1.199 亿美元</span><a class="ref" href="#s2">[2]</a>。来源没有解释两者的差别。按 rekt.news 的统计，被借走的资产包括 2,760 多枚 ETH，renBTC、WBTC 和 HBTC 合计 76 枚 BTC，以及数千万美元的稳定币和其他代币<a class="ref" href="#s8">[8]</a>。</p>
+        <ol class="flow">
+          <li class="atk"><b>借空以太坊 v1 市场</b>约 1.3 亿美元，多种资产</li>
+          <li class="atk"><b>稳定币存进 Curve</b>Mudit Gupta 认为是为了避开 USDT、USDC 发行方的冻结<a class="ref" href="#s6">[6]</a></li>
+          <li class="atk"><b>部分资产跨到比特币</b>经 renBridge<a class="ref" href="#s8">[8]</a></li>
+          <li class="atk"><b>CRETH2 加进 Uniswap 池</b>4,000 多万美元的单边流动性<a class="ref" href="#s8">[8]</a></li>
+        </ol>
+        <ol class="flow">
+          <li class="def"><b>Yearn 回收转入金库的资产</b>8,431,514 yUSD，约 942 万美元</li>
+          <li class="ok"><b>交给 Cream 多签</b>另有两名在价格虚高时存入的用户被补足</li>
+          <li class="doubt"><b>其余资产没有追回</b>没有公开的归还或执法结果</li>
+        </ol>
+        <p>第二组流程来自 Yearn 的披露<a class="ref" href="#s2">[2]</a>。Yearn 回收的这笔钱，本来就是攻击者为抬价而转进金库的资产，攻击结束后它留在了金库里。2022 年 3 月的社区提案提到，Cream 团队还从攻击者那里拿回了 CRETH2，具体数量和方式提案没有说明<a class="ref" href="#s17">[17]</a>。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>Cream 的以太坊业务结束</h3>
+        <p>以太坊 v1 市场在攻击后被暂停，crToken 被锁定<a class="ref" href="#s1">[1]</a>。社区提案称，这次攻击让以太坊上的 Cream 资不抵债，存款人遭受全部损失<a class="ref" href="#s17">[17]</a>。此后 Cream 的文档在 2022 年 3 月删除了 Iron Bank 页面，4 月停止了 CRETH2 项目<a class="ref" href="#s15">[15]</a>。DefiLlama 记录的 Cream Lending 以太坊锁仓量，2022 年 6 月约 4,950 万美元，2023 年 6 月约 26 万美元，2026 年 10 月不到 2,000 美元<a class="ref" href="#s18">[18]</a>。Mudit Gupta 在事发第二天写道，这“很可能是最后一次”<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>波及其他协议</h3>
+        <p>Yearn 检查后认为自己的金库记账没有出错，但同一种风险存在于所有接受金库份额作抵押的协议。Yearn 把问题披露给了 Aave，Aave 在 2021 年 11 月 2 日完成修复；Yearn 自己则开始研究让金库忽略直接转入的资产，改由专门的策略处理捐赠<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>“捐赠”抬高份额价格成了一类手法</h3>
+        <p>后来的 ERC-4626 标准金库面临同样的问题。OpenZeppelin 在 ERC-4626 文档里把它称为“通胀攻击”：攻击者向金库捐赠资产，推动兑换率，让金库处于不安全的状态；文档给出的防御是虚拟份额偏移<a class="ref" href="#s19">[19]</a>。2023 年的 <a href="2023-euler-finance.html">Euler Finance</a> 事件里，被利用的也是一个“捐赠”函数，只是用法不同。2026 年的 <a href="2026-tectonic.html">Tectonic</a> 事件被 DefiLlama 归为捐赠攻击，官方的描述则是价格操纵。更早的 <a href="2020-bzx-flash-loan.html">bZx</a> 和稍后的 <a href="2022-mango-markets.html">Mango Markets</a> 是同一大类问题的另外两种形态：借贷协议采信了一个可以被廉价推动的价格。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>当天的应对</h3>
+        <p>Cream 暂停以太坊 v1 市场、锁定 crToken、停止所有可封装代币的存借，并提交了 yvToken 的冻结修复<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。Cream 称正与执法部门合作追踪攻击者，并表示只要归还资金就支付 10% 的赏金<a class="ref" href="#s1">[1]</a>。没有公开信息显示攻击者回应过。</p>
+        <h3>Yearn 的回收</h3>
+        <p>Yearn 关闭了 5 个金库的新存款，确认风险后恢复了其中 3 个；随后部署 yRecover 策略，精确收回攻击者转入 yUSD 金库的资产，把份额价格恢复到攻击前的水平。两名在价格虚高时存入的用户被补足，其余回收资金交给 Cream 多签<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>偿还</h3>
+        <p>Cream 在 post-mortem 里承诺先做部分偿还，细节“将在未来几天公布”<a class="ref" href="#s1">[1]</a>。本站没有在 Cream 的 Medium 存档中找到之后发布的完整偿还方案。能查到的是两份链上记录。一是 2022 年 3 月 4 日文档新增的两个还款合约，CRETH2Repayment 和 USDCRepayment，用户凭默克尔证明按名单领取<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a>。CRETH2Repayment 的源码显示，领取 CRETH2 前要先按名单把一定数量的 CREAM 转给指定地址，合约没有说明原因<a class="ref" href="#s16">[16]</a>。二是 3 月 21 日的 Snapshot 提案：停付 AMP 事件剩下的 1,932.15 ETH 白帽赏金，改为按 2021 年 10 月 28 日的存款减借款比例分给受损的以太坊存款人；提案称团队已经交出追回的全部资金，并放弃了团队的待解锁代币和金库代币<a class="ref" href="#s17">[17]</a>。这些还款覆盖了损失的多大比例，本站没有找到公开数字。</p>
+        <h3>攻击者</h3>
+        <p>截至 2026 年 10 月，本站没有查到攻击者被公开认定、起诉或归还资金的信息。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给借贷协议</span>
+          <ul>
+            <li>不要把金库自报的份额价格直接当预言机。份额价格由金库地址上的余额决定，任何人都能单方面推高它。</li>
+            <li>评估一个抵押品时，要问它的价格在一笔交易里最多能被推动多少。能被原子化推高的价格，至少要配合时间加权、变动上限或延迟生效。</li>
+            <li>给金库份额、LP 代币这类封装资产设置抵押上限，让单一资产计入的价值有天花板。</li>
+            <li>共享资金池里一个坏资产就能拖垮整个市场。高风险资产放进隔离市场，损失只限于这个市场的参与者<a class="ref" href="#s6">[6]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给金库设计者</span>
+          <ul>
+            <li>用内部变量记账，不要直接用 <code>balanceOf(self)</code> 计算份额价格。这正是 Yearn 事后研究的“忽略捐赠”方案<a class="ref" href="#s2">[2]</a>。</li>
+            <li>ERC-4626 金库按 OpenZeppelin 的建议使用虚拟份额偏移，降低捐赠对兑换率的影响<a class="ref" href="#s19">[19]</a>。</li>
+            <li>金库份额被其他协议当作抵押品时，下游的风险也是金库的风险。Yearn 在这次事件后主动向 Aave 做了披露<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">C.R.E.A.M. Finance，《C.R.E.A.M. Finance Post Mortem: Flash Loan Exploit Oct 27》，Medium，2021-10-31（经 Wayback Machine 读取）。<a href="https://medium.com/cream-finance/post-mortem-exploit-oct-27-507b12bb6f8e">medium.com</a></li>
+          <li id="s2">Yearn，《Incident Disclosure 2021-10-27》，yearn-security 仓库。<a href="https://github.com/yearn/yearn-security/blob/master/disclosures/2021-10-27.md">github.com</a></li>
+          <li id="s3">CreamFi/compound-protocol 仓库，提交 7ae4ccd 的 contracts/PriceOracle/PriceOracleProxy.sol。<a href="https://github.com/CreamFi/compound-protocol/blob/7ae4ccd4041886a8853c4bd83fda095464b70f6f/contracts/PriceOracle/PriceOracleProxy.sol#L223">github.com</a></li>
+          <li id="s4">CreamFi/compound-protocol 仓库，提交 679352c《contracts/PriceOracle/PriceOracleProxy.sol: freeze yvToken》，2021-10-27 14:56 UTC。<a href="https://github.com/CreamFi/compound-protocol/commit/679352c4356c100d552ed4a29f5aa7fc5f6d8162">github.com</a></li>
+          <li id="s5">yearn/yearn-vaults 仓库 v0.3.5 标签，contracts/Vault.vy。<a href="https://github.com/yearn/yearn-vaults/blob/v0.3.5/contracts/Vault.vy">github.com</a> <span class="src-note">另经以太坊公共 RPC 只读调用 yUSD 金库 <span class="addr">0x4b5bfd52124784745c1071dcb244c6688d2533d3</span> 的 apiVersion()，返回 0.3.5。</span></li>
+          <li id="s6">Mudit Gupta，《Creamed Cream - Learn the Secret Recipe (Cream Hack Analysis)》，2021-10-28。<a href="https://mudit.blog/cream-hack-analysis/">mudit.blog</a></li>
+          <li id="s7">Halborn，《Explained: The CREAM Finance Hack (October 2021)》，2021-10-30。<a href="https://www.halborn.com/blog/post/explained-the-cream-finance-hack-october-2021">halborn.com</a></li>
+          <li id="s8">rekt.news，《Cream Finance - REKT 2》，2021-10-28。<a href="https://rekt.news/cream-rekt-2/">rekt.news</a></li>
+          <li id="s9">The Record，《Hackers steal $130 million from Cream Finance; the company's 3rd hack this year》，2021-10-27。<a href="https://therecord.media/hackers-steal-130-million-from-cream-finance-the-companys-3rd-hack-this-year">therecord.media</a></li>
+          <li id="s10">The Record，《Hackers steal $29 million from crypto-platform Cream Finance》，2021-08-30。<a href="https://therecord.media/hackers-steal-29-million-from-crypto-platform-cream-finance">therecord.media</a></li>
+          <li id="s11">C.R.E.A.M. Finance，《C.R.E.A.M. Finance Post Mortem: AMP Exploit》，Medium，2021-09-01（经 Wayback Machine 读取）。<a href="https://medium.com/cream-finance/c-r-e-a-m-finance-post-mortem-amp-exploit-6ceb20a630c5">medium.com</a></li>
+          <li id="s12">C.R.E.A.M. Finance，《Alpha Homora V2 Exploit Post Mortem》（2021-02-17）与《Joint Announcement on Funds Repayment》（2021-02-22），Medium（经 Wayback Machine 读取）。<a href="https://medium.com/cream-finance/alpha-homora-v2-exploit-post-mortem-344d277bdea6">post-mortem</a>　<a href="https://medium.com/cream-finance/joint-announcement-on-funds-repayment-a7d63870f7d6">偿还公告</a></li>
+          <li id="s13">C.R.E.A.M. Finance，《Postmortem Report of DNS Hijacking》，Medium，2021-03-17（经 Wayback Machine 读取）。<a href="https://medium.com/cream-finance/postmortem-report-of-dns-hijacking-66ab9c6ce63d">medium.com</a></li>
+          <li id="s14">C.R.E.A.M. Finance，《Let’s GOOO!》（2020-08-03）、《CREAM Token and Protocol Plans》（2020-08-16）、《C.R.E.A.M. Project Update》（2020-08-26），Medium（经 Wayback Machine 读取）。<a href="https://medium.com/cream-finance/lets-gooo-9daaf15f22d7">上线</a>　<a href="https://medium.com/cream-finance/cream-token-and-protocol-plans-d44bed69710c">代币计划</a>　<a href="https://medium.com/cream-finance/c-r-e-a-m-project-update-9d4fd484482f">项目更新</a></li>
+          <li id="s15">CreamFi/cream-docs 仓库：price-oracle.md（早期版本）、提交历史，以及 2022-03-04 新增还款合约地址的提交 08f4c57。<a href="https://github.com/CreamFi/cream-docs/blob/master/price-oracle.md">price-oracle.md</a>　<a href="https://github.com/CreamFi/cream-docs/commits/master">提交历史</a>　<a href="https://github.com/CreamFi/cream-docs/commit/08f4c574f8c8bc2ced7b8b6bfefd47a3c87b14ed">08f4c57</a></li>
+          <li id="s16">Sourcify 上完全匹配的已验证源码：CRETH2Repayment <span class="addr">0xA5462BC7BB1dd43b0Db84c2De71E34A03ac11DeB</span>、UsdcRepayment <span class="addr">0x84858f72d991f11a760dd2d26caff7962307900c</span>。<a href="https://repo.sourcify.dev/1/0xA5462BC7BB1dd43b0Db84c2De71E34A03ac11DeB">CRETH2Repayment</a>　<a href="https://repo.sourcify.dev/1/0x84858f72d991f11a760dd2d26caff7962307900c">UsdcRepayment</a></li>
+          <li id="s17">Cream Finance Snapshot，《Take back remaining whitehat bounty to compensate exploit losses》，2022-03-21。<a href="https://snapshot.org/#/cream-finance.eth/proposal/0x1d01d10f9e75b245235848795ce41c8315d2c2ea34829e1e548b2a73839ff00c">snapshot.org</a></li>
+          <li id="s18">DefiLlama，CREAM Lending 协议页（锁仓量历史）与 Hacks 数据库中的 CREAM Lending 条目。<a href="https://defillama.com/protocol/cream-lending">协议页</a>　<a href="https://defillama.com/hacks">Hacks</a></li>
+          <li id="s19">OpenZeppelin，《ERC-4626》文档中“Security concern: Inflation attack”一节。<a href="https://docs.openzeppelin.com/contracts/5.x/erc4626">docs.openzeppelin.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

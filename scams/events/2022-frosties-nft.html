@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Frosties NFT：售罄当天卷走 110 万美元｜区块链诈骗与骗局</title>
+<meta name="description" content="2022 年 1 月 9 日，卡通冰淇淋头像 NFT 系列 Frosties 在 48 分钟内卖光 8,888 个，几小时后项目方关掉网站和社交账号，把约 356.56 枚 ETH（约 110 万美元）转走，一部分经 Tornado Cash 混币。3 月 24 日，两名 20 岁的创办人在洛杉矶被捕，当时正准备发第二个项目 Embers。媒体称这是美国联邦执法第一次以 NFT 跑路抓人。本页讲收款合约的提款函数、调查人员怎样从 Discord、Coinbase 和信用卡记录认出两人、案子到 2026 年 11 月的进展和识别方法。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-frosties-nft">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　<a href="../index.html#cat-rug">跑路与拉盘</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Frosties NFT：售罄当天卷走 110 万美元</h1>
+    <p class="lede">2022 年 1 月 9 日，一个叫 Frosties 的 NFT 系列在 48 分钟内卖光了 8,888 个卡通冰淇淋头像，每个约 0.04 ETH。项目方承诺售罄后马上开发质押、元宇宙游戏和繁殖功能。几小时后，网站和社交账号关闭，收款合约里约 356.56 枚 ETH（当时约 110 万美元）被转走。3 月 24 日，纽约南区检方公布刑事起诉状，两名 20 岁的创办人 Ethan Nguyen 和 Andre Llacuna 在洛杉矶被捕，当时他们正准备发第二个项目 Embers。媒体称这是美国联邦执法第一次以 NFT 跑路抓人。据 Business Insider 2025 年 7 月的报道，两人都已认罪，Llacuna 还作为检方证人出庭指证 Tornado Cash 的开发者。到 2026 年 11 月，本站没有找到两人被判刑的公开记录。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Frosties 是 2022 年初以太坊上的一个头像类 NFT 系列，图案是各种拿着冰淇淋的卡通人物。网站写明，持有者可以得到赠品、空投、元宇宙游戏的抢先体验和后续几季的专属铸造资格，售罄后团队会“立即”开发质押、元宇宙和繁殖功能<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p>
+        <p>据起诉状，1 月 9 日公开发售约 48 分钟就卖光了；当天傍晚，收款合约里的钱被合约所有者一次提走，网站和部分社交账号随即停用<a class="ref" href="#s2">[2]</a>。买家在 Discord 和推特上喊出“rug pull”，Frosties 的转手价跌到每个几美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <p>美国国税局刑事调查处（IRS-CI）和国土安全调查局（HSI）1 月接到买家举报后开始调查。检方称，两人用了 VPN 和混币器 Tornado Cash，但 Discord、Coinbase、信用卡和域名注册的记录把化名“Frostie”和“heyandre”对上了真人<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。3 月 24 日两人被捕，被控电信欺诈共谋和洗钱共谋，每项最高 20 年<a class="ref" href="#s1">[1]</a>。</p>
+        <p>案子后来没有走到审判。2022 年 10 月，两人都被纽约南区的青年替代项目（Young Adult Opportunity Program）接收<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>；据 Business Insider，两人后来都认了罪，Llacuna 2025 年 7 月按合作协议在 Tornado Cash 联合创始人 Roman Storm 的审判中作证<a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>2021 年的 NFT 热潮</h3>
+        <p>2021 年 3 月，Beeple 的一件 NFT 作品在佳士得拍出 6,935 万美元，见大事记的<a href="../../milestones/events/2021-beeple.html">Beeple 的 NFT 在佳士得拍出 6,935 万美元</a>。此后一年里，头像类 NFT 系列一个接一个发售。常见的做法是：项目方先在推特和 Discord 上造势，公布一份“路线图”，许诺售罄后会有游戏、元宇宙、空投和社区金库；买家在发售时把 ETH 打进项目的合约，铸造出一个随机的头像。</p>
+        <p>司法部在新闻稿里解释，这类带“权益”的 NFT 叫 utility NFT，持有者可以得到奖励计划、赠品和活动的抢先参与资格<a class="ref" href="#s1">[1]</a>。它们的价格很大程度上取决于买家对路线图的期待。宣布这起案子时，美国纽约南区检察官 Damian Williams 说：“NFT 已经存在好几年，但最近大众的兴趣暴涨。有钱可赚的地方，骗子就会想办法偷。”<a class="ref" href="#s1">[1]</a></p>
+        <h3>化名团队和 rug pull</h3>
+        <p>起诉状对 rug pull 的定义是：NFT 或游戏项目的创建者募集投资后突然放弃项目，以欺诈方式留下投资者的钱<a class="ref" href="#s2">[2]</a>。The Verge 写道，这类跑路在加密圈极其常见，刑事案件却少得多。原因之一是 NFT 团队常用化名，连当时最贵的 Bored Ape Yacht Club 的创办人不久前也还是匿名的；另一个原因是 NFT 的法律地位不清楚<a class="ref" href="#s9">[9]</a>。同类的跑路，本站还写了 BNB Chain 上的 <a href="2021-squid-game-token.html">Squid Game 代币</a>和 Copper Launch 上的 <a href="2021-anubisdao.html">AnubisDAO</a>，后者至今没有人被起诉。NFT 买家遇到的另一类骗局是签名钓鱼，见 <a href="2022-opensea-phishing.html">OpenSea 合约迁移期的签名钓鱼</a>。</p>
+        <h3>“Frostie”和“Andre”</h3>
+        <p>Frosties 的网站把“Frostie”列为“创始人、开发者和画师”，把“Andre”列为“社区经理”<a class="ref" href="#s2">[2]</a>。检方后来认定，Frostie 就是 Ethan Vinh Nguyen，在 Discord 上还用过 Jakefiftyeight、Jobo、Joboethan 等名字；Andre 是 Andre Marcus Quiddaoen Llacuna，Discord 用户名 heyandre。两人被捕时都是 20 岁<a class="ref" href="#s1">[1]</a>。</p>
+        <p>据起诉状，项目的准备从 2021 年 9 月开始。9 月 7 日，Nguyen 的 Citibank 信用卡在自由职业平台 Fiverr 上付了 1,424.25 美元，订单备注是设计网站和落地页；两天后，Frosties 的域名在 GoDaddy 注册，同一张卡付了 54.98 美元<a class="ref" href="#s2">[2]</a>。12 月起，推特和 Discord 上开始宣传 Frosties，把感兴趣的人引到这个网站<a class="ref" href="#s2">[2]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2021-09-09</time><div class="ev">Frosties 的域名在 GoDaddy 注册；两天前，Nguyen 的信用卡在 Fiverr 上付钱请人设计网站<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2021-12-17</time><div class="ev">Nguyen 的 Coinbase 钱包给一个新地址转了约 0.024 ETH，这是该地址的第一笔交易；它随后部署了 Frosties 的合约，起诉状称之为 Fraud Wallet Address-1<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2022-01-07</time><div class="ev">7 日至 8 日私募预售，每个约 0.04 ETH，共 8,888 个<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk key"><time>2022-01-09</time><div class="ev">公开发售约 48 分钟、美东时间下午 2:47 售罄。约 5:45，收款合约里约 356.56 枚 ETH（约 110 万美元）被提到 Fraud Wallet Address-1，再整笔转到新地址 Fraud Wallet Address-2；网站和部分社交账号停用<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2022-01-11</time><div class="ev">凌晨，Fraud Wallet Address-2 分三笔把约 210 枚 ETH（约 67.8 万美元）转进 Tornado Cash<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2022-01</time><div class="ev">IRS-CI 和 HSI 根据买家举报开始调查<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2022-01-15</time><div class="ev">到 2 月 15 日，从 Tornado Cash 取出的 ETH 经中间钱包进了两人的 Coinbase 账户：Nguyen 约 9.5 枚，Llacuna 约 12.16 枚<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>2022-02-21</time><div class="ev">至 28 日，美国红十字会经 Bitpay 收到六笔共约 5 万美元的加密货币，都来自 Llacuna 家里的 IP。第二个项目 Embers 拿这笔捐款做宣传<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2022-03-15</time><div class="ev">治安法官签发刑事起诉状，罪名是电信欺诈共谋和洗钱共谋<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def key"><time>2022-03-24</time><div class="ev">两人在加州中区被捕，Embers 原定两天后开始预售；纽约南区检方公布起诉<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2022-04-04</time><div class="ev">两人在纽约南区初次到庭，各以 10 万美元的个人担保获准保释<a class="ref" href="#s3">[3]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2022-07-19</time><div class="ev">检方致信法院：两人都申请了青年替代项目，双方在谈起诉前的认罪安排，检方暂停审查扣押的设备<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2022-10-28</time><div class="ev">两人都被青年替代项目接收，诉讼时限暂停到 2024 年 4 月 28 日<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-08-23</time><div class="ev">纽约南区检方起诉 Tornado Cash 的 Roman Storm 和 Roman Semenov<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>2025-07-16</time><div class="ev">Llacuna 在 Storm 案中作为检方证人出庭。Business Insider 写他和同案被告都已认罪<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2025-08-06</time><div class="ev">Storm 被判无照经营汇款业务共谋罪成立，洗钱和违反制裁两项陪审团未能达成一致<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>Frosties 的骗局没有用到复杂的合约技巧。买家把 ETH 打进项目方部署的铸造合约，合约所有者随时可以把钱全部提走；项目方要做的，只是在卖光以后不再兑现路线图，提钱、关网站、换地址。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 546" role="img" aria-labelledby="fr-flow-t fr-flow-d">
+            <title id="fr-flow-t">Frosties 买家的 ETH 怎样被转走</title>
+            <desc id="fr-flow-d">买家每个付约 0.04 ETH，48 分钟买光 8,888 个 Frosties，ETH 存在收款合约里，共约 356.56 枚。1 月 9 日傍晚，合约所有者地址 Fraud Wallet Address-1 调用提款函数一次提走全部，随即整笔转到新地址 Fraud Wallet Address-2。1 月 11 日，约 210 枚 ETH 分三笔存进 Tornado Cash。1 月 15 日到 2 月 15 日，从 Tornado Cash 取出的 ETH 经中间钱包进了两人的 Coinbase 账户，Nguyen 约 9.5 枚，Llacuna 约 12.16 枚。</desc>
+            <defs>
+              <marker id="fr-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="fr-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="120" y="20" width="520" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="43" text-anchor="middle">买家（执法方估计成百上千人）</text>
+            <text class="d-t s" x="380" y="64" text-anchor="middle">每个约 0.04 ETH，48 分钟买光 8,888 个</text>
+            <rect class="d-box" x="120" y="110" width="520" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="133" text-anchor="middle">Frosties 收款合约</text>
+            <text class="d-t s" x="380" y="154" text-anchor="middle">买家的 ETH 存在合约里，共约 356.56 枚</text>
+            <rect class="d-box atk" x="120" y="200" width="520" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="223" text-anchor="middle">Fraud Wallet Address-1（合约所有者）</text>
+            <text class="d-t s" x="380" y="244" text-anchor="middle">1 月 9 日约 5:45 调用提款函数，一次提走全部</text>
+            <rect class="d-box atk" x="120" y="290" width="520" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="313" text-anchor="middle">Fraud Wallet Address-2（新地址）</text>
+            <text class="d-t s" x="380" y="334" text-anchor="middle">同时收到约 358 枚 ETH</text>
+            <rect class="d-box" x="120" y="380" width="520" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="403" text-anchor="middle">Tornado Cash 混币器</text>
+            <text class="d-t s" x="380" y="424" text-anchor="middle">1 月 11 日凌晨分三笔存入约 210 枚 ETH</text>
+            <rect class="d-box atk" x="120" y="470" width="520" height="56" rx="3"/>
+            <text class="d-t b" x="380" y="493" text-anchor="middle">中间钱包，再到两人的 Coinbase 账户</text>
+            <text class="d-t s" x="380" y="514" text-anchor="middle">1 月 15 日至 2 月 15 日：Nguyen 约 9.5 枚，Llacuna 约 12.16 枚</text>
+            <line class="d-line" x1="380" y1="76" x2="380" y2="106" marker-end="url(#fr-ah)"/>
+            <line class="d-line atk" x1="380" y1="166" x2="380" y2="196" marker-end="url(#fr-ah-atk)"/>
+            <line class="d-line atk" x1="380" y1="256" x2="380" y2="286" marker-end="url(#fr-ah-atk)"/>
+            <line class="d-line atk" x1="380" y1="346" x2="380" y2="376" marker-end="url(#fr-ah-atk)"/>
+            <line class="d-line atk" x1="380" y1="436" x2="380" y2="466" marker-end="url(#fr-ah-atk)"/>
+            <text class="d-t s" x="394" y="96" text-anchor="start">铸造时付款</text>
+            <text class="d-t s atk" x="394" y="186" text-anchor="start">所有者提款</text>
+            <text class="d-t s atk" x="394" y="276" text-anchor="start">整笔转出</text>
+            <text class="d-t s atk" x="394" y="366" text-anchor="start">混币</text>
+            <text class="d-t s atk" x="394" y="456" text-anchor="start">取出、拆分</text>
+          </svg>
+          </div>
+          <figcaption>红色是项目方控制的地址和转走的钱。各步的金额和时间据起诉状<a class="ref" href="#s2">[2]</a>；起诉状没有写剩下约 148 枚 ETH 的去向，Llacuna 2025 年作证时说经 Tornado Cash 取出的是 356 枚 ETH<a class="ref" href="#s14">[14]</a>，见“钱去了哪里”。</figcaption>
+        </figure>
+        <h3>钱存在谁手里</h3>
+        <p>据起诉状，买家在 Frosties 网站上铸造时，拿到的是项目合约的地址；这个合约同时就是收款地址，买家把 ETH 转进去，换回对应数量的 Frosties<a class="ref" href="#s2">[2]</a>。合约里写了一个有条件的提款函数，由合约所有者调用时，会把合约里的全部资金转到所有者的地址<a class="ref" href="#s2">[2]</a>。</p>
+        <p>项目方本来就要靠这样的函数拿到销售收入，函数本身不是问题。问题在于路线图承诺的东西都要等售罄以后才做，买家付款时没有任何办法把钱和这些承诺绑在一起。钱一进合约，就只受所有者一个地址支配。起诉状写，部署合约的正是 Fraud Wallet Address-1；这个地址的第一笔入账，是 2021 年 12 月 17 日从 Nguyen 名下的 Coinbase 钱包转来的约 0.024 ETH，之后它部署了合约，做了一些没有金额、像是测试代码能不能用的交易<a class="ref" href="#s2">[2]</a>。起诉状没有公开合约地址，本站没有引用合约代码。</p>
+        <h3>路线图是诱饵</h3>
+        <p>网站上的“发售路线图”写着，100% 售出后，团队会“立即”开始开发，“从质押、元宇宙开发和营销活动开始”<a class="ref" href="#s2">[2]</a>。调查人员访谈的三名买家里，至少两人说自己是看中这些权益才买的；第三人说，看到预售很火，把它当作一笔投资<a class="ref" href="#s2">[2]</a>。</p>
+        <p>团队的真实身份没有告诉买家<a class="ref" href="#s1">[1]</a>。起诉状写，Nguyen 2021 年 12 月 31 日买了 TunnelBear 的 VPN 服务，宣传 Frosties 的社交账号和网站后台都用过这家 VPN 的 IP 段<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>为什么算诈骗</h3>
+        <p>本站按转账是谁签的来分被盗和诈骗。Frosties 的买家自己签了铸造交易，把 ETH 付给了项目方；把钱提走的是项目方自己的地址，没有外人闯入。所以本站把它算作跑路。IRS-CI 纽约外勤办公室的负责人 Thomas Fattorusso 说：“你不能为一个商业机会募集资金，然后放弃这项生意，卷走投资者给你的钱。”<a class="ref" href="#s1">[1]</a></p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>起盘：48 分钟卖光</h3>
+        <p>1 月 7 日至 8 日是私募预售，9 日开放公开发售。据起诉状，公开发售约 48 分钟、到美东时间下午 2:47，8,888 个 Frosties 全部卖光<a class="ref" href="#s2">[2]</a>。The Verge 称它是一个“话题很热”的项目<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>卷款：当天傍晚</h3>
+        <p>约三小时后，下午 5:45 左右，收款合约里的钱全部转到 Fraud Wallet Address-1<a class="ref" href="#s2">[2]</a>。链上交易是公开的，有买家几乎实时看到了这笔转账；与此同时，Frosties 的网站和一些一直在宣传项目的社交账号停用了。不久，Discord 和推特上出现帖子，说项目方提前结束了项目、拿走了买家的钱。一些买家开始低价抛售手里的 Frosties<a class="ref" href="#s2">[2]</a>。</p>
+        <p>事后在推特上流传出一张 Discord 私信截图，是 Jakefiftyeight 发给社区版主 Garry_is_Back 的，署名 Frostie<a class="ref" href="#s2">[2]</a>。The Verge 转述了内容：“我知道这很突然，但这个项目要结束了。我从来没打算让项目继续下去，以后也没有任何计划。”发信人说给版主转了一些 ETH，“算是给你添麻烦的补偿”，建议版主删掉 Discord 账号<a class="ref" href="#s9">[9]</a>。同一天，heyandre 和 @FrostiesNFT 都发帖说，团队里的其他人不知道这件事<a class="ref" href="#s2">[2]</a>。</p>
+        <p>The Verge 写，买家转卖只能拿回几美元，承诺的 3D 头像和 Frosties 游戏都没了指望；有些受骗的社区成员试着把 Frosties 复活成另一个 NFT 系列<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>下一个项目：Embers</h3>
+        <p>Frosties 跑路后不到两个月，推特和 Discord 上开始宣传一个叫 Embers 的系列：5,555 个，每个约 0.10 ETH，当时约 267 美元；按起诉状的估算，全部卖完可得约 150 万美元，和 Frosties 差不多<a class="ref" href="#s2">[2]</a>。网站写预售从 2022 年 3 月 26 日 19:00（UTC）开始，公开发售在 27 日<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Embers 的承诺和 Frosties 很像：赠品、空投、质押、合作，并拿出销售额的 25% 放进社区钱包，用于质押和营销。它还承诺给红十字会捐 5 万美元<a class="ref" href="#s2">[2]</a>。3 月 1 日，网站上列为开发者之一的 Discord 用户 Ogami 贴出了一封红十字会的感谢信。据起诉状，红十字会 2 月 21 日至 28 日确实经支付处理商 Bitpay 收到了六笔、共约 5 万美元的加密货币，都是从 Llacuna 家的 IP 地址发出的；检方认为这笔钱“很可能”来自 Frosties 的赃款<a class="ref" href="#s2">[2]</a>。有人问 Embers 的创建者会不会在发售前公开身份，对方表示会继续匿名<a class="ref" href="#s2">[2]</a>。检方据此认为，两人正准备再做一次同样的跑路<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p>
+        <h3>被捕</h3>
+        <p>3 月 24 日，Embers 预售前两天，两人在洛杉矶被捕<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。HSI 纽约的代理负责人 Ricky J. Patel 说，调查人员赶在两人发售“又一个 NFT 项目”之前把他们找了出来<a class="ref" href="#s1">[1]</a>。The Business of Business 写，消息传到 Embers 的社区时，大多数成员措手不及；第一条警告贴出十分钟后，还有人在互相祝福，喊着“WAGMI”（我们都会成功）<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <p>赃款的去向，起诉状写得比较具体。1 月 9 日傍晚，约 356.56 枚 ETH 从收款合约提到 Fraud Wallet Address-1，同一时间这个地址又把约 358 枚 ETH 转到 Fraud Wallet Address-2，这也是后者的第一笔交易<a class="ref" href="#s2">[2]</a>。两个数字差约 1.4 枚，起诉状没有解释，可能是 Fraud Wallet Address-1 原有的余额。</p>
+        <p>1 月 11 日凌晨 0:16，Frosties 已经在社交媒体上被骂成骗局以后，Fraud Wallet Address-2 在很短的时间里分三笔把约 210 枚 ETH（约 67.8 万美元）存进 Tornado Cash。执行这三笔交易的两个 IP 地址都属于 VPN；当天凌晨 0:40 到 1:49，同样的 IP 登录了 heyandre 的 Discord 账号，其中一个还用名为 Cryptoandre.eth 的钱包买了一个 Frostie<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Tornado Cash 把很多用户存入的同额 ETH 混在一起，取款时换成别的地址，链上看不出存取的对应关系。美国财政部 2022 年 8 月宣布制裁它，见大事记的<a href="../../milestones/events/2022-tornado-sanctions.html">OFAC 制裁 Tornado Cash</a>。据起诉状，1 月 15 日到 2 月 15 日，从 Tornado Cash 取出的 ETH 经一个或多个不明钱包，最后存进了两人名下的 Coinbase 账户：Nguyen 约 9.5 枚，Llacuna 约 12.16 枚<a class="ref" href="#s2">[2]</a>。调查人员解释，Coinbase 这样的主流交易所要做反洗钱和实名审核，所以洗钱的人常在交易所和混币器之间插进几层中间交易<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Llacuna 2025 年在 Storm 案中作证时，讲了自己怎样用 Tornado Cash。据 Business Insider 转述，他说自己是在 Reddit 上知道这个工具的，“这是把钱藏起来、而且不被抓到的最好办法”<a class="ref" href="#s13">[13]</a>。他说存款要按 0.1、1、10、100 ETH 这样的固定面额，Tornado Cash 给他一串很长的随机密码，几天后他用它分批取出 356 枚 ETH<a class="ref" href="#s14">[14]</a>。</p>
+        <div class="note doubt"><span class="h">210 枚还是 356 枚</span><p>起诉状只写了 1 月 11 日存进 Tornado Cash 的约 210 枚 ETH<a class="ref" href="#s2">[2]</a>，没有写 Fraud Wallet Address-2 里剩下的约 148 枚去了哪里。Business Insider 转述 Llacuna 的证词，说取出的是 356 枚，又写他把“100 万美元”的 ETH 转进 Tornado Cash<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。起诉状写于 3 月，可能只追到了当时看到的部分。本页的示意图按起诉状画。</p></div>
+        <p>另一笔可以追到的钱是 Embers 名下给红十字会的约 5 万美元捐款，检方认为它很可能来自 Frosties 的赃款<a class="ref" href="#s2">[2]</a>。被捕当天，执法人员在加州按搜查令扣押了一批电子设备，检方列出的清单里有登记在 Llacuna 名下的 Ledger Nano X 和 Ledger Nano S 硬件钱包（附助记词）、一个 U 盘和一台 MacBook Pro<a class="ref" href="#s4">[4]</a>。这些设备里有多少币，本站没有找到公开数字，也没有找到没收或退赔的记录。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <p>受害者是 Frosties 的买家。起诉状写，从链上交易看，买过一个或多个 Frosties 的受害者“很可能有成百上千人”；因为调查是秘密进行的，执法人员只找到并访谈了少数几人<a class="ref" href="#s2">[2]</a>。起诉状描述了其中一人：这名买家连手续费在内花了约 750 美元买三个 Frosties，跑路后以每个约 6 美元的价格卖掉了<a class="ref" href="#s2">[2]</a>。没有机构公布过受害人数和人均损失。</p>
+        <p>按起诉状，每个 Frostie 约 0.04 ETH，当时约值 123 至 136 美元，8,888 个合计约 355.5 枚 ETH，和合约里的约 356.56 枚 ETH 很接近<a class="ref" href="#s2">[2]</a>。本站按起诉状的约 356.56 枚 ETH、约 110 万美元记这起事件的规模。在 NFT 跑路里，这个金额不算大；这起案子受关注，是因为有人被抓了。</p>
+        <h3>各家的数字和说法</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>说法</th><th>口径</th></tr></thead>
+          <tbody>
+            <tr><td>起诉状，2022-03-15<a class="ref" href="#s2">[2]</a></td><td>约 356.56 枚 ETH，约 110 万美元</td><td>从收款合约转到所有者地址的钱</td></tr>
+            <tr><td>司法部新闻稿，2022-03-24<a class="ref" href="#s1">[1]</a></td><td>约 110 万美元</td><td>转进两人控制的多个钱包</td></tr>
+            <tr><td>起诉状<a class="ref" href="#s2">[2]</a></td><td>每个约 0.04 ETH，约 123–136 美元</td><td>发售时的币价</td></tr>
+            <tr><td>Business Insider，2025-07-16<a class="ref" href="#s13">[13]</a></td><td>每个 0.04 ETH，约 200–300 美元</td><td>报道里的估算</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">是不是“第一起”</span><p>常见的说法是“司法部称这是美国第一起 NFT 跑路刑事案”。司法部 2022 年 3 月 24 日的新闻稿没有这样说<a class="ref" href="#s1">[1]</a>。The Business of Business 写，联邦执法人员这个月才“抓到第一批 NFT rug pull 嫌疑人”<a class="ref" href="#s10">[10]</a>；CoinDesk 的说法更谨慎，称这是美国执法部门起诉 NFT 跑路的“早期例子”，两人是“最早的一批”NFT 刑事被告之一<a class="ref" href="#s8">[8]</a>。本页写“媒体称”。另外，The Business of Business 把调查记在 FBI 名下，起诉状和新闻稿写的调查机构是 IRS-CI、HSI 和邮政检查局<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p></div>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <h3>怎样认出两个人</h3>
+        <p>两人在链上用了 VPN 和混币器，身份是从链下的记录里查出来的。The Business of Business 统计，调查人员先后向 Discord、Coinbase、MetaMask、Citibank、OpenSea、GoDaddy、T-Mobile、Charter、Bitpay、Fiverr 和 PayPal 发了大陪审团传票<a class="ref" href="#s10">[10]</a>。起诉状列出的线索主要有这几条<a class="ref" href="#s2">[2]</a>：</p>
+        <ul>
+          <li>Discord 用户 Jobo 和 Frostie 用过的 IP 地址，也登录过 Nguyen 实名的 Coinbase 账户。</li>
+          <li>Frosties 域名登记的电话和地址，和 Nguyen 的 Coinbase、Citibank、PayPal 账户对得上；付域名费和网站设计费的是他的信用卡。</li>
+          <li>部署合约的 Fraud Wallet Address-1，第一笔入账来自 Nguyen 的 Coinbase 钱包。</li>
+          <li>heyandre 的 Discord 账户登记的邮箱，连着 Llacuna 实名的 Coinbase 账户；Cryptoandre.eth 关联的 OpenSea 账户，邮箱里有他的全名。</li>
+          <li>OpenSea 上的 EmbersNFT 账户，和 Nguyen 的邮箱相连。</li>
+        </ul>
+        <p>The Verge 总结说，如果真要这么做，“大概不应该在 Discord 上承认”<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>起诉、保释和青年替代项目</h3>
+        <p>2022 年 3 月 15 日，治安法官签发刑事起诉状，两人被控一项电信欺诈共谋和一项洗钱共谋，每项最高刑期 20 年<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。3 月 24 日被捕后，两人先在加州中区出庭，4 月 4 日到纽约南区，各以 10 万美元的个人担保获准保释，出行限于纽约、新泽西和加州中区<a class="ref" href="#s3">[3]</a><a class="ref" href="#s6">[6]</a>。负责的检察官是复杂欺诈与网络犯罪组的 Danielle M. Kudla<a class="ref" href="#s1">[1]</a>。</p>
+        <p>案子一直没有起诉书（indictment）。从 2022 年 5 月起，检方每月申请延期，理由是双方在谈“可能的处理方式”<a class="ref" href="#s3">[3]</a>。7 月，检方告诉法院，两人都申请了纽约南区的青年替代项目（Young Adult Opportunity Program），并在谈起诉前的认罪安排<a class="ref" href="#s4">[4]</a>。10 月 28 日，Ronnie Abrams 法官和 Sarah Netburn 治安法官主持听证，两人都被接收进这个项目，诉讼时限暂停到 2024 年 4 月 28 日<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</p>
+        <p>这个项目由审前服务机构管理，参加者接受密集的监督和辅导。同意书写明，完成项目后，法官可以酌情减轻刑罚；检方也会把它作为减轻指控、在某些情况下暂缓起诉的依据，但这些都由检方决定，完成项目不保证任何结果<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>认罪和作证</h3>
+        <p>2025 年 7 月 16 日，Llacuna 在 Tornado Cash 联合创始人 Roman Storm 的审判中出庭，是检方的第五名证人。Business Insider 称他是“已定罪的欺诈犯”，写他按与政府的合作协议作证，希望自己在本案量刑时得到从宽；报道还说，同案被告也已认罪<a class="ref" href="#s13">[13]</a>。本站没有找到两人认罪的日期、认的罪名和对应的法院文件。</p>
+        <p>Storm 2023 年 8 月被起诉，检方称 Tornado Cash 经手的洗钱超过 10 亿美元，其中包括为朝鲜的 Lazarus Group 洗的数亿美元<a class="ref" href="#s12">[12]</a>。2025 年 8 月 6 日，陪审团只认定他无照经营汇款业务共谋罪成立，这项最高 5 年；洗钱和违反制裁两项，陪审团未能达成一致<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <h3>到 2026 年 11 月</h3>
+        <p>本站没有找到 Nguyen 或 Llacuna 被判刑的公开记录，也没有找到没收或退赔受害者的记录。CourtListener 收录的两人案卷，最后一条分别是 2023 年 11 月和 2025 年 7 月的出行许可<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>，认罪和判决可能在另一个案号下，或没有被收录。司法部的受害者联系人是 HSI 的特别探员，新闻稿留了他的邮箱<a class="ref" href="#s1">[1]</a>。</p>
+        <p>这起案子也进了立法讨论。2022 年 4 月，纽约州议会有人提出法案 S8839 和 A8820，要设立“非法 rug pull”等罪名；The Block 报道时提到了上个月的 Frosties 案<a class="ref" href="#s11">[11]</a>。本站没有查到这两个法案后来是否通过。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">路线图和团队</span>
+          <ul>
+            <li>“售罄后马上开发”的承诺，买家付款时没有任何保障。Frosties 的质押、元宇宙和游戏都要等卖光以后才做，钱却在卖光那一刻已经全在项目方手里<a class="ref" href="#s2">[2]</a>。</li>
+            <li>团队全用化名，又拒绝公开身份。Frosties 的买家不知道 Frostie 和 Andre 是谁；Embers 被问到时也表示会继续匿名<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</li>
+            <li>卖得快不代表项目可靠。Frosties 48 分钟售罄，第三名买家正是看到预售火爆才买的<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">慈善和背书</span>
+          <ul>
+            <li>捐款截图不能证明项目可信。Embers 晒出红十字会的感谢信，检方认为这 5 万美元很可能就是上一个项目的赃款<a class="ref" href="#s2">[2]</a>。</li>
+            <li>“社区钱包”“25% 用于营销”这类承诺，要看能不能在链上查到一个由多人共管的地址。Embers 没有公开这样的地址<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">出事前后看链上</span>
+          <ul>
+            <li>铸造前查一下收款合约的所有者地址：它是什么时候建的，钱从哪里来。Frosties 的合约由一个刚建不久的新地址部署，起诉状写它的第一笔钱来自 Nguyen 的个人交易所钱包<a class="ref" href="#s2">[2]</a>。</li>
+            <li>收入一次被提空、网站和社交账号同时下线，就是跑路。Frosties 的买家几乎实时看到了这笔转账<a class="ref" href="#s2">[2]</a>。这时能做的是尽快向执法机构举报：这起案子就是从买家的举报开始查的<a class="ref" href="#s1">[1]</a>。</li>
+            <li>经过混币器不等于查不到。两人最后把钱取进了实名的交易所账户，调查人员从 Coinbase、银行卡和 Discord 的记录把人找了出来<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国纽约南区检察官办公室，《Two Defendants Charged In Non-Fungible Token (“NFT”) Fraud And Money Laundering Scheme》，2022-03-24。<a href="https://www.justice.gov/usao-sdny/pr/two-defendants-charged-non-fungible-token-nft-fraud-and-money-laundering-scheme-0">justice.gov</a></li>
+          <li id="s2">美国诉 Ethan Nguyen 与 Andre Llacuna，刑事起诉状（Complaint），案号 22 Mag. 2478（1:22-mj-02478），纽约南区联邦法院，2022-03-15 签署，CourtListener RECAP 存档。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.577298/gov.uscourts.nysd.577298.1.0.pdf">courtlistener.com</a></li>
+          <li id="s3">同案，《Order of Continuance》及检方宣誓陈述（第 25 号文件），2022-09-06。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.577298/gov.uscourts.nysd.577298.25.0.pdf">courtlistener.com</a></li>
+          <li id="s4">同案，检方致 Ona T. Wang 治安法官的信（第 21 号文件，附扣押设备清单），2022-07-19。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.577298/gov.uscourts.nysd.577298.21.0.pdf">courtlistener.com</a></li>
+          <li id="s5">同案案卷，Ethan Nguyen 部分（含 2022-10-28 接收进青年替代项目的记录），2026 年 11 月查阅。<a href="https://www.courtlistener.com/docket/63191924/united-states-v-nguyen/">courtlistener.com</a></li>
+          <li id="s6">同案案卷，Andre Llacuna 部分，2026 年 11 月查阅。<a href="https://www.courtlistener.com/docket/63191925/united-states-v-nguyen/">courtlistener.com</a></li>
+          <li id="s7">美国审前服务机构纽约南区，《Young Adult Opportunity Program - Consent Form》（同案第 30 号文件），2022-11-01。<a href="https://storage.courtlistener.com/recap/gov.uscourts.nysd.577298/gov.uscourts.nysd.577298.30.0.pdf">courtlistener.com</a></li>
+          <li id="s8">CoinDesk，《US Justice Dept. Charges 2 in NFT Money-Laundering, 'Rug Pull' Scheme》，2022-03-24。<a href="https://www.coindesk.com/policy/2022/03/24/us-justice-dept-charges-2-in-nft-money-laundering-rug-pull-scheme/">coindesk.com</a></li>
+          <li id="s9">The Verge（Adi Robertson），《Two men arrested for $1.1 million NFT ‘rug pull’ scam》，2022-03-24。<a href="https://www.theverge.com/2022/3/24/22995107/us-arrest-charges-crypto-nft-rug-pull-frosties-ethan-nguyen-andre-llacuna">theverge.com</a></li>
+          <li id="s10">The Business of Business（Zack Abrams），《How the FBI made its first NFT “rug pull” bust — just in time to save other victims from the same fate》，2022-03-28。<a href="https://www.businessofbusiness.com/articles/how-the-fbi-made-its-first-nft-rug-pull-bust-just-in-time-to-save-other-victims-from-the-same-fate/">businessofbusiness.com</a></li>
+          <li id="s11">The Block（Michael McSweeney），《State lawmakers want to make fraudulent rug pulls a crime in New York》，2022-04-23。<a href="https://www.theblock.co/linked/143193/state-lawmakers-want-to-make-fraudulent-rug-pulls-a-crime-in-new-york">theblock.co</a></li>
+          <li id="s12">美国纽约南区检察官办公室，《Tornado Cash Founders Charged With Money Laundering And Sanctions Violations》，2023-08-23。<a href="https://www.justice.gov/usao-sdny/pr/tornado-cash-founders-charged-money-laundering-and-sanctions-violations">justice.gov</a></li>
+          <li id="s13">Business Insider（Laura Italiano），《Tornado Cash money launderer tells jury how he pulled off a $1M NFT scam at age 20》，2025-07-16。<a href="https://www.businessinsider.com/tornado-cash-money-launderer-describes-running-1m-nft-scam-20-2025-7">businessinsider.com</a></li>
+          <li id="s14">Business Insider（Laura Italiano），《Mistrial in Tornado Cash developer Roman Storm's money laundering trial》，2025-08-06。<a href="https://www.businessinsider.com/tornado-cash-roman-storm-trial-partial-mistrial-2025-8">businessinsider.com</a></li>
+          <li id="s15">美国纽约南区检察官办公室，《Founder Of Tornado Cash Crypto Mixing Service Convicted Of Knowingly Transmitting Criminal Proceeds》，2025-08-06。<a href="https://www.justice.gov/usao-sdny/pr/founder-tornado-cash-crypto-mixing-service-convicted-knowingly-transmitting-criminal">justice.gov</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

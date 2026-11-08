@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FTX 挪用客户资产与破产｜区块链大事记</title>
+<meta name="description" content="2022 年 11 月加密交易所 FTX 倒闭的经过：客户的法币怎样进了 Alameda 的账户，代码里 650 亿美元的借款额度和不平仓特权，以 FTT 为主的资产负债表，三天的挤兑，以及破产分配和 SBF 被判 25 年。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-ftx">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　<a href="../index.html#cat-crash">崩盘与暴雷</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>FTX 挪用客户资产与破产</h1>
+    <p class="lede">2022 年 11 月 11 日，加密交易所 FTX 和交易公司 Alameda Research 一起申请破产，两家都由 Sam Bankman-Fried（SBF）控制。FTX 对外说客户资产单独保管，客户的钱却被 Alameda 拿去用了。CoinDesk 披露 Alameda 的资产以 FTX 自己发行的 FTT 为主之后，Binance 宣布卖出手里的 FTT，FTX 遭到挤兑，停止提款。司法部称 SBF 拿走了超过 80 亿美元的客户资金；他 2024 年被判 25 年。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">FTX 由 Sam Bankman-Fried（SBF）和 Gary Wang 于 2019 年 5 月创办，注册在安提瓜和巴布达，总部在巴哈马<a class="ref" href="#s21">[21]</a>。它对外自称“买卖加密资产最安全、最简单的方式”，说客户的法币和加密资产都由 FTX 托管，和 FTX 自己的资产分开<a class="ref" href="#s7">[7]</a>；2022 年 1 月融资时估值 320 亿美元<a class="ref" href="#s21">[21]</a>。SBF 同时控制交易公司 Alameda Research，它是 FTX 上的主要做市商<a class="ref" href="#s7">[7]</a>。</p>
+        <p>CFTC 称，FTX 的客户资产经常由 Alameda 收下，和 Alameda 自己的钱混在一起<a class="ref" href="#s7">[7]</a>。破产后接任 CEO 的 John J. Ray III 发现，交易所的系统给了 Alameda 650 亿美元的借款额度，账户为负也不会被自动平仓；到申请破产时，全交易所只有 Alameda 一个账户开着这项设置<a class="ref" href="#s9">[9]</a>。司法部称，SBF 把客户的钱用于个人开支、投资、政治捐款和偿还 Alameda 的贷款<a class="ref" href="#s1">[1]</a>，拿走的客户资金超过 80 亿美元<a class="ref" href="#s4">[4]</a>。</p>
+        <p>2022 年 11 月 2 日，CoinDesk 披露 Alameda 的资产负债表，最大的一项资产是 FTT<a class="ref" href="#s13">[13]</a>。6 日，Binance 的<a href="2023-binance-plea.html">赵长鹏</a>说要卖掉手里全部的 FTT<a class="ref" href="#s21">[21]</a>；据 SBF 说，8 日上午之前的 72 小时里，FTX 净提款约 60 亿美元。8 日 FTX 停止提款，当天和 Binance 签了不具约束力的收购协议<a class="ref" href="#s14">[14]</a>，Binance 第二天退出<a class="ref" href="#s15">[15]</a>。11 日，FTX、Alameda 等 100 多家公司申请破产，SBF 辞去 CEO<a class="ref" href="#s21">[21]</a>。SBF 2023 年 11 月七项罪名全部成立，2024 年 3 月被判 25 年<a class="ref" href="#s4">[4]</a>；破产计划 2025 年 1 月生效<a class="ref" href="#s11">[11]</a>，到 2026 年 7 月已向债权人分配约 100 亿美元<a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>Alameda 和 FTX</h3>
+        <p>Alameda Research 2017 年在加州伯克利成立，创办人是 SBF 和几位 Jane Street 的前员工。FTX 最早是在 Alameda 内部做起来的，2019 年 5 月由 SBF 和 Gary Wang 创办。Binance 的赵长鹏早年以约 1 亿美元买下 FTX 20% 的股份<a class="ref" href="#s21">[21]</a>；2021 年 FTX 回购这部分股份，Binance 拿到约 21 亿美元的 BUSD 和 FTT<a class="ref" href="#s22">[22]</a>。</p>
+        <h3>规模</h3>
+        <p>2021 年 7 月，FTX 以 180 亿美元的估值融资 9 亿美元，投资方超过 60 家，包括软银和红杉资本；同年 9 月，总部从香港迁到巴哈马；2022 年 1 月，它又以 320 亿美元的估值完成 4 亿美元的 C 轮融资<a class="ref" href="#s21">[21]</a>。SEC 称，至少从 2019 年 5 月起，FTX 向股权投资者筹集了超过 18 亿美元，其中约 11 亿美元来自约 90 家美国投资者<a class="ref" href="#s6">[6]</a>。2021 年 7 月高峰时，FTX 有一百多万用户，按交易量是第三大加密交易所<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>四组公司</h3>
+        <p>Ray 接手后，把 FTX 集团分成四组，他称为“Silo”：West Realm Shires 及其子公司，包括 FTX US 等美国业务；Alameda Research 及其子公司；风险投资部门，包括 FTX Ventures；FTX Trading 及其子公司，包括 FTX.com 和其他非美国的交易所。四组都由 SBF 控制，Wang 和 Singh 持有少数股权<a class="ref" href="#s8">[8]</a>。</p>
+        <p>Ray 在 2022 年 11 月 11 日凌晨接任 CEO。他此前处理过安然等多起大公司的破产，在第一天声明里写道：“在我的职业生涯里，我从没见过公司控制如此彻底地失灵，可信的财务信息如此彻底地缺失。”<a class="ref" href="#s8">[8]</a></p>
+        <h3>FTT</h3>
+        <p>FTT 是 FTX 自己发行的代币，持有者可以享受交易手续费折扣、更高的推荐返佣和理财奖励。CoinDesk 写道，据 FTX 的说法，FTT 的价值靠 FTX 滚动回购和销毁代币来维持，这要花掉交易所三分之一的交易佣金，一直持续到一半的代币被销毁<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>政治捐款</h3>
+        <p>司法部称，2022 年中期选举之前，SBF 和同谋用 Alameda 的钱向联邦候选人和政治委员会捐了数百万美元；为了掩盖这些钱出自一家公司，也为了绕开捐款限额和申报要求，捐款登记在同谋的名下<a class="ref" href="#s1">[1]</a>。FTX 在巴哈马的关联公司 FTX Digital Markets 的前联席 CEO Ryan Salame 承认两项罪名：共谋非法政治捐款并欺骗联邦选举委员会，共谋经营无牌汇款业务；他被判 90 个月<a class="ref" href="#s5">[5]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">挪用、挤兑与损失</span><span class="def">破产、监管与执法</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2017</time><div class="ev">SBF 和几位 Jane Street 前员工在伯克利成立 Alameda Research<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2019-05</time><div class="ev">SBF 和 Gary Wang 创办 FTX<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>2019-07</time><div class="ev">Nishad Singh 在 FTX.com 的代码里先后加入 can_withdraw_below_borrow（23 日）和 allow_negative（31 日），让 Alameda 在账户净值为负时也能提走加密资产<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2021</time><div class="ev">FTX 回购 Binance 持有的股份，Binance 拿到约 21 亿美元的 BUSD 和 FTT<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2021-07 至 09</time><div class="ev">FTX 以 180 亿美元的估值融资 9 亿美元；9 月总部从香港迁到巴哈马<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2022-01</time><div class="ev">C 轮融资 4 亿美元，估值 320 亿美元<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>2022-03</time><div class="ev">Ellison 在私人笔记里估计，FTX.com 仅现金一项的缺口就超过 100 亿美元<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2022-06-30</time><div class="ev">Alameda 的资产负债表：资产 146 亿美元，最大的一项是 36.6 亿美元的“unlocked FTT”。这张表 11 月才被披露<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2022-07</time><div class="ev">FTX 给借贷平台 BlockFi 4 亿美元的信贷额度，并取得以约 2.4 亿美元收购它的选择权<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>2022-08</time><div class="ev">按破产后 FTX 的诉状，交易所这时欠客户的法币超过 80 亿美元，已经还不上；缺口记在一个内部称为“our Korean friend's account”的假客户账户里<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2022-09-26</time><div class="ev">FTX US 中标破产的 Voyager 的资产，交易估值约 14.2 亿美元<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li><time>2022-11-02</time><div class="ev">CoinDesk 披露 Alameda 的资产负债表<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li><time>2022-11-06</time><div class="ev">赵长鹏说 Binance 要卖掉手里全部的 FTT；Ellison 提出以每枚 22 美元买下<a class="ref" href="#s21">[21]</a><a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="atk"><time>2022-11-08</time><div class="ev">FTX 停止提款。据 SBF 说，此前 72 小时净提款约 60 亿美元。FTX 和 Binance 达成不具约束力的收购协议；FTT 当天跌约 80%<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="atk"><time>2022-11-09</time><div class="ev">Binance 放弃收购<a class="ref" href="#s15">[15]</a>。红杉资本把对 FTX 约 2.14 亿美元的投资减记为零<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def"><time>2022-11-10</time><div class="ev">巴哈马证券委员会冻结 FTX Digital Markets 的资产，临时指定清算人；同日 BlockFi 暂停业务<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2022-11-11</time><div class="ev">FTX、FTX US、Alameda 和 100 多家关联公司在特拉华州申请破产，SBF 辞职，Ray 接任 CEO<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="atk"><time>2022-11-11</time><div class="ev">当天起至少 3.72 亿美元的加密资产被未经授权转走<a class="ref" href="#s8">[8]</a>，经过见被盗站的<a href="../../hacks/events/2022-ftx-drain.html">FTX 破产当夜被盗</a>。</div></li>
+          <li class="atk"><time>2022-11-16</time><div class="ev">借贷平台 Genesis 暂停提款，Gemini Earn 的客户也取不出钱<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2022-12-12 至 13</time><div class="ev">SBF 在巴哈马被捕；纽约南区检察官公布起诉，SEC 和 CFTC 同日起诉<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2022-12-19 至 21</time><div class="ev">Ellison 和 Wang 19 日认罪，与检方合作；SBF 21 日被引渡到美国<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2023-04-09</time><div class="ev">Ray 提交第一份关于 FTX 控制失灵的中期报告<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2023-07-20</time><div class="ev">破产后的 FTX 起诉 SBF、Wang、Singh 和 Ellison<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2023-11-02</time><div class="ev">陪审团认定 SBF 七项罪名全部成立<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2024-03-28</time><div class="ev">SBF 被判 25 年，没收超过 110 亿美元<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2024-05 至 09</time><div class="ev">Salame 被判 90 个月（5 月 28 日）<a class="ref" href="#s5">[5]</a>，Ellison 被判 2 年（9 月 24 日）<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2024-10-08</time><div class="ev">破产法院确认重整计划<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2024-10 至 11</time><div class="ev">Singh（10 月 30 日）和 Wang（11 月 20 日）都被判已服刑期，加 3 年监督释放<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def"><time>2025-01-03</time><div class="ev">重整计划生效<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>2026-03</time><div class="ev">FTX Recovery Trust 第四次分配，约 22 亿美元<a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def"><time>2026-06-12</time><div class="ev">第二巡回上诉法院维持 SBF 的定罪和刑期<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li><time>2026-07-31</time><div class="ev">第五次分配约 9 亿美元，开始发放<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2026-09-10</time><div class="ev">SBF 向最高法院申请调卷复审，政府须在 11 月 16 日之前答复<a class="ref" href="#s18">[18]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>崩盘机制</h2>
+        <p>交易所替客户保管资产，本该和自己的钱分开，FTX 对外也是这样说的<a class="ref" href="#s7">[7]</a>。实际上，客户的钱经两条路到了 Alameda：法币直接进了 Alameda 的银行账户，加密资产则靠交易所系统里的特权被借走。Alameda 把钱花了出去，剩下的资产里很大一部分是 FTT。等客户一起来取钱时，钱已经不在交易所里了。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 452" role="img" aria-labelledby="ftx-flow-t ftx-flow-d">
+            <title id="ftx-flow-t">FTX 客户的钱怎样到了 Alameda</title>
+            <desc id="ftx-flow-d">客户把法币和加密资产存进 FTX。法币打进了 Alameda 控制的银行账户，在 Alameda 账上记成一笔约 80 亿美元的“fiat@”负债；加密资产则靠 650 亿美元的借款额度和账户为负也不平仓的设置被 Alameda 借走。Alameda 把钱花在风险投资、房产、政治捐款和偿还自己的贷款上，剩下的资产以 FTT 为主：2022 年 6 月底，与 FTT 有关的两项约 58 亿美元，约占资产的四成。2022 年 11 月 FTT 下跌、客户集中提款时，FTX 拿不出钱。</desc>
+            <defs>
+              <marker id="ftx-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="ftx-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="190" y="20" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="44" text-anchor="middle">FTX.com 的客户</text>
+            <text class="d-t s" x="380" y="65" text-anchor="middle">存入法币和加密资产，FTX 说这些资产单独保管</text>
+            <rect class="d-box" x="40" y="128" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="210" y="152" text-anchor="middle">法币：打进 Alameda 的银行账户</text>
+            <text class="d-t s" x="210" y="173" text-anchor="middle">记成约 80 亿美元的“fiat@”负债</text>
+            <rect class="d-box" x="400" y="128" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="152" text-anchor="middle">加密资产：被 Alameda 借走</text>
+            <text class="d-t s" x="570" y="173" text-anchor="middle">借款额度 650 亿美元，账户为负也不平仓</text>
+            <rect class="d-box" x="190" y="236" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="260" text-anchor="middle">Alameda Research</text>
+            <text class="d-t s" x="380" y="281" text-anchor="middle">SBF 控制的交易公司，FTX 上的主要做市商</text>
+            <rect class="d-box" x="40" y="344" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="210" y="368" text-anchor="middle">钱花了出去</text>
+            <text class="d-t s" x="210" y="389" text-anchor="middle">风险投资、房产、政治捐款、偿还 Alameda 的贷款</text>
+            <rect class="d-box" x="400" y="344" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="368" text-anchor="middle">剩下的资产以 FTT 为主</text>
+            <text class="d-t s" x="570" y="389" text-anchor="middle">2022 年 6 月底与 FTT 有关的约 58 亿美元，占四成</text>
+            <text class="d-t s" x="380" y="436" text-anchor="middle">2022 年 11 月 FTT 下跌、客户集中提款时，FTX 拿不出钱</text>
+            <line class="d-line" x1="320" y1="78" x2="225" y2="124" marker-end="url(#ftx-ah)"/>
+            <line class="d-line" x1="440" y1="78" x2="535" y2="124" marker-end="url(#ftx-ah)"/>
+            <line class="d-line atk" x1="225" y1="186" x2="320" y2="232" marker-end="url(#ftx-ah-atk)"/>
+            <line class="d-line atk" x1="535" y1="186" x2="440" y2="232" marker-end="url(#ftx-ah-atk)"/>
+            <line class="d-line" x1="320" y1="294" x2="225" y2="340" marker-end="url(#ftx-ah)"/>
+            <line class="d-line" x1="440" y1="294" x2="535" y2="340" marker-end="url(#ftx-ah)"/>
+          </svg>
+          </div>
+          <figcaption>客户的钱到 Alameda 的两条路（红色箭头）。法币一路据 CFTC 的起诉和破产后 FTX 的诉状<a class="ref" href="#s7">[7]</a><a class="ref" href="#s10">[10]</a>，借款额度和不平仓设置据 Ray 的第一份中期报告<a class="ref" href="#s9">[9]</a>，钱的用途据司法部和 SEC<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>，资产构成据 CoinDesk 披露的资产负债表<a class="ref" href="#s13">[13]</a>。</figcaption>
+        </figure>
+        <h3>法币：进了 Alameda 的银行账户</h3>
+        <p>CFTC 称，FTX 对外说客户资产由它托管、和自有资产分开，实际上客户资产经常由 Alameda 收下，和 Alameda 的资金混在一起<a class="ref" href="#s7">[7]</a>。Ray 的第一份中期报告写道，Alameda 用 North Dimension 的银行账户给交易所的客户付款；一名 FTX 集团的律师得知此事后不久，对 Alameda 缺少公司控制、称职的领导和风险管理表示担忧，随即被解雇<a class="ref" href="#s9">[9]</a>。</p>
+        <p>这些钱在 Alameda 账上记成一笔负债。破产后 FTX 的诉状称，申请破产之前，SBF 给潜在投资者看过一张 Alameda 的资产负债表，上面有一笔 80 亿美元的负债，记在一个“隐藏的、内部标注不清的‘fiat@’账户”里；SBF 清楚，这笔负债是收进 Alameda 银行账户、却没有替客户保管好的 FTX 客户法币<a class="ref" href="#s10">[10]</a>。</p>
+        <h3>加密资产：650 亿美元的借款额度</h3>
+        <p>FTX.com 允许一部分账户借钱交易。Ray 的第一份中期报告列出了申请破产时各类账户的借款额度<a class="ref" href="#s9">[9]</a>：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>账户</th><th class="n">借款额度</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>大多数客户</td><td class="n">0</td><td>不能借钱交易</td></tr>
+            <tr><td>部分优先客户和做市商</td><td class="n">最高 1.5 亿美元</td><td>账户为负、接近额度时触发自动平仓</td></tr>
+            <tr><td>Alameda</td><td class="n">650 亿美元</td><td>allow_negative 为 true，不会被自动平仓；申请破产时只有这一个账户这样设置</td></tr>
+          </tbody>
+        </table></div>
+        <p>报告说，Alameda 还有两项秘密的特权：can_withdraw_below_borrow 和 allow_negative，让它在账户净值为负时也能从 FTX.com 无限提走加密资产。Singh 在 2019 年 7 月 23 日和 31 日先后把它们加进交易所的代码，后一项很快取代了前一项。FTX 没有保存相应的数据库日志，650 亿美元的额度是什么时候、由谁设置的，已经查不清<a class="ref" href="#s9">[9]</a>。</p>
+        <p>Ellison 认罪时把这种安排描述为：Alameda 可以动用一条“无限的信用额度”，不用交抵押品、不用付利息，也不受追加保证金和 FTX.com 清算规则的约束<a class="ref" href="#s10">[10]</a>。SEC 的说法相近：Alameda 有一条由平台客户出钱、几乎没有上限的“信用额度”，还免于 FTX 几项关键的风控措施<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>钱去了哪里</h3>
+        <p>司法部称，SBF 把数十亿美元的客户资金用于个人开支、投资、数百万美元的政治捐款，以及偿还 Alameda 欠下的数十亿美元贷款<a class="ref" href="#s1">[1]</a>。SEC 列出的用途是未披露的风险投资、奢侈的房产和大额政治捐款<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>资产以 FTT 为主</h3>
+        <p>CoinDesk 拿到的 Alameda 资产负债表截至 2022 年 6 月 30 日，几项主要金额如下<a class="ref" href="#s13">[13]</a>：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>项目</th><th class="n">金额（美元）</th></tr></thead>
+          <tbody>
+            <tr><td>资产合计</td><td class="n">146 亿</td></tr>
+            <tr><td>“unlocked FTT”（最大的一项资产）</td><td class="n">36.6 亿</td></tr>
+            <tr><td>“crypto held”</td><td class="n">33.7 亿</td></tr>
+            <tr><td>“FTT collateral”（第三大的一项资产）</td><td class="n">21.6 亿</td></tr>
+            <tr><td>SOL（unlocked、locked、collateral 三项）</td><td class="n">约 12 亿</td></tr>
+            <tr><td>负债合计</td><td class="n">80 亿</td></tr>
+            <tr><td>其中贷款</td><td class="n">74 亿</td></tr>
+            <tr><td>其中“locked FTT”</td><td class="n">2.92 亿</td></tr>
+          </tbody>
+        </table></div>
+        <p>两项 FTT 合计约 58 亿美元，约占资产的四成。FTT 的价值靠 FTX 回购和销毁来维持<a class="ref" href="#s13">[13]</a>，也就是说，Alameda 账上最大的资产，价格取决于 FTX 本身。市场一旦怀疑 FTX，FTT 就会跌，Alameda 的资产随之缩水，欠下的贷款却不会少。SEC 把这一点列为 SBF 没有向投资者披露的风险之一：FTX 对 Alameda 的敞口很大，而 Alameda 持有大量估值过高、流动性差的资产，例如与 FTX 有关的代币<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>缺口早就有了</h3>
+        <p>破产后 FTX 的诉状称，到 2022 年 8 月，交易所欠客户的法币已经超过 80 亿美元，还不上了。为了藏住缺口，被告在 FTX.com 上开了一个假客户账户，内部称为“our Korean friend's account”。媒体关注的是被告 2022 年 8 月估计的 89 亿美元现金负债，记在这个假账户里；被告自己的估计有时更高：2022 年 3 月，Ellison 在私人笔记里估计 FTX.com 仅现金一项的缺口就超过 100 亿美元<a class="ref" href="#s10">[10]</a>。也就是说，缺口在 11 月挤兑之前至少八个月就已存在，挤兑只是让它露了出来。</p>
+      </section>
+      <section id="unfold">
+        <h2>崩盘过程</h2>
+        <ol class="steps">
+          <li><b>11 月 2 日：资产负债表曝光</b>CoinDesk 披露 Alameda 截至 6 月底的资产负债表，写道 FTX 和 Alameda 的关系“异常紧密”，Alameda 最大的一项资产是 FTT<a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>11 月 6 日：Binance 要卖 FTT</b>赵长鹏在推特上说，Binance 打算卖掉手里全部的 FTT，这些 FTT 是 2021 年 FTX 回购 Binance 的股份时给的<a class="ref" href="#s21">[21]</a>。Ellison 随即代表 Alameda 提出以每枚 22 美元买下，市场因此猜测：FTT 跌破这个价位，Alameda 的一些贷款就会被平仓<a class="ref" href="#s22">[22]</a>。</li>
+          <li><b>到 11 月 8 日上午：挤兑</b>据 Reuters，SBF 说周二（8 日）上午之前的 72 小时里，FTX 净提款约 60 亿美元；平常每天是净流入几千万美元<a class="ref" href="#s14">[14]</a>。</li>
+          <li><b>11 月 8 日：停止提款</b>FTX 当天早些时候停止提款，随后和 Binance 达成不具约束力的收购协议。FTT 的流通市值从前一天的约 29 亿美元跌到约 7.35 亿美元；比特币和以太坊都跌了 10% 以上，Coinbase 的股价跌了两位数<a class="ref" href="#s14">[14]</a>。</li>
+          <li><b>11 月 9 日：Binance 退出</b>Binance 发表声明，说“出于公司尽职调查的结果，以及最新关于客户资金处理不当和美国机构调查的报道”，决定不再收购 FTX.com，问题“超出了我们的控制或帮忙的能力”。据知情人士，SBF 对投资者说，提款请求造成的缺口最多 80 亿美元，需要紧急融资<a class="ref" href="#s15">[15]</a>。</li>
+          <li><b>11 月 10 日：巴哈马冻结资产</b>巴哈马证券委员会冻结 FTX Digital Markets“及相关方”的资产，临时指定了一名清算人<a class="ref" href="#s21">[21]</a>。</li>
+          <li><b>11 月 11 日：申请破产</b>FTX、FTX US、Alameda 和 100 多家关联公司在特拉华州申请破产，SBF 辞去 CEO<a class="ref" href="#s21">[21]</a>，Ray 当天凌晨接任<a class="ref" href="#s8">[8]</a>。</li>
+        </ol>
+        <p>Ray 在第一天声明里说，FTX 已把约 7.4 亿美元的加密资产转进新的冷钱包；还有一些加密资产不在 FTX 的控制之下，原因包括申请破产当天起至少 3.72 亿美元的未授权转账，以及申请之后有人未经授权“增发”了约 3 亿美元的 FTT。拿不到相关的数据库，FTX 就列不出包括客户在内的前 50 大债权人<a class="ref" href="#s8">[8]</a>。第一份中期报告还写道，11 月被盗的第二天，SBF 和/或 Wang 在巴哈马当局的指示下、未经 FTX 授权，用手里的私钥转走了价值数亿美元的 FTT、SRM、MAPS 等代币<a class="ref" href="#s9">[9]</a>。</p>
+        <div class="note doubt"><span class="h">破产当夜被盗多少</span><p>Ray 的“至少 3.72 亿美元”出自 2022 年 11 月 17 日的声明，只算申请破产当天起的未授权转账<a class="ref" href="#s8">[8]</a>。被盗站把这起事件记为约 4.77 亿美元，口径不同，经过和出处见<a href="../../hacks/events/2022-ftx-drain.html">FTX 破产当夜被盗</a>。</p></div>
+      </section>
+      <section id="contagion">
+        <h2>传染</h2>
+        <h3>夏天的接济落空</h3>
+        <p>2022 年夏天，<a href="2022-three-arrows.html">三箭资本</a>和 <a href="2022-celsius.html">Celsius</a> 相继倒下之后，FTX 向陷入困境的借贷平台伸手：7 月给 BlockFi 4 亿美元的信贷额度，并取得以约 2.4 亿美元收购它的选择权；9 月 26 日，FTX US 中标破产的 Voyager 的资产<a class="ref" href="#s21">[21]</a>。FTX 倒下后，这些安排都落空了：BlockFi 11 月 10 日暂停业务，14 日披露对 FTX 有“重大敞口”，15 日据报在准备申请破产；Voyager 的资产 12 月改由 Binance.US 中标<a class="ref" href="#s21">[21]</a>。</p>
+        <h3>Genesis 和 Gemini Earn</h3>
+        <p>11 月 16 日，DCG 旗下的借贷平台 Genesis 暂停提款；Gemini 通过 Genesis 提供的 Earn 服务随之停止赎回<a class="ref" href="#s21">[21]</a>。纽约州总检察长后来起诉 Gemini、Genesis 和 DCG，称 Alameda 一度借走了 Genesis 对第三方全部未偿贷款的近 60%；Gemini 早在 2022 年 2 月就把它对 Genesis 信用评级的估计从 BBB（投资级）下调到 CCC（垃圾级），却没有告诉投资者，继续把 Earn 宣传为低风险<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>投资者</h3>
+        <p>红杉资本 11 月 9 日把对 FTX 的股权投资减记为零，损失约 2.14 亿美元；FTX 的投资方还有安大略教师退休金计划、软银、贝莱德、Lightspeed 和淡马锡<a class="ref" href="#s22">[22]</a>。SEC 称，SBF 一边向投资者隐瞒客户资金被转给 Alameda，一边筹集了超过 18 亿美元<a class="ref" href="#s6">[6]</a>；司法部称他骗了 FTX 的投资者超过 17 亿美元，骗了 Alameda 的贷方超过 13 亿美元<a class="ref" href="#s4">[4]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>规模：几种口径</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>说法</th><th class="n">金额（美元）</th></tr></thead>
+          <tbody>
+            <tr><td>司法部，2024 年量刑</td><td>SBF 拿走的客户资金</td><td class="n">超过 80 亿<a class="ref" href="#s4">[4]</a></td></tr>
+            <tr><td>SBF，2022 年 11 月 9 日（据知情人士）</td><td>提款请求造成的缺口</td><td class="n">最多 80 亿<a class="ref" href="#s15">[15]</a></td></tr>
+            <tr><td>破产后 FTX 的诉状</td><td>2022 年 8 月欠客户、已还不上的法币</td><td class="n">超过 80 亿<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>同上，引 Ellison 的私人笔记</td><td>2022 年 3 月 FTX.com 仅现金一项的缺口</td><td class="n">超过 100 亿<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>司法部，2024 年量刑</td><td>骗 FTX 的投资者</td><td class="n">超过 17 亿<a class="ref" href="#s4">[4]</a></td></tr>
+            <tr><td>司法部，2024 年量刑</td><td>骗 Alameda 的贷方</td><td class="n">超过 13 亿<a class="ref" href="#s4">[4]</a></td></tr>
+            <tr><td>司法部，2024 年量刑</td><td>判令 SBF 没收</td><td class="n">超过 110 亿<a class="ref" href="#s4">[4]</a></td></tr>
+            <tr><td>Cointelegraph，2026 年 7 月</td><td>FTX Recovery Trust 和 FTX 累计分配</td><td class="n">约 100 亿<a class="ref" href="#s19">[19]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">这些数字不能相加</span><p>前四个数字说的都是客户资金的缺口，只是估计的时间和算法不同。没收金额是法院判令 SBF 交出的财产，不等于损失。累计分配的约 100 亿美元里，有一部分来自破产后资产的升值：维基百科写道，2023 年 Solana 回升，偿还客户才成为可能<a class="ref" href="#s22">[22]</a>。</p></div>
+        <h3>债权人拿回多少</h3>
+        <p>债权按申请破产日的价值计算。Ray 估计，客户和数字资产借贷的债权人能拿回申请日债权价值的 118% 到 142%<a class="ref" href="#s22">[22]</a>。按 FTX Recovery Trust 2026 年 3 月的公告，第四次分配之后，美国客户的债权和一般无担保债权累计拿回 100%，小额的便利类债权 120%，FTX.com 客户的债权 96%<a class="ref" href="#s20">[20]</a>。99Bitcoins 指出，按“认可的债权”拿回 100%，不等于按高点的价格拿回资产的美元价值；有些债权人的持仓在 2021 年底值好几倍，按申报的债权算却已经算是拿回了全部<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>定性</h3>
+        <p>SBF 被定罪后，纽约南区检察官 Damian Williams 说，这是美国历史上最大的金融欺诈之一，一个为了让 SBF 成为“加密之王”而设计的数十亿美元骗局<a class="ref" href="#s3">[3]</a>。SEC 主席 Gary Gensler 说：“我们指控 SBF 在欺骗的地基上盖了一座纸牌屋，同时对投资者说这是加密行业最安全的建筑之一。”<a class="ref" href="#s6">[6]</a></p>
+        <p>FTX 倒在 2022 年连环暴雷的后段。5 月 <a href="2022-terra-ust.html">Terra/UST 崩盘</a>；6 月 <a href="2022-celsius.html">Celsius</a> 冻结提款、<a href="2022-three-arrows.html">三箭资本</a>违约，损失传到 Voyager 和 Genesis；11 月 FTX 和 Alameda 倒下，又把 BlockFi 和 Genesis 拖了进去<a class="ref" href="#s21">[21]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>破产程序</h3>
+        <p>FTX 的破产案在特拉华州破产法院审理，案号 22-11068<a class="ref" href="#s11">[11]</a>。Ray 的团队从各地的关联公司收集并审阅了一百多万份文件，包括 Slack、Signal 和电子邮件里的通信。第一份中期报告写道，FTX 集团有 56 家实体没有任何财务报表，35 家用面向中小企业的记账软件 QuickBooks 做账；资产和负债靠 Google 文档、Slack 消息、共享盘和 Excel 表格拼凑着管理<a class="ref" href="#s9">[9]</a>。2023 年 7 月，破产后的 FTX 起诉 SBF、Wang、Singh 和 Ellison<a class="ref" href="#s10">[10]</a>。</p>
+        <p>重整计划 2024 年 5 月 7 日提交，6 月 26 日法院批准披露声明，10 月 8 日确认计划，2025 年 1 月 3 日计划生效<a class="ref" href="#s11">[11]</a>。此后 FTX Recovery Trust 分批还钱，债权人通过 BitGo、Kraken 或 Payoneer 收款。2026 年 3 月的第四次分配约 22 亿美元，7 月 31 日开始的第五次约 9 亿美元；Cointelegraph 和 99Bitcoins 都写道，累计分配约 100 亿美元<a class="ref" href="#s19">[19]</a><a class="ref" href="#s20">[20]</a>。</p>
+        <h3>刑事案</h3>
+        <p>SBF 2022 年 12 月 12 日在巴哈马被捕<a class="ref" href="#s1">[1]</a>，21 日被引渡到美国；Ellison 和 Wang 12 月 19 日认罪，与检方合作<a class="ref" href="#s2">[2]</a>。Singh 后来也认了六项罪名<a class="ref" href="#s21">[21]</a>。SBF 没有认罪。经过一个月的审判，陪审团 2023 年 11 月 2 日认定他七项罪名全部成立：电信欺诈两项、共谋电信欺诈两项，共谋证券欺诈、共谋商品欺诈和共谋洗钱各一项<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>被告</th><th>判决</th></tr></thead>
+          <tbody>
+            <tr><td>Sam Bankman-Fried，FTX 创始人、CEO</td><td>2024 年 3 月 28 日判 25 年，没收超过 110 亿美元<a class="ref" href="#s4">[4]</a></td></tr>
+            <tr><td>Ryan Salame，FTX Digital Markets 前联席 CEO</td><td>2024 年 5 月 28 日判 90 个月<a class="ref" href="#s5">[5]</a></td></tr>
+            <tr><td>Caroline Ellison，Alameda 前 CEO</td><td>2024 年 9 月 24 日判 2 年<a class="ref" href="#s16">[16]</a></td></tr>
+            <tr><td>Nishad Singh，FTX 前工程主管</td><td>2024 年 10 月 30 日判已服刑期，加 3 年监督释放<a class="ref" href="#s21">[21]</a></td></tr>
+            <tr><td>Gary Wang，FTX 联合创始人、前 CTO</td><td>2024 年 11 月 20 日判已服刑期，加 3 年监督释放<a class="ref" href="#s21">[21]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>给 Ellison 量刑时，Kaplan 法官说她的合作“非常、非常有分量”，她和 SBF 之间有“根本的区别”：“她合作了，而他否认一切。”<a class="ref" href="#s16">[16]</a></p>
+        <h3>上诉</h3>
+        <p>2026 年 6 月 12 日，第二巡回上诉法院的三名法官一致驳回 SBF 的上诉，维持定罪和 25 年的刑期。Barrington Parker 法官代表合议庭写道，SBF 一边公开向客户、投资者和监管者保证客户资金安全，一边把 FTX 当成自己的私人存钱罐，把客户的钱花在房产、政治捐款和投资上。据司法部赦免律师办公室，SBF 还在寻求特朗普总统的赦免<a class="ref" href="#s17">[17]</a>。</p>
+        <p>9 月 10 日，SBF 向最高法院申请调卷复审，要求重新审判，并以宪法第八修正案禁止过高罚金为由，挑战 110.2 亿美元的没收判决。最高法院 9 月 15 日立案，要求政府在 11 月 16 日之前答复<a class="ref" href="#s18">[18]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给交易所的用户</span>
+          <ul>
+            <li>交易所说客户资产单独保管，用户没法自己核实。FTX 就是这样说的，CFTC 却称客户的资产经常由 Alameda 收下，和 Alameda 的钱混在一起<a class="ref" href="#s7">[7]</a>。2019 年的 QuadrigaCX 说大部分币在冷钱包里，法院指定的监督人 EY 却发现冷钱包 2018 年 4 月就已转空<a class="ref" href="#s23">[23]</a>，经过见 <a href="2019-quadrigacx.html">QuadrigaCX 创办人死后客户资金下落不明</a>。</li>
+            <li>交易所一破产，账上的余额就变成排队等分配的债权，按申请破产日的价值计算<a class="ref" href="#s22">[22]</a>。</li>
+            <li>交易所自己发行的代币，和交易所绑在一起。FTX 停止提款那天，FTT 跌了约 80%<a class="ref" href="#s14">[14]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所和监管者</span>
+          <ul>
+            <li>交易所和交易公司归同一个人控制时，利益冲突可以藏在代码里。Alameda 的 650 亿美元额度和不平仓的设置写在交易所的系统里，外人看不到，连数据库日志都没有留下<a class="ref" href="#s9">[9]</a>。</li>
+            <li>拿自己发行的代币撑资产负债表，等于用自己的信用给自己担保。Alameda 账上约四成资产是 FTT<a class="ref" href="#s13">[13]</a>，FTX 一出问题，交易所和它的主要做市商同时出问题。</li>
+            <li>基本的账务和控制省不得。Ray 接手时，FTX 集团有 56 家实体没有任何财务报表<a class="ref" href="#s9">[9]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给贷方和投资者</span>
+          <ul>
+            <li>集中本身就是风险。Alameda 一度借走了 Genesis 对第三方贷款的近六成；Gemini 内部下调了对 Genesis 的评级，却没有告诉 Earn 的投资者<a class="ref" href="#s12">[12]</a>。</li>
+            <li>尽职调查要看资金流向，不能只看增长和估值。SEC 称 SBF 向投资者隐瞒了客户资金被转给 Alameda<a class="ref" href="#s6">[6]</a>；红杉资本最后把对 FTX 的投资减记为零<a class="ref" href="#s22">[22]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国司法部纽约南区检察官办公室，《United States Attorney Announces Charges Against FTX Founder Samuel Bankman-Fried》，2022-12-13。<a href="https://www.justice.gov/usao-sdny/pr/united-states-attorney-announces-charges-against-ftx-founder-samuel-bankman-fried">justice.gov</a></li>
+          <li id="s2">美国司法部纽约南区检察官办公室，《United States Attorney Announces Extradition Of FTX Founder Samuel Bankman-Fried To The United States And Guilty Pleas Of Former CEO Of Alameda Research And Former Chief Technology Officer Of FTX》，2022-12-22。<a href="https://www.justice.gov/usao-sdny/pr/united-states-attorney-announces-extradition-ftx-founder-samuel-bankman-fried-united">justice.gov</a></li>
+          <li id="s3">美国司法部纽约南区检察官办公室，《Statement Of U.S. Attorney Damian Williams On The Conviction Of Samuel Bankman-Fried》，2023-11-02。<a href="https://www.justice.gov/usao-sdny/pr/statement-us-attorney-damian-williams-conviction-samuel-bankman-fried">justice.gov</a></li>
+          <li id="s4">美国司法部纽约南区检察官办公室，《Samuel Bankman-Fried Sentenced To 25 Years In Prison》，2024-03-28。<a href="https://www.justice.gov/usao-sdny/pr/samuel-bankman-fried-sentenced-25-years-prison">justice.gov</a></li>
+          <li id="s5">美国司法部纽约南区检察官办公室，《Former FTX Executive Ryan Salame Sentenced To 90 Months In Prison》，2024-05-28。<a href="https://www.justice.gov/usao-sdny/pr/former-ftx-executive-ryan-salame-sentenced-90-months-prison">justice.gov</a></li>
+          <li id="s6">美国 SEC，《SEC Charges Samuel Bankman-Fried with Defrauding Investors in Crypto Asset Trading Platform FTX》，新闻稿 2022-219，2022-12-13。<a href="https://www.sec.gov/newsroom/press-releases/2022-219">sec.gov</a></li>
+          <li id="s7">美国 CFTC，《CFTC Charges Sam Bankman-Fried, FTX Trading and Alameda with Fraud and Material Misrepresentations》，新闻稿 8638-22，2022-12-13。<a href="https://www.cftc.gov/PressRoom/PressReleases/8638-22">cftc.gov</a></li>
+          <li id="s8">In re FTX Trading Ltd.（特拉华州破产法院，No. 22-11068），Doc. 24，John J. Ray III 支持 Chapter 11 申请和第一天动议的声明，2022-11-17。<a href="https://storage.courtlistener.com/recap/gov.uscourts.deb.188450/gov.uscourts.deb.188450.24.0.pdf">courtlistener.com</a></li>
+          <li id="s9">同案 Doc. 1242-1，《First Interim Report of John J. Ray III to the Independent Directors on Control Failures at the FTX Exchanges》，2023-04-09。<a href="https://storage.courtlistener.com/recap/gov.uscourts.deb.188450/gov.uscourts.deb.188450.1242.1.pdf">courtlistener.com</a></li>
+          <li id="s10">同案 Doc. 1886，FTX 等债务人起诉 Samuel Bankman-Fried、Gary Wang、Nishad Singh 和 Caroline Ellison 的诉状，2023-07-20。<a href="https://storage.courtlistener.com/recap/gov.uscourts.deb.188450/gov.uscourts.deb.188450.1886.0.pdf">courtlistener.com</a></li>
+          <li id="s11">Kroll Restructuring Administration，FTX Trading Ltd. 案件页面（Case No. 22-11068），2026 年 11 月查阅。<a href="https://restructuring.ra.kroll.com/FTX/">restructuring.ra.kroll.com</a></li>
+          <li id="s12">纽约州总检察长办公室，《Attorney General James Sues Cryptocurrency Companies Gemini, Genesis, and DCG for Defrauding Investors》，2023-10-19。<a href="https://ag.ny.gov/press-release/2023/attorney-general-james-sues-cryptocurrency-companies-gemini-genesis-and-dcg">ag.ny.gov</a></li>
+          <li id="s13">CoinDesk，《Divisions in Sam Bankman-Fried's Crypto Empire Blur on His Trading Titan Alameda's Balance Sheet》，2022-11-02（Internet Archive 存档）。<a href="https://web.archive.org/web/20221108235316/https://www.coindesk.com/business/2022/11/02/divisions-in-sam-bankman-frieds-crypto-empire-blur-on-his-trading-titan-alamedas-balance-sheet/">web.archive.org</a></li>
+          <li id="s14">CNBC，《FTX's token plunges 80% on liquidity concerns, wiping out over $2 billion in value》，2022-11-08。<a href="https://www.cnbc.com/2022/11/08/ftxs-ftt-token-plunges-80percent-wiping-out-over-2-billion-in-value.html">cnbc.com</a></li>
+          <li id="s15">CNBC，《Binance backs out of FTX rescue, leaving the crypto exchange on the brink of collapse》，2022-11-09。<a href="https://www.cnbc.com/2022/11/09/binance-backs-out-of-ftx-rescue-leaving-the-crypto-exchange-on-the-brink-of-collapse.html">cnbc.com</a></li>
+          <li id="s16">ABC News，《FTX founder's ex-girlfriend sentenced to 2 years in prison for fraud case》，2024-09-24。<a href="https://abcnews.com/US/caroline-ellison-ftx-sentence-federal-case/story?id=113940919">abcnews.com</a></li>
+          <li id="s17">Al Jazeera，《Sam Bankman-Fried loses appeal to overturn fraud convictions and prison》，2026-06-12。<a href="https://www.aljazeera.com/economy/2026/6/12/sam-bankman-fried-loses-appeal-to-overturn-fraud-convictions-and-prison">aljazeera.com</a></li>
+          <li id="s18">FinanceFeeds，《SBF's Supreme Court Bid Targets $11B Forfeiture, New Trial》，2026-10-14。<a href="https://financefeeds.com/sam-bankman-fried-takes-ftx-fraud-case-to-us-supreme-court/">financefeeds.com</a></li>
+          <li id="s19">Cointelegraph，《FTX to Distribute $900M to Creditors in Fifth Payment Round》，2026-07-17。<a href="https://cointelegraph.com/news/ftx-distribute-millions-creditors-fifth-payment-round">cointelegraph.com</a></li>
+          <li id="s20">99Bitcoins，《FTX Creditors Near $10Bn Total Recovery as July 31 Distribution Approaches》，2026-08-01。<a href="https://99bitcoins.com/news/altcoins/ftx-distribution-creditors-july-2026/">99bitcoins.com</a></li>
+          <li id="s21">维基百科，《FTX》。<a href="https://en.wikipedia.org/wiki/FTX">en.wikipedia.org</a></li>
+          <li id="s22">维基百科，《Bankruptcy of FTX》。<a href="https://en.wikipedia.org/wiki/Bankruptcy_of_FTX">en.wikipedia.org</a></li>
+          <li id="s23">Ernst &amp; Young Inc.，《Third Report of the Monitor》，2019-03-01（Internet Archive 存档）。<a href="https://web.archive.org/web/20190308155928/https://documentcentre.eycan.com/eycm_library/Quadriga%20Fintech%20Solutions%20Corp/English/1.%20Monitor's%20Reports/4.%20Third%20Report%20of%20the%20Monitor/Third%20Report%20of%20the%20Monitor%20dated%20March%201,%202019.pdf">web.archive.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

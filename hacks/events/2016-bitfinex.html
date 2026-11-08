@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitfinex 被盗 11.9 万枚 BTC｜区块链被盗事件编年史</title>
+<meta name="description" content="2016 年 Bitfinex 与 BitGo 的多签方案被绕过、11.9 万枚 BTC 被盗的经过：联签额度为何失效、全体用户分摊 36% 损失与 BFX 代币、2022 年查获 9.4 万枚、认罪与量刑、法院对查获资产归属的审理现状。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2016-bitfinex">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2016 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Bitfinex 被盗 11.9 万枚 BTC</h1>
+    <p class="lede">2016 年 8 月 2 日，香港交易所 Bitfinex 被盗约 11.98 万枚 BTC。它用 BitGo 的多签技术给每个用户开了单独的链上钱包，每笔提币都要 BitGo 联签；但据 Bitfinex 事后的说法，攻击者让 BitGo 自动放行的额度被调高了，BitGo 没有察觉，照常为 2,000 多笔提币签了名。被盗的币在攻击者的钱包里放了五年半，2022 年被美国执法部门查获，至今仍在法院等待确定归属。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">多签的意义在于，任何一方单独都动不了钱。Bitfinex 和 BitGo 的方案里，BitGo 作为联签方，按事先设定的额度策略决定放行多少提币。可是额度本身能从 Bitfinex 一侧被调高。攻击者进入 Bitfinex 的网络后，额度被调高，BitGo 的系统按规则照常签名，它事后说自己“没有被攻破，软件运行正常”<a class="ref" href="#s4">[4]</a><a class="ref" href="#s8">[8]</a>。联签方只能核对规则，核对不了规则是谁改的。</p>
+        <p>Bitfinex 没有破产，而是把损失摊到所有用户头上：每个账户按 36.067% 的比例扣减，扣掉的部分换成 1 美元一枚的 BFX 债务代币<a class="ref" href="#s5">[5]</a>。2017 年 4 月，剩余的 BFX 代币全部按面值兑付<a class="ref" href="#s11">[11]</a>。</p>
+        <p>2022 年 2 月，美国司法部用在 Ilya Lichtenstein 云端账户里解密出的私钥，从攻击者的钱包里查获约 94,636 枚 BTC，当时价值约 36 亿美元，并逮捕了他和妻子 Heather Morgan<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>。2023 年两人认罪，Lichtenstein 承认入侵是他做的<a class="ref" href="#s14">[14]</a>。2025 年 4 月，法院裁定不向 Bitfinex 判给赔偿，查获资产归谁，改由第三方主张程序决定，截至 2026 年 10 月尚未审结<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Bitfinex 由 iFinex 公司经营，2016 年是全球最大的美元比特币交易所，以美元对比特币交易的深度著称<a class="ref" href="#s3">[3]</a>。它在 2015 年 5 月就被盗过一次，损失约 1,500 枚 BTC<a class="ref" href="#s24">[24]</a>。</p>
+        <p>2015 年 6 月 3 日，Bitfinex 和 BitGo 宣布合作。此前 Bitfinex 和其他交易所一样，用一个共享的资金池存放客户的币，好比用一套钥匙管整个金库；新方案给每个客户一个独立的多签钱包，客户可以在链上核对自己的余额，所有资金和交易由“多机构、多签名、两步验证和高级策略”保护<a class="ref" href="#s1">[1]</a>。BitGo 的 CEO Mike Belshe 当时说，这种透明度和安全性“让 Mt.Gox 那样的失窃不可能发生”<a class="ref" href="#s1">[1]</a>。这些钱包都在线，提币可以很快完成<a class="ref" href="#s3">[3]</a>。</p>
+        <p>2016 年 6 月 2 日，美国商品期货交易委员会（CFTC）对 Bitfinex 罚款 7.5 万美元，认定它在 2013 年 4 月到至少 2016 年 2 月间提供杠杆交易，却没有把买入的比特币真正交付给交易者，而是放在自己拥有和控制的钱包里；CFTC 同时注意到 Bitfinex 已主动调整了部分业务做法<a class="ref" href="#s2">[2]</a>。两个月后，失窃就发生了。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方、执法与司法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2015-06-03</time><div class="ev">Bitfinex 与 BitGo 宣布合作，为每个客户开设独立的多签钱包<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2016-06-02</time><div class="ev">CFTC 对 Bitfinex 罚款 7.5 万美元<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk key"><time>2016-08-02</time><div class="ev">攻击者从用户的独立钱包发起 2,000 多笔未授权提币，把约 11.98 万枚 BTC 转进同一个钱包<a class="ref" href="#s13">[13]</a>。Bitfinex 发现后暂停交易，比特币价格当天下跌 23% 以上<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2016-08-03</time><div class="ev">Bitfinex 确认被盗 119,756 枚 BTC，“币是从用户的独立钱包里被偷走的”；BitGo 发推说调查没有发现其服务器被入侵<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2016-08-04</time><div class="ev">BitGo CEO 发表公开信：BitGo 的系统没有被攻破，软件按设计运行，Bitfinex 的配置是独特的<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def key"><time>2016-08-07</time><div class="ev">（香港时间）Bitfinex 宣布所有账户承担 36.067% 的“普遍化损失”，补发 BFX 代币<a class="ref" href="#s5">[5]</a>。网站以只读方式重新上线，所有用户须重设密码和二次验证，API 密钥全部作废<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2016-08-10</time><div class="ev">16:00（UTC）恢复交易。Bitfinex 称已把资金转入多签冷钱包、在新的基础设施上重建平台，8 月 9 日之前生成的充值地址全部作废<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2016-08-17</time><div class="ev">Bitfinex 发布阶段性说明：确切的攻击途径尚不清楚，但让 BitGo 放行额度被调高的关键漏洞已经堵上，BitGo 的独立多签钱包方案暂停使用<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2016-08-22</time><div class="ev">Bitfinex 与 BnkToTheFuture 签署意向书，让符合条件的 BFX 持有人把代币换成 iFinex 的股权<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2017-01</time><div class="ev">被盗的币开始从攻击者钱包里小额、多次地转出，先后经过暗网市场 AlphaBay 和多家交易所<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def key"><time>2017-04-03</time><div class="ev">Bitfinex 宣布按每枚 1 美元赎回全部剩余的 BFX 代币，在八个月内完成兑付<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2020-09</time><div class="ev">华盛顿特区联邦检察官办公室与美国国税局刑事调查部门、FBI、国土安全调查局开始调查此案<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def key"><time>2022-01-31</time><div class="ev">执法人员解密 Lichtenstein 云端账户里的一个文件，其中有 2,000 个地址和对应的私钥；到 2 月 1 日，从攻击者钱包查获约 94,636 枚 BTC，价值约 36.29 亿美元<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2022-02-08</time><div class="ev">Lichtenstein 和 Morgan 在曼哈顿被捕，被控合谋洗钱和合谋欺诈美国<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def key"><time>2023-08-03</time><div class="ev">两人认罪。Lichtenstein 承认是他入侵了 Bitfinex<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2024-11-14</time><div class="ev">Lichtenstein 被判 5 年监禁和 3 年监外监管<a class="ref" href="#s17">[17]</a>；11 月 18 日 Morgan 被判 18 个月<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li class="def key"><time>2025-04-04</time><div class="ev">法院裁定向 Bitfinex 判给的赔偿为 0 美元，不举行赔偿听证，查获资产的处置只在第三方主张程序中决定<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2026-01-01</time><div class="ev">Lichtenstein 在 X 上说自己凭《第一步法案》提前出狱；特朗普政府官员称他正在居家监禁<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2026-10-06</time><div class="ev">据 Arkham 的标注，与此案相关的美国政府钱包向 Coinbase Prime 转出约 264.863 枚 BTC；10 月 8 日又转出约 12,267 枚<a class="ref" href="#s21">[21]</a><a class="ref" href="#s22">[22]</a>。</div></li>
+          <li class="def"><time>2026-10</time><div class="ev">第三方主张程序仍在进行，法院要求 Bitfinex 在 10 月 22 日前提交一份异议书的公开删节版<a class="ref" href="#s19">[19]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>Bitfinex 的方案里，用户的币不在交易所的共享热钱包里，而是在每个用户自己的链上多签地址上<a class="ref" href="#s1">[1]</a>。提币需要 Bitfinex 和 BitGo 两个机构的签名，合作公告里的说法是，资金和交易受“多机构、多签名、两步验证和高级策略”保护<a class="ref" href="#s1">[1]</a>；BitGo 能放行多少币，由策略决定<a class="ref" href="#s8">[8]</a>。每个钱包有几把私钥、各由谁保管，公开资料没有说明。这些钱包都是在线的，否则做不到快速提币<a class="ref" href="#s3">[3]</a>。</p>
+        <p>公开资料里关于失守原因最具体的说法，来自 Bitfinex 2016 年 8 月 17 日的阶段性说明：</p>
+        <blockquote><p>The key security breach, which allowed the amount of bitcoins released by BitGo to be increased without BitGo realizing it or alerting us, has been squarely addressed.</p><cite>Bitfinex，《Interim Update》，2016-08-17</cite></blockquote>
+        <p>也就是说，关键漏洞是 BitGo 放行的比特币数量可以被调高，而 BitGo 既没有察觉，也没有通知 Bitfinex<a class="ref" href="#s8">[8]</a>。BitGo 一方的说法是，它的系统没有被攻破，软件运行正常，Bitfinex 的配置是独特的，其他客户不需要立即做改动<a class="ref" href="#s4">[4]</a>。两种说法放在一起，能看清这套多签的弱点：BitGo 的签名取决于策略，而策略可以从 Bitfinex 一侧被改动。攻击者一旦控制了 Bitfinex 一侧，第二把钥匙就不再独立。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 330" role="img" aria-labelledby="bfx-sig-t bfx-sig-d">
+            <title id="bfx-sig-t">BitGo 联签为什么没有拦住提币</title>
+            <desc id="bfx-sig-d">攻击者进入 Bitfinex 的网络，调高了 BitGo 自动放行的额度，然后从用户的独立钱包发起 2,000 多笔提币。BitGo 的联签服务只检查提币是否在额度以内，照常签名，币进入攻击者的钱包。BitGo 没有察觉额度被调高，也没有通知 Bitfinex。额度具体是怎样被调高的，没有公开。</desc>
+            <defs>
+              <marker id="bfx-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+              <marker id="bfx-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="200" height="56" rx="4"/>
+            <text class="d-t b" x="120" y="43" text-anchor="middle">攻击者</text>
+            <text class="d-t s" x="120" y="63" text-anchor="middle">2016 年 8 月进入网络</text>
+            <line class="d-line atk" x1="120" y1="76" x2="120" y2="148" marker-end="url(#bfx-ah-atk)"/>
+            <text class="d-t s atk halo" x="130" y="116">控制 Bitfinex 一侧</text>
+            <rect class="d-box" x="20" y="150" width="200" height="66" rx="4"/>
+            <text class="d-t b" x="120" y="175" text-anchor="middle">Bitfinex 系统</text>
+            <text class="d-t s" x="120" y="196" text-anchor="middle">发起提币、提供签名</text>
+            <rect class="d-box" x="330" y="150" width="200" height="66" rx="4"/>
+            <text class="d-t b" x="430" y="175" text-anchor="middle">BitGo 联签服务</text>
+            <text class="d-t s" x="430" y="196" text-anchor="middle">额度以内就签第二个名</text>
+            <rect class="d-box atk" x="590" y="150" width="150" height="66" rx="4"/>
+            <text class="d-t b" x="665" y="175" text-anchor="middle">攻击者钱包</text>
+            <text class="d-t s" x="665" y="196" text-anchor="middle">约 11.98 万 BTC</text>
+            <line class="d-line atk" x1="220" y1="166" x2="328" y2="166" marker-end="url(#bfx-ah-atk)"/>
+            <text class="d-t s atk halo" x="275" y="140" text-anchor="middle">① 额度被调高</text>
+            <line class="d-line atk" x1="220" y1="200" x2="328" y2="200" marker-end="url(#bfx-ah-atk)"/>
+            <text class="d-t s atk halo" x="275" y="240" text-anchor="middle">② 2,000 多笔提币</text>
+            <line class="d-line atk" x1="530" y1="183" x2="588" y2="183" marker-end="url(#bfx-ah-atk)"/>
+            <text class="d-t s atk halo" x="560" y="140" text-anchor="middle">③ 照常联签</text>
+            <line class="d-line dash" x1="430" y1="216" x2="430" y2="262"/>
+            <rect class="d-box doubt" x="210" y="262" width="440" height="56" rx="4"/>
+            <text class="d-t b" x="430" y="285" text-anchor="middle">缺失的一环：额度被改，BitGo 没有察觉也没报警</text>
+            <text class="d-t s" x="430" y="305" text-anchor="middle">额度是怎样被改的，至今没有公开</text>
+          </svg>
+          </div>
+          <figcaption>图 1：联签的失效方式，根据 Bitfinex 2016 年 8 月 17 日的说明和 BitGo 2016 年 8 月 4 日的公开信整理。红色是攻击者能控制的部分。第二个签名本应独立于 Bitfinex，但决定它签不签的额度，可以从 Bitfinex 一侧被调高。</figcaption>
+        </figure>
+        <div class="compare">
+          <div>
+            <h4>设计上的承诺</h4>
+            <p>BitGo 是独立的第二道关。只攻破 Bitfinex 一方，拿不走钱，因为每笔提币都需要 BitGo 签名；额度策略给最坏情况设了上限。</p>
+          </div>
+          <div>
+            <h4>实际发生的情况</h4>
+            <p>BitGo 只核对“这笔提币在不在额度以内”，不核对额度是不是被合法地改过。控制了 Bitfinex 一侧，就同时控制了第一把钥匙和第二把钥匙的放行条件。</p>
+          </div>
+        </div>
+        <p>还有一点与“每个用户一个钱包”的设计有关。即使额度策略是按单个钱包或单笔设定的，攻击者把提币分散到成百上千个钱包，每个钱包看起来都不异常，总损失却没有上限。BitGo 的 CEO 在事后的公开信里请所有客户反问自己一个问题：如果你的系统被攻破，你的最大损失是多少<a class="ref" href="#s4">[4]</a>。Bitfinex 的用户钱包都在线，一旦联签的放行条件被控制，这个问题的答案就由攻击者决定，最终是约 12 万枚 BTC。</p>
+        <div class="note doubt">
+          <span class="h">没有公开的部分</span>
+          <p>Bitfinex 请区块链取证公司 Ledger Labs 调查，但调查报告没有公开<a class="ref" href="#s8">[8]</a>。Lichtenstein 认罪时承认的事实，按司法部的公告只有这样几句：他使用了多种先进的黑客工具和技术进入 Bitfinex 的网络，在其中以欺诈方式授权了 2,000 多笔交易，把 119,754 枚 BTC 转到自己控制的钱包，之后又回到 Bitfinex 的网络里删除访问凭证和其他日志<a class="ref" href="#s14">[14]</a>。他怎样进入网络、用了哪些凭证、额度是改在 BitGo 的账户设置里还是别处，这些都没有公开。网上流传的一些更具体的说法，本站没有找到可靠出处，没有采用。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>能够确认的经过只有下面几步，均以司法部的公告、起诉材料和 Bitfinex 当时的公告为准。</p>
+        <ol class="steps">
+          <li><b>进入网络</b>2016 年 8 月前后，Lichtenstein 入侵了 Bitfinex 的计算机服务器<a class="ref" href="#s16">[16]</a>。当时他和 Morgan 住在旧金山，Morgan 并不知情；他最晚在 2020 年初才把这件事告诉她<a class="ref" href="#s16">[16]</a>。</li>
+          <li><b>放行额度被调高</b>据 Bitfinex 的说法，BitGo 放行的比特币数量被调高，BitGo 没有察觉<a class="ref" href="#s8">[8]</a>。</li>
+          <li><b>2,000 多笔提币</b>攻击者在 Bitfinex 的网络里发起 2,000 多笔未授权交易，约 119,754 枚 BTC 从 Bitfinex 的钱包转进同一个外部钱包，起诉材料称之为“Wallet 1CGA4s”<a class="ref" href="#s13">[13]</a>。Bitfinex 发现后暂停了交易，当天比特币价格下跌超过 23%<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>清除痕迹</b>Lichtenstein 随后回到 Bitfinex 的网络，删除可能暴露他身份的访问凭证和日志文件<a class="ref" href="#s14">[14]</a>。</li>
+          <li><b>静置</b>这些币在 Wallet 1CGA4s 里一直放到 2017 年 1 月，才开始有一小部分被转出<a class="ref" href="#s13">[13]</a>。</li>
+        </ol>
+        <p>入侵和盗窃本身没有被起诉。检方在法庭文件里说明，两名被告都没有被控“入侵网络”或盗窃加密货币，因为这些罪行已过追诉时效；他们被定罪的是事后的合谋洗钱，Morgan 另有一项合谋欺诈美国<a class="ref" href="#s14">[14]</a><a class="ref" href="#s18">[18]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>用户的独立钱包</b>2,000 多笔提币，约 119,754 BTC</li>
+          <li class="atk"><b>Wallet 1CGA4s</b>2016 年 8 月至 2022 年 1 月，大部分币一直留在这里</li>
+          <li class="atk"><b>约 2.5 万枚被洗出</b>2017 年起经 AlphaBay、多家交易所、混币服务转换成其他币和法币</li>
+          <li class="ok"><b>2022 年查获</b>剩余约 94,636 BTC 被美国执法部门扣押</li>
+        </ol>
+        <p>据司法部的指控，洗钱手法包括：用虚构身份开设账户；把资金拆成数千笔小额交易；用程序自动化地发起交易；在多家交易所和暗网市场之间存取，打断资金流；把比特币换成门罗币等匿名性更强的币种，即“跨链跳转”；使用 Bitcoin Fog、Helix、ChipMixer 等混币服务；用美国的公司账户让银行往来显得合法；把一部分钱换成金币，由 Morgan 埋藏起来<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。Lichtenstein 后来在 Bitcoin Fog 运营者的庭审中作为控方证人出庭，讲述了自己怎样用混币服务掩盖资金<a class="ref" href="#s15">[15]</a>。</p>
+        <h3>链条是怎样断的</h3>
+        <p>起诉材料披露了调查人员把资金追到这对夫妇的路径。通过 AlphaBay 洗出的一部分币进了一家美国交易所的八个账户，这些账户都用同一家印度邮箱服务商的邮箱注册，从相同的 IP 地址登录，在 2016 年 8 月前后集中开设，交易模式都是换成匿名币；交易所在 2017 年 2 至 3 月要求账户持有人补充身份信息，没有得到回应，于是冻结了账户<a class="ref" href="#s13">[13]</a>。后来在 Lichtenstein 的云端账户里找到一份表格，里面有这些账户的登录信息，其中六个旁边标着“FROZEN”<a class="ref" href="#s13">[13]</a>。资金最终流进了以两人真实身份注册的账户；2022 年 1 月 31 日，执法人员解密了云端账户里的另一个文件，拿到了 Wallet 1CGA4s 全部 2,000 个地址的私钥<a class="ref" href="#s13">[13]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>被盗</td><td class="n">119,756 BTC</td><td>Bitfinex 公布的数字，约 7,200 万美元<a class="ref" href="#s3">[3]</a>；司法部的数字为 119,754 BTC，约 7,100 万美元<a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>2017 年后被洗出</td><td class="n">约 25,000 BTC</td><td>部分最终进入两人控制的金融账户<a class="ref" href="#s12">[12]</a></td></tr>
+              <tr><td>2022 年查获</td><td class="n">约 94,636 BTC</td><td>查获时约 36.29 亿美元<a class="ref" href="#s13">[13]</a>；后来的没收文件记为 94,643.29837084 BTC<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>此后另行查获</td><td class="n">约 4.75 亿美元</td><td>2022 年逮捕后至 2023 年认罪时<a class="ref" href="#s14">[14]</a></td></tr>
+              <tr><td>Bitfinex 主张可追溯的资产</td><td class="n">约 109,729 BTC</td><td>94,643 + 2,818 + 12,267 BTC，另有约 117,377 BCH 和同等数量的 BSV，据 Bitfinex 聘请的专家<a class="ref" href="#s18">[18]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>让全体用户分摊损失</h3>
+        <p>Bitfinex 没有申请破产，而是把损失“普遍化”：不论自己的钱包有没有被转空，所有账户的所有资产一律扣减 36.067%。它的解释是，这是“最接近清算情形的做法”<a class="ref" href="#s5">[5]</a>。扣减部分换成 BFX 代币，每枚对应 1 美元损失，可以由 Bitfinex 赎回，也可以换成母公司 iFinex 的股份<a class="ref" href="#s5">[5]</a>。这种做法让交易所活了下来，但也意味着钱包没被动过的用户替被盗的用户承担了损失，而且补偿按美元计，不随比特币升值。九年后，部分老用户仍在法院主张自己才是一部分被盗比特币的所有人，法院则明确表示，与 36% 扣减有关的争议应当在别的场合解决<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>多签不等于两方独立</h3>
+        <p>这次事件之前，多签常被当作交易所安全的答案。BitGo 在 2015 年的公告里说，这种方案让 Mt.Gox 那样的失窃“不可能发生”<a class="ref" href="#s1">[1]</a>。Bitfinex 的失守说明，签名的个数并不决定安全性，决定安全性的是每个签名方能不能独立判断。此后的大案一再印证这一点：2024 年的 <a href="2024-wazirx.html">WazirX</a> 和 2025 年的 <a href="2025-bybit.html">Bybit</a>，签名人都看着被篡改的界面签下了攻击者的交易。</p>
+        <h3>链上追踪的长效</h3>
+        <p>被盗的币在攻击者钱包里放了五年半，最后仍被追回大部分。查获时这批币价值约 36 亿美元，司法部称这是它“有史以来最大的一笔金融查获”<a class="ref" href="#s12">[12]</a>。让调查取得突破的，是洗钱过程中不得不经过的、执行身份核验的交易所账户<a class="ref" href="#s13">[13]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Bitfinex 的补偿</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>时间</th><th>措施</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>2016-08</td><td>扣减 36.067%，发放 BFX 代币</td><td>每枚 BFX 代表 1 美元损失<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>2016-08 起</td><td>BFX 换股</td><td>与 BnkToTheFuture 签意向书，符合条件的持有人可把 BFX 换成 iFinex 股权<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>2016-10 起</td><td>分批赎回 BFX，RRT 开始交易</td><td>先后按 1.3152%、1.5% 等比例赎回 BFX<a class="ref" href="#s10">[10]</a>；“追偿权代币”RRT 发给因被盗受损的用户，日后追回的资金按 RRT 分配<a class="ref" href="#s23">[23]</a></td></tr>
+              <tr><td>2017-04-03</td><td>赎回剩余全部 BFX</td><td>按每枚 1 美元兑付，此后不再有 BFX 流通<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>2023-07</td><td>首笔追回资金</td><td>与美国国土安全部合作追回约 31.5 万美元现金和加密资产，分配给 RRT 持有人<a class="ref" href="#s23">[23]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>iFinex 2019 年发行了 UNUS SED LEO 代币，并承诺在被盗资金追回后的 18 个月内回购并销毁流通中的 LEO<a class="ref" href="#s24">[24]</a>；据 2026 年 10 月的报道，Bitfinex 计划把剩余净收益的至少 80% 用于回购销毁 LEO，同时兑付 RRT<a class="ref" href="#s21">[21]</a>。这些安排都以 Bitfinex 实际收回资产为前提。</p>
+        <h3>认罪与量刑</h3>
+        <p>2023 年 8 月 3 日，Lichtenstein 认罪的罪名是合谋洗钱，最高刑期 20 年；Morgan 认罪的罪名是合谋洗钱和合谋欺诈美国，每项最高 5 年<a class="ref" href="#s14">[14]</a>。检方以 Morgan 提供了实质性协助为由，建议对她从轻判处 18 个月<a class="ref" href="#s16">[16]</a>。2024 年 11 月 14 日，Lichtenstein 被判 5 年监禁和 3 年监外监管<a class="ref" href="#s17">[17]</a>；11 月 18 日，Morgan 被判 18 个月<a class="ref" href="#s23">[23]</a>。</p>
+        <p>两人都提前出狱。Morgan 2025 年 2 月入狱，同年 10 月 26 日发视频说自己已提前获释，并感谢特朗普缩短了她的刑期。2026 年 1 月 1 日，Lichtenstein 在 X 上说，“多亏特朗普总统的《第一步法案》”，他已提前出狱；一名特朗普政府官员说他正在居家监禁，监狱管理局的查询系统显示他的预定释放日期是 2 月 9 日<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>查获的币归谁</h3>
+        <p>2025 年 1 月，检方提出，应把直接从攻击者钱包查获的加密资产（包括分叉产生的 <a href="../../milestones/events/2017-blocksize-war.html">BCH</a>、BSV 等）作为“实物赔偿”返还给 Bitfinex，两名被告表示同意<a class="ref" href="#s18">[18]</a>。但此时已有 16 个个人和公司向法院主张，被盗的币里有一部分本来属于他们，主张的数量从 0.9 枚到 2,770 枚 BTC 不等，其中有一名 Bitfinex 的前内部人士<a class="ref" href="#s18">[18]</a>。</p>
+        <p>2025 年 4 月 4 日，法官 Colleen Kollar-Kotelly 裁定：由于赔偿问题涉及复杂的事实和法律争议，判给 Bitfinex 的赔偿为 0 美元，不举行赔偿听证；没收资产如何处置，只在第三方主张程序中决定，各方在其中证明谁对这些资产享有更优先的权利<a class="ref" href="#s18">[18]</a>。法院同时指出，所有主张人合计主张的数量只占攻击者钱包资产的一小部分，其余部分仍可由 Bitfinex 主张；36% 扣减引起的争议不在这一程序中解决；法院也无权强制 Bitfinex 进一步分配追回的资金<a class="ref" href="#s18">[18]</a>。截至 2026 年 10 月，这一程序仍在进行，Bitfinex 和部分主张人互相申请驳回对方的主张，法院 10 月 7 日要求 Bitfinex 在 22 日前提交一份异议书的公开删节版<a class="ref" href="#s19">[19]</a>。</p>
+        <div class="note doubt">
+          <span class="h">报道与案卷不一致</span>
+          <p>2026 年有媒体报道称，联邦法院“在 2025 年 1 月批准”把追回的资产返还给 Bitfinex<a class="ref" href="#s22">[22]</a>，或称“2025 年的一项裁决”要求实物返还<a class="ref" href="#s21">[21]</a>。案卷显示，2025 年 1 月提出实物返还的是检方，法院 4 月的裁定恰恰没有采纳这条路，而是转入第三方主张程序<a class="ref" href="#s18">[18]</a>。2026 年 10 月，据 Arkham 标注为与此案相关的政府钱包，先后转出约 264.863 枚和 12,267.02 枚 BTC<a class="ref" href="#s21">[21]</a><a class="ref" href="#s22">[22]</a>。后一个数字与 Bitfinex 专家列出的一项资产（约 12,267.025 枚）几乎相同<a class="ref" href="#s18">[18]</a>，但链上转账本身不能说明这是返还、托管调整还是出售。本站查阅的案卷中，没有找到准许把资产交给 Bitfinex 的公开命令；2026 年 10 月下旬的几份文件内容不公开，无法核实。</p>
+        </div>
+        <p>美国政府几次大额查获的比特币，列在大事记的<a href="../../milestones/events/2013-silk-road.html">FBI 查封 Silk Road 与 Ulbricht 案</a>一页；这些币怎样处置，见<a href="../../milestones/events/2025-btc-reserve.html">美国战略比特币储备</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给多签和联签服务的设计者</span>
+          <ul>
+            <li>联签方的价值只在于独立。被检查的一方不应该能修改检查的规则；额度、白名单等策略的任何改动，都要经过带外确认（另一个渠道、另一组人），并设置生效延时。</li>
+            <li>策略被修改、提币量异常时，要自动通知所有相关方。Bitfinex 的核心问题是额度被改了，BitGo 没有察觉，也没有告诉任何人。</li>
+            <li>限额要有全局上限，而不只是每个钱包、每笔交易的上限。攻击者可以把提币分散到成千上万个钱包里。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>算出“如果我们的系统被完全控制，最多会丢多少”，并让这个数字足够小。能在线签名的资金越多，这个数字越大；Bitfinex 事后改用多签冷钱包、热钱包只留很少的币<a class="ref" href="#s8">[8]</a>。</li>
+            <li>日志和访问记录要实时送到攻击者碰不到的地方。Lichtenstein 得手后回到网络里删除了凭证和日志<a class="ref" href="#s14">[14]</a>。</li>
+            <li>出事后的损失分配方案要考虑长期的法律后果。“全体分摊”让交易所活了下来，但九年后被盗资产的归属仍在诉讼中。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给执法与合规</span>
+          <ul>
+            <li>被盗的币放得再久，要变现终究要经过交易所。2017 年一家交易所因账户持有人拒绝补充身份信息而冻结账户，五年后成了破案的关键线索之一<a class="ref" href="#s13">[13]</a>。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">BitGo，《Bitfinex and BitGo Partner to Create World’s First Real-Time Proof of Reserve Bitcoin Exchange》，2015-06-03，Internet Archive 存档。<a href="https://web.archive.org/web/20151014051724/https://blog.bitgo.com/bitfinex-and-bitgo-partner-to-create-worlds-first-real-time-proof-of-reserve-bitcoin-exchange/">web.archive.org</a></li>
+          <li id="s2">美国商品期货交易委员会（CFTC），《CFTC Orders Bitcoin Exchange Bitfinex to Pay $75,000 …》，新闻稿 7380-16，2016-06-02。<a href="https://www.cftc.gov/PressRoom/PressReleases/7380-16">cftc.gov</a></li>
+          <li id="s3">Reuters，《Bitcoin worth $72 million stolen from Bitfinex exchange in Hong Kong》，2016-08-03，Internet Archive 存档。<a href="https://web.archive.org/web/20201111120442/https://www.reuters.com/article/us-bitfinex-hacked-hongkong-idUSKCN10E0KP">web.archive.org</a></li>
+          <li id="s4">Mike Belshe（BitGo），《Bitfinex Breach Update》，2016-08-04，Internet Archive 存档。<a href="https://web.archive.org/web/20190823051406/https://www.bitgo.com/blog/bitfinex-breach-update">web.archive.org</a></li>
+          <li id="s5">Clare Baldwin，《Bitfinex exchange customers to get 36 percent haircut, debt token》，Reuters，2016-08-07，Internet Archive 存档。<a href="https://web.archive.org/web/20190316072616/https://www.reuters.com/article/us-bitfinex-hacked-hongkong/bitfinex-exchange-customers-to-get-36-percent-haircut-debt-token-idUSKCN10I06H">web.archive.org</a></li>
+          <li id="s6">Bitfinex，《Site Relaunch》，2016-08-07，Internet Archive 存档。<a href="https://web.archive.org/web/20190717104702/https://www.bitfinex.com/posts/131">web.archive.org</a></li>
+          <li id="s7">Bitfinex，《Platform Service Update》，2016-08-10，Internet Archive 存档。<a href="https://web.archive.org/web/20170609070344/https://www.bitfinex.com/posts/133">web.archive.org</a></li>
+          <li id="s8">Bitfinex，《Interim Update》，2016-08-17，Internet Archive 存档。<a href="https://web.archive.org/web/20160817174400/https://www.bitfinex.com/posts/135">web.archive.org</a></li>
+          <li id="s9">Bitfinex，《Bitfinex signs letter of intent with BnkToTheFuture》，2016-08-22，Internet Archive 存档。<a href="https://web.archive.org/web/20170928122830/https://www.bitfinex.com/posts/137">web.archive.org</a></li>
+          <li id="s10">Bitfinex 公告列表（含 BFX 分批赎回、RRT 开放交易等公告），Internet Archive 2016-11-03 存档。<a href="https://web.archive.org/web/20161103084752/https://www.bitfinex.com/posts">web.archive.org</a></li>
+          <li id="s11">Bitfinex，《100% Redemption of Outstanding BFX Tokens》，2017-04-03，Internet Archive 存档。<a href="https://web.archive.org/web/20170404112850/https://www.bitfinex.com/posts/198">web.archive.org</a></li>
+          <li id="s12">美国司法部，《Two Arrested for Alleged Conspiracy to Launder $4.5 Billion in Stolen Cryptocurrency》，2022-02-08。<a href="https://www.justice.gov/opa/pr/two-arrested-alleged-conspiracy-launder-45-billion-stolen-cryptocurrency">justice.gov</a></li>
+          <li id="s13">United States v. Lichtenstein and Morgan，No. 1:22-mj-00022（D.D.C.），刑事起诉书所附事实陈述，2022-02-07。<a href="https://archive.org/download/gov.uscourts.dcd.239930/gov.uscourts.dcd.239930.1.1.pdf">archive.org</a></li>
+          <li id="s14">美国司法部，《Bitfinex Hacker and Wife Plead Guilty to Money Laundering Conspiracy Involving Billions in Cryptocurrency》，2023-08-03。<a href="https://www.justice.gov/archives/opa/pr/bitfinex-hacker-and-wife-plead-guilty-money-laundering-conspiracy-involving-billions">justice.gov</a></li>
+          <li id="s15">Jesse Hamilton，《Man Who Laundered Billions in Bitcoins Says Bitcoin Fog Was a Help: Bloomberg》，CoinDesk，2024-02-27。<a href="https://www.coindesk.com/policy/2024/02/27/man-who-laundered-billions-in-bitcoins-says-bitcoin-fog-was-a-help-bloomberg">coindesk.com</a></li>
+          <li id="s16">United States v. Lichtenstein and Morgan，No. 1:23-cr-00239（D.D.C.），检方对 Morgan 的从轻处罚动议与量刑备忘录，ECF No. 143，2024-10-09。<a href="https://archive.org/download/gov.uscourts.dcd.257739/gov.uscourts.dcd.257739.143.0.pdf">archive.org</a></li>
+          <li id="s17">美国司法部，《Bitfinex Hacker Sentenced in Money Laundering Conspiracy Involving Billions in Stolen Cryptocurrency》，2024-11-14。<a href="https://www.justice.gov/archives/opa/pr/bitfinex-hacker-sentenced-money-laundering-conspiracy-involving-billions-stolen">justice.gov</a></li>
+          <li id="s18">Colleen Kollar-Kotelly，United States v. Lichtenstein and Morgan，No. 1:23-cr-00239，Memorandum Opinion（ECF No. 300），2025-04-04。<a href="https://storage.courtlistener.com/recap/gov.uscourts.dcd.257739/gov.uscourts.dcd.257739.300.0_1.pdf">courtlistener.com</a></li>
+          <li id="s19">CourtListener，United States v. Lichtenstein，1:23-cr-00239 案卷记录（截至 2026-10-30）。<a href="https://www.courtlistener.com/docket/67625444/united-states-v-lichtenstein/">courtlistener.com</a></li>
+          <li id="s20">Kevin Breuninger、Eamon Javers，《Ilya Lichtenstein, Bitcoin hacker behind massive crypto theft, credits Trump for early prison release》，CNBC，2026-01-02。<a href="https://www.cnbc.com/2026/01/02/bitcoin-hacker-ilya-lichtenstein-bitfinex-razzlekhan.html">cnbc.com</a></li>
+          <li id="s21">John Chen，《US government moves 264 Bitcoin worth $23M to Coinbase in Bitfinex restitution》，Crypto Briefing，2026-10-06。<a href="https://cryptobriefing.com/us-government-bitcoin-coinbase-bitfinex-restitution/">cryptobriefing.com</a></li>
+          <li id="s22">Jamie Redman，《US Government Shifts $1 Billion in Bitcoin, $94 Million in Tether》，Bitcoin.com News，2026-10-08。<a href="https://news.bitcoin.com/crypto-news/us-government-shifts-1-billion-in-bitcoin-94-million-in-tether/">news.bitcoin.com</a></li>
+          <li id="s23">维基百科，《2016 Bitfinex hack》。<a href="https://en.wikipedia.org/wiki/2016_Bitfinex_hack">en.wikipedia.org</a></li>
+          <li id="s24">维基百科，《Bitfinex》。<a href="https://en.wikipedia.org/wiki/Bitfinex">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

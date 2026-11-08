@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ethereum：PoS 与最终性｜区块链基础知识</title>
+<meta name="description" content="验证者、slot 与 epoch、最终性、罚没、EIP-1559 与 blob；桥该等多少确认">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="ethereum">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 05 章</p>
+    <h1>Ethereum：PoS 与最终性</h1>
+    <p class="lede">验证者怎么轮流出块和投票，一段历史什么时候算“推不翻”，作恶会被怎么罚，手续费怎么定、为什么被烧掉。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">Ethereum 是一条由质押 ETH 的验证者轮流出块、并定期“最终确定”历史的链</p>
+  <p class="lead">2022-09-15 合并（The Merge）之后，以太坊不再有矿工。每 12 秒选一个验证者出块，其他验证者投票；票够了，一段历史就被“最终确定”，想推翻它的人要被罚掉巨量的质押 ETH。桥、交易所、CCTP 要等的“确认”，说的就是这件事。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见说法里，对的部分</h3>
+      <ul>
+        <li>以太坊用 PoS，激活一个验证者至少要 32 ETH</li>
+        <li>大约每 12 秒一个区块（2026-10-28 最近 300 个区块平均 12.00 秒）</li>
+        <li>交易手续费里有一部分被销毁</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>“等 12 个块”不等于最终确定</b>。12 块约 2.4 分钟，只是一个经验数字；协议意义上的最终确定要约两个 epoch，ethereum.org 写的是“约 15 分钟”</li>
+        <li><b>“最新区块”不保证不变</b>。2026-10-28 读到的最新区块，比已最终确定的区块领先 71 个（14.2 分钟）</li>
+        <li><b>手续费不是都给验证者</b>。基础费被销毁，验证者只拿小费</li>
+        <li><b>32 ETH 不再是上限</b>。2025-05 Pectra 之后，单个验证者最多可以有 2048 ETH 的有效余额</li>
+        <li><b>没有“矿工”了</b>。出块的是被随机选中的验证者</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="layers">
+  <h2 class="eyebrow">结构</h2>
+  <p class="lead">合并把原来的工作量证明链（现在叫执行层）接到了 2020-12-01 启动的信标链（现在叫共识层）上。所以今天的以太坊节点要同时跑两样软件；参与质押的人还要再跑一个验证者客户端。</p>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th>软件</th><th>负责什么</th><th>你接触它的方式</th></tr></thead>
+    <tbody>
+      <tr><td>执行客户端（执行层）</td><td>交易、EVM、账户状态、gas</td><td><code>eth_*</code> JSON-RPC：发交易、查余额、读事件</td></tr>
+      <tr><td>共识客户端（共识层 / 信标链）</td><td>PoS、选出块者、投票、分叉选择、最终性</td><td>Beacon API：<code>/eth/v1/beacon/...</code>；执行层的 <code>safe</code> / <code>finalized</code> 标签也来自这里</td></tr>
+      <tr><td>验证者客户端</td><td>保管签名密钥，按时出块、投票</td><td>只有质押者需要</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="slots">
+  <h2 class="eyebrow">时间与角色</h2>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Slot</span><h4>12 秒一个时间格</h4></div>
+      <p>每个 slot 用 RANDAO 伪随机选出<b>一个</b>出块者，负责打包这 12 秒的区块。出块者没出（离线），这个 slot 就是空的。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Epoch</span><h4>32 个 slot，约 6.4 分钟</h4></div>
+      <p>每个 epoch 里，<b>每个活跃验证者恰好投票一次</b>。验证者被分进各个 slot 的委员会。2026-10-28 当前 epoch：817,154 个活跃验证者，每个 slot 64 个委员会，平均每个委员会约 399 人。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Attestation</span><h4>一张票，投两件事</h4></div>
+      <p>① 链头是哪个区块（给分叉选择 LMD-GHOST 用）；② 从哪个检查点到哪个检查点（给最终性机制 Casper-FFG 用）。两者合起来叫 Gasper。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Checkpoint</span><h4>每个 epoch 的第一个区块</h4></div>
+      <p>因为一个 slot 里只有一部分验证者投票，只有凑满一整个 epoch，才能知道“全部质押”的意见。所以最终性只在 epoch 边界的检查点之间判断。</p></div>
+  </div>
+</section>
+
+<section id="finality">
+  <h2 class="eyebrow">核心机制</h2>
+  <p class="sub">最终性：从“被投票”到“推不翻”</p>
+  <p class="lead">一对相邻检查点，如果得到占<b>全部质押 ETH 三分之二以上</b>的投票支持（超级多数链接），较新的那个变成“已证明”（justified），较早的那个从“已证明”升级为“已最终确定”（finalized）。</p>
+  <div class="bit wide"><div class="anim" data-anim="ffg"></div></div>
+  <h3>RPC 里的三种区块，桥应该看哪个</h3>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>区块标签</th><th>官方定义</th><th>2026-10-28 读数</th><th>意味着什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">latest</td><td>最新提出的区块</td><td>区块 26,289,020</td><td>随时可能被重组掉</td></tr>
+      <tr><td class="mono">safe</td><td>最新的 safe head 区块</td><td>落后 39 个区块（约 8 分钟）</td><td>分叉选择认为不太会被重组，但没有经济上的保证</td></tr>
+      <tr><td class="mono">finalized</td><td>最新的已最终确定区块</td><td>落后 71 个区块（14.2 分钟）</td><td>推翻它，攻击者至少要损失全部质押 ETH 的三分之一</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">用法：<code>eth_getBlockByNumber("finalized", false)</code>。CCTP 的 Standard Transfer、OP Stack 的 L2 “finalized”状态，用的都是以太坊的最终确定。</p>
+</section>
+<section id="attacks">
+  <h2 class="eyebrow">安全性</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>攻击者控制的质押</th><th>能做到</th><th>代价 / 防御</th></tr></thead>
+    <tbody>
+      <tr><td>较少</td><td>短程重组：在链头附近调换几个区块</td><td>proposer boost（给按时出块者额外权重）和投票截止时间降低了成功率；最终确定的区块不受影响</td></tr>
+      <tr><td>约 34%</td><td>让链<b>无法最终确定</b>（拿不到三分之二）；在能操纵网络时序的极端条件下，理论上可能让两条分叉都最终确定</td><td>不活跃惩罚（见下）逐渐削减不投票者的质押；两条都最终确定时，需要社区在链下协调选择</td></tr>
+      <tr><td>要<b>推翻已最终确定的区块</b></td><td>改写“最终”的历史</td><td>ethereum.org 原话：攻击者“至少要损失全部质押 ETH 的三分之一”</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Slashing</span><h4>罚没：作恶会被当场抓住</h4></div>
+      <p>三种行为会被罚没：同一个 slot 提出两个区块；对同一个目标投两张不同的票（double vote）；投出“包围”另一张票的票（surround vote，相当于改写历史）。罚没时，32 ETH 的验证者<b>立刻烧掉 0.0078125 ETH</b>（按有效余额线性放大），然后进入 36 天的移出期；第 18 天再罚一笔“关联惩罚”，同一时期被罚没的人越多，罚得越重。举报的出块者获得被罚者有效余额的 1/512。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Inactivity leak</span><h4>不活跃惩罚：让链能自己恢复</h4></div>
+      <p>超过 4 个 epoch 没能最终确定时启动。没投票、或投票和多数相反的验证者，质押会被慢慢放掉，直到剩下的诚实验证者重新占到三分之二，链再次开始最终确定。</p></div>
+  </div>
+</section>
+
+<section id="lifecycle">
+  <h2 class="eyebrow">验证者的一生</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>阶段</th><th>发生什么</th><th>相关升级</th></tr></thead>
+    <tbody>
+      <tr><td>存款</td><td>向存款合约存入至少 32 ETH；Pectra 后单个验证者有效余额最多 2048 ETH，不必是 32 的倍数</td><td>Pectra（EIP-7251）</td></tr>
+      <tr><td>激活</td><td>进入激活队列，按速率限制陆续上岗</td><td>—</td></tr>
+      <tr><td>工作</td><td>每个 epoch 投一次票，偶尔被选中出块；按时、正确投票拿奖励，迟到或缺席扣钱</td><td>—</td></tr>
+      <tr><td>退出</td><td>主动退出要排队；Pectra 后也可以用执行层提款地址触发退出，即使验证者签名密钥丢了或在别人手里</td><td>Pectra（EIP-7002）</td></tr>
+      <tr><td>取回</td><td>退出后余额自动转到提款地址；多余部分也会被定期提取</td><td>Shapella（2023-04-12）开放提款</td></tr>
+      <tr><td>合并</td><td>可以把多个验证者的余额合并到一个</td><td>Pectra（EIP-7251）</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="fees">
+  <h2 class="eyebrow">手续费</h2>
+  <p class="sub">EIP-1559：基础费随拥堵自动涨跌，然后被烧掉</p>
+  <p class="lead">2021-08-05 London 升级（区块 12,965,000）引入。每个区块有一个协议算出来的<b>基础费</b>，出价必须不低于它；用户再加一笔<b>小费</b>给出块者。基础费被销毁，小费归验证者。</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Target</span><h4>目标是“半满”</h4></div>
+      <p>区块 gas 上限的一半是目标（<code>ELASTICITY_MULTIPLIER = 2</code>）。上一个区块用量高于目标，基础费上涨；低于目标，下跌；每块最多变化 1/8，即 12.5%（<code>BASE_FEE_MAX_CHANGE_DENOMINATOR = 8</code>）。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Now</span><h4>2026-10-28 的读数</h4></div>
+      <p>区块 gas 上限 60,000,000，目标 30,000,000；当时的基础费约 0.042 gwei。Fusaka 之后单笔交易最多 16,777,216 gas（2<sup>24</sup>，EIP-7825）。</p></div>
+  </div>
+  <div class="bit wide">
+    <div class="bh"><span class="term">Tool</span><h4>基础费计算器</h4></div>
+    <p>按 EIP-1559 的公式，算下一个区块的基础费；再看看连续 10 个区块都这么满会怎样。</p>
+    <div class="tool">
+      <div class="row">
+        <label for="bfNow">当前基础费（gwei）<input id="bfNow" type="number" min="0" step="0.001" value="0.042"></label>
+        <label for="bfLim">区块 gas 上限<input id="bfLim" type="number" min="1" step="1000000" value="60000000"></label>
+      </div>
+      <label for="bfUse">上一个区块有多满：<span id="bfUseV" class="mono"></span><input id="bfUse" type="range" min="0" max="100" step="1" value="100"></label>
+      <div class="out" id="bfOut" aria-live="polite"></div>
+    </div>
+  </div>
+  <h3>blob：给 L2 的另一条数据通道</h3>
+  <p>2024-03-13 Dencun 引入 blob（EIP-4844）：每个 blob 由 4096 个 32 字节的元素组成，约 128 KB，<b>只保存约 18 天</b>，有自己独立的 blob 基础费。L2（<a href="l2.html">第 06 章</a>）把交易数据发成 blob，所以 L2 手续费大幅下降。每个区块的 blob 数量：</p>
+  <div class="tbl"><table class="mw-560">
+    <thead><tr><th>时期</th><th>目标 / 上限（每区块）</th></tr></thead>
+    <tbody>
+      <tr><td>Dencun 到 Pectra 之前</td><td>3 / 6</td></tr>
+      <tr><td>Pectra（EIP-7691）</td><td>6 / 9</td></tr>
+      <tr><td>Fusaka（PeerDAS）之后，经 BPO 分叉逐步提高；2026-10-28 用 <code>eth_config</code> 读到</td><td><b>14 / 21</b></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="upgrades">
+  <h2 class="eyebrow">升级史</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>升级</th><th>日期</th><th>改了什么</th></tr></thead>
+    <tbody>
+      <tr><td>信标链创世</td><td>2020-12-01</td><td>PoS 共识层单独启动</td></tr>
+      <tr><td>London</td><td>2021-08-05</td><td>EIP-1559：基础费 + 销毁</td></tr>
+      <tr><td>Paris（The Merge）</td><td>2022-09-15，区块 15,537,394</td><td>执行层接上信标链，PoW 结束</td></tr>
+      <tr><td>Shapella</td><td>2023-04-12</td><td>质押可以提款</td></tr>
+      <tr><td>Dencun</td><td>2024-03-13</td><td>blob（EIP-4844），L2 变便宜</td></tr>
+      <tr><td>Pectra</td><td>2025-05-07</td><td>有效余额上限 2048 ETH；执行层触发退出；EIP-7702（普通账户可以临时挂合约代码，交易类型 0x04）；blob 6 / 9</td></tr>
+      <tr><td>Fusaka</td><td>2025-12-03</td><td>PeerDAS + BPO 分叉提高 blob 容量；单笔交易 gas 上限 2<sup>24</sup></td></tr>
+      <tr><td>Glamsterdam</td><td>官方路线图写“Q4 2026，开发中”</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Qtum 的 EVM 升级也是按这些名字跟进的，目前到 Pectra（<a href="qtum.html">第 01 章</a>）。</p>
+</section>
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li>ethereum.org：<a href="https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/" rel="noopener">Proof-of-stake</a>（slot、epoch、三分之二、推翻最终确定的代价）、<a href="https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/gasper/" rel="noopener">Gasper</a>、<a href="https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/rewards-and-penalties/" rel="noopener">奖励与惩罚</a>（罚没 0.0078125 ETH、36 天、第 18 天关联惩罚、不活跃惩罚）、<a href="https://ethereum.org/en/developers/docs/consensus-mechanisms/pos/attack-and-defense/" rel="noopener">攻击与防御</a>（34%）、<a href="https://ethereum.org/en/roadmap/single-slot-finality/" rel="noopener">单 slot 最终性</a>（约 15 分钟）</li>
+    <li>ethereum.org：<a href="https://ethereum.org/en/developers/docs/gas/" rel="noopener">Gas</a>（12.5%、销毁）、<a href="https://ethereum.org/en/developers/docs/apis/json-rpc/" rel="noopener">JSON-RPC</a>（<code>safe</code> / <code>finalized</code> 标签）、<a href="https://ethereum.org/en/ethereum-forks/" rel="noopener">升级史</a>、<a href="https://ethereum.org/en/roadmap/" rel="noopener">路线图</a>（Glamsterdam Q4 2026）、<a href="https://ethereum.org/en/roadmap/pectra/" rel="noopener">Pectra</a>、<a href="https://ethereum.org/en/roadmap/fusaka/" rel="noopener">Fusaka</a></li>
+    <li>EIP 原文：<a href="https://eips.ethereum.org/EIPS/eip-1559" rel="noopener">1559</a>、<a href="https://eips.ethereum.org/EIPS/eip-4844" rel="noopener">4844</a>、<a href="https://eips.ethereum.org/EIPS/eip-7251" rel="noopener">7251</a>、<a href="https://eips.ethereum.org/EIPS/eip-7002" rel="noopener">7002</a>、<a href="https://eips.ethereum.org/EIPS/eip-7702" rel="noopener">7702</a>、<a href="https://eips.ethereum.org/EIPS/eip-7825" rel="noopener">7825</a></li>
+    <li>链上实时读取（2026-10-28 05:05 UTC 前后，公共 RPC <code>ethereum-rpc.publicnode.com</code> 和 Beacon API <code>ethereum-beacon-api.publicnode.com</code>）：<code>latest</code> / <code>safe</code> / <code>finalized</code> 三个区块、gas 上限与基础费、<code>eth_config</code> 的 blob 参数、最终性检查点、当前 epoch 委员会（活跃验证者数）、最近 300 个区块的平均间隔</li>
+  </ol>
+  <p>核查日期 2026-10-28。链上数字随时变化。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // Casper-FFG：检查点从“被投票”到“已证明”再到“已最终确定”
+  const cp = (t, c) => chip(t, c);
+  const bar = (p, c) => `<div style="width:min(220px,46vw);height:12px;border-radius:6px;background:var(--rule);overflow:hidden"><div style="height:100%;width:${p}%;background:var(${c})"></div></div>`;
+  A.ffg = {h:280,
+    b:[['e1',2,6,30,44,'epoch 1 · 32 个 slot'],['e2',35,6,30,44,'epoch 2'],['e3',68,6,30,44,'epoch 3'],['vt',2,58,96,36,'这个 epoch 的投票（占全部质押）']],
+    it:[
+      {id:'c1', h:cp('检查点 1','--muted'), x:17, y:22}, {id:'c2', h:cp('检查点 2','--muted'), x:50, y:22}, {id:'c3', h:cp('检查点 3','--muted'), x:83, y:22},
+      {id:'s1', h:'<div class="lbl m">—</div>', x:17, y:38}, {id:'s2', h:'<div class="lbl m">—</div>', x:50, y:38}, {id:'s3', h:'<div class="lbl m">—</div>', x:83, y:38},
+      {id:'bar', h:bar(0, '--accent'), x:50, y:74},
+      {id:'th', h:'<div class="lbl m">门槛：三分之二</div>', x:50, y:86},
+      {id:'pc', h:'<span class="cell">0%</span>', x:88, y:74}],
+    s:[
+      {c:'时间被切成 12 秒的 slot，每 32 个 slot 是一个 epoch。每个 epoch 的第一个区块是这个 epoch 的“检查点”。'},
+      {c:'epoch 1 里，每个 slot 都有一个委员会（约 400 人）投票：一张票同时说“链头是哪个块”和“从哪个检查点到哪个检查点”。全部验证者在一个 epoch 里各投一次，票逐渐累积。',
+       set:{bar:{h:bar(40, '--accent')}, pc:{h:'<span class="cell">40%</span>'}}, lit:['e1','vt']},
+      {c:'epoch 1 结束时，支持“从上一个已证明检查点到检查点 1”的票超过全部质押的三分之二：检查点 1 变成“已证明”（justified）。',
+       set:{bar:{h:bar(70, '--ok')}, pc:{h:'<span class="cell" style="color:var(--ok)">70%</span>'}, c1:{h:cp('检查点 1','--accent')}, s1:{h:'<div class="lbl g">已证明</div>'}}, lit:['e1']},
+      {c:'epoch 2 重新开始投票，这次投的是“从检查点 1 到检查点 2”。',
+       set:{bar:{h:bar(35, '--accent')}, pc:{h:'<span class="cell">35%</span>'}}, lit:['e2','vt']},
+      {c:'“检查点 1 → 检查点 2”也超过三分之二：检查点 2 变成“已证明”，而检查点 1 从“已证明”升级为“已最终确定”（finalized）。',
+       set:{bar:{h:bar(72, '--ok')}, pc:{h:'<span class="cell" style="color:var(--ok)">72%</span>'}, c2:{h:cp('检查点 2','--accent')}, s2:{h:'<div class="lbl g">已证明</div>'},
+            c1:{h:cp('检查点 1','--ok')}, s1:{h:'<div class="lbl g">已最终确定</div>'}}, lit:['e1','e2']},
+      {c:'如此循环：每证明一个新检查点，就最终确定前一个。所以“已最终确定”通常落后最新区块约两个 epoch，也就是 64–95 个区块、约 13–19 分钟。2026-10-28 实测落后 71 个区块，14.2 分钟。',
+       set:{c3:{h:cp('检查点 3','--accent')}, s3:{h:'<div class="lbl g">已证明</div>'}, c2:{h:cp('检查点 2','--ok')}, s2:{h:'<div class="lbl g">已最终确定</div>'}, bar:{h:bar(71, '--ok')}, pc:{h:'<span class="cell" style="color:var(--ok)">71%</span>'}}, lit:['e2','e3']},
+      {c:'如果有超过三分之一的质押不投票或投反对票，就凑不够三分之二，链继续出块但不再最终确定。这时 finalized 会停在原地；超过 4 个 epoch 后不活跃惩罚启动，慢慢放掉这些人的质押。',
+       set:{bar:{h:bar(55, '--warn')}, pc:{h:'<span class="cell" style="color:var(--warn)">55%</span>'}, s3:{h:'<div class="lbl w">停在“已证明”之前</div>'}, c3:{h:cp('检查点 3','--muted')}}, bad:['e3','vt']},
+    ]};
+  Guide.mount(A);
+  // EIP-1559 基础费：next = base × (1 + (used − target) / target / 8)
+  const bfNow = document.getElementById('bfNow'), bfLim = document.getElementById('bfLim'), bfUse = document.getElementById('bfUse');
+  const bfUseV = document.getElementById('bfUseV'), bfOut = document.getElementById('bfOut');
+  const step = (base, used, target) => base * (1 + (used - target) / target / 8);
+  const g = v => v >= 1 ? v.toFixed(3) : v.toPrecision(4);
+  function bfRun(){
+    const base = Math.max(0, +bfNow.value || 0), lim = Math.max(2, +bfLim.value || 2), pct = +bfUse.value;
+    const target = lim / 2, used = lim * pct / 100;
+    bfUseV.textContent = `${pct}%（${Math.round(used).toLocaleString('en-US')} gas，目标 ${Math.round(target).toLocaleString('en-US')}）`;
+    const n1 = step(base, used, target);
+    let b = base; for (let i = 0; i < 10; i++) b = step(b, used, target);
+    const ch = base ? (n1 / base - 1) * 100 : 0;
+    const usdcGas = 45000;
+    bfOut.innerHTML = `<span>下一个区块的基础费：<b>${g(n1)} gwei</b>（${ch >= 0 ? '+' : ''}${ch.toFixed(2)}%）</span>
+      <span class="m">连续 10 个区块都这么满：${g(b)} gwei，是现在的 ${(base ? b / base : 0).toFixed(3)} 倍</span>
+      <span class="m">按这个基础费转一笔 USDC（约 45,000 gas），被销毁的部分约 ${(n1 * usdcGas / 1e9).toPrecision(3)} ETH；小费另付给出块者</span>`;
+  }
+  [bfNow, bfLim, bfUse].forEach(e => e.addEventListener('input', bfRun));
+  bfRun();
+})();
+</script>
+</body>
+</html>

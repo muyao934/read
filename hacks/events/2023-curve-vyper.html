@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curve / Vyper 编译器重入锁失效｜区块链被盗事件编年史</title>
+<meta name="description" content="2023 年 7 月 30 日，Vyper 0.2.15–0.3.0 的重入锁存储槽分配错误让四个 Curve ETH 池在九小时内被掏空：编译器源码、池子代码、攻击步骤、MEV 抢跑、各方归还与 Egorov 借贷风波。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-curve-vyper">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Curve / Vyper 编译器重入锁失效</h1>
+    <p class="lede">2023 年 7 月 30 日的九个小时里，四个与原生 ETH 配对的 Curve 池子先后被掏空，各家统计的损失在 6,200 万到 7,350 万美元之间。池子的源码给每个函数都加了同一把重入锁，但 Vyper 0.2.15 到 0.3.0 把它编译成了五把互不相干的锁。这个编译器缺陷 2021 年就被顺手修掉，却没有人意识到已部署的合约还带着它。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Curve 的 ETH 池子在 <code>remove_liquidity</code> 里先用 <code>raw_call</code> 把 ETH 发给用户，再更新 LP 总量。这段时间里执行权在收款方手里，池子靠 <code>@nonreentrant('lock')</code> 挡住回调：五个改动资金的函数写的是同一个 key，本应共用一个锁槽，任何一个在执行，其余四个都进不来。Vyper 0.2.15、0.2.16 和 0.3.0 的存储分配代码忽略了 key，给每个带装饰器的函数各分配一个新槽，锁只能防止函数重入自己<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>攻击者用闪电贷借来 ETH，在 ETH 回调里调用同一池子的 <code>add_liquidity</code> 或 <code>exchange</code>，让池子按一组互相矛盾的中间状态记账：稳定池的 LP 总量被旧值覆盖，CRV/ETH 池的账面余额多于实际余额。当天 13:10 到 22:00（UTC），pETH/ETH、msETH/ETH、alETH/ETH、CRV/ETH 四个池子依次被抽干<a class="ref" href="#s2">[2]</a>。不少攻击交易在公开内存池里被 MEV 机器人照抄抢跑，最早出手的几个攻击者反而没拿到钱<a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <p>到 8 月 5 日，alETH 池和 pETH 池的资金经链上谈判退回，msETH 池和 CRV/ETH 池第二笔的资金由白帽机器人 c0ffeebabe.eth 退回。CRV/ETH 池第一笔的攻击者一直没有回应，他拿走的 7,193,401.77 枚 CRV 和 7,680.49 枚 WETH 没有追回<a class="ref" href="#s2">[2]</a><a class="ref" href="#s18">[18]</a>。CRV 价格在 8 月 1 日最低跌到约 0.48 美元。Curve 创始人 Michael Egorov 用 CRV 作抵押在多个借贷协议借了大量稳定币，有被清算的风险，他以每枚约 0.40 美元场外出售了约 1.06 亿枚 CRV 来还债<a class="ref" href="#s15">[15]</a><a class="ref" href="#s19">[19]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Curve 是以太坊上专做稳定币和锚定资产兑换的 AMM。除了官方池子，它还有 Factory：任何人都可以按官方模板部署新池，新池子是指向同一个实现合约的 EIP-1167 最小代理。被攻击的 pETH/ETH、msETH/ETH、alETH/ETH 都是这样的 factory 池，三者指向同一个实现合约 <span class="addr">0x6326DEbBAa15bCFE603d831e7D75f4fc10d9B43E</span>。它在链上的已验证源码第一行是 <code># @version 0.2.15</code>，正文与 curve-factory 仓库 2021 年 7 月 26 日版本的 <code>Plain2ETH.vy</code> 完全相同<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。CRV/ETH 是 Curve 自己的 v2 加密资产池，用 Vyper 0.3.0 编译<a class="ref" href="#s7">[7]</a>。</p>
+        <p>三个 factory 池分别承载三个协议发行的锚定 ETH 资产：JPEG'd 的 pETH、Metronome 的 msETH、Alchemix 的 alETH。项目方自己也在池子里提供流动性，例如 Alchemix 的 AMO（算法做市合约），池子的深度关系到这些代币能否维持与 ETH 的锚定。事发时 pETH/ETH 池约有 2,100 万美元，msETH/ETH 约 410 万美元，alETH/ETH 约 4,600 万美元，CRV/ETH 约 4,700 万美元<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>为什么 ETH 池需要锁</h3>
+        <p>EVM 上发送原生 ETH 只能用 CALL，它会把执行权交给收款地址；如果收款方是合约，它的 fallback 就会被执行<a class="ref" href="#s1">[1]</a>。Curve 的 ETH 池在退出流动性和兑换时用 <code>raw_call(_receiver, b"", value=...)</code> 付 ETH，付完之后还有状态要更新，没有严格遵守“检查-生效-交互”的顺序。挡住回调的只有 <code>@nonreentrant('lock')</code>。</p>
+        <p>与 WETH 配对的池子付的是 ERC-20 代币，没有回调，因此不受影响。ERC-777 代币带回调，相关池子同样有风险，但那些池子当时基本已经停用<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>应急时只能撤资</h3>
+        <p>Curve 的紧急 DAO（eDAO）不能暂停池子，也不能动用户的资金，只能停掉某个池子的 CRV 奖励（kill gauge）<a class="ref" href="#s2">[2]</a>。一旦池子本身的代码有问题，LP 和项目方能做的只有抢在攻击者之前把流动性撤出来。</p>
+        <p>就在九天前的 7 月 21 日，Conic Finance 因 Curve ETH 池付款时的回调被攻击，损失约 335 万美元。那是一次只读重入：Conic 以为 Curve v2 的 ETH 池用零地址表示 ETH，实际上这些池子持有 WETH，判断函数 <code>_isETH</code> 返回 false，本该启用的重入检查被跳过<a class="ref" href="#s17">[17]</a>。两次事件的入口都是 ETH 回调，但 Conic 的错在它自己的代码里，和 Vyper 无关。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p>时间均为 UTC。2023 年 7 月 30 日当天的条目只写月日和时分；攻击时间取自 LlamaRisk 的复盘<a class="ref" href="#s2">[2]</a>。</p>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-02-17</time><div class="ev">Vyper 0.2.9 发布，重入锁不再放在固定的 <code>0xFFFFFF</code> 偏移处，改为普通变量之后的第一个空闲槽，以节省字节码<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2021-07</time><div class="ev">0.2.13（7 月 6 日）和 0.2.14（7 月 20 日）先后发布又被撤回，原因都是重入锁槽位算错。用 0.2.14 编译的 Yearn 金库里，锁和一个普通变量落在同一个槽，一名用户升级时发现锁的测试失败（issue #2393）<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="key"><time>2021-07-23</time><div class="ev">PR #2391 合并：把锁的分配挪到普通变量之前，统一由前端计算。改动顺带删掉了“同一个 key 只分配一个槽”的判断，漏洞由此引入<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2021-07-24</time><div class="ev">Vyper 0.2.15 发布（00:22）。按提交时间，约 75 分钟后 curve-factory 仓库把 ETH 池模板的编译器版本改成 0.2.15<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2021-08 至 10</time><div class="ev">0.2.16（8 月 28 日）和 0.3.0（10 月 5 日）发布，分配逻辑没有变化<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2021-10-25/26</time><div class="ev">PR #2439 和 #2514 合并，恢复同 key 共用一个槽，并第一次加入跨函数重入测试。两个 PR 被当作“去掉多余存储槽”的优化和编译报错修复处理<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2021-12-01</time><div class="ev">Vyper 0.3.1 发布，修复随版本发出，没有安全公告，用旧版本部署的项目方没有收到通知<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-07-21</time><div class="ev">Conic Finance 因 Curve ETH 池付款时的回调遭只读重入攻击，损失约 335 万美元，根因在 Conic 自己的代码<a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="atk key"><time>07-30 13:10</time><div class="ev">pETH/ETH 池被攻击。同一区块里原攻击者的调用执行失败，抢跑者 <span class="addr">0x6ec2…8538</span> 用同样的手法拿走约 6,107 WETH<a class="ref" href="#s2">[2]</a><a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>07-30 14:17</time><div class="ev">JPEG'd 公开确认 pETH/ETH 池被攻击<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>07-30 14:49</time><div class="ev">Curve 通知 Alchemix，alETH/ETH 池存在同样的漏洞<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>07-30 14:50</time><div class="ev">msETH/ETH 池被攻击。c0ffeebabe.eth 照抄原攻击交易抢先上链，拿走 866.55 ETH 和 959.71 msETH<a class="ref" href="#s2">[2]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>07-30 15:21</time><div class="ev">Alchemix 多签从 alETH/ETH 池单边撤出 8,027 alETH，准备紧接着撤出 ETH。时间是 Alchemix 给出的估计<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>07-30 15:34</time><div class="ev">alETH/ETH 池被攻击，攻击者拿走 7,258.70 ETH 和 4,821.55 alETH；池里剩下的 3,856 alETH 被一个套利机器人取走<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def key"><time>07-30 16:44</time><div class="ev">Vyper 官方推特确认 0.2.15、0.2.16、0.3.0 的重入锁失效<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>07-30 18:00 前后</time><div class="ev">Alchemix 暂停 Transmuter、停用收益代币和跨链桥<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk key"><time>07-30 19:08</time><div class="ev">CRV/ETH 池被攻击，攻击者拿走 7,193,401.77 CRV 和 7,680.49 WETH，随后转入 <span class="addr">0xb1c3…c148</span><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>07-30 22:00</time><div class="ev">c0ffeebabe.eth 从已经失衡的 CRV/ETH 池再取走 2,879.65 ETH。当晚全额退回 Curve 部署者地址<a class="ref" href="#s2">[2]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def"><time>07-31 清晨</time><div class="ev">c0ffeebabe.eth 向 Metronome 退回 786.5 ETH 和 955 msETH，保留小部分作为白帽赏金<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li><time>08-01 至 08-04</time><div class="ev">Egorov 以每枚约 0.40 美元场外出售 CRV，到 8 月 4 日累计 1.06 亿枚，换得 4,200 万美元用于还债<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def key"><time>08-04 至 08-05</time><div class="ev">alETH 池攻击者分多笔退回全部 alETH 和 ETH；pETH 池的抢跑者退回 5,495.4 WETH，保留 610.6 WETH 作为 JPEG'd 认可的一成赏金<a class="ref" href="#s9">[9]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>08-05</time><div class="ev">Vyper 发布安全公告 GHSA-5824-cm3x-3c38（CVE-2023-39363，严重等级 critical）和技术复盘<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>08-06</time><div class="ev">各受害协议给攻击者的期限（归还九成、留一成作赏金）于 08:00 到期。Curve 随即向公众悬赏：能指认攻击者并促成定罪的人，可获剩余被盗资金的 10%，约 185 万美元<a class="ref" href="#s14">[14]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+          <li><time>2023-09-27</time><div class="ev">Egorov 把 6,800 万枚 CRV 存进 Silo，还清了在 Aave 上的全部债务，在 Silo、Fraxlend、Inverse 和 Cream 上仍欠约 4,270 万美元<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>2024-06-20</time><div class="ev">Vyper 0.4.0 发布，删除具名重入锁，所有 <code>@nonreentrant</code> 共用一把全局锁<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li class="def"><time>2025-05-31</time><div class="ev">Vyper 0.4.2 加入 <code>#pragma nonreentrancy on</code>，可让整个文件的外部函数默认上锁<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">CRV/ETH 池第一笔的攻击者始终没有归还资金，身份也没有公开。本站没有查到相关的执法进展<a class="ref" href="#s2">[2]</a><a class="ref" href="#s18">[18]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <h3>锁是怎么生成的</h3>
+        <p>Vyper 的 <code>@nonreentrant(key)</code> 不是库代码，而是编译器在函数入口和出口插入的几条存储读写。0.3.0 生成这段代码的函数只有几行<a class="ref" href="#s4">[4]</a>：</p>
+<pre class="code"><code><span class="c"># vyper/old_codegen/function_definitions/utils.py（v0.3.0）</span>
+def get_nonreentrant_lock(func_type):
+    if not func_type.nonreentrant:
+        return ["pass"], ["pass"]
+
+    nkey = func_type.reentrancy_key_position.position   <span class="c"># 锁槽位置，由前端分配</span>
+    <span class="c"># 入口：断言 sload(nkey) == 0，然后写入 1；出口：写回 0</span>
+    nonreentrant_pre = [["seq", ["assert", ["iszero", ["sload", nkey]]], ["sstore", nkey, 1]]]
+    nonreentrant_post = [["sstore", nkey, 0]]
+    return nonreentrant_pre, nonreentrant_post</code></pre>
+        <p class="code-cap">来源：vyperlang/vyper 仓库 v0.3.0 标签，vyper/old_codegen/function_definitions/utils.py 第 1–8 行。中文注释为本站所加，下同。</p>
+        <p>锁槽 <code>nkey</code> 记在函数的类型信息上，由前端在计算存储布局时写进去。按设计，同一个 key 的函数应该拿到同一个 <code>nkey</code>。Curve 池子里五个改动资金的函数都写 <code>@nonreentrant('lock')</code>，用意就是让任何一个在执行时，其余四个都进不来。问题出在 0.2.15 的存储分配函数里<a class="ref" href="#s4">[4]</a>：</p>
+<pre class="code"><code><span class="c"># vyper/semantics/validation/data_positions.py（v0.2.15）</span>
+def set_storage_slots(vyper_module: vy_ast.Module) -&gt; None:
+    """
+    Parse module-level Vyper AST to calculate the layout of storage variables.
+    """
+    # Allocate storage slots from 0
+    # note storage is word-addressable, not byte-addressable
+    storage_slot = 0
+
+    for node in vyper_module.get_children(vy_ast.FunctionDef):
+        type_ = node._metadata["type"]
+        if type_.nonreentrant is not None:
+<span class="bad">            type_.set_reentrancy_key_position(StorageSlot(storage_slot))</span>
+            # TODO use one byte - or bit - per reentrancy key
+            # requires either an extra SLOAD or caching the value of the
+            # location in memory at entrance
+<span class="bad">            storage_slot += 1   <span class="c"># 不看 key 的值，每个带锁的函数都换一个新槽</span></span>
+
+    for node in vyper_module.get_children(vy_ast.AnnAssign):
+        type_ = node.target._metadata["type"]
+        type_.set_position(StorageSlot(storage_slot))   <span class="c"># 普通状态变量接在锁后面</span>
+        <span class="c"># ……（一段关于 HashMap 占槽的注释从略）……</span>
+        storage_slot += math.ceil(type_.size_in_bytes / 32)</code></pre>
+        <p class="code-cap">来源：vyperlang/vyper 仓库 v0.2.15 标签，vyper/semantics/validation/data_positions.py 第 20–44 行。</p>
+        <p>循环只看函数有没有 <code>nonreentrant</code>，从不看它的值。于是一个合约里有几个带锁的函数，就有几个锁槽，每个函数的锁只能挡住它自己被重入。0.2.16 和 0.3.0 的这段循环逻辑没变，只多了一个 <code>ret</code> 字典，用来输出 <code>-f layout</code> 存储布局。五个函数的 key 相同，<code>ret["nonreentrant.lock"]</code> 被覆盖了五次，布局里只显示最后一个槽，前四个看上去像是“分配了却没用的空洞”<a class="ref" href="#s1">[1]</a>。</p>
+        <p>0.3.1 的修复是在分配前查一下这个 key 是否出现过：</p>
+<pre class="code"><code><span class="c"># vyper/semantics/validation/data_positions.py（v0.3.1）</span>
+    for node in vyper_module.get_children(vy_ast.FunctionDef):
+        type_ = node._metadata["type"]
+        if type_.nonreentrant is None:
+            continue
+
+        variable_name = f"nonreentrant.{type_.nonreentrant}"
+
+        # a nonreentrant key can appear many times in a module but it
+        # only takes one slot. after the first time we see it, do not
+        # increment the storage slot.
+<span class="good">        if variable_name in ret:</span>
+<span class="good">            _slot = ret[variable_name]["slot"]</span>
+<span class="good">            type_.set_reentrancy_key_position(StorageSlot(_slot))   <span class="c"># 复用第一次分配的槽</span></span>
+<span class="good">            continue</span>
+
+        type_.set_reentrancy_key_position(StorageSlot(storage_slot))
+        <span class="c"># ……（写入 ret 布局记录、TODO 注释从略）……</span>
+        storage_slot += 1</code></pre>
+        <p class="code-cap">来源：vyperlang/vyper 仓库 v0.3.1 标签，同一文件第 35–63 行。</p>
+        <h3>漏洞是怎么被带进来的</h3>
+        <p>这个错误不是一次手误，而是一连串修补的副产品。当时 Vyper 正在把单遍编译器拆成前端（类型检查、语义分析）和后端（代码生成）两层，存储槽的分配在两层之间搬来搬去<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>版本</th><th>发布</th><th>与锁槽有关的改动</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td>0.2.9</td><td>2021-02-17</td><td>PR #2308：锁从固定偏移 <code>0xFFFFFF</code> 挪到普通变量之后的第一个空闲槽</td><td>只要变量都只占一个槽就没问题</td></tr>
+              <tr><td>0.2.13</td><td>2021-07-06</td><td>PR #2361：普通变量改由前端分配，锁仍在代码生成阶段按旧算法算，两套分配器并存</td><td>锁的偏移算错，版本撤回</td></tr>
+              <tr><td>0.2.14</td><td>2021-07-20</td><td>PR #2379：按变量实际大小重算锁的偏移，但旧分配器不给 HashMap 留槽，新分配器留槽</td><td>锁与普通变量重叠，版本撤回</td></tr>
+              <tr><td>0.2.15</td><td>2021-07-24</td><td>PR #2391：锁挪到普通变量之前，一起在前端分配；按 key 去重的逻辑被删掉</td><td>每个函数一把锁，漏洞引入</td></tr>
+              <tr><td>0.2.16、0.3.0</td><td>2021-08-28、10-05</td><td>分配逻辑不变，新增 <code>-f layout</code> 布局输出</td><td>漏洞仍在</td></tr>
+              <tr><td>0.3.1</td><td>2021-12-01</td><td>PR #2439、#2514：同 key 共用一个槽，补上跨函数重入测试</td><td>修复，没有安全公告</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>旧代码里“一个 key 只分配一个槽”靠的是 <code>get_nonrentrant_counter</code> 函数开头的一个判断：key 已经在字典里，就直接返回原来的槽。PR #2391 把分配挪到前端时，这个字典和判断一起被删掉了，新的循环里没有对应的检查<a class="ref" href="#s1">[1]</a>。</p>
+        <p>修复它的 PR #2439 也没有把问题当成安全漏洞。它的描述是<a class="ref" href="#s1">[1]</a>：</p>
+        <blockquote>
+          <p>this is not a semantic bug but an optimization bug since we allocate more slots than we actually need, leading to "holes" in the slot allocator -- slots which are allocated but unused.</p>
+          <cite>Vyper PR #2439 的描述，转引自 Vyper 团队的技术复盘</cite>
+        </blockquote>
+        <p>也就是说，开发者看到布局输出里锁槽之间有空洞，以为只是浪费了几个槽。这个 PR 本身只做到了去重，没有把复用的槽写回后面的函数，结果编译器直接报错；第二天的 PR #2514 补上了这一步，并加入了第一个“两个函数共用 key、互相调用应当回滚”的测试<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <div class="note warn">
+          <span class="h">为什么两年没人发现</span>
+          <p>Vyper 自己的测试在 0.3.1 之前只验证“函数不能重入自己”，没有跨函数的用例<a class="ref" href="#s1">[1]</a>。审计看的是源码，源码里每个函数都写着 <code>@nonreentrant('lock')</code>，挑不出毛病；布局输出又只显示一个锁槽。修复版本发布时没有人回头评估已部署的合约，用 0.2.15 到 0.3.0 部署的协议没有收到任何通知<a class="ref" href="#s1">[1]</a>。</p>
+        </div>
+        <p>Vyper 的安全公告列出了获利的三个前提：合约用 0.2.15、0.2.16 或 0.3.0 编译；某个带 key 的 <code>@nonreentrant</code> 函数在更新存储之前调用了不可信的外部地址；另一个用同一 key 的函数会受这个中间状态影响<a class="ref" href="#s3">[3]</a>。Curve 的 ETH 池三条全中。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 376" role="img" aria-labelledby="curve-slot-t curve-slot-d">
+            <title id="curve-slot-t">同一个 key 的五个函数：设计上的锁槽与 0.2.15–0.3.0 实际的锁槽</title>
+            <desc id="curve-slot-d">左侧：五个写着 nonreentrant('lock') 的函数共用 slot 0，任何一个执行时其余都进不来。右侧：0.2.15 到 0.3.0 给五个函数各分配一个槽，从 slot 0 到 slot 4。remove_liquidity 持有 slot 2 时，add_liquidity 检查的是 slot 0，照常放行。</desc>
+            <text class="d-t b" x="24" y="30">源码的意图（0.3.1 起的编译结果）</text>
+            <text class="d-t b atk" x="404" y="30">0.2.15 – 0.3.0 的编译结果</text>
+            <line class="d-line dash" x1="387" y1="14" x2="387" y2="282"/>
+            <rect class="d-box" x="24" y="52" width="220" height="34" rx="4"/><text class="d-t m" x="36" y="74">add_liquidity</text>
+            <rect class="d-box" x="24" y="98" width="220" height="34" rx="4"/><text class="d-t m" x="36" y="120">exchange</text>
+            <rect class="d-box" x="24" y="144" width="220" height="34" rx="4"/><text class="d-t m" x="36" y="166">remove_liquidity</text>
+            <rect class="d-box" x="24" y="190" width="220" height="34" rx="4"/><text class="d-t m" x="36" y="212">remove_liquidity_imbalance</text>
+            <rect class="d-box" x="24" y="236" width="220" height="34" rx="4"/><text class="d-t m" x="36" y="258">remove_liquidity_one_coin</text>
+            <line class="d-line def" x1="244" y1="69" x2="300" y2="149"/>
+            <line class="d-line def" x1="244" y1="115" x2="300" y2="155"/>
+            <line class="d-line def" x1="244" y1="161" x2="300" y2="161"/>
+            <line class="d-line def" x1="244" y1="207" x2="300" y2="167"/>
+            <line class="d-line def" x1="244" y1="253" x2="300" y2="173"/>
+            <rect class="d-box def" x="300" y="140" width="70" height="42" rx="4"/>
+            <text class="d-t m" x="335" y="166" text-anchor="middle">slot 0</text>
+            <text class="d-t s" x="335" y="128" text-anchor="middle">共用一把锁</text>
+            <rect class="d-box atk" x="404" y="52" width="220" height="34" rx="4"/><text class="d-t m" x="416" y="74">add_liquidity</text>
+            <rect class="d-box" x="404" y="98" width="220" height="34" rx="4"/><text class="d-t m" x="416" y="120">exchange</text>
+            <rect class="d-box atk" x="404" y="144" width="220" height="34" rx="4"/><text class="d-t m" x="416" y="166">remove_liquidity</text>
+            <rect class="d-box" x="404" y="190" width="220" height="34" rx="4"/><text class="d-t m" x="416" y="212">remove_liquidity_imbalance</text>
+            <rect class="d-box" x="404" y="236" width="220" height="34" rx="4"/><text class="d-t m" x="416" y="258">remove_liquidity_one_coin</text>
+            <line class="d-line atk" x1="624" y1="69" x2="670" y2="69"/>
+            <line class="d-line atk" x1="624" y1="115" x2="670" y2="115"/>
+            <line class="d-line atk" x1="624" y1="161" x2="670" y2="161"/>
+            <line class="d-line atk" x1="624" y1="207" x2="670" y2="207"/>
+            <line class="d-line atk" x1="624" y1="253" x2="670" y2="253"/>
+            <rect class="d-box atk" x="670" y="52" width="66" height="34" rx="4"/><text class="d-t m" x="703" y="74" text-anchor="middle">slot 0</text>
+            <rect class="d-box atk" x="670" y="98" width="66" height="34" rx="4"/><text class="d-t m" x="703" y="120" text-anchor="middle">slot 1</text>
+            <rect class="d-box atk" x="670" y="144" width="66" height="34" rx="4"/><text class="d-t m" x="703" y="166" text-anchor="middle">slot 2</text>
+            <rect class="d-box atk" x="670" y="190" width="66" height="34" rx="4"/><text class="d-t m" x="703" y="212" text-anchor="middle">slot 3</text>
+            <rect class="d-box atk" x="670" y="236" width="66" height="34" rx="4"/><text class="d-t m" x="703" y="258" text-anchor="middle">slot 4</text>
+            <rect class="d-box soft" x="24" y="298" width="712" height="64" rx="4"/>
+            <text class="d-t s" x="380" y="322" text-anchor="middle">右侧的攻击路径：remove_liquidity 执行中持有 slot 2，在付 ETH 的回调里调用 add_liquidity，</text>
+            <text class="d-t s" x="380" y="346" text-anchor="middle">后者检查的是 slot 0，值为 0，照常放行。修复后五个函数检查同一个槽，这次调用会回滚。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：同一个 <code>@nonreentrant('lock')</code> 在不同编译器版本下的锁槽分配。右侧的编号按 <code>data_positions.py</code> 的分配顺序（函数在源码中出现的顺序）推算，本站没有实际编译验证；在 0.2.15 下，普通状态变量从 slot 5 开始。</figcaption>
+        </figure>
+        <h3>稳定池：回调里重入 add_liquidity</h3>
+        <p>三个 factory 池的实现合约里，<code>remove_liquidity</code> 是这样写的。ETH 是 0 号币，循环先处理它<a class="ref" href="#s6">[6]</a>：</p>
+<pre class="code"><code><span class="c"># Plain2ETH.vy（# @version 0.2.15），即链上实现合约 0x6326…B43E 的源码</span>
+@external
+@nonreentrant('lock')
+def remove_liquidity(
+    _burn_amount: uint256,
+    _min_amounts: uint256[N_COINS],
+    _receiver: address = msg.sender
+) -&gt; uint256[N_COINS]:
+    total_supply: uint256 = self.totalSupply      <span class="c"># 进入时读一次，存在局部变量里</span>
+    amounts: uint256[N_COINS] = empty(uint256[N_COINS])
+
+    for i in range(N_COINS):
+        old_balance: uint256 = self.balances[i]
+        value: uint256 = old_balance * _burn_amount / total_supply
+        assert value &gt;= _min_amounts[i], "Withdrawal resulted in fewer coins than expected"
+        self.balances[i] = old_balance - value
+        amounts[i] = value
+
+        if i == 0:
+<span class="bad">            raw_call(_receiver, b"", value=value)   <span class="c"># 付 ETH，执行权交给收款方</span></span>
+        else:
+            <span class="c"># ……（1 号币用 ERC-20 transfer 付出，从略）……</span>
+
+    total_supply -= _burn_amount
+    self.balanceOf[msg.sender] -= _burn_amount
+<span class="bad">    self.totalSupply = total_supply   <span class="c"># 用进入时的旧值回写，回调期间的变化被覆盖</span></span></code></pre>
+        <p class="code-cap">来源：curvefi/curve-factory 仓库提交 f389123，contracts/implementations/plain-2/Plain2ETH.vy 第 613–655 行，省略了文档字符串和日志；与 Blockscout 上 0x6326…B43E 的已验证源码一致。</p>
+        <p>付 ETH 的那一刻，池子处在一个不一致的状态：ETH 余额已经扣了，pETH 余额还没扣；LP 还没烧，<code>totalSupply</code> 还是旧值。正常情况下锁让这个状态不可能被别的函数看到。锁失效后，攻击者在回调里调用 <code>add_liquidity</code>，后者用 <code>self.balances</code> 算出存款前的不变量 <code>D0</code>，再按 <code>mint_amount = total_supply * (D2 - D0) / D0</code> 铸 LP<a class="ref" href="#s6">[6]</a>。<code>D0</code> 因为少了一大块 ETH 而偏小，<code>total_supply</code> 却还包括马上要烧掉的 LP，同样存入 40,000 ETH，第一次只换到 32,431 LP，在回调里换到了 82,182 LP<a class="ref" href="#s2">[2]</a>。</p>
+        <p>回调结束后，外层的 <code>remove_liquidity</code> 接着付出 pETH，然后用进入函数时读到的 <code>total_supply</code> 减去这次烧掉的 LP，写回 <code>self.totalSupply</code>。回调里新铸的 LP 因此从账面总量中消失，却还留在攻击者的余额上。LlamaRisk 的概括是：由于重入，新铸 LP 是按烧毁前的余额计算的，攻击者几乎可以无限制地铸 LP<a class="ref" href="#s2">[2]</a>。</p>
+        <p>这时攻击者持有的 LP 远多于合约记录的总量。第二次取款他只烧了 10,273 LP，就取走了池里剩下的 47,507 ETH 和 1,185 pETH<a class="ref" href="#s2">[2]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 508" role="img" aria-labelledby="curve-seq-t curve-seq-d">
+            <title id="curve-seq-t">pETH/ETH 池重入调用时序</title>
+            <desc id="curve-seq-d">攻击合约调用 remove_liquidity，池子获取 slot 2 的锁并扣减 ETH 余额，然后用 raw_call 付 ETH，触发攻击合约的 fallback。fallback 调用 add_liquidity，它检查的是 slot 0，照常执行，照常铸出 82,182 LP。回调返回后，remove_liquidity 付出 pETH，再按进入时读到的旧总量回写，新铸的 LP 从总量中消失。攻击者第二次只烧 10,273 LP 就取走 47,507 ETH 和 1,185 pETH。</desc>
+            <defs>
+              <marker id="curve-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="curve-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="100" y1="66" x2="100" y2="498"/>
+            <line class="d-line dash" x1="390" y1="66" x2="390" y2="498"/>
+            <line class="d-line dash" x1="640" y1="66" x2="640" y2="350"/>
+            <rect class="d-box atk" x="20" y="12" width="160" height="54" rx="4"/>
+            <text class="d-t b" x="100" y="35" text-anchor="middle">攻击合约</text>
+            <text class="d-t s" x="100" y="55" text-anchor="middle">fallback 里再调池子</text>
+            <rect class="d-box" x="310" y="12" width="160" height="54" rx="4"/>
+            <text class="d-t b" x="390" y="35" text-anchor="middle">pETH/ETH 池</text>
+            <text class="d-t s m" x="390" y="55" text-anchor="middle">remove_liquidity</text>
+            <rect class="d-box" x="560" y="12" width="160" height="54" rx="4"/>
+            <text class="d-t b" x="640" y="35" text-anchor="middle">pETH/ETH 池</text>
+            <text class="d-t s m" x="640" y="55" text-anchor="middle">add_liquidity</text>
+            <line class="d-line" x1="100" y1="100" x2="388" y2="100" marker-end="url(#curve-ah)"/>
+            <text class="d-t halo" x="245" y="92" text-anchor="middle">① <tspan class="m">remove_liquidity(32,431 LP)</tspan></text>
+            <rect class="d-box" x="402" y="112" width="226" height="48" rx="4"/>
+            <text class="d-t s" x="412" y="131">② 取得 slot 2 的锁，先扣 ETH 余额</text>
+            <text class="d-t s m" x="412" y="150">balances[0] -= 34,316 ETH</text>
+            <line class="d-line atk" x1="390" y1="186" x2="102" y2="186" marker-end="url(#curve-ah-atk)"/>
+            <text class="d-t atk halo" x="245" y="178" text-anchor="middle">③ <tspan class="m">raw_call</tspan> 付 ETH，触发 fallback</text>
+            <line class="d-line atk" x1="100" y1="232" x2="638" y2="232" marker-end="url(#curve-ah-atk)"/>
+            <text class="d-t atk halo" x="245" y="224" text-anchor="middle">④ <tspan class="m">add_liquidity(40,000 ETH)</tspan></text>
+            <text class="d-t s atk halo" x="515" y="224" text-anchor="middle">检查 slot 0：未锁，放行</text>
+            <rect class="d-box atk" x="404" y="246" width="226" height="64" rx="4"/>
+            <text class="d-t s" x="414" y="268">⑤ ETH 已扣、pETH 未扣、总量未减</text>
+            <text class="d-t s atk" x="414" y="294">按这组数据铸出 82,182 LP</text>
+            <line class="d-line dash" x1="640" y1="336" x2="102" y2="336" marker-end="url(#curve-ah)"/>
+            <text class="d-t halo" x="245" y="328" text-anchor="middle">⑥ 返回，攻击者多出 82,182 LP</text>
+            <line class="d-line dash" x1="100" y1="366" x2="388" y2="366" marker-end="url(#curve-ah)"/>
+            <text class="d-t halo" x="245" y="358" text-anchor="middle">⑦ fallback 返回</text>
+            <rect class="d-box" x="402" y="378" width="356" height="76" rx="4"/>
+            <text class="d-t s" x="412" y="398">⑧ 继续付出 pETH，再用进入时的旧值回写：</text>
+            <text class="d-t s" x="412" y="419"><tspan class="m">totalSupply</tspan> 按进入时的旧值写回</text>
+            <text class="d-t s atk" x="412" y="441">回调里铸出的 82,182 LP 从总量中消失</text>
+            <line class="d-line atk" x1="100" y1="484" x2="388" y2="484" marker-end="url(#curve-ah-atk)"/>
+            <text class="d-t atk halo" x="245" y="476" text-anchor="middle">⑨ <tspan class="m">remove_liquidity(10,273 LP)</tspan></text>
+            <text class="d-t s atk" x="402" y="489">取走 47,507 ETH 和 1,185 pETH</text>
+          </svg>
+          </div>
+          <figcaption>图 2：pETH/ETH 池攻击交易中的重入路径（数字取整）。第 ① 步之前，攻击者已经存入 40,000 ETH 换得 32,431 LP。红色是锁本应拦住的步骤。</figcaption>
+        </figure>
+        <h3>CRV/ETH 池：用内存里的旧余额回写</h3>
+        <p>CRV/ETH 池的 LP 是独立的代币合约，<code>remove_liquidity</code> 一开始就把 LP 烧掉，所以上面“总量被旧值覆盖”的路径不存在。但它同样在循环中途付 ETH，而且开头把余额读进内存，循环里用这份副本回写存储<a class="ref" href="#s7">[7]</a>：</p>
+<pre class="code"><code><span class="c"># CRV/ETH 池 0x8301…C511 的已验证源码（# @version 0.3.0）</span>
+<span class="c"># coins[0] 是 WETH，coins[1] 是 CRV；ETH_INDEX = 0</span>
+@external
+@nonreentrant('lock')
+def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS], use_eth: bool = False):
+    """
+    This withdrawal method is very safe, does no complex math
+    """
+    _coins: address[N_COINS] = coins
+    total_supply: uint256 = CurveToken(token).totalSupply()
+    CurveToken(token).burnFrom(msg.sender, _amount)        <span class="c"># LP 先烧掉</span>
+    balances: uint256[N_COINS] = self.balances              <span class="c"># 余额读进内存</span>
+    amount: uint256 = _amount - 1  # Make rounding errors favoring other LPs a tiny bit
+
+    for i in range(N_COINS):
+        d_balance: uint256 = balances[i] * amount / total_supply
+        assert d_balance &gt;= min_amounts[i]
+<span class="bad">        self.balances[i] = balances[i] - d_balance   <span class="c"># 用内存里的旧余额回写存储</span></span>
+        balances[i] = d_balance  # now it's the amounts going out
+        if use_eth and i == ETH_INDEX:
+<span class="bad">            raw_call(msg.sender, b"", value=d_balance)   <span class="c"># 先付 ETH，CRV 余额和 D 还没更新</span></span>
+        else:
+            if i == ETH_INDEX:
+                WETH(_coins[i]).deposit(value=d_balance)
+            assert ERC20(_coins[i]).transfer(msg.sender, d_balance)
+
+    D: uint256 = self.D
+    self.D = D - D * amount / total_supply</code></pre>
+        <p class="code-cap">来源：Blockscout 上 0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511 的已验证源码（编译器 0.3.0+commit.8a23feb）第 960–985 行。docstring 里那句 “very safe” 是原文。</p>
+        <p>付 ETH 发生在循环中途。锁失效后，攻击合约可以在回调里调用 <code>add_liquidity</code> 和 <code>exchange</code>，两个函数各有各的锁槽。控制权回到外层后，循环处理 CRV 时用回调之前读进内存的余额计算并写回 <code>self.balances[1]</code>，<code>exchange</code> 刚刚卖出的 CRV 又被记回账上，池子账面上的 CRV 从此多于它实际持有的数量。LlamaRisk 的描述是“池子以为自己还有 CRV，实际上 CRV 已经在第一次攻击中被抽干”<a class="ref" href="#s2">[2]</a>。</p>
+        <p>攻击者随后把 CRV 卖回池子换 ETH，同样的过程重复多轮，直到池里真实的 CRV 所剩无几<a class="ref" href="#s2">[2]</a>。</p>
+        <p>第二阶段利用的正是这笔假账。任何人都能调用的 <code>claim_admin_fees</code> 会先把账面余额同步成合约实际持有的数量，再重算 <code>D</code><a class="ref" href="#s7">[7]</a>：</p>
+<pre class="code"><code><span class="c"># 同一合约，_claim_admin_fees 中的一段（由带锁的外部函数 claim_admin_fees 调用）</span>
+    # Gulp here
+    _coins: address[N_COINS] = coins
+    for i in range(N_COINS):
+        if i == ETH_INDEX:
+            self.balances[i] = self.balance
+        else:
+            self.balances[i] = ERC20(_coins[i]).balanceOf(self)   <span class="c"># 账面余额改成真实余额</span></code></pre>
+        <p class="code-cap">来源：同上，第 558–564 行。</p>
+        <p>c0ffeebabe.eth 在第二笔交易里往池子转入少量 CRV，调用这个函数把账面同步成真实余额，再用 CRV 换走池里剩下的大部分 ETH，最后留下 2,879.65 ETH<a class="ref" href="#s2">[2]</a>。The Block 报道称，它是抢在另一笔针对 CRV/ETH 池的恶意交易之前完成的<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>LlamaRisk 拆解了四个池子的攻击交易<a class="ref" href="#s2">[2]</a>。做法相同：借 WETH 闪电贷，换成 ETH 存进池子，取款时在池子用 <code>raw_call</code> 付 ETH 的回调里重入同一个池子，最后还掉闪电贷。下面只列结果，不复述交易的具体步骤。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>池子</th><th>时间（UTC）</th><th>执行者</th><th class="n">取走</th></tr></thead>
+            <tbody>
+              <tr><td>pETH/ETH（JPEG'd）</td><td>07-30 13:10</td><td>抢跑机器人，原攻击者的交易失败<a class="ref" href="#s10">[10]</a></td><td class="n">6,106.65 WETH</td></tr>
+              <tr><td>msETH/ETH（Metronome）</td><td>07-30 14:50</td><td>c0ffeebabe.eth，照抄原攻击交易<a class="ref" href="#s8">[8]</a></td><td class="n">866.55 ETH<br>959.71 msETH</td></tr>
+              <tr><td>alETH/ETH（Alchemix）</td><td>07-30 15:34</td><td>攻击者，事后全部退回<a class="ref" href="#s9">[9]</a></td><td class="n">7,258.70 ETH<br>4,821.55 alETH</td></tr>
+              <tr><td>CRV/ETH 第一笔</td><td>07-30 19:08</td><td>攻击者，未归还</td><td class="n">7,680.49 WETH<br>7,193,401.77 CRV</td></tr>
+              <tr><td>CRV/ETH 第二笔</td><td>07-30 22:00</td><td>c0ffeebabe.eth，当晚退回<a class="ref" href="#s12">[12]</a></td><td class="n">2,879.65 ETH</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>数量来自 LlamaRisk<a class="ref" href="#s2">[2]</a>。CertiK 记录到，pETH/ETH 池的原攻击者 0x172… 的交易在区块 17,806,056 中失败，出价更高的抢跑机器人 <span class="addr">0x6Ec21d1868743a44318c3C259a6d4953F9978538</span> 先执行，拿走了这笔利润<a class="ref" href="#s10">[10]</a>。</p>
+        <p>Alchemix 比攻击者早 45 分钟收到 Curve 的通知，还是没来得及撤完。它的 AMO 合约只有 <code>sweep</code> 能一次性平衡地撤出全部流动性，而 <code>sweep</code> 受时间锁限制。紧急情况下只能单边撤：先撤 8,027 alETH 把池子拉平，再撤 ETH。第二笔交易还没上链，池子就被抽干了。池里剩下的 3,856 alETH 被套利机器人取走，alETH 净损失约 5,000 ETH 的背书资产<a class="ref" href="#s9">[9]</a>。</p>
+        <p>LlamaRisk 指出，CRV/ETH 是四个池子里唯一的非稳定币池，所以这次攻击在重入之外还夹带了套利<a class="ref" href="#s2">[2]</a>。</p>
+        <div class="note doubt">
+          <span class="h">攻击者、抢跑者与白帽</span>
+          <p>Metronome 的复盘写道，原攻击者大多没有获利，他们的交易被对抗性的 MEV 机器人发现并抢跑，随后黑帽和白帽开始比赛寻找还没被打的合约<a class="ref" href="#s8">[8]</a>。alETH 池的攻击者事后分多笔退回了全部资金<a class="ref" href="#s9">[9]</a>。Chainalysis 记录到，这几天的抢跑竞争产生了以太坊历史上最大的 MEV 区块奖励<a class="ref" href="#s11">[11]</a>。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>四个池子、五笔交易里，大部分资金落到了抢跑者而不是原攻击者手里。经过谈判，其中四笔基本退回，白帽各自保留了不超过一成的赏金；只有 CRV/ETH 池的第一笔没有追回<a class="ref" href="#s2">[2]</a><a class="ref" href="#s18">[18]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>池子</th><th class="n">取走</th><th>退回</th><th>结果</th></tr></thead>
+            <tbody>
+              <tr><td>pETH/ETH</td><td class="n">6,106.65 WETH</td><td>08-04 抢跑者退回 5,495.4 WETH<a class="ref" href="#s13">[13]</a></td><td>保留 610.6 WETH 作为一成赏金</td></tr>
+              <tr><td>msETH/ETH</td><td class="n">866.55 ETH<br>959.71 msETH</td><td>07-31 c0ffeebabe.eth 退回 786.5 ETH 和 955 msETH<a class="ref" href="#s8">[8]</a></td><td>保留小部分作赏金；Metronome 另通过其他途径追回 157,500 USDC</td></tr>
+              <tr><td>alETH/ETH</td><td class="n">7,258.70 ETH<br>4,821.55 alETH</td><td>08-04 至 05 攻击者分多笔全部退回<a class="ref" href="#s9">[9]</a></td><td>池中剩余的 3,856 alETH 被套利机器人取走，alETH 损失约 5,000 ETH 的背书资产</td></tr>
+              <tr><td>CRV/ETH 第一笔</td><td class="n">7,680.49 WETH<br>7,193,401.77 CRV</td><td>无</td><td>攻击者没有回应<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td>CRV/ETH 第二笔</td><td class="n">2,879.65 ETH</td><td>07-30 c0ffeebabe.eth 全额退回<a class="ref" href="#s12">[12]</a></td><td>退至 Curve 部署者地址</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="note doubt">
+          <span class="h">总损失有三种口径</span>
+          <p>CertiK 在 7 月 31 日统计：被取走约 <span class="dispute">6,930 万美元</span>，已退回 1,670 万美元，净损失约 5,200 万美元<a class="ref" href="#s10">[10]</a>。Chainalysis 给出的是约 7,000 万美元<a class="ref" href="#s11">[11]</a>。CoinDesk 在 8 月 7 日报道：被盗约 7,350 万美元，约 73% 已追回，仍有约 1,970 万美元未归还<a class="ref" href="#s18">[18]</a>。差异来自统计时点的币价，以及是否计入抢跑者和套利机器人的所得。本站以 6,930 万美元作为事发时的损失。</p>
+        </div>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>CRV 价格与创始人的借贷仓位</h3>
+        <p>按 Binance 的日线数据，CRV 在 7 月 30 日开盘约 0.738 美元，8 月 1 日最低跌到 0.482 美元<a class="ref" href="#s19">[19]</a>。市场更担心的是 Michael Egorov 本人的仓位：他用大量 CRV 作抵押，在 Aave、Abracadabra 等多个借贷协议借出稳定币。如果 CRV 继续下跌触发清算，抵押品在流动性已经变差的市场里很难卖出，坏账会落到这些借贷协议身上。The Block 统计，截至 8 月 4 日他在各 DeFi 平台仍欠约 6,530 万美元<a class="ref" href="#s15">[15]</a>。</p>
+        <p>Egorov 的办法是场外折价卖币。他以每枚约 0.40 美元的价格，把约 1.06 亿枚 CRV 卖给 Wintermute、Justin Sun、DCFGod、Jun Du 等买家，换得约 4,200 万美元，先还了 Abracadabra 和 Aave 的部分借款<a class="ref" href="#s15">[15]</a>。9 月 27 日，他把 6,800 万枚 CRV 存进 Silo，还清了 Aave 上的全部借款，剩余约 4,270 万美元的债务分布在 Silo、Fraxlend、Inverse 和 Cream<a class="ref" href="#s16">[16]</a>。这一轮他靠卖币和还款避开了清算。这段插曲说明，一个协议出事，风险可以经由创始人的个人仓位传到别的协议。</p>
+        <h3>编译器成了攻击面</h3>
+        <p>这次的漏洞出在编译器里。池子的源码写法没有问题，<code>@nonreentrant('lock')</code> 的语义在文档里写得很清楚，只看源码的审计发现不了它，问题在编译器生成的字节码里。Vyper 团队承认，0.3.1 修复这个缺陷时没有意识到它对已部署合约的影响，也没有通知仍在使用旧版本的协议<a class="ref" href="#s1">[1]</a>。此后“审计只看源码是否足够”“编译器旧版本由谁负责”成了行业讨论的话题。</p>
+        <h3>抢跑与白帽</h3>
+        <p>攻击交易一进入公开内存池就被 MEV 机器人照抄抢跑，Chainalysis 称这几天产生了以太坊历史上最大的 MEV 区块奖励<a class="ref" href="#s11">[11]</a>。Metronome 把这描述为黑帽和白帽之间的一场竞赛，双方都在找还没被打的合约<a class="ref" href="#s8">[8]</a>。结果是大部分资金落在了愿意归还的抢跑者手里。白帽抢先转走剩余资金的做法，可以对照 2016 年 <a href="2016-the-dao.html">The DAO</a> 事件里的白帽团队。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Curve 能做的很少</h3>
+        <p>Curve 的池子不可升级，也没有暂停开关。LlamaRisk 指出，Curve 的紧急 DAO 无法暂停池子或动用用户资金，唯一能做的是停发受影响池子的 CRV 激励<a class="ref" href="#s2">[2]</a>。Curve 同时提醒 Arbitrum 上 Tricrypto 池的 LP 撤出，尽管审计方和 Vyper 开发者没有找到可获利的攻击路径<a class="ref" href="#s2">[2]</a>。Alchemix 一类的受害协议也只能撤资，而撤资本身需要时间<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>追讨与悬赏</h3>
+        <p>Curve、Alchemix、JPEG'd 和 Metronome 联合向攻击者喊话：归还九成，可以留下一成作为赏金，期限为 8 月 6 日 08:00（UTC）<a class="ref" href="#s14">[14]</a><a class="ref" href="#s18">[18]</a>。pETH 池的抢跑者和 alETH 池的攻击者在期限前退回了资金。CRV/ETH 第一笔的攻击者没有回应。期限过后，Curve 公开悬赏剩余被盗资金的 10%，约 185 万美元，给能指认攻击者并促成法院定罪的人，同时表示如果对方全额归还，就不再追究<a class="ref" href="#s14">[14]</a>。</p>
+        <h3>补偿与重建</h3>
+        <p>Metronome 用退回的资金新建了 msETH/WETH 池<a class="ref" href="#s8">[8]</a>。Alchemix 表示正与 Curve 一起分析攻击前的 LP 持仓、制定补偿方案，内容包括退还追回的资金，以及 Curve 可能以锁仓 CRV 的形式给予补偿；Curve 此后部署的 ETH 池都改用 Vyper 0.3.1 及以上版本<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>编译器一侧</h3>
+        <p>8 月 5 日，Vyper 发布安全公告 GHSA-5824-cm3x-3c38，严重等级 critical，同时发布技术复盘<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。复盘列出的后续措施包括：针对最新版本的竞赛审计，覆盖所有历史版本的漏洞赏金，由多个协议联合出资的 Vyper Security Alliance，以及请 ChainSecurity、OtterSec、Statemind、Certora 等审计方回头检查仍在保护大额资金的旧版本<a class="ref" href="#s1">[1]</a>。语言层面，0.4.0 删除了具名重入锁，所有 <code>@nonreentrant</code> 共用一把全局锁；0.4.2 加入 <code>#pragma nonreentrancy on</code>，可以让一个文件里的外部函数默认上锁<a class="ref" href="#s20">[20]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>重入锁是第二道防线，不是第一道。如果 <code>remove_liquidity</code> 按“检查-生效-交互”的顺序，先更新 <code>totalSupply</code> 和余额、最后才付 ETH，锁失效也不会出事。</li>
+            <li>给锁写测试：在一个上锁函数的回调里调用共用同一个 key 的另一个函数，确认交易回滚。Vyper 的复盘建议同时做源码级和字节码级的测试<a class="ref" href="#s1">[1]</a>。</li>
+            <li>付原生 ETH 等于把执行权交给对方。能用 WETH 的地方优先用 WETH，否则把付款放在所有状态更新之后。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议、审计方和编译器维护者</span>
+          <ul>
+            <li>审计范围要包括编译器版本。部署时记录编译器版本和提交号，编译器发布安全公告时，能立刻查出自己有哪些合约受影响。</li>
+            <li>编译器修复要配套安全公告。0.3.1 在 2021 年 12 月就修好了这个问题，但没有公告，用旧版本部署的项目方一直不知情<a class="ref" href="#s1">[1]</a>。</li>
+            <li>不可升级、不可暂停的池子，应急手段只剩撤资，事先要准备好撤资路径。Alchemix 的平衡撤资函数受时间锁限制，紧急时只能单边撤，没能撤完<a class="ref" href="#s9">[9]</a>。</li>
+            <li>大户以单一代币抵押的集中仓位是借贷协议的系统性风险。CRV 下跌时，压力同时落在了多个协议上。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Vyper 团队（Omniscia 协助），《Vyper Nonreentrancy Lock Vulnerability Technical Post-Mortem Report》，HackMD，2023-08。<a href="https://hackmd.io/@vyperlang/HJUgNMhs2">hackmd.io</a></li>
+          <li id="s2">LlamaRisk，《Curve Pool Reentrancy Exploit Postmortem July 30th, 2023》，HackMD，2023-07。<a href="https://hackmd.io/@LlamaRisk/BJzSKHNjn">hackmd.io</a></li>
+          <li id="s3">vyperlang/vyper 安全公告 GHSA-5824-cm3x-3c38（CVE-2023-39363），《Incorrectly allocated named re-entrancy locks》，2023-08-05。<a href="https://github.com/vyperlang/vyper/security/advisories/GHSA-5824-cm3x-3c38">github.com</a></li>
+          <li id="s4">vyperlang/vyper 仓库源码（v0.2.14、v0.2.15、v0.3.0、v0.3.1 标签）与 GitHub Releases 发布记录。<a href="https://github.com/vyperlang/vyper/releases">github.com</a></li>
+          <li id="s5">vyperlang/vyper PR #2391《fix: storage slot allocation bug》（2021-07-23 合并），以及修复用的 PR #2439、#2514 和 issue #2393。<a href="https://github.com/vyperlang/vyper/pull/2391">github.com</a></li>
+          <li id="s6">curvefi/curve-factory 仓库 Plain2ETH.vy 的提交记录：e3b0eb7 把编译器升到 0.2.15（2021-07-24），f389123（2021-07-26）。<a href="https://github.com/curvefi/curve-factory/commit/f389123bea5b682eea1e0746f1ffdff71c9366b6">github.com</a></li>
+          <li id="s7">Blockscout 上的已验证合约源码：factory 池实现合约 0x6326DEbBAa15bCFE603d831e7D75f4fc10d9B43E，CRV/ETH 池 0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511。<a href="https://eth.blockscout.com/address/0x8301AE4fc9c624d1D396cbDAa1ed877821D7C511?tab=contract">eth.blockscout.com</a></li>
+          <li id="s8">MetronomeDAO，《Vyper, Curve Exploit Post-Mortem》，Medium，2023-08-18。<a href="https://metronomedao.medium.com/vyper-curve-exploit-post-mortem-6a42d6d9fa07">medium.com</a></li>
+          <li id="s9">Alchemix Finance，《Curve Exploit Post Mortem》，Medium，2023-09-21。<a href="https://alchemixfi.medium.com/curve-exploit-post-mortem-7142e78bc339">medium.com</a></li>
+          <li id="s10">CertiK，《Vyper Incident Analysis》，2023-07-31。<a href="https://www.certik.com/blog/vyper-incident-anaylsis">certik.com</a></li>
+          <li id="s11">Chainalysis，《Vulnerability in Curve Finance Vyper Code Leads to Multi-Million Dollar Hack Affecting Several Liquidity Pools》，2023-08-02。<a href="https://www.chainalysis.com/blog/curve-finance-liquidity-pool-hack/">chainalysis.com</a></li>
+          <li id="s12">Vishal Chawla，《MEV bot runner 'c0ffeebabe.eth' returns $5.4 million amid Curve exploit》，The Block，2023-07-31。<a href="https://www.theblock.co/post/242136/mev-bot-runner-c0ffeebabe-eth-returns-5-4-million-amid-curve-exploit">theblock.co</a></li>
+          <li id="s13">Cointelegraph，《JPEG'd confirms return of 5,495 ETH from Curve hacker》，2023-08-05。<a href="https://cointelegraph.com/news/jpeg-d-confirms-return-of-eth-from-curve-hacker">cointelegraph.com</a></li>
+          <li id="s14">Ana Paula Pereira，《Curve Finance opens bounty after exploiter's return deadline expires》，Cointelegraph，2023-08-06。<a href="https://cointelegraph.com/news/curve-finance-opens-bounty-after-exploiter-deadline-expires">cointelegraph.com</a></li>
+          <li id="s15">Vishal Chawla，《Michael Egorov has sold a total of 106 million CRV for $42 million》，The Block，2023-08-04。<a href="https://www.theblock.co/post/243183/michael-egorov-has-sold-a-total-of-106-million-crv-for-42-million">theblock.co</a></li>
+          <li id="s16">Cointelegraph，《Curve Finance founder cuts debt to $42.7M, settles entire Aave loan》，2023-09-27。<a href="https://cointelegraph.com/news/curve-finance-founder-cuts-debt-to-42-7-m-settles-aave-loan">cointelegraph.com</a></li>
+          <li id="s17">CertiK，《Conic Finance Incident Analysis》，2023-07-28。<a href="https://www.certik.com/resources/blog/conic-finance-incident-analysis">certik.com</a></li>
+          <li id="s18">Shaurya Malwa，《Curve Recoups 73% of Hacked Funds, Bolstering CRV Sentiment》，CoinDesk，2023-08-07。<a href="https://www.coindesk.com/tech/2023/08/07/curve-recoups-73-of-hacked-funds-bolstering-crv-sentiment">coindesk.com</a></li>
+          <li id="s19">Binance，CRVUSDT 日线行情（2023-07-29 至 08-06），公开行情接口。<a href="https://api.binance.com/api/v3/klines?symbol=CRVUSDT&amp;interval=1d&amp;startTime=1690588800000&amp;limit=10">api.binance.com</a></li>
+          <li id="s20">Vyper 文档《Control Structures》中 <code>@nonreentrant</code> 与 <code>#pragma nonreentrancy</code> 的说明，以及 v0.4.0 发布说明。<a href="https://docs.vyperlang.org/en/stable/control-structures.html">docs.vyperlang.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beanstalk 闪电贷治理攻击｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 4 月 Beanstalk 被人用闪电贷借来约 10 亿美元、临时拿到约 79% 的治理投票权，在一笔交易里通过并执行了把金库转给自己的提案：emergencyCommit 的代码、投票权为何能借、损失口径、Barn Raise 重启与治理教训。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-beanstalk">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Beanstalk 闪电贷治理攻击</h1>
+    <p class="lede">2022 年 4 月 17 日，攻击者用闪电贷借来约 10 亿美元，存进 Beanstalk 换成投票权，在同一笔交易里投票并执行了自己前一天提交的提案，把协议金库转给了自己。攻击者带走约 7,600 万美元，协议的损失按不同口径在 7,700 万到 1.82 亿美元之间。这起事件说明，只按当前余额计票的链上治理，投票权本身就可以借来。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Beanstalk 是以太坊上的算法稳定币协议，由持有 Stalk 的存款人对改进提案（BIP）投票。普通提案要投 7 天；另有一条紧急通道 <code>emergencyCommit</code>：提案提交满 1 天、赞成票达到当前全部投票权的三分之二，任何人都可以立即执行它<a class="ref" href="#s7">[7]</a>。投票权按投票那一刻的存款计算，没有快照，也没有锁定期<a class="ref" href="#s8">[8]</a>。</p>
+        <p>攻击者在 4 月 16 日用少量存款提交了两个提案：BIP-18 把协议资产转给攻击者合约，BIP-19 向乌克兰捐款地址转钱<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。一天后，攻击者从 Aave、Uniswap V2 和 SushiSwap 闪电借出约 10 亿美元的资产，换成可以存进 Beanstalk 的 Curve LP 代币存入，瞬间拿到约 79% 的投票权，随即调用 <code>emergencyCommit</code> 执行 BIP-18<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。协议的资产被转走，闪电贷还清，剩下的约 24,830 枚 ETH 进了 Tornado Cash<a class="ref" href="#s12">[12]</a>。</p>
+        <p>Beanstalk 暂停了约四个月，用名为 Barn Raise 的公开募资重新筹集被盗的约 7,700 万美元非 Bean 资产，2022 年 8 月 6 日重启，链上治理改为社区多签<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a>。到重启时，Barn Raise 只募到约 1,700 万美元<a class="ref" href="#s6">[6]</a>。攻击者身份至今没有公开认定。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Beanstalk 由化名 Publius 的匿名开发者在 2021 年 8 月 6 日部署到以太坊主网<a class="ref" href="#s3">[3]</a>，Publius 在攻击后公开表示自己是一个三人团队<a class="ref" href="#s12">[12]</a>。它的稳定币 BEAN 不靠抵押品，而是靠“借款给协议换取 Pods”“存款换取 Stalk 和利息”这一套激励把价格维持在 1 美元附近。按 Beanstalk Farms 的说法，攻击前约八个月里 BEAN 市值涨到约 1 亿美元，吸引了约 1.44 亿美元的长期激励流动性；攻击前两周还向债权人偿还了约 2,500 万美元<a class="ref" href="#s2">[2]</a>。</p>
+        <p>协议从第一天起就由 Beanstalk DAO 通过链上治理拥有<a class="ref" href="#s2">[2]</a>。用户把 BEAN 或白名单里的 LP 代币存进名为 Silo 的模块，就得到 Stalk，Stalk 就是投票权。合约内部用 roots 记录每个账户的投票权，计票时拿提案获得的 roots 除以当前的 roots 总量<a class="ref" href="#s8">[8]</a>。可以存进 Silo 的资产包括 BEAN 与 3CRV、BEAN 与 LUSD 组成的两个 Curve 池的 LP 代币。CertiK 认为，正是这些能用闪电贷大量制造的 LP 代币，让投票权变得可以借来<a class="ref" href="#s10">[10]</a>。</p>
+        <p>Beanstalk 的合约由 Omniscia 审计过。事发后各方对审计范围的说法不一：CoinDesk 转述 Omniscia 称，审计完成于闪电贷漏洞被引入之前<a class="ref" href="#s13">[13]</a>；rekt.news 称 Omniscia 表示这次攻击不在审计范围内，但审计报告里有对治理合约的评论<a class="ref" href="#s12">[12]</a>；Halborn 的说法是被利用的治理功能在上线前没有经过审计<a class="ref" href="#s11">[11]</a>。本站查了代码历史：<code>emergencyCommit</code> 和“1 天、三分之二”这两个参数在 2021 年 8 月的首个版本里就已存在<a class="ref" href="#s9">[9]</a>，2022 年 4 月 1 日的“Omniscia 审计更新”提交只是把它的执行逻辑重构成了一个内部函数<a class="ref" href="#s7">[7]</a>。来源没有说明“被引入的漏洞”具体指哪一次改动。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-08-06</time><div class="ev">Beanstalk 部署到以太坊主网<a class="ref" href="#s3">[3]</a>。首个版本的治理合约里已有 <code>emergencyCommit</code><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2022-04-01</time><div class="ev">按 Omniscia 审计意见更新的版本提交到代码仓库<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="atk"><time>2022-04-16</time><div class="ev">攻击者存入少量 BEAN 取得提案资格，提交 BIP-18（转走协议资产）和 BIP-19（向乌克兰捐款地址转账），两个提案都没有引起注意<a class="ref" href="#s10">[10]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk key"><time>04-17 约 12:24</time><div class="ev">攻击交易执行：闪电贷借入约 10 亿美元，拿到约 79% 的投票权，<code>emergencyCommit</code> 执行 BIP-18，协议资产被转走。时间为 UTC，下同<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="atk"><time>04-17 15:24</time><div class="ev">约 24,849 枚 ETH 被转入 Tornado Cash<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2022-04-17</time><div class="ev">PeckShield 在推特上发出警报，CoinDesk 当天报道，BEAN 较 1 美元锚定价跌去约 86%<a class="ref" href="#s13">[13]</a>。Beanstalk Farms 关闭链上治理、暂停协议<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-04-19</time><div class="ev">Beanstalk Farms 发布事件说明：约 7,700 万美元非 Bean 资产被盗，攻击者合约里剩余的 BEAN 已被销毁<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-05-25</time><div class="ev">发布《The Path Forward》，宣布以 Barn Raise 募资重启，治理改为社区多签<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def key"><time>2022-06-06</time><div class="ev">Barn Raise 开始，Fertilizer 以每枚 1 USDC 出售<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2022-07</time><div class="ev">Beanstalk Farms 分别在 7 月 13 日和 7 月 22 日宣布 Halborn、Trail of Bits 的审计完成<a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def key"><time>2022-08-05 至 06</time><div class="ev">BIP-21 通过后执行“Replant”，合约所有权从 Publius 转给 Beanstalk Community Multisig；8 月 6 日协议恢复运行<a class="ref" href="#s5">[5]</a><a class="ref" href="#s14">[14]</a>。此时 Barn Raise 募到约 1,700 万美元<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2024-10-10</time><div class="ev">DefiLlama 记录 Beanstalk 迁移到 Arbitrum<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-09</time><div class="ev">Beanstalk 的 GitHub 仓库仍有面向 L2 迁移和前端的维护提交<a class="ref" href="#s7">[7]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>Beanstalk 的治理合约里有两条执行路径。<code>commit</code> 是普通路径：投票期（168 个 Season，约 7 天）结束后，赞成票过半即可执行。<code>emergencyCommit</code> 是紧急路径，下面是攻击前最后一个版本的代码<a class="ref" href="#s7">[7]</a>：</p>
+<pre class="code"><code><span class="c">// GovernanceFacet.sol（提交 ee4720c，2022-04-01），紧急执行</span>
+function emergencyCommit(uint32 bip) external {
+    require(isNominated(bip), "Governance: Not nominated.");
+    require(
+<span class="bad">        block.timestamp &gt;= timestamp(bip).add(C.getGovernanceEmergencyPeriod()),</span>
+        "Governance: Too early.");   <span class="c">// 只要求提案提交满 1 天</span>
+    require(isActive(bip), "Governance: Ended.");
+    require(
+<span class="bad">        bipVotePercent(bip).greaterThanOrEqualTo(C.getGovernanceEmergencyThreshold()),</span>
+        "Governance: Must have super majority."
+    );   <span class="c">// 当前投票权的三分之二</span>
+    _execute(msg.sender, bip, false, true);   <span class="c">// 立即执行提案里的任意代码</span>
+}
+
+<span class="c">// C.sol（同一提交），相关常量</span>
+uint32 private constant GOVERNANCE_PERIOD = 168; // 168 seasons = 7 days
+<span class="bad">uint32 private constant GOVERNANCE_EMERGENCY_PERIOD = 86400; // 1 day</span>
+uint256 private constant GOVERNANCE_PASS_THRESHOLD = 5e17; // 1/2
+uint256 private constant GOVERNANCE_EMERGENCY_THRESHOLD_NUMERATOR = 2; // 2/3
+uint256 private constant GOVERNANCE_EMERGENCY_THRESHOLD_DEMONINATOR = 3; // 2/3</code></pre>
+        <p class="code-cap">来源：BeanstalkFarms/Beanstalk 仓库提交 ee4720c，protocol/contracts/farm/facets/GovernanceFacet/GovernanceFacet.sol 第 180–191 行、protocol/contracts/C.sol 第 43–47 行，去掉了一层缩进，把行尾注释移到了单独位置<a class="ref" href="#s7">[7]</a>。</p>
+        <p>1 天的等待从提案提交时算起，而不是从投票结束时算起。攻击者提前一天提交提案，这个条件到攻击时已经满足。剩下的唯一门槛是三分之二的票，问题就在票怎么算：</p>
+<pre class="code"><code><span class="c">// VotingBooth.sol（同一提交），投票时把账户当前的 roots 加到提案上</span>
+function recordVote(address account, uint32 bipId) internal {
+    s.g.voted[bipId][account] = true;
+<span class="bad">    s.g.bips[bipId].roots = s.g.bips[bipId].roots.add(balanceOfRoots(account));</span>
+}
+
+<span class="c">// Bip.sol（同一提交），赞成比例 = 提案获得的 roots ÷ 此刻的 roots 总量</span>
+function bipVotePercent(uint32 bipId) internal view returns (Decimal.D256 memory) {
+<span class="bad">    return Decimal.ratio(rootsFor(bipId), totalRoots());</span>
+}
+
+function balanceOfRoots(address account) internal view returns (uint256) {
+    return s.a[account].roots;   <span class="c">// 账户当前的存款份额，没有快照</span>
+}</code></pre>
+        <p class="code-cap">来源：同一提交的 VotingBooth.sol 第 32–35 行、Bip.sol 第 151–153 行与第 188–190 行<a class="ref" href="#s8">[8]</a>。</p>
+        <p>这几行合在一起，意味着投票权就是投票那一刻的存款份额。没有“提案创建时的余额快照”，也没有“存入后多久才能投票”的锁定期。只要在同一笔交易里先存入、再投票、再执行，借来的钱和自己的钱没有区别。据 CoinDesk 转述，Beanstalk 的项目负责人事后在 Discord 中写道：“Beanstalk 没有用抗闪电贷的方式计算 Stalk 的占比……这就是让攻击者得手的缺陷。”（本站译文）<a class="ref" href="#s13">[13]</a></p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 420" role="img" aria-labelledby="bean-gov-t bean-gov-d">
+            <title id="bean-gov-t">emergencyCommit 的两道检查怎样被满足</title>
+            <desc id="bean-gov-d">4 月 16 日攻击者提交 BIP-18 和 BIP-19，满足“提交满 1 天”的条件需要等待一天。4 月 17 日的一笔交易里依次完成：闪电贷借入约 10 亿美元，换成 Curve LP 存入 Silo，投票使赞成票达到约 79%，调用 emergencyCommit 执行 BIP-18 转走协议资产，最后还清闪电贷。两道检查分别是提交满 1 天和赞成票达到当前投票权的三分之二，都被满足。投票权按投票当时的存款计算，没有快照和锁定期。</desc>
+            <defs>
+              <marker id="bean-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bean-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box atk" x="20" y="20" width="160" height="56" rx="4"/>
+            <text class="d-t b" x="100" y="44" text-anchor="middle">4 月 16 日</text>
+            <text class="d-t s" x="100" y="64" text-anchor="middle">提交 BIP-18、BIP-19</text>
+            <rect class="d-box soft" x="200" y="20" width="160" height="56" rx="4"/>
+            <text class="d-t b" x="280" y="44" text-anchor="middle">等待 ≥ 1 天</text>
+            <text class="d-t s" x="280" y="64" text-anchor="middle">没有人发现</text>
+            <line class="d-line" x1="180" y1="48" x2="198" y2="48" marker-end="url(#bean-ah)"/>
+            <line class="d-line atk" x1="360" y1="48" x2="398" y2="48" marker-end="url(#bean-ah-atk)"/>
+            <text class="d-t b" x="410" y="44">4 月 17 日约 12:24（UTC），一笔交易：</text>
+            <rect class="d-box atk" x="20" y="96" width="720" height="140" rx="4"/>
+            <rect class="d-box" x="36" y="116" width="130" height="64" rx="4"/>
+            <text class="d-t b" x="101" y="142" text-anchor="middle">闪电贷</text>
+            <text class="d-t s" x="101" y="164" text-anchor="middle">约 10 亿美元</text>
+            <rect class="d-box" x="180" y="116" width="130" height="64" rx="4"/>
+            <text class="d-t b" x="245" y="142" text-anchor="middle">存入 Silo</text>
+            <text class="d-t s" x="245" y="164" text-anchor="middle">换成 Curve LP</text>
+            <rect class="d-box atk" x="324" y="116" width="130" height="64" rx="4"/>
+            <text class="d-t b" x="389" y="142" text-anchor="middle">投票</text>
+            <text class="d-t s atk" x="389" y="164" text-anchor="middle">约 79% 投票权</text>
+            <rect class="d-box atk" x="468" y="116" width="130" height="64" rx="4"/>
+            <text class="d-t b m" x="533" y="142" text-anchor="middle">emergencyCommit</text>
+            <text class="d-t s" x="533" y="164" text-anchor="middle">执行 BIP-18</text>
+            <rect class="d-box" x="612" y="116" width="112" height="64" rx="4"/>
+            <text class="d-t b" x="668" y="142" text-anchor="middle">还清闪电贷</text>
+            <text class="d-t s" x="668" y="164" text-anchor="middle">余下归攻击者</text>
+            <line class="d-line" x1="166" y1="148" x2="178" y2="148" marker-end="url(#bean-ah)"/>
+            <line class="d-line" x1="310" y1="148" x2="322" y2="148" marker-end="url(#bean-ah)"/>
+            <line class="d-line atk" x1="454" y1="148" x2="466" y2="148" marker-end="url(#bean-ah-atk)"/>
+            <line class="d-line atk" x1="598" y1="148" x2="610" y2="148" marker-end="url(#bean-ah-atk)"/>
+            <text class="d-t s" x="36" y="206">检查一：提案提交满 1 天。提案是前一天提交的，已满足。</text>
+            <text class="d-t s atk" x="36" y="226">检查二：赞成票 ≥ 当前投票权的 2/3。借来的约 79% 已满足。</text>
+            <rect class="d-box soft" x="20" y="256" width="720" height="64" rx="4"/>
+            <text class="d-t" x="380" y="282" text-anchor="middle">投票权 = 投票那一刻的存款份额，没有快照，也没有锁定期</text>
+            <text class="d-t s" x="380" y="304" text-anchor="middle">在合约看来，借来的存款和自己的存款没有区别</text>
+            <rect class="d-box def" x="20" y="340" width="720" height="64" rx="4"/>
+            <text class="d-t def b" x="380" y="366" text-anchor="middle">本可以拦住的地方</text>
+            <text class="d-t s" x="380" y="388" text-anchor="middle">按提案创建时的快照计票；等待期从投票结束起算；紧急通道不能转移资产</text>
+          </svg>
+          </div>
+          <figcaption>图 1：<code>emergencyCommit</code> 的两道检查在攻击中怎样被满足。红色是被利用的环节，蓝色是本可以拦住的设计。数字来自 Beanstalk 的说明和 Halborn、CertiK 的分析<a class="ref" href="#s1">[1]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。</figcaption>
+        </figure>
+        <h3>1 天的等待为什么没起作用</h3>
+        <p>紧急通道要求提案提交满 1 天，本意是给社区留出发现恶意提案的时间。Halborn 指出，这个恶意提案在这一天里没有被注意到<a class="ref" href="#s11">[11]</a>。rekt.news 还发现，攻击者把向乌克兰捐款的那个提案也命名为“Bip18”，两个提案看起来很像<a class="ref" href="#s12">[12]</a>。更根本的问题是等待期从提交时算起：攻击者提前一天提交，等待期在投票开始之前就已经过完了，投票、计票、执行之间没有任何间隔。</p>
+        <h3>哪一步本可以拦住</h3>
+<pre class="code"><code><span class="c">// 示意：两处改动，任何一处都能让闪电贷借来的票失效（不是 Beanstalk 的代码）</span>
+function vote(uint32 bipId) external {
+    Bip storage b = bips[bipId];
+<span class="good">    // 一：按提案创建那个区块的余额计票，之后才存入的资产不算</span>
+<span class="good">    uint256 weight = rootsAt(msg.sender, b.snapshotBlock);</span>
+    b.roots += weight;
+}
+
+function emergencyCommit(uint32 bipId) external {
+    Bip storage b = bips[bipId];
+<span class="good">    // 二：投票结束后再等一段时间才能执行，投票和执行不能在同一笔交易里</span>
+<span class="good">    require(block.timestamp &gt;= b.votingEndedAt + EXECUTION_DELAY, "too early");</span>
+    require(b.roots * 3 &gt;= totalRootsAt(b.snapshotBlock) * 2, "no supermajority");
+    _execute(bipId);
+}</code></pre>
+        <p class="code-cap">示意代码。rekt.news 的评论是，给链上治理提案的执行加上延迟，是防止这类攻击的一种办法<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面按 CertiK、rekt.news 和 Halborn 发表的分析转述攻击的结构<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>，只写到结论层面。</p>
+        <ol class="steps">
+          <li><b>提前一天提交提案</b>攻击者的资金经 Synapse 跨链桥转入，rekt.news 称最初来自 Tornado Cash<a class="ref" href="#s12">[12]</a>。攻击者存入少量 BEAN，取得提案资格（提案门槛是全部 Stalk 的 0.1%<a class="ref" href="#s7">[7]</a>），提交了 BIP-18 和 BIP-19。</li>
+          <li><b>闪电贷借入约 10 亿美元</b>第二天，攻击者在一笔交易里从 Aave 借出约 3.5 亿 DAI、5 亿 USDC 和 1.5 亿 USDT，从 Uniswap V2 借出约 3,200 万 BEAN，从 SushiSwap 借出约 1,160 万 LUSD<a class="ref" href="#s12">[12]</a>。</li>
+          <li><b>换成投票权</b>这些资产被加进 BEAN 的两个 Curve 池，得到的 LP 代币存进 Silo，攻击者因此拿到约 79% 的投票权<a class="ref" href="#s11">[11]</a>。</li>
+          <li><b>投票并立即执行</b>攻击者为 BIP-18 投票，赞成票超过三分之二，随即调用 <code>emergencyCommit</code>。BIP-18 附带的初始化合约把 Silo 中的 BEAN 和各种 LP 代币转给了攻击者合约<a class="ref" href="#s10">[10]</a>。BIP-19 也被执行，25 万 USDC 转到了乌克兰的加密货币捐款地址<a class="ref" href="#s10">[10]</a><a class="ref" href="#s13">[13]</a>。</li>
+          <li><b>还贷离场</b>攻击者撤出流动性、还清闪电贷，把剩下的资产换成 ETH。约三小时后，约 24,849 枚 ETH 被转入 Tornado Cash<a class="ref" href="#s10">[10]</a>。</li>
+        </ol>
+        <div class="note doubt">
+          <span class="h">乌克兰捐款是 BEAN 还是 USDC</span>
+          <p>CertiK 和 CoinDesk 转述的 PeckShield 都说捐出的是 25 万美元的稳定币，CertiK 写明为 250,000 USDC<a class="ref" href="#s10">[10]</a><a class="ref" href="#s13">[13]</a>；rekt.news 引述的早期分析则说 BIP-19 转出的是“价值 25 万美元的 BEAN”<a class="ref" href="#s12">[12]</a>。本页采用前者。</p>
+        </div>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>这起事件常被引用的金额有好几个，统计的对象不同。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">金额</th><th>出处与说明</th></tr></thead>
+            <tbody>
+              <tr><td>协议损失</td><td class="n">约 1.81 亿至 1.82 亿美元</td><td>CertiK、Halborn、CoinDesk<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a><a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>被盗的非 Bean 资产</td><td class="n">约 7,700 万美元</td><td>Beanstalk Farms 的口径<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>攻击者获利</td><td class="n">约 7,600 万美元</td><td>Halborn、CertiK<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>；PeckShield 早期估计为 8,000 多万美元，含 24,830 枚 ETH 和 3,600 万 BEAN<a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>转入 Tornado Cash</td><td class="n">约 24,849 ETH</td><td>CertiK 记为 4 月 17 日 15:24（UTC）<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>捐给乌克兰</td><td class="n">25 万 USDC</td><td>BIP-19<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>留在攻击者合约的 BEAN</td><td class="n">约 3,640 万枚</td><td>CertiK 按攻击后约 0.22 美元的价格折算约 724 万美元<a class="ref" href="#s10">[10]</a>；Beanstalk 称已销毁<a class="ref" href="#s1">[1]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>1.82 亿美元和 7,700 万美元的差别，主要在 BEAN 本身。Silo 里的资产有很大一部分是 BEAN 和含 BEAN 的 LP 代币，攻击前按约 1 美元计价；攻击后 BEAN 跌到约 0.22 美元<a class="ref" href="#s10">[10]</a>，攻击者手里剩下的 BEAN 又被销毁。这是本站根据各来源数字的理解，来源本身没有给出逐项对账。</p>
+        <ol class="flow">
+          <li class="atk"><b>Silo 里的资产</b>BEAN、两种 Curve LP、BEAN/ETH LP</li>
+          <li class="atk"><b>BIP-18 转给攻击者合约</b>与闪电贷在同一笔交易里</li>
+          <li class="atk"><b>还清闪电贷、换成 ETH</b>约 24,800 枚 ETH</li>
+          <li class="atk"><b>进入 Tornado Cash</b>当天转入，此后没有公开的追回</li>
+        </ol>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>对 Beanstalk</h3>
+        <p>BEAN 当天较 1 美元的锚定价跌去约 86%<a class="ref" href="#s13">[13]</a>，协议暂停了近四个月，链上治理被整体移除<a class="ref" href="#s2">[2]</a>。DefiLlama 记录的 Beanstalk 锁仓量从攻击前一天的约 3,200 万美元变为 0<a class="ref" href="#s14">[14]</a>，这个数字和 Beanstalk 自己说的 1.44 亿美元激励流动性统计口径不同，只能看出变化的方向。</p>
+        <h3>对链上治理</h3>
+        <p>闪电贷在此之前主要被用来操纵价格，比如 2020 年的 <a href="2020-bzx-flash-loan.html">bZx</a>。Beanstalk 证明它也能用来买下一次投票：只要投票权按当前余额计算、投票和执行之间没有间隔，治理代币就可以在一笔交易里借来、用完、还掉。DefiLlama 把这起事件单独归为“Flashloan Governance Attack”<a class="ref" href="#s14">[14]</a>。同年 10 月的 <a href="2022-mango-markets.html">Mango Markets</a> 事件里，攻击者则用治理提案和 DAO 谈判归还金额，治理被以另一种方式卷了进来。</p>
+        <p>Halborn 在复盘里指出，攻击同样暴露了运维问题：1 天的等待本来是留给人发现恶意提案的，但没有人在看<a class="ref" href="#s11">[11]</a>。rekt.news 的评论是，这次事件也许会促使代币持有人更仔细地盯治理提案，而普通用户往往以为被大力宣传的项目自然有更有经验的人在盯着<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>当天的应对</h3>
+        <p>Beanstalk Farms 收到警报后关闭了链上治理并暂停协议，随后销毁了攻击者合约里剩余的 BEAN<a class="ref" href="#s1">[1]</a>。为避免被怀疑监守自盗，化名 Publius 的创始人在 Discord 中公开了身份，表示是一个三人团队<a class="ref" href="#s12">[12]</a>。</p>
+        <h3>Barn Raise：用借款重启</h3>
+        <p>2022 年 5 月 25 日，Beanstalk Farms 公布重启方案<a class="ref" href="#s2">[2]</a>。核心是 Barn Raise：协议向出资人借入约 7,700 万美元，用来补回 Silo 里被盗的非 Bean 资产。出资人按每枚 1 USDC 购买名为 Fertilizer 的代币，年化利率（Humidity）从 500% 起，重启几周后降到 20%；重启后新铸出的 BEAN 有三分之一用来偿还 Fertilizer<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。攻击前的 BEAN 和 LP 变成 Unripe 资产，按 Fertilizer 的售出比例和已偿还比例逐步解锁，提前兑换要承担折扣<a class="ref" href="#s4">[4]</a>。DAO 通过的方案名为 BFP-72《The Path Forward, No Haircuts》，即不对攻击前的资产直接打折<a class="ref" href="#s6">[6]</a>。</p>
+        <p>Barn Raise 从 6 月 6 日开始<a class="ref" href="#s4">[4]</a>。到 8 月 4 日 BIP-21 获得绝对多数时，共募到约 1,700 万美元，不到目标的四分之一<a class="ref" href="#s6">[6]</a>。8 月 5 日执行 Replant，合约所有权从 Publius 转给 Beanstalk Community Multisig，Humidity 降到 250%；8 月 6 日，即部署一周年当天，协议恢复运行<a class="ref" href="#s5">[5]</a><a class="ref" href="#s14">[14]</a>。攻击前持有人的损失并没有当场补回，而是取决于此后 Fertilizer 的销售和偿还进度。</p>
+        <h3>治理和安全的改动</h3>
+        <p>重启后，Beanstalk 由一个九人的社区多签管理，提案改在 Snapshot 上投票，作为开发出安全的去中心化治理之前的临时措施。重启前，Halborn 和 Trail of Bits 分别做了全面审计，项目还在 Immunefi 上设立了漏洞赏金<a class="ref" href="#s2">[2]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <h3>此后</h3>
+        <p>DefiLlama 记录 Beanstalk 在 2024 年 10 月迁移到 Arbitrum<a class="ref" href="#s14">[14]</a>，截至 2026 年 9 月，它的 GitHub 仓库仍有维护提交<a class="ref" href="#s7">[7]</a>。截至 2026 年 10 月，本站没有查到攻击者被公开认定或起诉的信息，也没有查到被盗 ETH 被追回的记录。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给治理合约的设计者</span>
+          <ul>
+            <li>投票权按提案创建时的快照计算，不要用投票那一刻的余额。快照之后才存入的资产，无论来自哪里，都不该有投票权。</li>
+            <li>执行延迟从投票结束起算，而且不能被“紧急”通道绕过。投票和执行至少不能发生在同一笔交易里。</li>
+            <li>紧急通道只用来做防御性的动作，比如暂停。<code>emergencyCommit</code> 能执行任意代码、转走全部资产，等于给“临时凑够三分之二的人”留了一把万能钥匙。</li>
+            <li>给新的存款资产授予投票权时，要重新评估治理的安全假设。能用闪电贷大量制造的 LP 代币，不该直接换算成投票权<a class="ref" href="#s10">[10]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给社区和监控</span>
+          <ul>
+            <li>等待期只有在有人盯着的时候才有用。新提案的初始化代码应当被自动解析，异常的资产转移要触发告警。</li>
+            <li>提案的名称和内容要能对上。这次两个提案用了几乎相同的名称<a class="ref" href="#s12">[12]</a>。</li>
+            <li>审计报告要写清楚覆盖了哪个版本、哪些模块。这次各方对审计范围的说法互相矛盾<a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>，用户无从判断。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Beanstalk Farms，《Beanstalk Governance Exploit》，2022-04-19。<a href="https://bean.money/blog/beanstalk-governance-exploit">bean.money</a></li>
+          <li id="s2">Beanstalk Farms，《Beanstalk: The Path Forward》，2022-05-25（2022-07-01 更新）。<a href="https://bean.money/blog/path-forward">bean.money</a></li>
+          <li id="s3">Beanstalk Farms，《Beanstalk's One Year Anniversary》，2022-08-06。<a href="https://bean.money/blog/beanstalk-one-year-anniversary">bean.money</a></li>
+          <li id="s4">Beanstalk Farms，《A Farmer's Guide to the Barn Raise》，2022-05-29。<a href="https://bean.money/blog/a-farmers-guide-to-the-barn-raise">bean.money</a></li>
+          <li id="s5">Beanstalk Farms，《Anticipated Replant Timeline》，2022-07-24。<a href="https://bean.money/blog/anticipated-replant-timeline">bean.money</a></li>
+          <li id="s6">Beanstalk Farms，《Beanstalk Farms' 2022 Roundup》，2023-01-01。<a href="https://bean.money/blog/beanstalk-farms-2022-roundup">bean.money</a></li>
+          <li id="s7">BeanstalkFarms/Beanstalk 仓库，提交 ee4720c（2022-04-01，《Hotfix: Omniscia Audit Update》）的 GovernanceFacet.sol 与 C.sol，以及仓库提交历史。<a href="https://github.com/BeanstalkFarms/Beanstalk/blob/ee4720cdb449d5b6ff2b789083792c4395628674/protocol/contracts/farm/facets/GovernanceFacet/GovernanceFacet.sol">GovernanceFacet.sol</a>　<a href="https://github.com/BeanstalkFarms/Beanstalk/blob/ee4720cdb449d5b6ff2b789083792c4395628674/protocol/contracts/C.sol">C.sol</a>　<a href="https://github.com/BeanstalkFarms/Beanstalk/commits/master">提交历史</a></li>
+          <li id="s8">同一提交的 VotingBooth.sol 与 Bip.sol。<a href="https://github.com/BeanstalkFarms/Beanstalk/blob/ee4720cdb449d5b6ff2b789083792c4395628674/protocol/contracts/farm/facets/GovernanceFacet/VotingBooth.sol">VotingBooth.sol</a>　<a href="https://github.com/BeanstalkFarms/Beanstalk/blob/ee4720cdb449d5b6ff2b789083792c4395628674/protocol/contracts/farm/facets/GovernanceFacet/Bip.sol">Bip.sol</a></li>
+          <li id="s9">BeanstalkFarms/Beanstalk 仓库，提交 2fe44c6（2021-08-18，《bip-0》）的 GovernanceFacet.sol 与 C.sol。<a href="https://github.com/BeanstalkFarms/Beanstalk/blob/2fe44c6f5bdba924843da1bb8c0e86bcfa92b10e/protocol/contracts/farm/facets/GovernanceFacet/GovernanceFacet.sol">GovernanceFacet.sol</a>　<a href="https://github.com/BeanstalkFarms/Beanstalk/blob/2fe44c6f5bdba924843da1bb8c0e86bcfa92b10e/protocol/contracts/C.sol">C.sol</a></li>
+          <li id="s10">CertiK，《Revisiting Beanstalk Farms Exploit》，2022-07-28。<a href="https://www.certik.com/resources/blog/revisiting-beanstalk-farms-exploit">certik.com</a></li>
+          <li id="s11">Halborn，《Explained: The Beanstalk Hack (April 2022)》，2022-04-25。<a href="https://www.halborn.com/blog/post/explained-the-beanstalk-hack-april-2022">halborn.com</a></li>
+          <li id="s12">rekt.news，《Beanstalk - REKT》，2022-04-18。<a href="https://rekt.news/beanstalk-rekt/">rekt.news</a></li>
+          <li id="s13">Sam Kessler，《Attacker Drains $182M From Beanstalk Stablecoin Protocol》，CoinDesk，2022-04-17。<a href="https://www.coindesk.com/tech/2022/04/17/attacker-drains-182m-from-beanstalk-stablecoin-protocol/">coindesk.com</a></li>
+          <li id="s14">DefiLlama，Beanstalk 协议页（锁仓量历史与“Replant”“Migration to Arbitrum”两个时间节点）与 Hacks 数据库中的 Beanstalk 条目。<a href="https://defillama.com/protocol/beanstalk">协议页</a>　<a href="https://defillama.com/hacks">Hacks</a></li>
+          <li id="s15">Beanstalk Farms 博客文章列表（含《Halborn Audit of Beanstalk Completed》2022-07-13、《Trail of Bits Audit of Beanstalk Completed》2022-07-22、《Immunefi Bug Bounty Program》2022-10-11）。<a href="https://bean.money/blog">bean.money</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

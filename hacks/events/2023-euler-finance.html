@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Euler Finance 被盗 1.97 亿美元｜区块链被盗事件编年史</title>
+<meta name="description" content="2023 年 3 月 Euler Finance 因 donateToReserves 缺少健康度检查被盗约 1.97 亿美元：漏洞代码、坏账与自我清算的原理、资金去向、谈判归还与赔付经过。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-euler-finance">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Euler Finance 被盗 1.97 亿美元</h1>
+    <p class="lede">2023 年 3 月 13 日，攻击者利用借贷协议 Euler 新增的 <code>donateToReserves</code> 函数没有检查账户健康度这一点，先把自己的账户做成坏账，再用另一个地址以 20% 的折扣清算它，在几十分钟里取走约 1.97 亿美元。这段代码是八个月前一次经过审计的治理升级加进去的。三周后，攻击者道歉并归还了资金。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">Euler 是以太坊上的借贷协议。存款人拿到计息的 eToken 作为抵押凭证，借款人背上 dToken 作为债务。每个账户的抵押与债务之比叫健康分，低于 1 就可以被清算。凡是会减少抵押的操作，函数末尾都要检查一次健康分；2022 年加入的 <code>donateToReserves</code> 允许用户把自己的 eToken 捐给协议储备，抵押因此减少，函数里却没有这次检查。</p>
+        <p>攻击者从 Aave 闪电贷借出 3,000 万 DAI，用 Euler 的 <code>mint</code> 在一个账户里叠出约 10 倍的自抵押杠杆，然后捐出 1 亿 eDAI，把这个账户的健康分压到约 0.75。另一个账户随即以最高 20% 的折扣清算它，拿走全部剩余抵押，只承接了一部分债务，留下约 1.36 亿 dDAI 的坏账。清算后的账户抵押多于债务，可以把池子里的 DAI 全部取走<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。同样的操作在 DAI、USDC、WBTC、stETH 和 WETH 几个市场重复了几次。</p>
+        <p>此后的三周里，Euler 一边在链上给攻击者留言施压，一边与执法和链上分析机构合作。攻击者在 3 月 18 日到 4 月 3 日之间分多次归还了约 95,556 枚 ETH 和约 4,306 万 DAI，并留言道歉<a class="ref" href="#s5">[5]</a>。ETH 在这段时间上涨，归还时的美元价值超过了被盗时的金额，Euler 因此称资金“100% 追回”；不过按币数算，转进 Tornado Cash 的 1,100 枚 ETH 和转给 Ronin 攻击者地址的 100 枚 ETH 没有回来<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。攻击者的身份至今没有公开。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Euler V1 于 2021 年 12 月部署在以太坊上，主打“无许可上币”：只要某个代币在 Uniswap V3 上有可用的定价池，任何人都能为它开一个借贷市场<a class="ref" href="#s1">[1]</a>。用户存入资产得到 eToken，借款时记一笔 dToken 债务。它还提供一个 <code>mint</code> 函数，同时给账户铸出等量的 eToken 和 dToken，相当于“用自己存的钱借给自己”。这种自抵押贷款的抵押率上限是 95%，普通贷款是 75%，所以自抵押可以叠出很高的杠杆<a class="ref" href="#s7">[7]</a>。</p>
+        <p>清算采用“软清算”：账户的健康分跌破 1 后，跌得越深，清算人能拿到的折扣越大，最高 20%。清算人替违约账户承接一部分债务，换取折价的抵押品<a class="ref" href="#s2">[2]</a><a class="ref" href="#s7">[7]</a>。出事前，Euler 的总锁仓约 2.64 亿美元，官网列出六家安全审计机构，还设有 100 万美元的漏洞赏金和 1,000 万美元的保险<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <p>2022 年 7 月 6 日，Euler 的开发者 Doug Hoyte 在治理论坛发布 eIP 14，把多个模块的改动打包升级。EToken 模块的说明里写着：新增 <code>donateToReserves</code>，允许用户把一部分 eToken 捐给储备，“可能对某些封装合约有用”，也可以用来清掉账户里的零头<a class="ref" href="#s4">[4]</a>。这个函数最早出现在 2022 年 6 月 21 日的提交 85abe8d 里，同一次提交让新市场的储备从一个非零初始值起步<a class="ref" href="#s3">[3]</a>。Euler 事后解释，这组改动是为了修复近一年前通过 Immunefi 报告的一个问题：新市场的第一个存款人可以操纵 eToken 的兑换率<a class="ref" href="#s1">[1]</a>。</p>
+        <p>论坛上有人问这些改动是否经过审计。Hoyte 回复说，Chainlink 相关的改动已由 Omniscia 审计，其余改动正由 Sherlock 等几方审阅；8 月 9 日他又补充，Sherlock 的审计员 WATCHPUG 完成了另一轮审计。8 月 18 日 Snapshot 投票通过，升级随即执行<a class="ref" href="#s4">[4]</a>。Cyfrin 后来的复盘称，<code>donateToReserves</code> 只被审计过一次，之后几轮审计都没有把它纳入范围<a class="ref" href="#s7">[7]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2021-12</time><div class="ev">Euler V1 在以太坊上线<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li><time>2022-06-21</time><div class="ev">提交 85abe8d 加入 <code>donateToReserves</code>，同时让新市场的储备从非零初始值起步<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2022-07-06</time><div class="ev">eIP 14 在治理论坛发布，打包 DToken、EToken、Exec、Governance 等模块的升级。Omniscia 审计了 Chainlink 相关部分，其余由 Sherlock 等审阅<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="key"><time>2022-08-18</time><div class="ev">eIP 14 的 Snapshot 投票通过，升级上链。带缺陷的 <code>donateToReserves</code> 从此在链上运行了约七个月<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk"><time>2023-03-13 08:50</time><div class="ev">08:50:23（UTC），被 Euler 标为 Exploiter 1 的地址部署攻击合约；12 秒后另一个地址部署了一份相同的合约<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2023-03-13 08:50</time><div class="ev">08:50:59，第一笔攻击交易执行，约 880 万美元的 DAI 被取走。发出这笔交易的是后一个地址，它事后自称是“意外抢跑”了黑客的 MEV 机器人<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-03-13 08:56 起</time><div class="ev">Exploiter 1 在约 15 分钟里继续发出多笔攻击交易，取走 USDC、WBTC、stETH 和 WETH 市场的资金，合计损失约 1.97 亿美元<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2023-03-13</time><div class="ev">PeckShield 和 BlockSec 发出警报。Euler 回应称正在与安全专家和执法部门合作<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="atk"><time>2023-03-13 10:38</time><div class="ev">Exploiter 1 把 100 ETH 转入 Tornado Cash<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-03-13 11:38</time><div class="ev">自称 MEV 机器人的地址把约 880 万美元的 DAI 转给了 Exploiter 1，而不是还给 Euler，理由是它的合约“只能转到字节码里写死的地址”<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2023-03-13 至 14</time><div class="ev">Euler 在链上给攻击者发出第一条留言，并禁用了有漏洞的 eToken 模块和捐赠功能，存款随之停止<a class="ref" href="#s1">[1]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2023-03-14</time><div class="ev">Sherlock 承认在审阅 eIP 14 时漏掉了这个问题，批准 450 万美元的理赔，当天先付 330 万美元。Euler 再次留言：24 小时内不归还 90%，就悬赏 100 万美元征集能让攻击者被捕的线索<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2023-03-15</time><div class="ev">Euler 提出条件：把 90% 的 DAI 和 ETH 还到 EulerDAO 金库，调查即可停止，不走法律途径<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2023-03-16 至 17</time><div class="ev">攻击者又把 1,000 ETH 分批转入 Tornado Cash，并把 100 ETH 转到一个收过 Ronin 跨链桥被盗资金的地址。Chainalysis 认为这可能是故意误导<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def key"><time>2023-03-18</time><div class="ev">攻击者第一次归还，3,000 ETH，不到被盗资金的 3%<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2023-03-20 至 22</time><div class="ev">攻击者提议建立加密通讯，双方转入私下沟通，对方在邮件中署名“Jacob”。期间 Ronin 攻击者地址给他发来一条附带“解密工具”的加密消息，Euler 提醒他不要使用<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2023-03-25</time><div class="ev">攻击者归还 51,000 ETH，约占被盗资金的一半<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2023-03-27 至 28</time><div class="ev">又有几笔 ETH 和 DAI 从多个地址归还。3 月 28 日，攻击者以“Jacob”的名义留言道歉<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def key"><time>2023-04-03</time><div class="ev">最后几笔归还：1,200 万 DAI、约 8,080 ETH 和约 2,500 ETH。Euler 随后发文确认追回<a class="ref" href="#s1">[1]</a><a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="def"><time>2023-04-05 至 12</time><div class="ev">Euler Foundation 先后发布两版用户兑付方案。金库实收 95,556.36 ETH 和 43,063,729.35 DAI，另有 Sherlock 的赔付<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2024-01-10</time><div class="ev">Euler Labs 发布长文复盘谈判经过，称被盗资金 100% 追回<a class="ref" href="#s1">[1]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <p>Euler V1 的安全靠一条不变式：任何操作结束时，账户的健康分都不能低于 1。健康分等于按风险折算后的抵押价值除以按风险折算后的债务价值，由 <code>checkLiquidity</code> 按预言机价格重新计算，低于 1 就让整笔交易回滚。取款、借款（<code>mint</code>）、还款（<code>burn</code>）和 eToken 转账，都在函数末尾调用它<a class="ref" href="#s2">[2]</a>。下面是取款函数：</p>
+<pre class="code"><code><span class="c">// EToken.sol，withdraw()</span>
+function withdraw(uint subAccountId, uint amount) external nonReentrant {
+    (address underlying, AssetStorage storage assetStorage, address proxyAddr,
+        address msgSender) = CALLER();
+    address account = getSubAccount(msgSender, subAccountId);
+    <span class="c">// ……（计算可取金额、检查池子余额）……</span>
+    pushTokens(assetCache, msgSender, amount);            <span class="c">// 把底层资产转给用户</span>
+    decreaseBalance(assetStorage, assetCache, proxyAddr, account, amountInternal);
+<span class="good">    checkLiquidity(account);                              <span class="c">// 抵押减少后检查健康分</span></span>
+    logAssetStatus(assetCache);
+}</code></pre>
+        <p class="code-cap">来源：euler-xyz/euler-contracts 仓库 master 分支，contracts/modules/EToken.sol 第 180–200 行，中间几行从略，第一条语句按长度折行。</p>
+        <p>eIP 14 加入的 <code>donateToReserves</code> 同样会减少调用者的 eToken 余额，效果和取款一样是抵押变少，只是减掉的部分记进了协议储备，而不是转给用户：</p>
+<pre class="code"><code><span class="c">// EToken.sol，donateToReserves()，eIP 14 加入</span>
+function donateToReserves(uint subAccountId, uint amount) external nonReentrant {
+    (address underlying, AssetStorage storage assetStorage, address proxyAddr,
+        address msgSender) = CALLER();
+    address account = getSubAccount(msgSender, subAccountId);
+
+    updateAverageLiquidity(account);
+    emit RequestDonate(account, amount);
+
+    AssetCache memory assetCache = loadAssetCache(underlying, assetStorage);
+
+    uint origBalance = assetStorage.users[account].balance;
+    uint newBalance;
+
+    if (amount == type(uint).max) {
+        amount = origBalance;
+        newBalance = 0;
+    } else {
+        require(origBalance >= amount, "e/insufficient-balance");
+        unchecked { newBalance = origBalance - amount; }
+    }
+
+<span class="bad">    assetStorage.users[account].balance = encodeAmount(newBalance);   <span class="c">// 抵押减少</span></span>
+    assetStorage.reserveBalance = assetCache.reserveBalance =
+        encodeSmallAmount(assetCache.reserveBalance + amount);           <span class="c">// 记入储备</span>
+
+    emit Withdraw(assetCache.underlying, account, amount);
+    emitViaProxy_Transfer(proxyAddr, account, address(0), amount);
+
+    logAssetStatus(assetCache);
+<span class="bad">    <span class="c">// 到这里就结束了：没有 checkLiquidity(account)，健康分低于 1 也不会回滚</span></span>
+}</code></pre>
+        <p class="code-cap">来源：同上，EToken.sol 第 359–386 行。第一条语句和储备赋值按长度折行；最后一行注释是本站加的，原文没有这一行。</p>
+        <p>如果捐赠走的是普通的 eToken 转账，<code>transferFrom</code> 会对转出方调用 <code>checkLiquidity</code>（同一文件第 345 行）。<code>donateToReserves</code> 直接改写余额，绕开了这条路径<a class="ref" href="#s6">[6]</a>。漏洞本身就这么一行。</p>
+        <h3>为什么能从清算里获利</h3>
+        <p>只靠这个缺口，用户能做的只是把自己的账户弄得资不抵债，捐出去的抵押进了储备，对自己没有好处。让它变成攻击的是清算折扣的设计：账户健康分跌得越深，清算人拿到的折扣越大。</p>
+<pre class="code"><code><span class="c">// Liquidation.sol，常量</span>
+uint public constant UNDERLYING_RESERVES_FEE = 0.02 * 1e18;
+uint public constant MAXIMUM_DISCOUNT = 0.20 * 1e18;
+
+<span class="c">// computeLiqOpp()：折扣 = 2% + (1 - 健康分)，再乘激励系数，最多 20%</span>
+uint baseDiscount = UNDERLYING_RESERVES_FEE + (1e18 - liqOpp.healthScore);
+uint discountBooster = computeDiscountBooster(liqLocs.liquidator, liabilityValue);
+uint discount = baseDiscount * discountBooster / 1e18;
+if (discount &gt; (baseDiscount + MAXIMUM_BOOSTER_DISCOUNT))
+    discount = baseDiscount + MAXIMUM_BOOSTER_DISCOUNT;
+if (discount &gt; MAXIMUM_DISCOUNT) discount = MAXIMUM_DISCOUNT;
+
+<span class="c">// Limit yield to borrower's available collateral, and reduce repay if necessary</span>
+<span class="c">// 抵押不够时，清算人拿走全部抵押，承接的债务按折扣后的价值相应减少</span>
+if (collateralBalance &lt; liqOpp.yield) {
+    liqOpp.repay = collateralBalance * 1e18 / liqOpp.conversionRate;
+    liqOpp.yield = collateralBalance;
+}</code></pre>
+        <p class="code-cap">来源：euler-xyz/euler-contracts 仓库 master 分支，contracts/modules/Liquidation.sol 第 13–16、91–98、139–150 行，节选，一处长行折行。</p>
+        <p>健康分为 0.75 时，基础折扣是 2% + 25% = 27%，被封顶在 20%。清算人按八折拿抵押：每承接 0.8 份债务，就换到 1 份抵押。正常情况下，这个差价是给第三方清算人承担风险的补偿。可当违约账户和清算人都是攻击者自己时，抵押超出债务的那部分就成了可以直接取走的利润，而违约账户里剩下的债务没有任何抵押支撑，成了由其他存款人承担的坏账<a class="ref" href="#s7">[7]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 400" role="img" aria-labelledby="euler-bal-t euler-bal-d">
+            <title id="euler-bal-t">DAI 市场一次攻击中两个账户的抵押与债务</title>
+            <desc id="euler-bal-d">违约账户加杠杆后有约 410.9M eDAI 抵押、390M dDAI 债务，健康分约 1.02。捐出 100M eDAI 后抵押降到约 310.9M，债务不变，健康分约 0.75。被清算后抵押归零，剩下约 135.8M dDAI 坏账。清算账户拿到约 310.9M eDAI 抵押，只承接约 259.3M dDAI 债务，多出约 51.6M，足以取走池中剩余的约 38.9M DAI。</desc>
+            <text class="d-t b" x="16" y="24">违约账户</text>
+            <text class="d-t s" x="96" y="24">攻击者用来制造坏账的合约</text>
+            <text class="d-t b" x="16" y="58">① 加杠杆后</text>
+            <text class="d-t s" x="16" y="80">健康分 ≈ 1.02</text>
+            <text class="d-t s" x="242" y="58" text-anchor="end">抵押 eDAI</text>
+            <text class="d-t s" x="242" y="82" text-anchor="end">债务 dDAI</text>
+            <rect class="d-box" x="250" y="42" width="431" height="22" rx="2"/>
+            <text class="d-t" x="258" y="58">410.9M</text>
+            <rect class="d-box atk" x="250" y="66" width="410" height="22" rx="2"/>
+            <text class="d-t" x="258" y="82">390M</text>
+            <text class="d-t b" x="16" y="128">② 捐出 100M eDAI</text>
+            <text class="d-t s atk" x="16" y="150">健康分 ≈ 0.75，未回滚</text>
+            <text class="d-t s" x="242" y="128" text-anchor="end">抵押 eDAI</text>
+            <text class="d-t s" x="242" y="152" text-anchor="end">债务 dDAI</text>
+            <rect class="d-box" x="250" y="112" width="326" height="22" rx="2"/>
+            <text class="d-t" x="258" y="128">310.9M</text>
+            <rect class="d-line dash" x="576" y="112" width="105" height="22" rx="2"/>
+            <text class="d-t s" x="584" y="128">100M 进了储备</text>
+            <rect class="d-box atk" x="250" y="136" width="410" height="22" rx="2"/>
+            <text class="d-t" x="258" y="152">390M，不变</text>
+            <text class="d-t b" x="16" y="198">③ 被清算后</text>
+            <text class="d-t s" x="16" y="220">健康分 0，没有抵押</text>
+            <text class="d-t s" x="242" y="198" text-anchor="end">抵押 eDAI</text>
+            <text class="d-t s" x="242" y="222" text-anchor="end">债务 dDAI</text>
+            <text class="d-t s" x="252" y="198">0，全部被清算拿走</text>
+            <rect class="d-box atk" x="250" y="206" width="143" height="22" rx="2"/>
+            <text class="d-t" x="258" y="222">135.8M</text>
+            <text class="d-t s atk" x="402" y="222">无人偿还的坏账</text>
+            <line class="d-line dash" x1="16" y1="250" x2="744" y2="250"/>
+            <text class="d-t b" x="16" y="278">清算账户</text>
+            <text class="d-t s" x="96" y="278">攻击者的另一个合约，在 ② 之后以 20% 折扣清算</text>
+            <text class="d-t b" x="16" y="312">④ 清算完成时</text>
+            <text class="d-t s" x="16" y="334">抵押多于债务</text>
+            <text class="d-t s" x="242" y="312" text-anchor="end">抵押 eDAI</text>
+            <text class="d-t s" x="242" y="336" text-anchor="end">债务 dDAI</text>
+            <rect class="d-box" x="250" y="296" width="326" height="22" rx="2"/>
+            <text class="d-t" x="258" y="312">310.9M，即 ② 的全部抵押</text>
+            <rect class="d-box atk" x="250" y="320" width="272" height="22" rx="2"/>
+            <text class="d-t" x="258" y="336">259.3M</text>
+            <line class="d-line dash" x1="576" y1="318" x2="576" y2="356"/>
+            <path class="d-line atk" d="M522,350 v6 h54 v-6"/>
+            <text class="d-t s atk" x="576" y="378" text-anchor="end">多出约 51.6M，足以取走池中剩余的约 38.9M DAI</text>
+          </svg>
+          </div>
+          <figcaption>图 1：DAI 市场那一次攻击中两个账户的状态，条形长度按金额比例画出，单位为百万枚（M）。数字取自 CertiK 和 Cyfrin 的复盘<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。② 是唯一本该回滚却没有回滚的一步。</figcaption>
+        </figure>
+        <div class="note">
+          <span class="h">两处设计叠在一起才出事</span>
+          <p>Cyfrin 的复盘把根因归为两点：捐赠后没有检查健康分；清算人的收益可以超过他承接的债务，所以清算账户不需要额外资金就能把利润取走<a class="ref" href="#s7">[7]</a>。单独存在时，前者只能让用户伤害自己，后者只是给清算人的正常激励。高倍自抵押杠杆又把规模放大了：2,000 万 DAI 本金撑起了 3.9 亿 dDAI 的债务。</p>
+        </div>
+        <p>修复只需要在函数末尾补上取款时已有的那次检查。下面是示意写法。Euler V1 事后没有重新开放，事发当天的处置是直接禁用这个模块，见“后续处置”。</p>
+<pre class="code"><code><span class="c">// 示意：与 withdraw 保持一致，捐赠后也检查健康分</span>
+    emit Withdraw(assetCache.underlying, account, amount);
+    emitViaProxy_Transfer(proxyAddr, account, address(0), amount);
+
+<span class="good">    checkLiquidity(account);   <span class="c">// 健康分低于 1 时整笔交易回滚</span></span>
+
+    logAssetStatus(assetCache);
+}</code></pre>
+        <p class="code-cap">示意代码，并非 Euler 发布的补丁。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>Euler、CertiK 和 Cyfrin 的复盘对 DAI 市场那一次攻击的描述一致，可以概括为四个阶段，数字取整<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。这里只转述结论，重点是每个阶段为什么没有被拦下。</p>
+        <ol class="steps">
+          <li><b>借来本金</b>攻击者从 Aave 闪电贷借出 3,000 万 DAI，并准备了两个合约，一个用来制造坏账（复盘里称为违约账户），一个用来清算它。闪电贷必须在同一笔交易里还清，所以整个过程都发生在一笔交易之内。</li>
+          <li><b>叠出高杠杆</b>违约账户存入 2,000 万 DAI，再借助 <code>mint</code> 的自抵押贷款把头寸放大到约 4.1 亿 eDAI 抵押、3.9 亿 dDAI 债务，健康分约 1.02。自抵押的抵押率上限是 95%，每一步都在规则之内，检查全部通过。</li>
+          <li><b>捐出抵押</b>违约账户通过 <code>donateToReserves</code> 捐出 1 亿 eDAI，健康分跌到约 0.75。这是整个过程里唯一越界的一步，因为函数里没有健康检查，交易没有回滚。</li>
+          <li><b>自我清算</b>清算合约以 20% 的折扣清算违约账户，拿走它的全部抵押，只承接了约 2.59 亿 dDAI，留下约 1.36 亿 dDAI 的坏账。清算合约的抵押多于债务，于是取走池中剩余的约 3,890 万 DAI，还掉闪电贷后，这一次净得约 888 万 DAI。</li>
+        </ol>
+        <p>CertiK 列出的受害市场共五个：eDAI、eWETH、eWBTC、ewstETH 和 eUSDC，攻击者对每个市场重复了同样的流程<a class="ref" href="#s6">[6]</a>。DAI 市场的那一笔是第一笔，被一个自称 MEV 机器人的地址抢先执行了，所得约 880 万美元的 DAI 几个小时后又转给了攻击者的地址<a class="ref" href="#s1">[1]</a>。CertiK 发现，这个“机器人”的启动资金来自一个此前在 BSC 上利用通缩代币漏洞获利的地址<a class="ref" href="#s6">[6]</a>；rekt.news 和研究者 ZachXBT 也指出，与攻击者关联的地址此前在 BSC 上作过案，并把所得转进了 Tornado Cash<a class="ref" href="#s9">[9]</a><a class="ref" href="#s10">[10]</a>。</p>
+        <div class="note lesson">
+          <span class="h">哪一步本可以拦住</span>
+          <ul>
+            <li>第 3 阶段：<code>donateToReserves</code> 末尾调用一次 <code>checkLiquidity</code>，交易就会回滚，后面的阶段都无从谈起。</li>
+            <li>第 4 阶段：清算收益如果以承接的债务为上限，自我清算就不再有利润。</li>
+            <li>第 2 阶段：如果自抵押杠杆有总量上限，单次攻击能撬动的规模会小得多。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>CertiK 统计的被盗资产如下。攻击者随后把大部分换成 ETH 和 DAI，手里约有 96,733 枚 ETH 和约 4,300 万 DAI，分散在 Euler 标为 Exploiter 1 至 4 的几个地址里，其中最大的一个是 <span class="addr">0xb66cd966670d962c227b3eaba30a872dbfb995db</span><a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s8">[8]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>被盗资产</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>DAI</td><td class="n">8,877,507</td><td>第一笔，被自称 MEV 机器人的地址抢先执行</td></tr>
+              <tr><td>WETH</td><td class="n">8,080</td><td></td></tr>
+              <tr><td>WBTC</td><td class="n"><span class="dispute">846.4</span></td><td>rekt.news 引 SlowMist 的数字为 849 枚<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>stETH</td><td class="n">73,821</td><td>来自 ewstETH 市场</td></tr>
+              <tr><td>USDC</td><td class="n">34,224,863</td><td></td></tr>
+              <tr><td>合计</td><td class="n">约 1.97 亿美元</td><td>按事发时价格</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ol class="flow">
+          <li class="atk"><b>被盗约 1.97 亿美元</b>换成约 96,733 ETH 和约 4,300 万 DAI</li>
+          <li class="atk"><b>转出 1,200 ETH</b>1,100 ETH 进 Tornado Cash，100 ETH 转给 Ronin 攻击者地址</li>
+          <li class="ok"><b>归还 EulerDAO 金库</b>95,556.36 ETH 和 43,063,729.35 DAI</li>
+          <li class="ok"><b>按方案兑付</b>连同 Sherlock 的赔付，按比例分给受影响的用户</li>
+        </ol>
+        <p>Euler 公布的金库实收数字是 95,556.36 ETH 和 43,063,729.35 DAI，接收地址为 <span class="addr">0xcAD001c30E96765aC90307669d578219D4fb1DCe</span>。没有追回的部分包括转进 Tornado Cash 的 1,100 枚 ETH 和转给 Ronin 攻击者地址的 100 枚 ETH。另有 100 枚 ETH 被攻击者直接还给了一名受害者，这名受害者又把多出自己损失的 12 枚交给了金库<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <div class="note doubt">
+          <span class="h">“100% 追回”是按美元算的</span>
+          <p>Euler 在 2024 年的复盘里称被盗资金 100% 追回，标题里的金额是 2.4 亿美元，原因是谈判期间 ETH 价格上涨<a class="ref" href="#s1">[1]</a>。按币数算，约 1,200 枚 ETH 没有回来，这是 Euler 自己在兑付方案里列出的<a class="ref" href="#s5">[5]</a>。两种说法都成立，本页并列写出。</p>
+        </div>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>Euler 自身</h3>
+        <p>事发后 Euler 的总锁仓从约 2.64 亿美元跌到约 1,000 万美元，EUL 代币当天下跌超过 50%<a class="ref" href="#s9">[9]</a>。协议在禁用 eToken 模块后停摆，用户的资产只能等兑付方案出来后领取。</p>
+        <h3>沿着集成扩散</h3>
+        <p>更大的影响来自其他协议。不少协议把自己的资金存在 Euler 里赚利息，Euler 被掏空，它们的资产也跟着被锁住或受损。Cointelegraph 报道称受影响的协议超过 11 个<a class="ref" href="#s11">[11]</a>。rekt.news 在事发后列出的主要受影响方如下，数字是当时各方披露的风险敞口，不是最终损失<a class="ref" href="#s9">[9]</a>。这些协议在 Euler 里的存款后来也纳入了兑付范围，智能合约账户由 Euler Foundation 逐个处理<a class="ref" href="#s5">[5]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>协议</th><th class="n">敞口</th><th>备注</th></tr></thead>
+            <tbody>
+              <tr><td>Angle Protocol</td><td class="n">超过 1,700 万美元</td><td>agEUR 的抵押品，ANGLE 下跌超过 50%</td></tr>
+              <tr><td>Balancer</td><td class="n">约 1,190 万美元</td><td>bb-e-USD 池</td></tr>
+              <tr><td>Temple DAO</td><td class="n">约 500 万美元</td><td>TEMPLE 下跌约 30%</td></tr>
+              <tr><td>Idle DAO</td><td class="n">约 500 万美元</td><td></td></tr>
+              <tr><td>Swissborg</td><td class="n">约 430 万美元</td><td>260 万美元 ETH 和 170 万美元 USDT</td></tr>
+              <tr><td>Yield Protocol</td><td class="n">约 150 万美元</td><td></td></tr>
+              <tr><td>Yearn</td><td class="n">约 138 万美元</td><td>间接敞口，由 Yearn 金库承担</td></tr>
+              <tr><td>Inverse Finance</td><td class="n">约 80 万美元</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>对行业</h3>
+        <p>CertiK 在事发当天估计，这一起就占了 2023 年当时全部被盗金额的约 70%<a class="ref" href="#s6">[6]</a>。这次事件让两个问题受到关注。一是升级的审计范围：一次只审阅改动部分的审计，很难看出新函数和原有清算逻辑叠在一起会出什么问题。二是可组合性的代价：一个借贷协议出事，十几个把钱存在里面的协议同时受影响。</p>
+        <p>谈判追回也成了一个常被引用的先例：链上留言、悬赏、执法合作和私下沟通几种手段并用，最后几乎全额追回。不过同一年的 <a href="2023-curve-vyper.html">Curve / Vyper</a> 等事件里，并不是每个攻击者都愿意谈。借贷协议被操纵清算的更早案例，可以对照 <a href="2020-bzx-flash-loan.html">bZx</a> 和 <a href="2022-mango-markets.html">Mango Markets</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>止损</h3>
+        <p>Euler 禁用了有漏洞的 eToken 模块和捐赠功能，存款随之停止，同时联系执法部门以及 TRM Labs、Chainalysis 等链上分析机构协助调查<a class="ref" href="#s11">[11]</a>。Euler V1 此后没有重新开放。</p>
+        <h3>谈判</h3>
+        <p>谈判几乎全程在链上公开进行，Euler 把留言写进交易的附加数据里<a class="ref" href="#s1">[1]</a><a class="ref" href="#s9">[9]</a>：</p>
+        <ol class="steps">
+          <li><b>3 月 13 日：开口</b>第一条留言写道：“我们知道今天早上对 Euler 平台的攻击是你干的”，并邀请对方谈下一步。</li>
+          <li><b>3 月 14 日：施压</b>如果 24 小时内不归还 90%，就悬赏 100 万美元，征集能让攻击者被捕、资金全部追回的线索。</li>
+          <li><b>3 月 15 日：给台阶</b>把 90% 的 DAI 和 ETH 还到 EulerDAO 金库，调查即可停止，资金可以直接分给用户，不必走法律途径。</li>
+          <li><b>3 月 18 日起：归还</b>攻击者先还了 3,000 ETH，3 月 20 日提议建立加密通讯，此后在邮件中署名“Jacob”，3 月 25 日一次归还 51,000 ETH。</li>
+          <li><b>3 月 28 日：道歉</b>攻击者留言：“Jacob here. I don't think what I say will help me in any way but I still want to say it.” 他后来私信 Euler 的联合创始人，称自己不知道可以走漏洞赏金渠道，“经验不够”。</li>
+          <li><b>4 月 3 日：还清</b>最后几笔归还完成，最终归还的不是谈判时提出的 90%，而是攻击者控制的几乎全部资金。</li>
+        </ol>
+        <p>谈判期间还有一段插曲：3 月 21 日，被美国财政部 OFAC 归因于朝鲜 Lazarus 的 Ronin 跨链桥攻击者地址，给 Euler 的攻击者发去一条加密消息，附带一个“解密工具”。Euler 认为这是想反过来黑掉他，提醒他不要使用<a class="ref" href="#s1">[1]</a>。此前攻击者转给这个地址的 100 ETH，Chainalysis 认为可能是故意制造与朝鲜有关的假象<a class="ref" href="#s8">[8]</a>。Ronin 事件见 <a href="2022-ronin-bridge.html">Ronin 跨链桥被盗</a>。</p>
+        <p>“Jacob”只是攻击者自己留下的称呼。截至 2026 年 10 月，本站没有查到针对此案攻击者的公开执法行动或起诉。</p>
+        <h3>审计方赔付</h3>
+        <p>审计平台 Sherlock 承认在审阅 eIP 14 时漏掉了这个问题，批准了 450 万美元的理赔，3 月 14 日先付了 330 万美元<a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a>。Euler 的兑付方案显示，金库中来自 Sherlock 保险赔付的资产为 3,396,964 USDC 和 1,007,321 DAI，这部分也用于兑付<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>用户兑付</h3>
+        <p>Euler Foundation 在 4 月 5 日发布方案初稿，4 月 12 日发布修订版<a class="ref" href="#s5">[5]</a>。做法是：以协议被禁用时的区块为准，模拟每个子账户用资产偿还全部债务；剩余资产按事先公布的兑付区块的价格折算成净值；追回的 ETH、DAI 和 USDC 按净值比例分配。修订版增加了一条：如果按兑付时的价格，分到的资产超过净值的 1.005 倍，超出部分改分给那些因协议停摆而错过行情的持仓用户。普通地址和多签钱包签署条款后，通过 merkle 分发合约领取；141 个受影响的智能合约账户逐个处理。</p>
+        <p>2024 年 1 月，Euler Labs 发布长文复盘这次追回的经过。Euler 后来以 V2 的形式重新推出协议，同一篇文章的编者按称 V2 已完成 50 多次审计<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给合约开发者</span>
+          <ul>
+            <li>凡是会减少抵押或增加债务的函数，都要经过同一个健康检查。与其指望每个函数记得调用，不如把检查放在所有入口共用的位置，并用不变式测试验证：任何外部可调用的函数执行完，账户健康分都不低于 1。</li>
+            <li>新增一个“看起来无害”的函数时，要问它改了哪些状态，再查这些状态的每一个使用方。<code>donateToReserves</code> 改的是余额，而余额是清算的输入。</li>
+            <li>清算激励要防自我清算：清算人的收益不应随违约程度无上限地增长，测试里要包括“违约者和清算人是同一人”的场景。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议和审计方</span>
+          <ul>
+            <li>升级的审计不能只看 diff。eIP 14 的改动被拆给不同的审计方，新函数和原有清算逻辑的交互没有人完整看过；Cyfrin 指出，这个函数之后几轮审计都不在范围内<a class="ref" href="#s7">[7]</a>。</li>
+            <li>用存款和借款上限限制单个市场、单个账户的规模。高倍自抵押杠杆会把一个小缺口放大成上亿美元的坏账。</li>
+            <li>事先准备好应急流程：能禁用的模块、能联系的执法与分析机构、给攻击者的谈判条件。Euler 在一天之内完成了止损和第一轮施压。</li>
+            <li>集成其他协议的一方，要把对方的风险算进自己的风险里。这次有十几个协议同时被波及。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Euler Labs，《War &amp; Peace: Behind the Scenes of Euler's $240M Exploit Recovery》，2024-01-10。<a href="https://www.euler.finance/blog/war-peace-behind-the-scenes-of-eulers-240m-exploit-recovery">euler.finance</a></li>
+          <li id="s2">Euler V1 合约源码，euler-xyz/euler-contracts 仓库（现更名为 euler-legacy-xyz/euler-contracts）master 分支，contracts/modules/EToken.sol、Liquidation.sol。<a href="https://github.com/euler-legacy-xyz/euler-contracts/tree/master/contracts/modules">github.com</a></li>
+          <li id="s3">Doug Hoyte，提交 85abe8d《start reserves at non-zero value after market activation》，2022-06-21。<a href="https://github.com/euler-legacy-xyz/euler-contracts/commit/85abe8d0986f97557159d26c5e79df6d78eccc53">github.com</a></li>
+          <li id="s4">Doug Hoyte 等，《eIP 14: Contract Upgrades》，Euler 治理论坛，2022-07-06 至 2022-08-18。<a href="https://forum.euler.finance/t/eip-14-contract-upgrades/305">forum.euler.finance</a></li>
+          <li id="s5">Euler Foundation（Doug Hoyte 发布），《Plan for Redemption of Euler Funds V2》，Euler 治理论坛，2023-04-12；初稿见同论坛 2023-04-05 的《Plan for Redemption of Euler Funds》。<a href="https://forum.euler.finance/t/plan-for-redemption-of-euler-funds-v2/947">forum.euler.finance</a></li>
+          <li id="s6">CertiK，《Euler Finance Incident Analysis》，2023-03-13。<a href="https://www.certik.com/resources/blog/euler-finance-incident-analysis">certik.com</a></li>
+          <li id="s7">Ciara Nightingale，《How did the Euler Finance hack happen? - Full Hack Analysis》，Cyfrin，2024-02-21。<a href="https://www.cyfrin.io/blog/how-did-the-euler-finance-hack-happen-hack-analysis">cyfrin.io</a></li>
+          <li id="s8">Chainalysis，《$197 Million Stolen: Euler Finance Flash Loan Attack Explained》，2023-03-15，2023-04-06 更新。<a href="https://www.chainalysis.com/blog/euler-finance-flash-loan-attack/">chainalysis.com</a></li>
+          <li id="s9">rekt.news，《Euler Finance - REKT》，2023-03-14。<a href="https://rekt.news/euler-rekt/">rekt.news</a></li>
+          <li id="s10">Lorenzo Franceschi-Bicchierai，《Hackers steal around $200 million from crypto lender Euler Finance》，TechCrunch，2023-03-13。<a href="https://techcrunch.com/2023/03/13/hackers-steal-around-200-million-from-crypto-lender-euler-finance/">techcrunch.com</a></li>
+          <li id="s11">Prashant Jha，《Euler Finance blocks vulnerable module, working on recovering funds》，Cointelegraph，2023-03-14。<a href="https://cointelegraph.com/news/euler-finance-blocks-vulnerable-module-working-on-recovering-funds">cointelegraph.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

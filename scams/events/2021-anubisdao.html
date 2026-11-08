@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AnubisDAO：开售 20 小时，池子被抽空｜区块链诈骗与骗局</title>
+<meta name="description" content="2021 年 10 月 28 日，没有网站、没有白皮书的 AnubisDAO 在 Copper Launch 上发售 ANKH 代币，不到一天收进约 13,556 枚 ETH（约 6,000 万美元）。开售约 20 小时后，创建交易池的地址兑出 LP 代币，把 ETH 全部转走，ANKH 归零。本页讲流动性启动池的权限、“被钓鱼”的说法为什么站不住、赃款经 Tornado Cash 的去向和识别方法。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/sc.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2021-anubisdao">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链诈骗与骗局</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2021 年　/　<a href="../index.html#cat-rug">跑路与拉盘</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>AnubisDAO：开售 20 小时，池子被抽空</h1>
+    <p class="lede">2021 年 10 月 28 日，一个叫 AnubisDAO 的项目在众筹平台 Copper Launch 上发售 ANKH 代币。它自称是 OlympusDAO 的分叉，没有网站，也没有白皮书，只有一个推特账号和一个 Discord 服务器，不到一天却收进约 13,556 枚 ETH，当时约值 6,000 万美元。开售约 20 小时后，创建交易池的地址把池里的 ETH 全部提走，ANKH 归零。项目一方说是被钓鱼，Chainalysis 的结论是证据不支持这个说法，“所有迹象都指向一次标准的 rug pull”。到 2026 年 11 月，钱没有追回，也没有找到有人因此被起诉的公开报道。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">AnubisDAO 以埃及神话里狗头的冥神阿努比斯为形象，自称是 OlympusDAO 的分叉，要做一种由一篮子资产支撑、自由浮动的去中心化货币<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。它没有网站和白皮书，开发者都用化名<a class="ref" href="#s1">[1]</a>。10 月 28 日（周四），它在 Copper Launch 上开了一个 24 小时的发售，买家把 ETH 换进一个 Balancer 的流动性启动池（LBP），换回 ANKH<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</p>
+        <p>据 Chainalysis 的分析，部署这个池子的地址本来就持有池子绝大部分的 LP 代币。开售 20 小时后，这个地址兑出 LP 代币，拿走了池里几乎全部的 wETH 和 ANKH，再经一串中间钱包转走；ANKH 没有了可以卖进去的流动性，价格归零<a class="ref" href="#s1">[1]</a>。转走的金额，吴说区块链当天报 13,556 枚 ETH，约 6,000 万美元<a class="ref" href="#s5">[5]</a>。</p>
+        <p>AnubisDAO 的推特说是 Copper 出了“意外的错误”，Copper 回应自己没有被攻破，问题出在 Anubis 团队自己的管理密钥<a class="ref" href="#s2">[2]</a>。社区把收款地址和化名 Beerus 的推特账号联系起来，自称 Beerus 的人用另一个账号说自己可能被钓鱼<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。Chainalysis 写道，这名创始人提供的证据不支持钓鱼的说法<a class="ref" href="#s1">[1]</a>。</p>
+        <p>赃款在被 Etherscan 标成“AnubisDAO Liquidity Rug 3”的地址里放了 236 天，2022 年 6 月起分批经混币器 Tornado Cash 转出<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。Protos 2026 年 5 月写道，受害者从没追回资金，也没有人因盗窃入狱<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>狗币热和“储备货币”</h3>
+        <p>2021 年秋天，以狗为形象的代币正热。损失了近 47 万美元的投资者 Brian Nguyen 对 CNBC 说，AnubisDAO 吸引他的，是它的营销方式和最近大涨的 Dogecoin、Shiba Inu 很像<a class="ref" href="#s2">[2]</a>。Cointelegraph 后来也写，AnubisDAO 能募到钱，靠的是当时的 Dogecoin 热潮<a class="ref" href="#s7">[7]</a>。同一周，BNB Chain 上的 <a href="2021-squid-game-token.html">Squid Game 代币</a>也在借热点暴涨。</p>
+        <p>AnubisDAO 给自己贴的另一个标签是 OlympusDAO 的分叉。Decrypt 介绍，OlympusDAO 是一种“去中心化储备货币”，靠出售债券和收取流动性提供者的手续费来积累资产<a class="ref" href="#s3">[3]</a>；Business Insider 的说法是，它的币由金库里的资产支撑<a class="ref" href="#s4">[4]</a>。分叉就是复制一份开源代码，改个名字再发一次。发币、建池子、给存钱的人发收益的玩法，在 2020 年的流动性挖矿热潮里流行起来，见大事记的<a href="../../milestones/events/2020-defi-summer.html">DeFi 之夏</a>。</p>
+        <h3>只有一个推特账号和一个 Discord</h3>
+        <p>Chainalysis 写道，AnubisDAO 除了一个仿 Dogecoin 的标志，几乎什么都没有：没有网站，没有白皮书，开发者全用化名<a class="ref" href="#s1">[1]</a>。它对外只有一个推特账号和一个 Discord 服务器<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。即便如此，投资者还是在一天之内投进了约 6,000 万美元<a class="ref" href="#s3">[3]</a>。</p>
+        <p>Nguyen 承认，投钱之前他没有仔细研究这个项目。“我们这些玩加密货币的，习惯先买，再做研究。”<a class="ref" href="#s2">[2]</a> 他说，让他下决心的还有一点：他听说项目得到化名 0xSisyphus 的加密网红支持，他很看重这个人。CNBC 写，0xSisyphus 事发前发过推文介绍 AnubisDAO 和这次发售<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>Copper Launch 和流动性启动池</h3>
+        <p>AnubisDAO 的发售放在 Copper Launch 上。Copper 是一个众筹网站，背后用的是 Balancer 的流动性启动池（Liquidity Bootstrapping Pool，LBP）。Balancer 的文档里举的例子之一，是 Gitcoin 在 Copper 上开的 AKITA/ETH 池<a class="ref" href="#s11">[11]</a>。Nguyen 对 CNBC 说，Copper Launch 是有名的众筹工具，发售放在那里，让项目显得更可信<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Copper 事后在推特上说明，任何人都可以用它的众筹工具，在上面发售不代表平台为项目背书<a class="ref" href="#s2">[2]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">骗局与损失</span><span class="def">调查、执法与法院</span><span>其他</span></p>
+        <ol class="timeline">
+          <li class="atk key"><time>2021-10-28</time><div class="ev">周四，AnubisDAO 在 Copper Launch 开始为期 24 小时的 ANKH 发售<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk key"><time>2021-10-29</time><div class="ev">开售约 20 小时，创建池子的地址兑出 LP 代币，池里的 wETH 被转到一串新地址，ANKH 归零<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。吴说区块链报转走 13,556 枚 ETH<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>2021-10-29</time><div class="ev">AnubisDAO 的推特称是 Copper 出了“意外的错误”；Copper 回应自己没有被攻破，是 Anubis 团队的管理密钥出了问题<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2021-10-29</time><div class="ev">社区把收款地址和化名 Beerus 的推特账号联系起来，这个账号随即消失；自称 Beerus 的人用另一个账号说可能被钓鱼<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。0xSisyphus 悬赏 1,000 ETH 找人<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2021-10-30</time><div class="ev">自称 Beerus 的账号说已经报警，把电脑交给警方检查；0xSisyphus 说已请 Chainalysis 参与调查<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2021-12-16</time><div class="ev">Chainalysis 把 AnubisDAO 列为 2021 年第二大的 rug pull，称“所有迹象都指向一次标准的 rug pull”<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk"><time>2022-06-24</time><div class="ev">赃款放了 236 天后第一次移动：转出 1,097 枚 ETH，其中 1,018 枚经 Tornado Cash 转走<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2022-08-08</time><div class="ev">美国财政部海外资产控制办公室（OFAC）制裁 Tornado Cash<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>2023</time><div class="ev">据 CoinEdition，同一地址又转出 3,000 枚 WETH，经中间地址进了 Tornado Cash<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2023-07-15</time><div class="ev">15 日至 16 日，赃款按每笔 100 ETH 经 Tornado Cash 转出，PeckShield 发出警报<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li><time>2023-10-06</time><div class="ev">匿名账号 NFT Ethics 在 X 上指控 0xSisyphus 的真实身份并称他参与其中；ZachXBT 认为这些说法缺乏事实<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li><time>2026-05-07</time><div class="ev">Protos 写道，受害者从没追回资金，也没有人因盗窃入狱<a class="ref" href="#s10">[10]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>骗术怎样运作</h2>
+        <p>AnubisDAO 的发售用的是现成的 Balancer 流动性启动池：买家往池子里存 ETH，换走 ANKH；池子本身由创建它的地址掌握。开售约 20 小时，这个地址把池子连同里面的 ETH 一起收了回去。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 410" role="img" aria-labelledby="an-flow-t an-flow-d">
+            <title id="an-flow-t">AnubisDAO 买家的 ETH 怎样被转走</title>
+            <desc id="an-flow-d">创建池子的地址在 Copper Launch 上用 Balancer 的流动性启动池发售 ANKH，自己持有池子绝大部分的 LP 代币。买家把 ETH 换进池子，换回 ANKH，池里的 wETH 越积越多。开售约 20 小时后，创建池子的地址兑出 LP 代币，拿走几乎全部 wETH 和剩下的 ANKH，经中间钱包转到被标成 AnubisDAO Liquidity Rug 3 的地址。池里没有了 ETH，买家手里的 ANKH 无处可卖，价格归零。赃款放了 236 天后，从 2022 年 6 月起分批经 Tornado Cash 转出。</desc>
+            <defs>
+              <marker id="an-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="an-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box" x="40" y="20" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="200" y="46" text-anchor="middle">买家</text>
+            <text class="d-t s" x="200" y="68" text-anchor="middle">在 Copper Launch 上用 ETH 换 ANKH</text>
+            <rect class="d-box atk" x="400" y="20" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="560" y="46" text-anchor="middle">创建池子的地址</text>
+            <text class="d-t s" x="560" y="68" text-anchor="middle">放进 ANKH，持有绝大部分 LP 代币</text>
+            <rect class="d-box" x="190" y="150" width="380" height="64" rx="3"/>
+            <text class="d-t b" x="380" y="176" text-anchor="middle">Balancer 流动性启动池（ANKH/wETH）</text>
+            <text class="d-t s" x="380" y="198" text-anchor="middle">买家的 ETH 留在池里，一天收进约 13,556 枚</text>
+            <rect class="d-box" x="40" y="290" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="200" y="316" text-anchor="middle">买家手里的 ANKH</text>
+            <text class="d-t s" x="200" y="338" text-anchor="middle">池里没有 ETH 可换，价格归零</text>
+            <rect class="d-box atk" x="400" y="290" width="320" height="64" rx="3"/>
+            <text class="d-t b" x="560" y="316" text-anchor="middle">开售约 20 小时：兑出 LP 代币</text>
+            <text class="d-t s" x="560" y="338" text-anchor="middle">拿走几乎全部 wETH，经中间钱包转走</text>
+            <line class="d-line" x1="240" y1="84" x2="330" y2="146" marker-end="url(#an-ah)"/>
+            <line class="d-line atk" x1="520" y1="84" x2="430" y2="146" marker-end="url(#an-ah-atk)"/>
+            <line class="d-line dash" x1="330" y1="214" x2="240" y2="286" marker-end="url(#an-ah)"/>
+            <line class="d-line atk" x1="430" y1="214" x2="520" y2="286" marker-end="url(#an-ah-atk)"/>
+            <text class="d-t s" x="268" y="118" text-anchor="end">存入 ETH</text>
+            <text class="d-t s atk" x="492" y="118" text-anchor="start">建池，掌握 LP</text>
+            <text class="d-t s" x="268" y="256" text-anchor="end">无处可卖</text>
+            <text class="d-t s atk" x="492" y="256" text-anchor="start">收回整个池子</text>
+            <text class="d-t s" x="380" y="392" text-anchor="middle">赃款放了 236 天，2022 年 6 月起分批经 Tornado Cash 转出</text>
+          </svg>
+          </div>
+          <figcaption>红色是创建池子的一方和被转走的钱，虚线表示买家的 ANKH 卖不出去。LP 代币和转走的过程据 Chainalysis<a class="ref" href="#s1">[1]</a>，金额据吴说区块链<a class="ref" href="#s5">[5]</a>，236 天和 Tornado Cash 据 The Block<a class="ref" href="#s6">[6]</a>。</figcaption>
+        </figure>
+        <h3>流动性启动池本来怎样用</h3>
+        <p>Balancer 的文档写，LBP 是一种可以随时间改变代币权重的池子，例如两种代币的权重从 1:99 慢慢变成 99:1。开始和结束的权重、时间都由池子的所有者设定，所有者还可以暂停交易；“池子的所有者是唯一可以加入池子的地址”<a class="ref" href="#s11">[11]</a>。也就是说，只有所有者能往池里放钱、从池里取钱，其他人只能来买卖。</p>
+        <p>这样设计的本意是让新代币卖得更分散。文档建议把起始价定得很高，随着权重变化，价格一路往下走，早买的人反而吃亏，鲸鱼和机器人就不会一开始抢光<a class="ref" href="#s11">[11]</a>。项目方只要投入不多的启动资金，发售结束时手里会多出大笔买家付进来的 ETH，这正是 LBP 用来募资的原因<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>谁握着这个池子</h3>
+        <p>买家在 Copper 页面上的操作是一笔普通的兑换：把 ETH 换进池子，换回 ANKH。池子的份额，也就是代表“从池里按比例取回资金”的 LP 代币，不在买家手里。Chainalysis 写道，部署池子合约的地址本来就持有这个池子绝大部分的 LP 代币；开售 20 小时后，它兑出这些 LP 代币，拿走了池里几乎全部的 wETH 和 ANKH<a class="ref" href="#s1">[1]</a>。</p>
+        <p>社区当天的梳理也是这个结论。一位叫 DCF GOD 的推特用户写：“beerus 的钱包创建了这次 copper launch，也就是撤走流动性、把 ETH 转走的那个钱包。”<a class="ref" href="#s5">[5]</a> 买家付出去的 ETH 从进池子那一刻起就归池子的所有者支配。发售规则、价格曲线和 Copper 的界面都没有改变这一点。</p>
+        <p>名字里的“DAO”也没有带来任何约束。Chainalysis 解释，去中心化的代币本应这样设计：持有治理代币的投资者投票决定池里的资产怎么用，开发者就不可能把池子抽空。能查出这类问题的代码审计在业内很常见，但大多数去中心化交易所上币并不要求审计，所以 rug pull 才这么多<a class="ref" href="#s1">[1]</a>。AnubisDAO 的买家拿到的 ANKH 管不了池子，池子的所有权从头到尾在一个地址手里<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>“被钓鱼”还是跑路</h3>
+        <p>本站按转账是谁签的来分被盗和诈骗。这起事件里，买家自己签了兑换，把 ETH 交给了项目方建的池子；把 ETH 取走的，是持有池子 LP 代币的项目方地址，不是一个从外面闯进来的攻击者。项目一方说这个地址的私钥被钓鱼偷走，已发表的调查不支持：Chainalysis 认为这名创始人拿出的证据不支持钓鱼的说法，“所有迹象都指向一次标准的 rug pull”<a class="ref" href="#s1">[1]</a>；Copper 说问题出在 Anubis 团队自己的管理密钥<a class="ref" href="#s2">[2]</a>；链上调查者 ZachXBT 认为最可能负责的是团队里化名 Beerus 和 Ersan 的两个人<a class="ref" href="#s9">[9]</a>。所以本站把它算作跑路。Chainalysis 同时写明，还不清楚是不是所有开发者都参与了<a class="ref" href="#s1">[1]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>起盘：一夜募到 6,000 万美元</h3>
+        <p>AnubisDAO 2021 年 10 月 28 日（周四）上线<a class="ref" href="#s1">[1]</a>，同一天在 Copper Launch 开售<a class="ref" href="#s5">[5]</a>。发售定为 24 小时，买家付出 ETH，换得 ANKH<a class="ref" href="#s4">[4]</a>。ForkLog 写，不到一天，ANKH/ETH 池里就存进了 13,597 枚 ETH<a class="ref" href="#s5">[5]</a>。Chainalysis 的说法是，它“几乎一夜之间”从投资者手里募到近 6,000 万美元<a class="ref" href="#s1">[1]</a>。CNBC 写，发售周四开始、周五结束，Nguyen 在这期间投进了六位数美元的 ETH<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>卷款：10 月 29 日</h3>
+        <p>开售约 20 小时，离发售结束还有几个小时，池里的流动性被全部撤走<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。Chainalysis 写，这些以 wETH 为主的资金离开池子，转进一串新地址；不久，作为 AnubisDAO 门面的推特账号下线，ANKH 价格跌到零<a class="ref" href="#s1">[1]</a>。The Block 指出，池里没有了流动性，ANKH 已经无处可卖；Copper 上的发售页面随后撤下<a class="ref" href="#s4">[4]</a>。Nguyen 对 CNBC 说，他周五早上醒来才发现钱没了<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>互相指认</h3>
+        <p>投资者在推特和 Reddit 上声讨后，AnubisDAO 的推特把事情归咎于“Copper 意外的错误”。Copper 回应，平台没有被攻破，“但 Anubis 团队似乎泄露了他们的管理密钥”<a class="ref" href="#s2">[2]</a>。</p>
+        <p>设计师 @loldefi 翻出化名 @Beerus 的账号 3 月 18 日的一条推文，里面贴的地址就是这次接收资金的地址；Beerus 的账号一分钟后从推特消失<a class="ref" href="#s3">[3]</a>。20 分钟后，一个叫 @cryptofan777 的账号自称是 Beerus，说钱不是自己转走的，可能被钓鱼了，还贴出一封冒充 0xSisyphus 的邮件截图，邮件附带一个可能有恶意代码的附件<a class="ref" href="#s3">[3]</a>。ForkLog 写，社区里另有人说收到过同样的邮件；0xSisyphus 说自己和邮件无关，邮件是从一个香港的 IP 发出的，附带的 PDF 是乱码，看不出有恶意<a class="ref" href="#s5">[5]</a>。</p>
+        <p>0xSisyphus 周五发推说，账户的“同名者显然被盗了”<a class="ref" href="#s2">[2]</a>，又说事情可能出在团队里一个“不可靠的成员”身上。他提议对方把钱还给用户，自己掏 1,000 ETH 给对方留下，并说已请 Chainalysis 参与调查<a class="ref" href="#s5">[5]</a>。Decrypt 写，他还在一条后来删掉的推文里悬赏 1,000 ETH，找能指认那个地址控制者的人<a class="ref" href="#s3">[3]</a>。@cryptofan777 则说已经报警，把电脑送去警察局，“正在配合警方的调查”<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。Decrypt 写，社区的反应两极，有人相信 Beerus 无辜，有人认定他有罪<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>两年后的旧账</h3>
+        <p>2023 年 10 月 6 日，匿名账号 NFT Ethics 在 X 上指控 0xSisyphus 的真实身份是某家 NFT 平台的前员工，说他事先和其他开发者谋划了这次跑路，还经 PEPE 代币洗钱；链上分析账号 Lookonchain 也说他在发售前起了关键的造势作用。那家平台告诉 Cointelegraph，不知道这名前员工和这些项目有关<a class="ref" href="#s9">[9]</a>。ZachXBT 认为这个帖子“拿不相关的事件做了很多假设，没有事实”。他同时说，Sisyphus 在 Anubis 团队多签的问题上撒了谎，“百分之百”属于重大过失，受害者也许能打民事官司，但过失和偷自己项目的钱是两回事<a class="ref" href="#s9">[9]</a>。本站不点名被指控的人，他没有被起诉。</p>
+      </section>
+      <section id="money">
+        <h2>钱去了哪里</h2>
+        <p>Chainalysis 写，池里的 wETH 被兑出后，经一串中间钱包转走<a class="ref" href="#s1">[1]</a>。The Block 报道，赃款最后落在 Etherscan 标为“AnubisDAO Liquidity Rug 3”的地址 <span class="addr">0xb1302743acf31f567e9020810523f5030942e211</span><a class="ref" href="#s6">[6]</a>。</p>
+        <p>这笔钱在那里放了 236 天。2022 年 6 月 24 日，The Block 引 PeckShield 的警报报道，这个地址第一次转出 1,097 枚 ETH（约 130 万美元），到了一个中间地址，其中 1,018 枚 ETH 经 Tornado Cash 转走。当时地址里还有 12,500 枚 ETH，因为 ETH 自事发以来跌了约 70%，只值约 1,450 万美元<a class="ref" href="#s6">[6]</a>。</p>
+        <p>2023 年，CoinEdition 报道同一个地址又转出 3,000 枚 WETH，约 560 万美元，经中间地址进了 Tornado Cash，消息同样来自 PeckShield<a class="ref" href="#s8">[8]</a>。同年 7 月 15 日至 16 日，PeckShield 又发警报说 AnubisDAO 的赃款正在经 Tornado Cash 清洗；Cointelegraph 写，转出的人把钱拆成每笔 100 ETH，那时 13,556 枚 ETH 只值约 2,620 万美元<a class="ref" href="#s7">[7]</a>。</p>
+        <div class="note doubt"><span class="h">2023 年那笔 3,000 WETH 的日期</span><p>CoinEdition 的报道经 Investing.com 转载，本站读到的页面写 2023 年 4 月 8 日，新闻检索给出的日期是 2023 年 8 月 3 日，两者对不上。原文没有写清楚它和 7 月那批 100 ETH 的转账是不是同一批钱<a class="ref" href="#s8">[8]</a>。本页只写“2023 年”。</p></div>
+        <p>Tornado Cash 是一种混币器：大家把同样面额的币存进一个合约，再用另一个地址取出，链上就看不出存取的对应关系。美国财政部 2022 年 8 月 8 日宣布制裁它，说它自 2019 年创建以来洗过价值超过 70 亿美元的加密资产<a class="ref" href="#s12">[12]</a>，见大事记的<a href="../../milestones/events/2022-tornado-sanctions.html">OFAC 制裁 Tornado Cash</a>。AnubisDAO 的赃款在制裁前后都在经它转出<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。NFT Ethics 称部分赃款经 PEPE 代币洗白，ZachXBT 不认同这个推断<a class="ref" href="#s9">[9]</a>，本站不采用。本站没有找到交易所冻结这笔钱的报道。</p>
+      </section>
+      <section id="victims">
+        <h2>受害者与规模</h2>
+        <h3>谁买了 ANKH</h3>
+        <p>买家是在推特、Discord 上看到消息的加密货币投资者。没有机构公布过受害人数。公开报道过的个案是 Brian Nguyen：他对 CNBC 说，自己在发售期间投了六位数美元的 ETH，损失近 47 万美元，“很痛”。CNBC 注明，它无法独立核实这笔投资和他本人的关联<a class="ref" href="#s2">[2]</a>。</p>
+        <p>Chainalysis 估计被盗金额超过 5,800 万美元，在 2021 年的 rug pull 里排第二<a class="ref" href="#s1">[1]</a>。排第一的是土耳其交易所 <a href="2021-thodex.html">Thodex</a>，用户损失超过 20 亿美元，占当年 rug pull 被盗总额的近九成；Chainalysis 写，除 Thodex 外，2021 年的 rug pull 全都是 DeFi 项目<a class="ref" href="#s1">[1]</a>。</p>
+        <p>按 Chainalysis 的统计，rug pull 2021 年从受害者手里拿走了超过 28 亿美元的加密资产，占全年诈骗收入的 37%，2020 年只占 1%。它把原因归结为：懂一点技术，就能便宜、轻松地在以太坊等链上发一种新币，不经代码审计就上去中心化交易所<a class="ref" href="#s1">[1]</a>。AnubisDAO 连自己的代币合约都不用写好，借一个现成的发售平台就够了。</p>
+        <h3>各家的数字</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>说法</th><th>口径</th></tr></thead>
+          <tbody>
+            <tr><td>ForkLog，2021-10-30<a class="ref" href="#s5">[5]</a></td><td>13,597 枚 ETH，约 5,878 万美元</td><td>不到一天存进池里的 ETH</td></tr>
+            <tr><td>The Block，2022-06-24<a class="ref" href="#s6">[6]</a></td><td>13,597 枚 ETH，当时约 6,000 万美元</td><td>出售 ANKH 募到的钱</td></tr>
+            <tr><td>吴说区块链，2021-10-29<a class="ref" href="#s5">[5]</a></td><td>13,556 枚 ETH，近 6,000 万美元</td><td>被转走的 ETH；Cointelegraph 也用这个数<a class="ref" href="#s7">[7]</a></td></tr>
+            <tr><td>Chainalysis，2021-12-16<a class="ref" href="#s1">[1]</a></td><td>超过 5,800 万美元</td><td>被盗的加密资产</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">13,597 和 13,556</span><p>两个数差 41 枚 ETH。前者是存进池子、募到的 ETH，后者是被转走的 ETH，Chainalysis 也写池里的 wETH 被拿走的是“几乎全部”<a class="ref" href="#s1">[1]</a>，差额可能是留在池里或另作他用的部分，本站没有找到解释。本站按 13,556 枚 ETH、约 6,000 万美元记这起事件的规模。美元数是事发时的币价；赃款留在 ETH 里，到 2022 年 6 月和 2023 年 7 月的市值分别只有约 1,450 万和 2,620 万美元<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>，这和买家的损失无关。</p></div>
+      </section>
+      <section id="enforcement">
+        <h2>追查与执法</h2>
+        <p>到 2026 年 11 月，本站没有找到任何国家的执法机构就 AnubisDAO 起诉、逮捕、扣押或退赔的公开报道，也没有找到受害者提起的诉讼。Protos 2026 年 5 月写道，受害者从没追回资金，也没有人因盗窃入狱<a class="ref" href="#s10">[10]</a>。</p>
+        <p>事发后有过几条追查的线索，都来自当事人自己的说法。自称 Beerus 的账号说已经报警、把电脑交给警方<a class="ref" href="#s5">[5]</a>；0xSisyphus 说已请 Chainalysis 参与<a class="ref" href="#s5">[5]</a>，据 Cointelegraph，他还找过美国和香港的执法部门<a class="ref" href="#s9">[9]</a>。ZachXBT 说，据他所知，团队里只有 Sisyphus 和美国国土安全部（DHS）谈过<a class="ref" href="#s9">[9]</a>。这些调查有没有结果，没有公开。ZachXBT 认为受害者“也许能打民事官司”<a class="ref" href="#s9">[9]</a>，本站没有找到这样的案子。</p>
+        <p>赃款几次移动都被 PeckShield 公开发了警报<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>，但钱进了 Tornado Cash 之后就看不出去向。Protos 写，0xSisyphus 后来在 X 上积累了 15.3 万关注者，以揭发骗局的形象出现，被 AnubisDAO 害了的人的损失却一直没人赔<a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>怎样识别</h2>
+        <div class="note lesson">
+          <span class="h">项目本身</span>
+          <ul>
+            <li>没有网站、没有白皮书、开发者全用化名，却要一天募几千万美元。Chainalysis 的建议是，对缺少网站、白皮书这类正经项目应有的公开材料、创建者也不用真名的代币要格外小心<a class="ref" href="#s1">[1]</a>。</li>
+            <li>“某某项目的分叉”“狗狗主题”只是标签。AnubisDAO 说自己是 OlympusDAO 的分叉，却拿不出任何代码和文档<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。Chainalysis 认为最要紧的是避开没有经过代码审计的新代币<a class="ref" href="#s1">[1]</a>。</li>
+            <li>“先买，再做研究”正是骗局要的。Nguyen 事后说自己没有仔细研究就投了钱<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">平台和名人</span>
+          <ul>
+            <li>发售平台不替项目担保。Copper 事后明说，任何人都能用它的工具发售，上线不代表背书<a class="ref" href="#s2">[2]</a>。Nguyen 正是因为发售放在 Copper 上，才觉得它可信<a class="ref" href="#s2">[2]</a>。</li>
+            <li>网红转发不等于项目可靠。Nguyen 说自己因为听说 0xSisyphus 支持才有信心；事后 0xSisyphus 说是团队里有不可靠的成员，ZachXBT 说他在多签的问题上撒了谎<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s9">[9]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">钱放进去以后归谁管</span>
+          <ul>
+            <li>往 LBP 这类池子里存钱之前，先弄清楚池子的所有者是谁。Balancer 的文档写明，所有者可以暂停交易，而且只有所有者能往池里加钱<a class="ref" href="#s11">[11]</a>。AnubisDAO 池子的所有者握着绝大部分 LP 代币，随时能把买家的钱取走<a class="ref" href="#s1">[1]</a>。</li>
+            <li>项目方说的“多签”“社区金库”要能在链上查到。ZachXBT 认为 Sisyphus 在团队多签的问题上撒了谎<a class="ref" href="#s9">[9]</a>；DCF GOD 的梳理是，创建池子、撤走流动性和转走 ETH 的都是同一个钱包<a class="ref" href="#s5">[5]</a>。</li>
+            <li>出事后的说法互相矛盾，本身就是警报。项目一方先说是 Copper 出错，又说是被钓鱼；Copper 说是 Anubis 自己的密钥出了问题<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>。“被钓鱼”的说法，Chainalysis 认为证据不支持<a class="ref" href="#s1">[1]</a>。</li>
+            <li>赃款放着不动，不代表还能要回来。AnubisDAO 的钱在一个公开标记的地址里放了 236 天，后来照样经 Tornado Cash 转走了<a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Chainalysis，《The Biggest Threat to Trust in Cryptocurrency: Rug Pulls Put 2021 Cryptocurrency Scam Revenue Close to All-time Highs》，2021-12-16。<a href="https://www.chainalysis.com/blog/2021-crypto-scam-revenues/">chainalysis.com</a></li>
+          <li id="s2">CNBC Make It，《This crypto investor says he just lost $470,000 on a dog-inspired DeFi project》，2021-10-29。<a href="https://www.cnbc.com/make-it/2021/10/29/crypto-investor-says-he-lost-6-figures-on-a-dog-inspired-defi-project.html">cnbc.com</a></li>
+          <li id="s3">Decrypt（Tim Hakki），《AnubisDAO Investors Lose $60 Million in Alleged Rug Pull》，2021-10-31。<a href="https://decrypt.co/84924/anubisdao-investors-lose-60-million-in-alleged-rug-pull">decrypt.co</a></li>
+          <li id="s4">Business Insider（Carla Mozée），《A crypto project that raised $60 million overnight using a dog meme saw all of that money go missing in what may have been a phishing attack》，2021-10-31，转述 The Block 的报道。<a href="https://markets.businessinsider.com/news/currencies/crypto-project-phishing-attack-anubisdao-olympusdao-token-sale-2021-10">markets.businessinsider.com</a></li>
+          <li id="s5">ForkLog，《AnubisDAO token sale participants lost nearly $60 million》，2021-10-30，文中嵌入吴说区块链、DCF GOD、@cryptofan777 和 0xSisyphus 的推文。<a href="https://forklog.com/en/anubisdao-token-sale-participants-lost-nearly-60-million/">forklog.com</a></li>
+          <li id="s6">The Block（Osato Avan-Nomayo），《AnubisDAO funds move for the first time, eight months after rug pull》，2022-06-24。<a href="https://www.theblock.co/news/regulation/2022-06-24-anubisdao-funds-move-for-the-first-time-eight-months-after-rug-pull-154004">theblock.co</a></li>
+          <li id="s7">Cointelegraph（Arijit Sarkar），《AnubisDAO’s rug-pulled 13.5K ETH washes away on Tornado Cash》，2023-07-17。<a href="https://cointelegraph.com/news/anubis-dao-rug-pull-money-washes-away-on-tornado-cash">cointelegraph.com</a></li>
+          <li id="s8">CoinEdition，《AnubisDAO Liquidity Rug 3 Transfers $5.6M In Cryptocurrency Funds》，2023 年，Investing.com 转载（日期见正文说明）。<a href="https://www.investing.com/news/cryptocurrency-news/anubisdao-liquidity-rug-3-transfers-56m-in-cryptocurrency-funds-3050998">investing.com</a></li>
+          <li id="s9">Cointelegraph（Tom Mitchelhill），《OpenSea ‘unaware’ of any involvement of former exec in $60M rug pull》，2023-10-09。<a href="https://cointelegraph.com/news/opensea-kevin-pawlak-sisyphus-accused-rug-pull">cointelegraph.com</a></li>
+          <li id="s10">Protos，《From $60M failure to crypto ‘scam cop’: The reinvention of 0xSisyphus》，2026-05-07。<a href="https://protos.com/from-60m-failure-to-crypto-scam-cop-the-reinvention-of-0xsisyphus/">protos.com</a></li>
+          <li id="s11">Balancer 文档，《Liquidity Bootstrapping Pools (LBPs)》，GitHub 仓库 balancer/docs 的 docs/concepts/pools/liquidity-bootstrapping.md，2026 年 11 月查阅。<a href="https://github.com/balancer/docs/blob/main/docs/concepts/pools/liquidity-bootstrapping.md">github.com</a></li>
+          <li id="s12">美国财政部，《U.S. Treasury Sanctions Notorious Virtual Currency Mixer Tornado Cash》，2022-08-08。<a href="https://home.treasury.gov/news/press-releases/jy0916">home.treasury.gov</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

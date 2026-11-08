@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BNB Smart Chain｜区块链基础知识</title>
+<meta name="description" content="PoSA 与 45 / 21 个验证者、快速最终性、销毁、Binance-Peg 资产、opBNB">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="bsc">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 07 章</p>
+    <h1>BNB Smart Chain</h1>
+    <p class="lede">它和 Binance、BNB Chain、opBNB 是什么关系；45 个验证者怎么选、21 个怎么轮流出块；为什么不到 1 秒就能最终确定；手续费去哪了；BSC 上的 USDT、USDC 到底是谁发的。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">BSC 是 Binance 在 2020 年推出的一条独立 EVM 链：少数验证者轮流出块，快、便宜，安全和以太坊无关</p>
+  <p class="lead">BNB Smart Chain（BSC）链 ID 56，创世区块时间 2020-08-29。它用 Geth 的代码、跑 EVM，所以以太坊的合约和工具基本能直接用；但它不把数据交给以太坊，也不借以太坊的安全，是一条独立的 L1。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见说法里，对的部分</h3>
+      <ul>
+        <li>BSC 兼容 EVM，MetaMask 加一个网络就能用</li>
+        <li>出块很快、手续费很低：2026-10-28 最近 2000 个区块平均 0.450 秒一个，gas 价格 0.05 gwei</li>
+        <li>付 gas 用 BNB</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>BSC 不是以太坊的 L2，也不是以太坊的侧链式扩容</b>。它不在以太坊上结算，以太坊出事它不受影响，它出事以太坊也帮不了它</li>
+        <li><b>BNB Chain ≠ BSC</b>。BNB Chain 是一个家族的名字，BSC 只是其中一条</li>
+        <li><b>BSC 上主流的 USDT、USDC、ETH、BTCB 都不是原生发行</b>。四个合约由同一个普通地址控制增发，精度都是 18 位（以太坊上的 USDC 是 6 位）</li>
+        <li><b>BSC 没有通往以太坊的官方信任最小化桥</b>。官网的“桥”只是聚合了 6 家第三方路线</li>
+        <li><b>“去中心化程度”和以太坊不在一个量级</b>：BSC 有 45 个活跃验证者，每个周期 21 个出块；以太坊一个 epoch 里有 81 万多个</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="family">
+  <h2 class="eyebrow">BNB Chain 家族</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>链</th><th>是什么</th><th>现状</th></tr></thead>
+    <tbody>
+      <tr><td><b>BNB Beacon Chain</b>（原 Binance Chain）</td><td>最早的链，做去中心化交易所，也曾负责 BSC 的质押和治理</td><td>2024-12-03 在区块 385,251,927 关停。2022-10 被盗的 Token Hub 跨链桥就连在它和 BSC 之间</td></tr>
+      <tr><td><b>BNB Smart Chain（BSC）</b></td><td>EVM 链，PoSA 共识，本章主角</td><td>链 ID 56；2024-04-18 Feynman 升级后，质押和治理都搬到了 BSC 本身</td></tr>
+      <tr><td><b>opBNB</b></td><td>BSC 的 L2，基于 OP Stack</td><td>链 ID 204，gas 用 BNB；提现回 BSC 有 7 天挑战期（结构和<a href="l2.html">第 06 章</a>讲的一样，只是“L1”换成了 BSC）</td></tr>
+      <tr><td><b>BNB Greenfield</b></td><td>去中心化存储链</td><td>和 BSC 之间有跨链编程接口</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">BNB 本身的来历：2017-07 作为 Binance 交易所的平台币 Binance Coin 发行，最初是以太坊上的 ERC-20；2020-09 BSC 上线后迁到 BSC；2022-02 Binance Smart Chain 改名 BNB Chain，Binance Coin 改名 BNB（Build’N’Build）。</p>
+  <p class="note">把 Beacon Chain 的功能迁到 BSC、再关停 Beacon Chain 的整个过程，官方叫 BNB Chain Fusion。</p>
+</section>
+
+<section id="posa">
+  <h2 class="eyebrow">共识</h2>
+  <p class="lead">PoSA（Proof of Staked Authority）结合了两件事：谁能当验证者，按质押的 BNB 多少来选（PoS 的部分）；当选的少数验证者按顺序轮流出块（PoA 的部分）。</p>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th>层级</th><th>多少个</th><th>怎么来</th></tr></thead>
+    <tbody>
+      <tr><td>验证者候选</td><td>不限</td><td>质押 BNB 创建验证者（有最低自质押要求）；普通持有人可以委托给它，拿到它的质押凭证 stBNB</td></tr>
+      <tr><td>活跃验证者</td><td><b>45</b>（链上 <code>getValidators()</code> 读到 45）</td><td>总质押最多的 45 个</td></tr>
+      <tr><td>其中 Cabinet</td><td>21</td><td>质押最多的 21 个</td></tr>
+      <tr><td>其中 Candidate</td><td>24</td><td>其余 24 个</td></tr>
+      <tr><td><b>本周期出块的共识验证者</b></td><td><b>21</b></td><td>每个周期从 Cabinet 里选 18 个、从 Candidate 里选 3 个</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bit wide">
+    <div class="bh"><span class="term">Simulator</span><h4>每个周期，谁在出块</h4></div>
+    <p>45 个活跃验证者，深色是 Cabinet，浅色是 Candidate；实心的是本周期被选中出块的 21 个。点“下一个周期”看看轮换。选法是示意，实际按协议规则。</p>
+    <div class="tool">
+      <div class="wrap-6" id="vsGrid" aria-label="45 个活跃验证者"></div>
+      <div class="ctrl gap-6"><button class="btn" type="button" id="vsNext">下一个周期</button></div>
+      <div class="out" id="vsOut" aria-live="polite"></div>
+    </div>
+  </div>
+  <p class="note">链上抽样：2026-10-28 最近 200 个区块里每 5 个取 1 个，共 40 个，出块者正好是 21 个不同地址。取消委托要等 7 天解绑期。</p>
+</section>
+<section id="finality">
+  <h2 class="eyebrow">最终性</h2>
+  <p class="lead">早期 BSC 只有概率性的最终性：BEP-126 原文写，21 个验证者时，要等 2/3 × 21 ≈ 14 个区块。BEP-126 加上了投票：验证者用 BLS 密钥给区块签票，票够了就写进下一个区块的头里。</p>
+  <div class="bit wide"><div class="anim" data-anim="bscff"></div></div>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th></th><th>BSC</th><th>Ethereum（<a href="ethereum.html">第 05 章</a>）</th></tr></thead>
+    <tbody>
+      <tr><th>多少人投票</th><td>本周期 21 个验证者</td><td>81 万多个验证者，一个 epoch 投一轮</td></tr>
+      <tr><th>门槛</th><td>超过 2/3 的验证者</td><td>超过 2/3 的质押 ETH</td></tr>
+      <tr><th>多久最终确定</th><td>按规则约落后 2 个区块；2026-10-28 三个公共 RPC 实测 <code>finalized</code> 落后 0–1 个区块（区块 0.45 秒一个）</td><td>约两个 epoch，实测落后 71 个区块（14.2 分钟）</td></tr>
+      <tr><th>RPC</th><td>标准的 <code>safe</code>（最新已证明）/ <code>finalized</code>；另有 BSC 专用的 <code>eth_getFinalizedHeader(verifiedValidatorNum)</code>，参数 −3 表示要求全部验证者</td><td>标准的 <code>safe</code> / <code>finalized</code></td></tr>
+      <tr><th>代价</th><td>只要攻破或串通 21 个里的足够多数</td><td>要损失三分之一的质押 ETH</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="slashing">
+  <h2 class="eyebrow">罚没</h2>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th>行为</th><th>怎么判定</th><th>处罚（官方文档，参数可治理）</th></tr></thead>
+    <tbody>
+      <tr><td>双签</td><td>同一验证者在同一高度、同一父块下签了两个不同区块，证据 24 小时内有效</td><td>罚没自质押 200 BNB，关禁闭 30 天并移出活跃集合</td></tr>
+      <tr><td>恶意投票</td><td>快速最终性里投出互相冲突或包围的两票</td><td>罚没 200 BNB，举报者得 5 BNB，关禁闭 30 天</td></tr>
+      <tr><td>不出块</td><td>24 小时内漏出超过 333 个块：拿不到出块奖励；超过 1000 个块：处罚</td><td>罚没 10 BNB，关禁闭 2 天</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">和以太坊对照：以太坊罚没按质押比例扣、再加关联惩罚（<a href="ethereum.html">第 05 章</a>）；BSC 是固定数额，从验证者的自质押里扣。</p>
+</section>
+
+<section id="speed">
+  <h2 class="eyebrow">速度与升级</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>升级</th><th>主网时间</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td>Feynman</td><td>2024-04-18</td><td>BNB Chain Fusion 的关键一步：质押（BEP-294）和链上治理（BEP-297）搬到 BSC</td></tr>
+      <tr><td>Haber</td><td>2024-06-20</td><td>secp256r1 曲线预编译（EIP-7212）等</td></tr>
+      <tr><td>Pascal</td><td>2025-03-20</td><td>跟进以太坊 Pectra 的几项：EIP-7702、EIP-2537、EIP-2935、EIP-7623</td></tr>
+      <tr><td>Lorentz</td><td>2025-04-29</td><td>出块间隔 3 秒 → <b>1.5 秒</b>（BEP-520）</td></tr>
+      <tr><td>Maxwell</td><td>2025-06-30</td><td>→ <b>0.75 秒</b>（BEP-524）</td></tr>
+      <tr><td>Fermi</td><td>2026-01-14</td><td>→ <b>0.45 秒</b>（BEP-619）；扩展快速最终性投票规则（BEP-590）</td></tr>
+      <tr><td>Mendel</td><td>2026-04-28</td><td>跟进以太坊 Fusaka：以太坊 13 个 EIP 里采纳 7 个，包括 CLZ 操作码（BEP-654）、单笔交易 gas 上限（BEP-652）</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">BSC 的 EVM 功能是通过自己的 BEP 逐项跟进以太坊的，不是自动同步。部署合约前要确认目标 EVM 版本在 BSC 上已经启用。</p>
+</section>
+
+<section id="fees">
+  <h2 class="eyebrow">手续费</h2>
+  <p class="lead">BSC 的区块头里基础费是 0（2026-10-28 读取），没有以太坊那种随拥堵自动涨跌、全部销毁的基础费。gas 价格由验证者设定，当时 <code>eth_gasPrice</code> 返回 0.05 gwei。</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">BEP-95</span><h4>手续费的去向</h4></div>
+      <p>每个区块的手续费由出块者存进 ValidatorSet 系统合约（<code>0x…1000</code>），合约按比例拆分：<b>6.25%</b> 进系统奖励合约，<b>10%</b> 直接销毁，其余分给验证者和委托人。两个比例都是链上读到的当前值（<code>systemRewardBaseRatio = 625</code>、<code>burnRatio = 1000</code>，分母 10000），可以由治理修改。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Cost</span><h4>一笔转账多少钱</h4></div>
+      <p>转 BNB 是 21,000 gas。按 0.05 gwei，手续费是 21,000 × 0.05 × 10<sup>−9</sup> = 0.00000105 BNB。区块 gas 上限当时是 7000 万。</p></div>
+  </div>
+</section>
+<section id="assets">
+  <h2 class="eyebrow">资产</h2>
+  <p class="lead">BEP-20 就是 BSC 上的 ERC-20：接口一样，多了一个 <code>getOwner()</code>。交易所提现时选的“BEP20 网络”，就是在 BSC 上转。</p>
+  <div class="tbl"><table class="mw-780">
+    <thead><tr><th>代币</th><th>合约</th><th>链上名字 / 精度</th><th>总量（2026-10-28）</th><th>谁能增发</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">USDT</td><td class="mono">0x55d3…7955</td><td>Tether USD / <b>18</b></td><td>约 91.85 亿</td><td rowspan="4">四个合约的 <code>getOwner()</code> 都是<b>同一个普通地址</b> <code>0xf68a…f62d</code>；合约里有 <code>mint</code></td></tr>
+      <tr><td class="mono">USDC</td><td class="mono">0x8AC7…580d</td><td>USD Coin / <b>18</b></td><td>约 15.89 亿</td></tr>
+      <tr><td class="mono">ETH</td><td class="mono">0x2170…33F8</td><td>Ethereum Token / 18</td><td>约 50.5 万</td></tr>
+      <tr><td class="mono">BTCB</td><td class="mono">0x7130…ad9c</td><td>BTCB Token / 18</td><td>约 6.53 万</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <p><b>怎么理解：</b>这些是 Binance 发行的锚定币（Binance-Peg），属于图鉴里说的“托管包装币”：真资产在 Binance 手里，Binance 在 BSC 上铸等量的代币。它们的安全性就是 Binance 的安全性。Circle 不在 BSC 上发原生 USDC（<a href="usdc.html">第 02 章</a>）。Tether 官方的“支持的协议”页面虽然列出了 BNB Smart Chain，但 Tether 的透明度数据（2026-10-29）里 BNB 一项的发行量是 <b>0</b>；而 BSC 上这个 USDT 合约有约 91.85 亿，增发地址和 Binance-Peg USDC 是同一个。所以它基本可以判断是 Binance 的锚定币，不是 Tether 直接发行。</p>
+    <p><b>精度陷阱：</b>以太坊上 USDC、USDT 都是 6 位，BSC 上这两个是 18 位。跨链时如果按 6 位处理，金额会差 10<sup>12</sup> 倍。</p>
+  </div>
+</section>
+
+<section id="bridges">
+  <h2 class="eyebrow">跨链</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>路线</th><th>情况</th><th>详见</th></tr></thead>
+    <tbody>
+      <tr><td>官方信任最小化桥</td><td class="n">没有</td><td>图鉴“按链查”</td></tr>
+      <tr><td>BNB Chain 官网的“桥”</td><td>聚合 Stargate、Celer、deBridge、Meson、LayerZero、Mayan 六条路线；官方原话 “we do not operate the routes”</td><td>图鉴</td></tr>
+      <tr><td>交易所充提</td><td>在 Binance 等交易所选“ERC20 充值、BEP20 提现”</td><td>图鉴“中心化”</td></tr>
+      <tr><td>CCTP</td><td>BSC 是 domain 17，但只用于 USYC，不能搬 USDC</td><td><a href="cctp-ccip.html">第 04 章</a></td></tr>
+      <tr><td>CCIP</td><td>支持 BSC；但 CCIP 的 USDC 走 CCTP，所以 USDC 列表里没有 BSC</td><td><a href="cctp-ccip.html">第 04 章</a></td></tr>
+      <tr><td>LayerZero</td><td>官方部署表有 BSC</td><td>图鉴</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="compare">
+  <h2 class="eyebrow">对照</h2>
+  <div class="tbl"><table class="mw-780">
+    <thead><tr><th></th><th><span class="dot bg-bsc"></span>BSC</th><th><span class="dot bg-eth"></span>Ethereum</th><th><span class="dot bg-qtum"></span>Qtum</th></tr></thead>
+    <tbody>
+      <tr><th>共识</th><td>PoSA：45 个活跃，每周期 21 个出块</td><td>PoS：81 万多个验证者</td><td>PoS（UTXO 上），任何持币人可质押</td></tr>
+      <tr><th>出块间隔</th><td>0.45 秒</td><td>12 秒</td><td>32 秒</td></tr>
+      <tr><th>最终性</th><td>BEP-126 快速最终性，约 1–2 个区块</td><td>约两个 epoch，约 15 分钟</td><td>没有 finalized，重组上限约 2000 块</td></tr>
+      <tr><th>手续费</th><td>验证者定价（0.05 gwei），10% 销毁</td><td>EIP-1559 基础费全部销毁</td><td>链上治理定最低 gas 价（40 sat/gas）</td></tr>
+      <tr><th>EVM</th><td>按 BEP 逐项跟进以太坊</td><td>原生</td><td>按版本跟进，目前到 Pectra</td></tr>
+      <tr><th>chainId</th><td>56</td><td>1</td><td>81（和别的链重复）</td></tr>
+      <tr><th>主流稳定币</th><td>Binance-Peg（18 位）</td><td>发行方原生</td><td>Qtum 桥的 USDC.e</td></tr>
+      <tr><th>通往以太坊的官方桥</th><td>没有</td><td>—</td><td>没有（另有 Qtum 桥）</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li>BNB Chain 文档：<a href="https://docs.bnbchain.org/bnb-smart-chain/introduction/" rel="noopener">Introduction</a>（45 个验证者、PoSA）、<a href="https://docs.bnbchain.org/bnb-smart-chain/overview/" rel="noopener">Overview</a>（0.45 秒）、<a href="https://docs.bnbchain.org/bnb-smart-chain/validator/overview/" rel="noopener">Validator Overview</a>（Cabinet / Candidate、18 + 3）、<a href="https://docs.bnbchain.org/bnb-smart-chain/staking/user-guide/" rel="noopener">Staking User Guide</a>（7 天解绑）、<a href="https://docs.bnbchain.org/bnb-smart-chain/slashing/slash-rules/" rel="noopener">Slash Rules</a>、<a href="https://docs.bnbchain.org/bnb-smart-chain/developers/json_rpc/bsc-api-list/" rel="noopener">BSC API</a>（<code>safe</code> / <code>finalized</code>、<code>eth_getFinalizedHeader</code>）</li>
+    <li>升级公告：<a href="https://docs.bnbchain.org/announce/feynman-bsc/" rel="noopener">Feynman</a>、<a href="https://docs.bnbchain.org/announce/haber-bsc/" rel="noopener">Haber</a>、<a href="https://docs.bnbchain.org/announce/pascal-bsc/" rel="noopener">Pascal</a>、<a href="https://docs.bnbchain.org/announce/lorentz-bsc/" rel="noopener">Lorentz</a>、<a href="https://docs.bnbchain.org/announce/maxwell-bsc/" rel="noopener">Maxwell</a>、<a href="https://docs.bnbchain.org/announce/fermi-bsc/" rel="noopener">Fermi</a>；<a href="https://docs.bnbchain.org/bc-fusion/overview/" rel="noopener">BNB Chain Fusion</a>（Beacon Chain 关停）；opBNB <a href="https://docs.bnbchain.org/bnb-opbnb/overview/" rel="noopener">Overview</a>、<a href="https://docs.bnbchain.org/bnb-opbnb/get-started/network-info/" rel="noopener">Network Info</a>、<a href="https://docs.bnbchain.org/bnb-opbnb/faq/opbnb-bridge-faqs/" rel="noopener">Bridge FAQ</a>；<a href="https://docs.bnbchain.org/bnb-greenfield/" rel="noopener">Greenfield</a></li>
+    <li>BEP 原文（github.com/bnb-chain/BEPs）：BEP-126（快速最终性）、BEP-95（实时销毁，初始 10%）；<a href="https://github.com/bnb-chain/bsc-genesis-contract/blob/master/contracts/BSCValidatorSet.sol" rel="noopener">BSCValidatorSet.sol</a>（<code>deposit</code> 中的拆分）</li>
+    <li>BSC 链上只读调用（2026-10-28；<code>bsc-dataseed.bnbchain.org</code>、<code>bsc-dataseed1.binance.org</code>、<code>bsc-rpc.publicnode.com</code>）：三种区块标签、最近 2000 个区块的毫秒时间戳、<code>eth_gasPrice</code>、<code>eth_chainId</code>、区块 1 的时间、ValidatorSet 的 <code>getValidators</code> / <code>burnRatio</code> / <code>systemRewardBaseRatio</code>、出块者抽样、四个代币的 <code>name</code> / <code>decimals</code> / <code>totalSupply</code> / <code>getOwner</code></li>
+    <li><a href="https://tether.to/en/supported-protocols/" rel="noopener">Tether：Supported Protocols</a>；<a href="https://docs.bnbchain.org/bnb-smart-chain/cross-chain-bridge/" rel="noopener">BNB Chain：Cross-chain bridge</a></li>
+  </ol>
+  <p>核查日期 2026-10-28。验证者数量、出块间隔、销毁比例都可以被治理或升级改变。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // BEP-126 快速最终性：投票写进下一个区块的头；连续两个已证明，前一个最终确定
+  A.bscff = {h:260,
+    b:[['ch',2,6,96,46,'BSC 区块（每 0.45 秒一个）'],['vt',2,58,96,36,'BLS 投票（本周期 21 个验证者）']],
+    it:[
+      {id:'b0', h:blk('N−1'), x:12, y:24}, {id:'b1', h:blk('N'), x:31, y:24, hide:1}, {id:'b2', h:blk('N+1'), x:50, y:24, hide:1},
+      {id:'b3', h:blk('N+2'), x:69, y:24, hide:1}, {id:'b4', h:blk('N+3'), x:88, y:24, hide:1},
+      {id:'l1', h:'<div class="lbl m">latest</div>', x:31, y:42, hide:1}, {id:'l2', h:'<div class="lbl m">latest</div>', x:50, y:42, hide:1},
+      {id:'vc', h:'<span class="cell">0 / 21</span>', x:50, y:72},
+      {id:'at1', h:chip('N 的投票汇总','--accent'), x:31, y:86, hide:1},
+      {id:'at2', h:chip('N+1 的投票汇总','--accent'), x:50, y:86, hide:1}],
+    s:[
+      {c:'BSC 每个周期有 21 个验证者轮流出块，约 0.45 秒一个。刚出的区块只是“latest”。', lit:['ch']},
+      {c:'区块 N 出来后，验证者用各自的 BLS 密钥给它签一张投票。', set:{b1:{hide:0, h:blk('N','new')}, l1:{hide:0}, vc:{h:'<span class="cell">9 / 21</span>'}}, lit:['ch','vt']},
+      {c:'N 的票超过 2/3（21 个里至少 15 个）。下一个出块者在打包 N+1 时，把这些票聚合成一份证明写进 N+1 的区块头：N 被“证明”（justified）。',
+       set:{vc:{h:'<span class="cell" style="color:var(--ok)">15 / 21</span>'}, b2:{hide:0}, l2:{hide:0}, at1:{hide:0, x:50, y:88}, l1:{h:'<div class="lbl g">已证明</div>'}}, lit:['vt','ch']},
+      {c:'验证者接着给 N+1 投票，票数过 2/3 后写进 N+2 的区块头：N+1 也被证明。',
+       set:{at1:{hide:1}, b3:{hide:0}, vc:{h:'<span class="cell" style="color:var(--ok)">16 / 21</span>'}, at2:{hide:0, x:69, y:88}, l2:{h:'<div class="lbl g">已证明</div>'}}, lit:['vt','ch']},
+      {c:'N 和 N+1 是连续两个已证明的区块，所以 N 升级为“已最终确定”（finalized）。BEP-126 的规则：连续两个区块都被证明，前一个就最终确定。按这个规则，最终确定大约落后 2 个区块，不到 1 秒。',
+       set:{at2:{hide:1}, b4:{hide:0}, b1:{h:blk('N')}, l1:{h:'<div class="lbl g">已最终确定</div>'}}, lit:['ch']},
+      {c:'如果某个验证者签了互相冲突的两张票，任何人都可以提交证据：罚没 200 BNB、关禁闭 30 天、移出验证者集合。',
+       set:{vc:{h:'<span class="cell" style="color:var(--warn)">冲突的两张票 → 罚没</span>'}}, bad:['vt']},
+      {c:'和以太坊对照：以太坊每个 epoch 才最终确定一次，靠 81 万多个验证者，要约 15 分钟；BSC 约 1 秒，但只靠 21 个验证者。快，但能出事的人少得多。',
+       set:{vc:{h:'<span class="cell">21 个 vs 81 万多个</span>'}}, lit:['ch','vt']},
+    ]};
+  Guide.mount(A);
+  // 45 个活跃验证者：前 21 个 Cabinet、后 24 个 Candidate；每个周期选 18 + 3 个出块（示意）
+  const vsGrid = document.getElementById('vsGrid'), vsOut = document.getElementById('vsOut');
+  let epoch = 1;
+  const cells = Array.from({length:45}, (_, i) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'width:22px;height:22px;border-radius:4px;border:2px solid;font:600 9px/18px var(--f-mono);text-align:center';
+    d.textContent = i + 1; d.title = (i < 21 ? 'Cabinet ' : 'Candidate ') + (i + 1);
+    vsGrid.appendChild(d); return d;
+  });
+  function pick(n, from){ const a = from.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return new Set(a.slice(0, n)); }
+  function vsRun(){
+    const cab = pick(18, [...Array(21).keys()]), can = pick(3, [...Array(24).keys()].map(i => i + 21));
+    cells.forEach((d, i) => {
+      const isCab = i < 21, on = cab.has(i) || can.has(i), c = isCab ? 'var(--bsc)' : 'var(--muted)';
+      d.style.borderColor = c; d.style.background = on ? c : 'transparent'; d.style.color = on ? 'var(--paper)' : c;
+    });
+    vsOut.innerHTML = `<span>第 ${epoch} 个周期：Cabinet 里选中 18 个，Candidate 里选中 3 个，共 21 个出块</span>
+      <span class="m">Cabinet 每个周期大约有 ${Math.round(18 / 21 * 100)}% 的机会出块，Candidate 约 ${Math.round(3 / 24 * 100)}%</span>`;
+  }
+  document.getElementById('vsNext').addEventListener('click', () => { epoch++; vsRun(); });
+  vsRun();
+})();
+</script>
+</body>
+</html>

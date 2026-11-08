@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CCTP 与 CCIP｜区块链基础知识</title>
+<meta name="description" content="消息格式、验签、Fast Transfer、CCIP 2.0 组件、代币池、限速与费用">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="cctp-ccip">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 04 章</p>
+    <h1>CCTP 与 CCIP 深入</h1>
+    <p class="lede">把两套协议拆到合约和字节层面：消息长什么样、目标链怎么验、Fast Transfer 的代价、CCIP 2.0 的验证与执行怎么分开、限速和费用怎么算。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">CCTP 是 USDC 发行方自己的“销毁 → 证明 → 铸造”通道；CCIP 是 Chainlink 的通用跨链消息网络</p>
+  <p class="lead">两者经常被放在一起比，但出发点完全不同。CCTP 只解决一件事：让 USDC 在链之间移动时始终是原生 USDC。CCIP 解决的是“任意消息、任意代币怎么安全地跨链”，而它搬 USDC 时，底层又会用到 CCTP。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见说法里，对的部分</h3>
+      <ul>
+        <li>CCTP 没有锁仓池，USDC 在源链真的被销毁，在目标链真的被铸造</li>
+        <li>CCIP 可以同时传代币和调用数据，到账后自动执行目标合约</li>
+        <li>两者在支持的链上都不需要项目方自己运行验证者</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>CCTP 不是 Chainlink 的</b>，是 Circle 的；证明者是 Circle 自己的 attester，以太坊上目前 <b>2 个里要 2 个签名</b>（链上读取）</li>
+        <li><b>Fast Transfer 不是“确认得更快”</b>，而是 Circle 在源链只到“已确认”、还没最终确定时就签名，自己承担重组风险，所以有额度上限、要收费</li>
+        <li><b>CCTP 的 Hooks 不会被 CCTP 自动执行</b>。hookData 只是随消息带过去的数据，要由集成方的合约读出来执行</li>
+        <li><b>CCIP 不是只能搬代币</b>，也可以只发消息。反过来，任意代币要走 CCIP 的标准代币池，必须由代币管理员自己注册</li>
+        <li><b>CCIP 2.0 里的 RMN 不再自动拦截</b>，现在是一个手动的链上安全开关（curse）</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="cctp">
+  <h2 class="eyebrow">CCTP · 组件</h2>
+  <p class="sub">三个合约 + 一个链下服务</p>
+  <p class="lead">CCTP V2 在每条支持的 EVM 链上部署同一组合约（除个别链外地址也相同）。下面是以太坊主网的地址。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>组件</th><th>以太坊地址</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">TokenMessengerV2</td><td class="mono">0x28b5…cf5d</td><td>用户入口：<code>depositForBurn</code> / <code>depositForBurnWithHook</code>；拼出“销毁消息”；在目标链上检查来源、处理手续费、调用 TokenMinter 铸币</td></tr>
+      <tr><td class="mono">MessageTransmitterV2</td><td class="mono">0x81D4…4B64</td><td>收发消息：<code>sendMessage</code> 发出 MessageSent 事件；<code>receiveMessage(message, attestation)</code> 验签、检查目标 domain、防重放</td></tr>
+      <tr><td class="mono">TokenMinterV2</td><td class="mono">0xfd78…D002</td><td>USDC 的铸币员（<a href="usdc.html">第 02 章</a>）：源链 <code>burn</code>，目标链 <code>mint</code>；管理每笔销毁上限</td></tr>
+      <tr><td>Iris（链下）</td><td>Circle 的证明服务</td><td>监听各链 MessageSent，按要求等待确认，由 attester 对消息签名；集成方通过 API 取回 attestation</td></tr>
+    </tbody>
+  </table></div>
+  <h3>一笔 CCTP V2 转账的全过程</h3>
+  <div class="bit wide"><div class="anim" data-anim="cctp"></div></div>
+  <h3>消息长什么样</h3>
+  <p>CCTP 消息是一段定长字段 + 可变长消息体拼起来的字节串。源码注释写明：除了消息体，其他字段都必须定长，<b>以免出现哈希碰撞</b>。签名签的就是整段字节的 keccak256。</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">MessageV2</span><h4>消息头（148 字节 + 消息体）</h4></div>
+      <div class="tbl"><table>
+        <thead><tr><th>字段</th><th>字节</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">version</td><td>4</td><td>格式版本</td></tr>
+          <tr><td class="mono">sourceDomain</td><td>4</td><td>源链 domain</td></tr>
+          <tr><td class="mono">destinationDomain</td><td>4</td><td>目标链 domain，目标链会核对</td></tr>
+          <tr><td class="mono">nonce</td><td>32</td><td>防重放，用过就作废</td></tr>
+          <tr><td class="mono">sender</td><td>32</td><td>源链发送合约（TokenMessenger）</td></tr>
+          <tr><td class="mono">recipient</td><td>32</td><td>目标链接收合约</td></tr>
+          <tr><td class="mono">destinationCaller</td><td>32</td><td>非零时，只有这个地址能提交</td></tr>
+          <tr><td class="mono">minFinalityThreshold</td><td>4</td><td>发送方要求的最低确认程度</td></tr>
+          <tr><td class="mono">finalityThresholdExecuted</td><td>4</td><td>实际签名时达到的程度</td></tr>
+          <tr><td class="mono">messageBody</td><td>可变</td><td>下面的销毁消息</td></tr>
+        </tbody>
+      </table></div></div>
+    <div class="bit"><div class="bh"><span class="term">BurnMessageV2</span><h4>消息体：销毁消息（228 字节 + hookData）</h4></div>
+      <div class="tbl"><table>
+        <thead><tr><th>字段</th><th>字节</th><th>作用</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">version</td><td>4</td><td>消息体版本</td></tr>
+          <tr><td class="mono">burnToken</td><td>32</td><td>源链被销毁的代币</td></tr>
+          <tr><td class="mono">mintRecipient</td><td>32</td><td>目标链收款人</td></tr>
+          <tr><td class="mono">amount</td><td>32</td><td>金额</td></tr>
+          <tr><td class="mono">messageSender</td><td>32</td><td>谁发起的销毁</td></tr>
+          <tr><td class="mono">maxFee</td><td>32</td><td>愿付的最高手续费</td></tr>
+          <tr><td class="mono">feeExecuted</td><td>32</td><td>实际手续费</td></tr>
+          <tr><td class="mono">expirationBlock</td><td>32</td><td>过期区块；过期要重新签</td></tr>
+          <tr><td class="mono">hookData</td><td>可变</td><td>随消息带过去的数据，CCTP 不执行</td></tr>
+        </tbody>
+      </table></div></div>
+  </div>
+</section>
+<section id="cctp-verify">
+  <h2 class="eyebrow">CCTP · 验证</h2>
+  <p class="lead">把它和<a href="bridges.html">第 03 章</a> Qtum 桥的验签放在一起看，同样是“几个签名者对一个哈希签名”，细节上有几处值得借鉴。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>检查项</th><th>CCTP V2（<code>receiveMessage</code>）</th><th>Qtum 桥（<code>withdrawERC20</code>）</th></tr></thead>
+    <tbody>
+      <tr><td>签的是什么</td><td>整段消息字节的 <code>keccak256</code>，不加 EIP-191 前缀</td><td>7 个字段的 <code>keccak256</code>，再加 EIP-191 前缀</td></tr>
+      <tr><td>签名数量</td><td>attestation 长度必须<b>正好</b>等于 65 × 门槛</td><td>至少达到门槛</td></tr>
+      <tr><td>去重</td><td>签名者地址必须<b>严格递增</b>排列，重复或乱序直接拒绝</td><td>按地址首字节做位图，首字节相同的不同签名者会被误判</td></tr>
+      <tr><td>签名者名单</td><td>每个签名者都必须是已启用的 attester；以太坊上目前 2 个，门槛 2</td><td>在签名人名单里，门槛 4/5</td></tr>
+      <tr><td>目标链</td><td>消息里的 <code>destinationDomain</code> 必须等于本链</td><td>哈希里有 <code>chainId</code></td></tr>
+      <tr><td>来源合约</td><td><code>sender</code> 必须是登记过的“对方链 TokenMessenger”，否则 “Remote TokenMessenger unsupported”</td><td>哈希里没有来源桥合约，也没有目标桥合约</td></tr>
+      <tr><td>谁能提交</td><td>可选 <code>destinationCaller</code>：非零时只有它能提交</td><td>任何人</td></tr>
+      <tr><td>防重放</td><td><code>usedNonces[nonce]</code></td><td><code>usedHashes[keccak(txHash, txNonce)]</code></td></tr>
+      <tr><td>过期</td><td><code>expirationBlock</code> 到期后 “Message expired and must be re-signed”</td><td>没有</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">“严格递增”去重的写法来自 Christian Lundkvist 的 Simple Multisig，源码注释里注明了出处。它不需要额外存储，也不会误伤首字节相同的签名者。</p>
+</section>
+
+<section id="cctp-fast">
+  <h2 class="eyebrow">CCTP · Standard 与 Fast</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th></th><th>Standard Transfer</th><th>Fast Transfer</th></tr></thead>
+    <tbody>
+      <tr><th><code>minFinalityThreshold</code></th><td><code>2000</code>（finalized）</td><td><code>1000</code>（confirmed）</td></tr>
+      <tr><th>Circle 何时签名</th><td>源链交易<b>最终确定</b>之后</td><td>源链交易<b>已确认</b>、尚未最终确定时</td></tr>
+      <tr><th>以太坊为源链时</th><td>约 15–19 分钟</td><td>约 20 秒（官方概览写 8–20 秒）</td></tr>
+      <tr><th>协议费</th><td>无</td><td>按源链收 0–13 个基点（以太坊 1、OP / Base 1.3、Linea 13）</td></tr>
+      <tr><th>目标链调用</th><td><code>handleReceiveFinalizedMessage</code></td><td><code>handleReceiveUnfinalizedMessage</code></td></tr>
+      <tr><th>谁承担重组风险</th><td>没有（已最终确定）</td><td>Circle，所以受“Fast Transfer 额度”限制，额度低时要改用 Standard</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="cctp-config">
+  <h2 class="eyebrow">CCTP · 链上配置</h2>
+  <p>2026-10-28 从以太坊主网直接读取：</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>合约</th><th>项目</th><th>链上值</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3">MessageTransmitterV2</td><td>签名门槛 / 已启用 attester</td><td><b>2 / 2</b></td></tr>
+      <tr><td>localDomain / version</td><td>0 / 1</td></tr>
+      <tr><td>消息体最大长度</td><td>8192 字节</td></tr>
+      <tr><td>TokenMinterV2</td><td>每笔销毁上限（USDC）</td><td><b>1000 万 USDC</b>，超过报 “Burn amount exceeds per tx limit”</td></tr>
+      <tr><td>各合约角色</td><td colspan="2">MessageTransmitter：owner、pauser、rescuer、attesterManager；TokenMessenger：owner、rescuer、denylister（可禁止地址发起销毁）、feeRecipient；TokenMinter：owner、pauser、rescuer、tokenController。读到的都是不同的普通地址（EOA）</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="cctp-newchain">
+  <h2 class="eyebrow">CCTP · 新链</h2>
+  <p class="lead">结合<a href="usdc.html">第 02 章</a>和本章的源码，接入 CCTP 的每一步都需要 Circle 控制的角色来执行，项目方自己做不了。</p>
+  <div class="tbl"><table class="mw-680">
+    <thead><tr><th>步骤</th><th>由谁执行</th></tr></thead>
+    <tbody>
+      <tr><td>在这条链上发行 Circle 控制的原生 USDC（FiatToken 全部角色归 Circle）</td><td>Circle</td></tr>
+      <tr><td>部署 TokenMessengerV2、MessageTransmitterV2、TokenMinterV2，分配 domain 编号</td><td>Circle</td></tr>
+      <tr><td>masterMinter 把 TokenMinterV2 设为 USDC 铸币员并给额度</td><td>Circle（<a href="usdc.html">第 02 章</a>）</td></tr>
+      <tr><td>在各条已有链上互相登记对方的 TokenMessenger，并把各链 USDC 互相关联</td><td>Circle（各合约 owner / tokenController）</td></tr>
+      <tr><td>attester 开始观察这条链，Iris 定义它的确认规则</td><td>Circle</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">CCTP 支持链列表在 2026-10 有 31 个主网 domain，Qtum 不在其中。2026-10-31 起 V1 开始停用，12-01 完成；Noble 仍是只支持 V1 的链。</p>
+</section>
+<section id="ccip">
+  <h2 class="eyebrow">CCIP · 组件</h2>
+  <p class="sub">CCIP 2.0：发送、验证、索引、执行四步</p>
+  <p class="lead">Chainlink 原本以预言机网络（DON）出名，CCIP 默认的验证网络就建在同一套 DON 基础设施上。CCIP 2.0 把“谁来验证”和“谁来执行”拆开了：验证由 Cross-Chain Verifier（CCV）负责，执行谁都可以做。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>组件</th><th>在哪</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">Router</td><td>源链 / 目标链</td><td>固定不变的入口地址，升级时 OnRamp / OffRamp 在它背后替换。检查目标链是否支持、有没有全局 curse，收费，把代币交给代币池</td></tr>
+      <tr><td class="mono">OnRamp</td><td>源链</td><td>出站把关：检查目标链没被 curse，确定这条消息需要哪些验证者和执行者，让代币池锁定或销毁代币，发出消息</td></tr>
+      <tr><td class="mono">Fee Quoter / Token Admin Registry / 代币池</td><td>源链 / 目标链</td><td>报价；登记每个代币由哪个池子处理；池子负责本链这一侧的锁定 / 销毁 / 释放 / 铸造</td></tr>
+      <tr><td>CCV（Committee Verifier）</td><td>链下 + 目标链合约</td><td>默认验证网络，<b>16 个独立节点运营方</b>各自签名，由 Aggregator 汇成法定人数证明；还可以叠加别的 CCV</td></tr>
+      <tr><td>Indexer</td><td>链下（可选）</td><td>按消息 ID 汇总各验证者的证明，方便执行者查询</td></tr>
+      <tr><td>Executor</td><td>链下</td><td>付目标链 gas、提交消息。默认是 Chainlink 的，但<b>执行无需许可</b></td></tr>
+      <tr><td class="mono">OffRamp</td><td>目标链</td><td>无需许可的执行入口。<b>不信任提交者给的验证者列表</b>，自己根据接收合约、代币池和通道配置重新推出需要哪些 CCV，再逐个在链上核对证明</td></tr>
+      <tr><td class="mono">RMN（curse）</td><td>各链</td><td>手动的链上安全开关。某条链或通道被 curse 后，相关发送和执行全部回滚，直到解除</td></tr>
+    </tbody>
+  </table></div>
+  <h3>一条 CCIP 消息的全过程</h3>
+  <div class="bit wide"><div class="anim" data-anim="ccip"></div></div>
+</section>
+
+<section id="ccip-tokens">
+  <h2 class="eyebrow">CCIP · 代币</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>机制</th><th>源链</th><th>目标链</th><th>什么时候用</th></tr></thead>
+    <tbody>
+      <tr><td>Burn and Mint</td><td><code>BurnMintTokenPool</code> 销毁</td><td><code>BurnMintTokenPool</code> 铸造</td><td>代币能把铸币和销毁权交给池子，各链总量保持一份</td></tr>
+      <tr><td>Lock and Mint</td><td><code>LockReleaseTokenPool</code> 锁定</td><td><code>BurnMintTokenPool</code> 铸包装币</td><td>代币只在原生链铸造，其他链是包装币（中心辐射）</td></tr>
+      <tr><td>Burn and Unlock</td><td><code>BurnMintTokenPool</code> 销毁包装币</td><td><code>LockReleaseTokenPool</code> 放出原币</td><td>上一行的反向，回到原生链</td></tr>
+      <tr><td>Lock and Unlock</td><td><code>LockReleaseTokenPool</code> 锁定</td><td><code>LockReleaseTokenPool</code> 放出</td><td>跨链操作不能铸造这个代币时</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">CCT</span><h4>自助注册：代币管理员说了算</h4></div>
+      <p>每条链有一个 Token Admin Registry，记录每个代币的管理员和当前使用的池子。注册流程：注册模块提议一个管理员 → 该地址接受 → 管理员设置池子。设置池子即启用，设成零地址即下架。能注册的前提是代币暴露 <code>owner()</code>、OpenZeppelin 的 <code>DEFAULT_ADMIN_ROLE</code>，或实现 CCIP 专用的 <code>getCCIPAdmin()</code>。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Rate limit</span><h4>限速是一桶水</h4></div>
+      <p>每个代币池在每条通道上都能设限速，官方原话 “It is highly recommended to set rate limits”。桶的容量是单笔能转的上限；补充速率是每秒加回多少；每次转账扣掉相应的量，桶满了就不再加。<b>能不能转，看的是桶里现在还剩多少</b>，不是桶有多大。</p></div>
+  </div>
+  <div class="bit wide">
+    <div class="bh"><span class="term">Simulator</span><h4>试一试：限速桶</h4></div>
+    <p>设好容量和补充速率，连续转几笔，看看第二笔大额为什么会被拒。你自己的桥也可以用同样的办法限速。</p>
+    <div class="tool">
+      <div class="row">
+        <label for="bkCap">容量（单笔上限）<input id="bkCap" type="number" min="1" step="1000" value="100000"></label>
+        <label for="bkRate">补充速率（每秒）<input id="bkRate" type="number" min="0" step="1" value="10"></label>
+        <label for="bkAmt">这笔转多少<input id="bkAmt" type="number" min="1" step="1000" value="80000"></label>
+      </div>
+      <div class="ctrl gap-6">
+        <button class="btn" type="button" id="bkSend">转账</button>
+        <button class="btn ghost" type="button" id="bkWait">过 1 小时</button>
+        <button class="btn ghost" type="button" id="bkWait2">过 1 分钟</button>
+        <button class="btn ghost" type="button" id="bkReset">重置为满桶</button>
+      </div>
+      <div class="out" id="bkOut" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+
+<section id="ccip-fees">
+  <h2 class="eyebrow">CCIP · 费用与限制</h2>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>费用</th><th>付给谁</th><th>怎么算</th></tr></thead>
+    <tbody>
+      <tr><td>Executor 费</td><td>执行者</td><td>目标链执行 gas + 可选的固定美元费（默认 Chainlink 执行者通常不收固定费）</td></tr>
+      <tr><td>CCV 费</td><td>验证者</td><td>固定美元费；默认 Chainlink CCV 目前不收</td></tr>
+      <tr><td>代币池费</td><td>池子的所有者</td><td>固定美元费和 / 或按金额收基点</td></tr>
+      <tr><td>CCIP 网络费</td><td>CCIP 协议</td><td>按通道收固定美元费</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table class="mw-620">
+    <thead><tr><th>网络费（2026-10 官方表）</th><th>用 LINK 付</th><th>用其他币付</th></tr></thead>
+    <tbody>
+      <tr><td>代币转账：Ethereum → 非 Ethereum、非 Solana</td><td>$0.45</td><td>$0.50</td></tr>
+      <tr><td>代币转账：非 Ethereum、非 Solana → Ethereum</td><td>$1.35</td><td>$1.50</td></tr>
+      <tr><td>代币转账：两端都不是 Ethereum / Solana</td><td>$0.225</td><td>$0.25</td></tr>
+      <tr><td>任意消息：涉及 Ethereum 的任一方向</td><td>$0.45</td><td>$0.50</td></tr>
+      <tr><td>任意消息：两端都不是 Ethereum</td><td>$0.09</td><td>$0.10</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">官方举例：USDC 的快速转账可能经过 CCTP 验证者，CCTP 还会从转账金额里扣自己的手续费。EVM 上的服务限制：消息 data 最长 32 KB；每条消息最多 1 种代币；代币池执行 gas 上限 90,000。</p>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">ccipReceive</span><h4>接收合约必须自己检查三件事</h4></div>
+      <p>官方最佳实践：在 <code>ccipReceive</code> 里校验<b>源链</b>（<code>sourceChainSelector</code>）、<b>发送方</b>（<code>sender</code>），以及调用者是不是 <b>Router</b>。不检查的话，任何链上的任何合约都能给你发消息。</p></div>
+    <div class="bit"><div class="bh"><span class="term">extraArgs</span><h4>每条消息的配置</h4></div>
+      <p>新集成用 <code>ExtraArgsV3</code>：可以写验证者、执行者、确认程度、gas 上限等。旧的 <code>GenericExtraArgsV2</code> 只认 <code>gasLimit</code>，<code>allowOutOfOrderExecution</code> 在 2.0 里已弃用。</p></div>
+    <div class="bit"><div class="bh"><span class="term">Manual execution</span><h4>执行失败怎么办</h4></div>
+      <p>证明已经齐了但自动执行失败，任何人都可以通过 OffRamp 手动执行。证明本身缺失时，手动执行也补不出来。</p></div>
+    <div class="bit"><div class="bh"><span class="term">FTF</span><h4>快于最终性（可选）</h4></div>
+      <p>默认等源链完全最终确定。CCIP 2.0 的通道可以支持 Faster-Than-Finality，但要发送方（对所有消息）和代币发行方（对代币转账）都明确选择开启。</p></div>
+  </div>
+</section>
+<section id="compare">
+  <h2 class="eyebrow">对照</h2>
+  <div class="tbl"><table class="mw-780">
+    <thead><tr><th></th><th>CCTP V2</th><th>CCIP 2.0</th></tr></thead>
+    <tbody>
+      <tr><th>搬什么</th><td>USDC；2026-09 起经 <code>CrossChainTokenService</code> 支持 EURC 等其他 Circle 资产</td><td>任意消息、代币，或两者一起</td></tr>
+      <tr><th>谁证明</th><td>Circle 的 attester（以太坊上 2 / 2）</td><td>默认 Committee Verifier（16 个运营方），可叠加其他 CCV</td></tr>
+      <tr><th>链上怎么验</th><td>MessageTransmitter 逐个 <code>ecrecover</code>，地址严格递增</td><td>OffRamp 自己推出需要的 CCV，逐个核对证明</td></tr>
+      <tr><th>资产模式</th><td>只有销毁 → 铸造</td><td>四种池子，由代币管理员选</td></tr>
+      <tr><th>速度</th><td>Standard 等最终性；Fast 约 20 秒</td><td>默认等最终性；可选 FTF</td></tr>
+      <tr><th>费用</th><td>Standard 免协议费；Fast 0–13 bps</td><td>执行 + CCV + 池子 + 网络费四项</td></tr>
+      <tr><th>限额</th><td>每笔销毁上限（以太坊 USDC 1000 万）；Fast 额度</td><td>每个池子、每条通道的限速桶</td></tr>
+      <tr><th>新链接入</th><td>只能由 Circle 决定和执行</td><td>需要 Chainlink 网络级支持</td></tr>
+      <tr><th>新代币接入</th><td>不开放</td><td>CCT 自助注册（要有代币管理权）</td></tr>
+      <tr><th>紧急开关</th><td>pauser、denylister、attesterManager</td><td>RMN curse</td></tr>
+      <tr><th>两者关系</th><td colspan="2">CCIP 搬 USDC 时用 CCTP（两端都在 CCTP 名单里）。CCIP 管“消息”，CCTP 管“USDC 本身”</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li><a href="https://github.com/circlefin/evm-cctp-contracts" rel="noopener">circlefin/evm-cctp-contracts</a>（commit <code>a92a2b4</code>，2026-06-18）：<code>src/messages/v2/MessageV2.sol</code>、<code>BurnMessageV2.sol</code>、<code>src/roles/Attestable.sol</code>、<code>src/v2/MessageTransmitterV2.sol</code>、<code>TokenMessengerV2.sol</code>、<code>BaseTokenMessenger.sol</code>、<code>FinalityThresholds.sol</code>、<code>src/roles/TokenController.sol</code>、<code>src/examples/CCTPHookWrapper.sol</code></li>
+    <li>以太坊主网只读调用（2026-10-28）：MessageTransmitterV2 的 <code>signatureThreshold</code>、<code>getNumEnabledAttesters</code>、<code>maxMessageBodySize</code> 和各角色；TokenMinterV2 的 <code>burnLimitsPerMessage(USDC)</code></li>
+    <li>Circle 文档：<a href="https://developers.circle.com/cctp/references/contract-addresses" rel="noopener">合约地址</a>、<a href="https://developers.circle.com/cctp/cctp-supported-blockchains" rel="noopener">支持链</a>、<a href="https://developers.circle.com/cctp/concepts/finality-and-block-confirmations" rel="noopener">最终性</a>、<a href="https://developers.circle.com/cctp/concepts/fees" rel="noopener">费用</a>、<a href="https://developers.circle.com/cctp/migration-from-v1-to-v2" rel="noopener">V1 → V2</a>、<a href="https://developers.circle.com/cctp/references/contract-interfaces" rel="noopener">合约接口</a></li>
+    <li>Chainlink 文档：<a href="https://docs.chain.link/ccip/concepts/architecture/overview" rel="noopener">CCIP 架构</a>、<a href="https://docs.chain.link/ccip/concepts/cross-chain-token/overview" rel="noopener">Cross-Chain Token</a>（代币池、TAR、限速）、<a href="https://docs.chain.link/ccip/concepts/best-practices/evm" rel="noopener">最佳实践</a>、<a href="https://docs.chain.link/ccip/billing" rel="noopener">费用</a>、<a href="https://docs.chain.link/ccip/service-limits/evm" rel="noopener">服务限制</a>；<a href="https://chain.link/blog/introducing-ccip-2-0" rel="noopener">Introducing CCIP 2.0（2026-09-28）</a></li>
+  </ol>
+  <p>核查日期 2026-10-28。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // CCTP V2：一笔转账的全过程（以太坊 → Base）
+  A.cctp = {h:320,
+    b:[['src',2,4,30,92,'源链 · Ethereum'],['tm',4,14,26,22,'TokenMessengerV2'],['mi',4,42,26,22,'TokenMinterV2'],['mt',4,70,26,22,'MessageTransmitterV2'],
+       ['iris',35,30,30,40,'Circle Iris · attester'],
+       ['dst',68,4,30,92,'目标链 · Base'],['mt2',70,14,26,22,'MessageTransmitterV2'],['tm2',70,42,26,22,'TokenMessengerV2'],['us',70,70,26,22,'收款人']],
+    it:[
+      {id:'u', h:chip('100 USDC','--usdc'), x:17, y:27},
+      {id:'ev', h:chip('MessageSent','--muted'), x:17, y:84, hide:1},
+      {id:'wait', h:'<div class="lbl m">等待确认</div>', x:50, y:46, hide:1},
+      {id:'att', h:chip('attestation 2/2','--accent'), x:50, y:58, hide:1},
+      {id:'ck', h:'<div class="lbl">验签 · domain · nonce</div>', x:83, y:27, hide:1},
+      {id:'m', h:chip('99.99 USDC','--usdc'), x:83, y:78, hide:1},
+      {id:'fee', h:'<div class="lbl m">+ 手续费另铸给 feeRecipient</div>', x:83, y:88, hide:1}],
+    s:[
+      {c:'用户先 approve TokenMessengerV2，再调用 depositForBurn(amount, destinationDomain = 6, mintRecipient, burnToken, destinationCaller, maxFee, minFinalityThreshold)。', lit:['tm']},
+      {c:'TokenMessenger 用 transferFrom 把 USDC 转给 TokenMinter，TokenMinter 调用 USDC 的 burn。源链 USDC 总量减少。这一步会检查每笔销毁上限（以太坊上 USDC 是 1000 万）。', set:{u:{y:53, hide:1}}, lit:['tm','mi']},
+      {c:'TokenMessenger 拼出销毁消息（收款人、金额、maxFee、hookData…），交给 MessageTransmitterV2.sendMessage，它加上消息头（domain、nonce、sender…）后发出 MessageSent 事件。', set:{ev:{hide:0}}, lit:['mt']},
+      {c:'Circle 的 Iris 看到这条事件，按 minFinalityThreshold 等待：2000 要等源链最终确定（以太坊约 15–19 分钟）；1000 只等“已确认”，即 Fast Transfer。', set:{ev:{x:50, y:46, hide:1}, wait:{hide:0}}, lit:['iris']},
+      {c:'达到要求后，attester 对整段消息的 keccak256 签名。以太坊上目前 2 个 attester、门槛 2，得到一份 attestation。', set:{wait:{hide:1}, att:{hide:0}}, lit:['iris']},
+      {c:'任何人（设置了 destinationCaller 时只有它）把 message + attestation 交给目标链 MessageTransmitterV2.receiveMessage：签名份数正好、签名者地址严格递增、都是在任 attester；目标 domain 是本链；nonce 没用过，立刻标记已用。',
+       set:{att:{x:83, y:27, hide:1}, ck:{hide:0}}, lit:['mt2']},
+      {c:'交给 TokenMessengerV2：发送方必须是登记过的“以太坊上的 TokenMessenger”，消息没过期，手续费不超过 maxFee。然后 TokenMinter 给收款人铸“金额减手续费”，手续费单独铸给 feeRecipient。',
+       set:{m:{hide:0}, fee:{hide:0}}, lit:['tm2','us']},
+      {c:'hookData 一路被带了过来，但 CCTP 的核心合约不会执行它。想“到账后自动做点什么”，要用集成方自己的合约（官方给了示例 CCTPHookWrapper）来读取并执行。', lit:['tm2']},
+    ]};
+  // CCIP 2.0：一条消息的全过程
+  A.ccip = {h:320,
+    b:[['src',2,4,30,92,'源链'],['rt',4,14,26,22,'Router'],['on',4,42,26,22,'OnRamp'],['pl',4,70,26,22,'代币池'],
+       ['ccv',35,14,30,40,'CCV · 16 个运营方'],['ix',35,60,30,30,'Indexer / Executor'],
+       ['dst',68,4,30,92,'目标链'],['off',70,14,26,22,'OffRamp'],['pl2',70,42,26,22,'代币池'],['rc',70,70,26,22,'你的接收合约']],
+    it:[
+      {id:'msg', h:chip('消息 + 100 XYZ','--link'), x:17, y:27},
+      {id:'lk', h:'<div class="lbl m">锁定 / 销毁</div>', x:17, y:83, hide:1},
+      {id:'sg', h:'<div class="lbl">各自签名 → Aggregator</div>', x:50, y:36, hide:1},
+      {id:'pf', h:chip('证明','--accent'), x:50, y:76, hide:1},
+      {id:'re', h:'<div class="lbl">自己推出需要哪些 CCV</div>', x:83, y:27, hide:1},
+      {id:'rm', h:'<div class="lbl m">释放 / 铸造</div>', x:83, y:55, hide:1},
+      {id:'cr', h:'<div class="lbl">ccipReceive：查源链、发送方、Router</div>', x:83, y:83, hide:1}],
+    s:[
+      {c:'应用调用 Router.ccipSend。Router 的地址升级时不变，它检查目标链是否支持、有没有全局 curse，收费，把代币交给对应的代币池。', lit:['rt']},
+      {c:'OnRamp 决定这条消息需要哪些验证者和执行者，让代币池锁定或销毁代币，然后发出消息。', set:{msg:{y:55}, lk:{hide:0}}, lit:['on','pl']},
+      {c:'每个 CCV 节点各自观察源链，等到足够的确认程度后独立签名；Aggregator 把 16 个运营方的签名汇成法定人数证明。通道、代币池或接收合约可以要求额外的 CCV。', set:{msg:{hide:1}, sg:{hide:0}}, lit:['ccv']},
+      {c:'Indexer 按消息 ID 汇总证明（可选）。执行者取到证明，把消息连同证明一起交给目标链的 OffRamp。执行无需许可，Chainlink 的执行者只是默认选项。', set:{pf:{hide:0}}, lit:['ix']},
+      {c:'OffRamp 不相信提交者自己报的验证者列表，而是根据接收合约、代币池和通道配置自己推出“需要哪些 CCV”，再逐个在链上核对。这样执行者没法偷偷跳过某个验证者。', set:{pf:{x:83, y:27, hide:1}, re:{hide:0}}, lit:['off']},
+      {c:'验证通过：目标链代币池释放或铸造代币，然后调用接收合约的 ccipReceive。接收合约应当检查 sourceChainSelector、sender，以及调用者是不是 Router。', set:{rm:{hide:0}, cr:{hide:0}}, lit:['pl2','rc']},
+      {c:'两个兜底：执行失败但证明齐全时，任何人都能通过 OffRamp 手动执行；出事时可以用 RMN 合约 curse 某条链或通道，相关发送和执行全部回滚，直到解除。', bad:['src','dst']},
+    ]};
+  Guide.mount(A);
+  // 限速桶：容量 C、每秒补充 r；能不能转看“当前剩余”
+  const bk = {cap:0, rate:0, cur:0, log:[]};
+  const $b = id => document.getElementById(id);
+  const fmt = n => Math.floor(n).toLocaleString('en-US');
+  function bkRead(){
+    bk.cap = Math.max(1, +$b('bkCap').value || 1);
+    bk.rate = Math.max(0, +$b('bkRate').value || 0);
+    bk.cur = Math.min(bk.cur, bk.cap);
+  }
+  function bkShow(){
+    const pct = Math.round(bk.cur / bk.cap * 100);
+    $b('bkOut').innerHTML = `<span>桶里现在 <b>${fmt(bk.cur)}</b> / 容量 ${fmt(bk.cap)}</span>
+      <div style="height:10px;border-radius:5px;background:var(--rule);overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--accent)"></div></div>
+      ${bk.log.slice(-5).map(l => l.startsWith('<span') ? l : `<span>${l}</span>`).join('')}`;
+  }
+  function bkSend(){
+    bkRead();
+    const a = Math.max(0, +$b('bkAmt').value || 0);
+    if (a > bk.cap) bk.log.push(`<b style="color:var(--warn)">拒绝</b> 转 ${fmt(a)}：超过容量，单笔永远转不了这么多`);
+    else if (a > bk.cur) bk.log.push(`<b style="color:var(--warn)">拒绝</b> 转 ${fmt(a)}：桶里只剩 ${fmt(bk.cur)}，等补满一些再试`);
+    else { bk.cur -= a; bk.log.push(`<b style="color:var(--ok)">成功</b> 转 ${fmt(a)}，桶里剩 ${fmt(bk.cur)}`); }
+    bkShow();
+  }
+  function bkWait(sec){
+    bkRead();
+    const before = bk.cur; bk.cur = Math.min(bk.cap, bk.cur + bk.rate * sec);
+    bk.log.push(`<span class="m">过了 ${sec >= 3600 ? sec / 3600 + ' 小时' : sec / 60 + ' 分钟'}，补回 ${fmt(bk.cur - before)}${bk.cur >= bk.cap ? '（已满，不再增加）' : ''}</span>`);
+    bkShow();
+  }
+  $b('bkSend').addEventListener('click', bkSend);
+  $b('bkWait').addEventListener('click', () => bkWait(3600));
+  $b('bkWait2').addEventListener('click', () => bkWait(60));
+  $b('bkReset').addEventListener('click', () => { bkRead(); bk.cur = bk.cap; bk.log = ['<span class="m">已重置为满桶</span>']; bkShow(); });
+  ['bkCap', 'bkRate'].forEach(id => $b(id).addEventListener('change', () => { bkRead(); bkShow(); }));
+  bkRead(); bk.cur = bk.cap; bk.log = ['<span class="m">满桶开始。先转 80,000，再转一次看看</span>']; bkShow();
+})();
+</script>
+</body>
+</html>

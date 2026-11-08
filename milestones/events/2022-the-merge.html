@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Merge：以太坊从工作量证明转为权益证明｜区块链大事记</title>
+<meta name="description" content="2022 年 9 月以太坊不停链换掉共识机制的经过：Beacon Chain 和工作量证明链并行近两年，用终端总难度（TTD）触发切换，三个公共测试网的演练，ETHPoW 分叉和重放攻击，以及耗电、发行、质押集中、交易审查和监管上的后续。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-the-merge">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　<a href="../index.html#cat-tech">协议与技术</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>The Merge：以太坊从工作量证明转为权益证明</h1>
+    <p class="lede">2022 年 9 月 15 日，以太坊在不停链的情况下换掉了共识机制：并行运行近两年的 Beacon Chain 接管出块，挖矿结束。切换的触发条件是旧链的累计难度越过一个事先公布的阈值，这套办法先在三个公共测试网上演练过。切换后全网耗电和 ETH 的新增发行大幅下降，质押集中、交易审查和质押算不算证券的问题随之出现。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">The Merge 分两步完成。2022 年 9 月 6 日，共识层的 Beacon Chain 按 epoch 高度激活 Bellatrix 升级；9 月 15 日，执行层的工作量证明链在区块 15,537,393 越过终端总难度（TTD），从下一个区块起由 Beacon Chain 的验证者出块，这一步叫 Paris<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。Ars Technica 引述 CoinDesk 的报道说，约 15 分钟后第一个权益证明区块被最终确认，切换宣告成功<a class="ref" href="#s30">[30]</a>。</p>
+        <p>挖矿停止后，CCRI 估计以太坊的年耗电下降 99.988% 以上<a class="ref" href="#s11">[11]</a>；按 ethereum.org 的计算，ETH 的新增发行减少约 88%<a class="ref" href="#s8">[8]</a>。一部分矿工转去挖 Ethereum Classic<a class="ref" href="#s28">[28]</a>，另一部分分叉出 ETHPoW（代币 ETHW），新链上线第二天就有跨链桥被重放攻击<a class="ref" href="#s34">[34]</a>。</p>
+        <p>出块权从矿工转到质押者手里，新的问题也出在这里。据 Nansen，合并前 Lido 一家持有约 31% 的质押 ETH，Coinbase、Kraken、Binance 三家交易所合计约 30%<a class="ref" href="#s26">[26]</a>；一篇 2023 年的论文发现，合并后两个月里至少 46% 的区块出自为遵守美国 OFAC 制裁而审查交易的参与者<a class="ref" href="#s17">[17]</a>。合并当天，SEC 主席 Gary Gensler 对记者说，以太坊新的质押系统可能落入证券规则<a class="ref" href="#s33">[33]</a>。质押的 ETH 在合并后仍取不出来，要等到 2023 年 4 月的 <a href="2023-shapella.html">Shapella 升级</a><a class="ref" href="#s6">[6]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>两条并行的链</h3>
+        <p>以太坊 <a href="2015-ethereum-launch.html">2015 年 7 月上线</a>，交易、合约和账户都在一条工作量证明链上<a class="ref" href="#s7">[7]</a>。2020 年 10 月 14 日，质押存款合约在区块 11,052,984 部署；11 月 27 日凑够 16,384 笔、每笔 32 ETH 的存款，12 月 1 日 Beacon Chain 开始出块<a class="ref" href="#s6">[6]</a>。它的共识协议在论文里叫 Gasper，把负责最终确认的 Casper FFG 和负责分叉选择的 LMD GHOST 合在一起<a class="ref" href="#s15">[15]</a>。</p>
+        <p>此后近两年，两条链并行运行。Beacon Chain 不处理主网的交易，只就活跃的验证者和他们的余额达成共识<a class="ref" href="#s7">[7]</a>，存进去的 ETH 也取不出来。EIP-3675 的作者在动机一节写道，Beacon Chain 自 2020 年 12 月运行以来没有出现过安全或活性故障，已经可以为主网提供安全保障<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>难度炸弹和一再推迟</h3>
+        <p>工作量证明链里埋着一枚“难度炸弹”：到了约定的区块，挖矿难度会指数上升，直到挖不出块。它是 2015 年 8 月主网上线后不久的客户端更新加进来的<a class="ref" href="#s42">[42]</a>，经过见<a href="2015-ethereum-launch.html">以太坊主网上线（Frontier）</a>。Fortune 解释，开发者保留它，是为了促使矿工在合并后接受权益证明链<a class="ref" href="#s21">[21]</a>。合并的日期一再推迟，难度炸弹也跟着推迟：2021 年 12 月的 Arrow Glacier 把它推到 2022 年 6 月（EIP-4345），2022 年 6 月 30 日的 Gray Glacier 又推后三个月，到 2022 年 9 月（EIP-5133）<a class="ref" href="#s6">[6]</a>。Ars Technica 写道，切换失败可能造成混乱，开发者过去一年“一再推迟合并的日期，给自己更多准备时间”<a class="ref" href="#s30">[30]</a>。</p>
+        <h3>为什么要换</h3>
+        <p>一是耗电。2021 年 5 月，以太坊基金会的 Carl Beekhuizen 引用 Digiconomist 的估计：当时以太坊矿工每年耗电约 44.49 太瓦时，相当于持续 5.13 吉瓦的负荷；他估算换成权益证明后，耗电至少下降约 99.95%<a class="ref" href="#s10">[10]</a>。2021 年的 NFT 热潮里，BBC 的 Will Gompertz 也写道，生成 NFT 的电脑日夜运转，耗电巨大<a class="ref" href="#s40">[40]</a>，见<a href="2021-beeple.html">Beeple 的 NFT 在佳士得拍出 6,935 万美元</a>。同一年，国家发展改革委等十一部门以“挖矿”能耗和碳排放大、对国民经济贡献度低为由，要求严禁新增项目、加快存量退出<a class="ref" href="#s41">[41]</a>，见<a href="2021-china-mining-ban.html">中国清退比特币挖矿</a>。二是发行。ethereum.org 写道，挖矿在经济上是很重的活动，历来要靠很高的 ETH 发行来维持；运行验证节点的成本低得多，不需要那么多奖励<a class="ref" href="#s8">[8]</a>。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击与损失</span><span class="def">监管与执法</span><span>协议与其他事件（粗体为主网的关键节点）</span></p>
+        <ol class="timeline">
+          <li><time>2020-10-14</time><div class="ev">质押存款合约在区块 11,052,984 部署<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="key"><time>2020-12-01</time><div class="ev">Beacon Chain 开始出块。此前的 11 月 27 日，存款凑够 16,384 笔，每笔 32 ETH<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2021-05-18</time><div class="ev">以太坊基金会估计，合并后耗电至少下降约 99.95%<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>2021-07-22</time><div class="ev">EIP-3675《把共识升级为权益证明》提出<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>2021-12-09</time><div class="ev">Arrow Glacier 把难度炸弹推到 2022 年 6 月<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2022-03-15</time><div class="ev">合并测试网 Kiln 完成合并<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2022-06-08</time><div class="ev">最老的测试网 Ropsten 完成合并<a class="ref" href="#s20">[20]</a>。</div></li>
+          <li><time>2022-06-30</time><div class="ev">Gray Glacier 把难度炸弹再推后三个月<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2022-07-06</time><div class="ev">测试网 Sepolia 完成合并<a class="ref" href="#s22">[22]</a>。</div></li>
+          <li><time>2022-08-09</time><div class="ev">USDC 的发行方 Circle 和 USDT 的发行方 Tether 先后表示，合并后只支持权益证明链<a class="ref" href="#s24">[24]</a>。</div></li>
+          <li><time>2022-08-10</time><div class="ev">Goerli 与 Prater 完成合并，这是主网之前最后一次公共测试网演练<a class="ref" href="#s23">[23]</a>。</div></li>
+          <li><time>2022-08-24</time><div class="ev">以太坊基金会公布主网的 Bellatrix epoch、TTD 和各客户端的版本<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="key"><time>2022-09-06</time><div class="ev">Beacon Chain 在 epoch 144896 激活 Bellatrix<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="key"><time>2022-09-15</time><div class="ev">区块 15,537,393 越过 TTD；区块 15,537,394 由验证者产出，约 15 分钟后被最终确认<a class="ref" href="#s6">[6]</a><a class="ref" href="#s30">[30]</a>。</div></li>
+          <li><time>2022-09-15</time><div class="ev">ETHPoW 发布主网代码；Ethereum Classic 的算力创新高<a class="ref" href="#s16">[16]</a><a class="ref" href="#s28">[28]</a>。</div></li>
+          <li class="def"><time>2022-09-15</time><div class="ev">Gensler 在参议院作证后对记者说，合并后的质押系统可能落入证券规则<a class="ref" href="#s33">[33]</a>。</div></li>
+          <li class="atk"><time>2022-09-16</time><div class="ev">ETHPoW 上的 Omni Bridge 被重放攻击，攻击者多拿到 200 ETHW<a class="ref" href="#s34">[34]</a>。</div></li>
+          <li><time>2022-10-26</time><div class="ev">MEV Watch 统计的审查型 relay 交付份额到峰值 94.8%<a class="ref" href="#s18">[18]</a>。</div></li>
+          <li class="key"><time>2023-04-12</time><div class="ev">Shapella 升级，质押的 ETH 可以提取<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2024-06</time><div class="ev">SEC 告诉 Consensys，结束对“Ethereum 2.0”的调查<a class="ref" href="#s35">[35]</a>。</div></li>
+          <li class="def"><time>2024-06-28</time><div class="ev">SEC 起诉 Consensys，指 MetaMask 的兑换和质押服务属于未注册的经纪业务<a class="ref" href="#s36">[36]</a>。</div></li>
+          <li class="def"><time>2025-03-27</time><div class="ev">SEC 对 Consensys 的起诉被撤销<a class="ref" href="#s37">[37]</a>。</div></li>
+          <li class="def"><time>2025-05-29</time><div class="ev">SEC 公司融资部称，协议层面的质押活动不涉及证券的发行和销售<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2025-10-06</time><div class="ev">Grayscale 的两只现货以太坊 ETF 开始质押，美国首例<a class="ref" href="#s38">[38]</a>。</div></li>
+          <li><time>2026-06-30</time><div class="ev">全网质押约 4,310 万 ETH，Lido 的份额从年初的 23.93% 降到 21.18%<a class="ref" href="#s39">[39]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>技术机制</h2>
+        <p>合并没有新建一条链。原来的工作量证明链变成执行层，接在 Beacon Chain 下面，账户、合约和全部历史都保留下来<a class="ref" href="#s7">[7]</a>；变的是谁来出块，以及什么样的区块算有效。EIP-3675 规定了区块结构、区块处理、分叉选择和网络接口四个方面的改动<a class="ref" href="#s2">[2]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 452" role="img" aria-labelledby="merge-flow-t merge-flow-d">
+            <title id="merge-flow-t">两层怎样合到一起</title>
+            <desc id="merge-flow-d">共识层的 Beacon Chain 从 2020 年 12 月起单独出块，执行层是原来的工作量证明链。2022 年 9 月 6 日 Beacon Chain 激活 Bellatrix，开始等待终端总难度。区块 15,537,393 越过终端总难度，成为最后一个工作量证明区块；下一个区块 15,537,394 由验证者提议。此后共识客户端选链头、投票和最终确认，通过 Engine API 指挥执行客户端；执行客户端只执行交易、维护状态。按设计约两个 epoch 后最终确认，合并完成。</desc>
+            <defs>
+              <marker id="merge-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box" x="40" y="20" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="210" y="44" text-anchor="middle">共识层：Beacon Chain</text>
+            <text class="d-t s" x="210" y="65" text-anchor="middle">2020 年 12 月起出块，只管验证者和余额</text>
+            <rect class="d-box" x="400" y="20" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="44" text-anchor="middle">执行层：原来的工作量证明链</text>
+            <text class="d-t s" x="570" y="65" text-anchor="middle">交易、合约和账户，靠挖矿出块</text>
+            <rect class="d-box" x="40" y="128" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="210" y="152" text-anchor="middle">Bellatrix：2022 年 9 月 6 日</text>
+            <text class="d-t s" x="210" y="173" text-anchor="middle">epoch 144896，开始等待 TTD</text>
+            <rect class="d-box" x="400" y="128" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="152" text-anchor="middle">区块 15,537,393 越过 TTD</text>
+            <text class="d-t s" x="570" y="173" text-anchor="middle">最后一个工作量证明区块</text>
+            <rect class="d-box" x="190" y="236" width="380" height="58" rx="3"/>
+            <text class="d-t b" x="380" y="260" text-anchor="middle">区块 15,537,394：第一个权益证明区块</text>
+            <text class="d-t s" x="380" y="281" text-anchor="middle">2022 年 9 月 15 日 06:42:42 UTC，由验证者提议（Paris）</text>
+            <rect class="d-box" x="40" y="344" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="210" y="368" text-anchor="middle">共识客户端</text>
+            <text class="d-t s" x="210" y="389" text-anchor="middle">选链头、投票、最终确认，经 Engine API 下指令</text>
+            <rect class="d-box" x="400" y="344" width="340" height="58" rx="3"/>
+            <text class="d-t b" x="570" y="368" text-anchor="middle">执行客户端</text>
+            <text class="d-t s" x="570" y="389" text-anchor="middle">执行交易、维护状态，不再接受工作量证明区块</text>
+            <text class="d-t s" x="380" y="436" text-anchor="middle">按设计约两个 epoch（约 13 分钟）后最终确认，合并完成</text>
+            <line class="d-line" x1="210" y1="78" x2="210" y2="124" marker-end="url(#merge-ah)"/>
+            <line class="d-line" x1="570" y1="78" x2="570" y2="124" marker-end="url(#merge-ah)"/>
+            <line class="d-line" x1="225" y1="186" x2="320" y2="232" marker-end="url(#merge-ah)"/>
+            <line class="d-line" x1="535" y1="186" x2="440" y2="232" marker-end="url(#merge-ah)"/>
+            <line class="d-line" x1="320" y1="294" x2="225" y2="340" marker-end="url(#merge-ah)"/>
+            <line class="d-line" x1="440" y1="294" x2="535" y2="340" marker-end="url(#merge-ah)"/>
+          </svg>
+          </div>
+          <figcaption>合并前后的两层。日期、epoch 和区块高度据以太坊基金会的主网公告和 ethereum.org<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>，两个客户端的分工据 EIP-3675 和 ethereum.org<a class="ref" href="#s2">[2]</a><a class="ref" href="#s6">[6]</a>。</figcaption>
+        </figure>
+        <h3>一个节点，两个客户端</h3>
+        <p>合并以后，节点运营者要同时运行共识层客户端和执行层客户端，两边都要升级，这和以往的升级不同<a class="ref" href="#s1">[1]</a>。执行层客户端通过一组新的内部接口 Engine API 接受共识层客户端的指令<a class="ref" href="#s6">[6]</a>。以太坊基金会为主网合并列出的共识层客户端有 Lighthouse、Lodestar、Nimbus、Prysm 和 Teku，执行层客户端有 Besu、Erigon、geth 和 Nethermind。交易的优先费原来归矿工，合并后归提议区块的验证者，验证者可以指定任意以太坊地址收款；Beacon Chain 上的质押奖励仍要等后续升级才能提取<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>用累计难度触发切换</h3>
+        <p>以往的硬分叉都在约定的区块高度生效。The Merge 分两段：共识层的 Bellatrix 按 Beacon Chain 的 epoch 激活，执行层的 Paris 要等工作量证明链的累计难度达到终端总难度（Terminal Total Difficulty，TTD）才触发。主网的 TTD 是 58,750,000,000,000,000,000,000（约 5.875×10²²）。以太坊基金会 8 月 24 日公布这个值时，只能估计它会在 9 月 10 日到 20 日之间到达：算力增加就早，算力流失就晚<a class="ref" href="#s1">[1]</a>。</p>
+        <p>EIP-3675 解释了为什么不用区块高度。切换期间，权益证明的分叉选择优先于工作量证明。如果按高度触发，攻击者只要用少数算力造出一条满足高度要求的分叉，第一个权益证明区块就可能被恶意提议在这条分叉上并成为链头，切换的安全性就被破坏了。累计难度要靠算力一点点挣，少数算力的分叉追不上主链<a class="ref" href="#s2">[2]</a>。</p>
+        <p>终端 PoW 区块的定义是：它自己的累计难度达到 TTD，它的父块还没到。同一个父块下可能有不止一个这样的子块<a class="ref" href="#s2">[2]</a>。共识层规范把这个条件写成两次比较：</p>
+<pre class="code"><code><span class="c"># specs/bellatrix/fork-choice.md</span>
+def is_valid_terminal_pow_block(block: PowBlock, parent: PowBlock) -&gt; bool:
+    is_total_difficulty_reached = block.total_difficulty &gt;= TERMINAL_TOTAL_DIFFICULTY
+    is_parent_total_difficulty_valid = parent.total_difficulty &lt; TERMINAL_TOTAL_DIFFICULTY
+    return is_total_difficulty_reached and is_parent_total_difficulty_valid
+
+<span class="c"># validate_merge_block：第一个权益证明区块的父块必须是终端 PoW 区块（节选）</span>
+    pow_block = get_pow_block(block.body.execution_payload.parent_hash)
+    pow_parent = get_pow_block(pow_block.parent_hash)
+    assert is_valid_terminal_pow_block(pow_block, pow_parent)
+
+<span class="c"># configs/mainnet.yaml</span>
+TERMINAL_TOTAL_DIFFICULTY: 58750000000000000000000
+BELLATRIX_FORK_EPOCH: 144896  # Sept 6, 2022, 11:34:47am UTC</code></pre>
+        <p class="code-cap">出处：ethereum/consensus-specs v1.2.0-rc.3（2022 年 8 月 18 日发布，主网合并时的最新版本；这几行与合并后发布的 v1.2.0 相同），specs/bellatrix/fork-choice.md、configs/mainnet.yaml，节选<a class="ref" href="#s4">[4]</a>。英文为原文，中文注释为本站所加。</p>
+        <p>执行层这边，geth 每验证一个区块头，先看它的父块有没有到 TTD，再决定用哪套规则：</p>
+<pre class="code"><code><span class="c">// consensus/beacon/consensus.go，VerifyHeader（节选）</span>
+reached, err := IsTTDReached(chain, header.ParentHash, header.Number.Uint64()-1)
+<span class="c">// ……</span>
+if !reached {
+    <span class="c">// 父块还没到 TTD：仍按 Ethash 的工作量证明规则验证</span>
+    return beacon.ethone.VerifyHeader(chain, header, seal)
+}
+<span class="c">// 父块已到 TTD：按权益证明的规则验证（verifyHeader 节选）</span>
+if header.Nonce != beaconNonce {
+    return errInvalidNonce
+}
+if header.UncleHash != types.EmptyUncleHash {
+    return errInvalidUncleHash
+}
+<span class="c">// difficulty 必须等于 beaconDifficulty（0），否则报 invalid difficulty</span>
+
+<span class="c">// IsTTDReached：比较父块的累计难度和配置里的 TTD（节选）</span>
+td := chain.GetTd(parentHash, number)
+<span class="c">// ……</span>
+return td.Cmp(chain.Config().TerminalTotalDifficulty) &gt;= 0, nil
+
+<span class="c">// params/config.go，主网的 TTD</span>
+MainnetTerminalTotalDifficulty, _ = new(big.Int).SetString("58_750_000_000_000_000_000_000", 0)</code></pre>
+        <p class="code-cap">出处：ethereum/go-ethereum v1.10.23（2022 年 8 月 24 日发布，以太坊基金会主网公告列出的版本），consensus/beacon/consensus.go、params/config.go，节选<a class="ref" href="#s5">[5]</a>。英文为原文，中文注释为本站所加。</p>
+        <p>两边判断的是同一个条件。EIP-3675 还规定，终端区块之后的工作量证明区块一律不导入，所以终端区块就是规范链上最后一个工作量证明区块。从第一次收到共识层的分叉选择更新起，执行层不再按“最重的链”选链头，链头和最终确认的区块都以共识层的指定为准，执行层不能自己“乐观地”更新链头。eth 协议里的区块广播也被弃用，因为只有 Beacon Chain 的网络有足够的信息验证区块<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>区块头里的挖矿字段改成常量</h3>
+        <p>区块的格式没有变，原来给挖矿用的字段保留下来，从第一个权益证明区块起改成固定值，相应的验证规则（难度公式、Ethash 校验、叔块规则）一并取消<a class="ref" href="#s2">[2]</a>：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>字段或规则</th><th>合并前</th><th>合并后</th></tr></thead>
+          <tbody>
+            <tr><td>difficulty</td><td>按难度公式计算</td><td>固定为 0</td></tr>
+            <tr><td>nonce</td><td>挖矿找到的值</td><td>固定为 0</td></tr>
+            <tr><td>mixHash</td><td>Ethash 的计算结果</td><td>改存 Beacon Chain 的 RANDAO 值，改名 prevRandao（EIP-4399）</td></tr>
+            <tr><td>ommers、ommersHash</td><td>可以带叔块</td><td>固定为空列表和空列表的哈希</td></tr>
+            <tr><td>出块奖励</td><td>每块 2 ETH，另有叔块奖励</td><td>取消，验证者的奖励在 Beacon Chain 上发放</td></tr>
+          </tbody>
+        </table></div>
+        <p class="code-cap">字段规则据 EIP-3675 和 EIP-4399<a class="ref" href="#s2">[2]</a><a class="ref" href="#s3">[3]</a>，合并前的出块奖励据 ethereum.org<a class="ref" href="#s8">[8]</a>。</p>
+        <p>以太坊基金会称，合并只会轻微影响一小部分已部署的合约，而且都不应造成故障<a class="ref" href="#s1">[1]</a>。受影响最直接的是读取难度的合约。</p>
+        <h3>DIFFICULTY 变成 PREVRANDAO</h3>
+        <p>区块的 difficulty 固定为 0 以后，操作码 DIFFICULTY（0x44）就没有了原来的意义。不少合约拿它和别的值混在一起当随机数用。EIP-4399 让这个操作码改为返回 mixHash 字段，也就是上一个区块之后 Beacon Chain 状态里最新的 RANDAO 值，并改名 PREVRANDAO，gas 不变。返回值大于 2⁶⁴，就说明交易是在权益证明区块里执行的<a class="ref" href="#s3">[3]</a>。</p>
+        <p>EIP-4399 同时提醒，这个随机数可以被影响。每个区块的提议者在自己的 slot 里有 1 比特的影响力：他可以放弃出块，让 RANDAO 这一轮不更新；也可以审查一笔“掷骰子”的交易，逼它进入下一个区块，用上提议者事先知道的随机值。所以 EIP 建议应用使用足够靠后的随机数，前瞻至少四个 epoch<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>出了问题怎么办</h3>
+        <p>EIP-3675 为切换中可能出现的故障留了几条规则<a class="ref" href="#s2">[2]</a>：</p>
+        <ul>
+          <li><b>宁可停，也不跟错链。</b>如果一个节点的共识层部分在 TTD 前后掉线，它会继续跟着终端区块之后还在延长的工作量证明链走，状态可能被剪枝，再也切不回权益证明链，应用也可能读到错误分叉上的数据。所以规范要求不导入终端区块之后的工作量证明区块，用活性故障（节点停下）换取安全（不跟错链）。</li>
+          <li><b>终端区块之间可以重组。</b>短暂的网络分区可能让一小部分节点看到另一个终端 PoW 区块。只要这些区块都满足终端条件，在第一个被最终确认的区块出现之前，网络可以在它们之间重组，避免永久分叉。</li>
+          <li><b>紧急情况可以改参数。</b>算力大幅下降、切换被严重拖延时，可以把 TTD 重设为更近的值；工作量证明网络在切换前遭到攻击时，可以直接指定终端区块的哈希和高度。后一种会让主网出现明显的停顿，只留给最极端的情况。</li>
+        </ul>
+        <p>第一种改参数的办法在测试网上用过。Ropsten 的算力波动很大，以太坊基金会先把 TTD 设成一个按当时算力要约 250 年才能达到的值，等 Bellatrix 激活后再公布实际的 TTD，让节点运营者手动改配置<a class="ref" href="#s13">[13]</a>。主网公告也写明，算力大幅下降时可以像 Ropsten 那样协调一次 TTD 覆盖<a class="ref" href="#s1">[1]</a>。主网最后没有用到。</p>
+      </section>
+      <section id="unfold">
+        <h2>经过</h2>
+        <h3>测试网演练</h3>
+        <p>客户端团队先在专门的合并测试网上试。2021 年 12 月底上线的 Kintsugi 之后是 Kiln：它和主网一样，执行层先以工作量证明启动，和一条 Beacon Chain 并行，2022 年 3 月 15 日完成合并。此前开发者还用 Goerli 做过多次影子分叉<a class="ref" href="#s12">[12]</a>。影子分叉是让少数节点复制一条现有网络的状态，单独先跑一遍切换。</p>
+        <p>接下来是三个长期运行的公共测试网。每个都先在共识层激活 Bellatrix，再等工作量证明链达到 TTD：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>测试网</th><th>合并日期</th><th>TTD</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>Ropsten</td><td>2022 年 6 月 8 日</td><td>5×10¹⁶</td><td>最老的工作量证明测试网，为合并新建了一条 Beacon Chain；TTD 先设成极大值，6 月 3 日才公布实际值<a class="ref" href="#s13">[13]</a><a class="ref" href="#s20">[20]</a></td></tr>
+            <tr><td>Sepolia</td><td>2022 年 7 月 6 日</td><td>1.7×10¹⁶</td><td>开发者在电话会上提到出块方有个小问题，其余正常<a class="ref" href="#s22">[22]</a></td></tr>
+            <tr><td>Goerli（与 Prater 合并）</td><td>2022 年 8 月 10 日（美东时间）</td><td>10,790,000</td><td>最后一次公共测试网演练，Bellatrix 8 月 4 日激活，合并后沿用 Goerli 的名字<a class="ref" href="#s14">[14]</a><a class="ref" href="#s23">[23]</a></td></tr>
+            <tr><td>主网</td><td>2022 年 9 月 15 日</td><td>约 5.875×10²²</td><td>见下文<a class="ref" href="#s1">[1]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p class="code-cap">TTD 的值据 go-ethereum v1.10.23 的 params/config.go<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>主网的九天</h3>
+        <ol class="steps">
+          <li><b>8 月 24 日：公布参数</b>以太坊基金会公布 Bellatrix 的 epoch 和 TTD，列出各客户端可用于合并的版本，并提醒 geth v1.10.22 有严重的数据库问题，不要使用<a class="ref" href="#s1">[1]</a>。当天发布的 geth v1.10.23 修复了 v1.10.22 带来的一个剪枝问题<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>9 月 6 日：Bellatrix</b>Beacon Chain 在 epoch 144896 完成升级，共识客户端开始等待 TTD<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。等待期间，以太坊基金会在公告里补充提醒：Lighthouse 验证者客户端的 --strict-fee-recipient 选项会让验证者在 Bellatrix 到 TTD 之间提议不了区块，用了它的人应尽快去掉并重启；Nimbus v22.9.0 也修复了一个影响 TTD 之前出块的问题<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>9 月 15 日 06:42 UTC：越过 TTD</b>区块 15,537,393 的累计难度越过 TTD，成为最后一个工作量证明区块；区块 15,537,394 由 Beacon Chain 的验证者产出，时间是 06:42:42 UTC，当时 ETH 的价格约 1,472 美元<a class="ref" href="#s6">[6]</a>。Ars Technica 引述 CoinDesk 说，YouTube 上的合并直播有超过 41,000 人在看<a class="ref" href="#s30">[30]</a>。</li>
+          <li><b>约 15 分钟后：最终确认</b>按设计，正常情况下第一个权益证明区块在两个 epoch（约 13 分钟）后被最终确认，应用可以用新增的 JSON-RPC 区块标签 finalized 判断合并是否完成<a class="ref" href="#s1">[1]</a>；Ars Technica 引述的 CoinDesk 报道说，实际用了约 15 分钟<a class="ref" href="#s30">[30]</a>。Vitalik Buterin 随后发推：“最终确认了。合并快乐。”<a class="ref" href="#s27">[27]</a></li>
+          <li><b>当天：价格和矿工</b>合并后 ETH 一度下跌约 7%，Fortune 认为投资者似乎从 7 月起就已经把合并成功计入了价格<a class="ref" href="#s32">[32]</a>。TechCrunch 报道，合并完成后不久，Ethereum Classic 的算力在当天上午创下纪录<a class="ref" href="#s28">[28]</a>。</li>
+        </ol>
+        <div class="note doubt"><span class="h">两个区块高度别弄混</span><p>资料里 15,537,393 和 15,537,394 两个高度都有人用。按 ethereum.org 的写法，15,537,393 是越过 TTD 的最后一个工作量证明区块，15,537,394 是第一个权益证明区块，Paris 从这个区块起生效<a class="ref" href="#s6">[6]</a>。切换的时刻，ethereum.org 记为 06:42:42 UTC，Ars Technica 引述的 CoinDesk 报道写 6:43 UTC<a class="ref" href="#s30">[30]</a>，相差来自取整。</p></div>
+      </section>
+      <section id="response">
+        <h2>各方应对</h2>
+        <h3>稳定币和应用只认权益证明链</h3>
+        <p>一部分矿工表示合并后要继续维持一条工作量证明链。分叉会复制出一条余额和合约都相同的链，资产的发行方和应用要决定认哪一条。2022 年 8 月 9 日，USDC 的发行方 Circle 在博客里写道，它“打算完全且只支持”合并后的权益证明链；USDT 的发行方 Tether 随后发文《USDT Supports ETH Proof-of-Stake Transition》，说希望合并不要被“武器化”，给以太坊生态和投资者造成混乱和伤害。Fortune 写道，矿工延续工作量证明链的努力很难成功，主要稳定币发行方表态以后更是如此<a class="ref" href="#s24">[24]</a>。</p>
+        <p>Vitalik Buterin 8 月 5 日对媒体说，他不担心分叉伤害以太坊，大多数主要应用都表态支持权益证明，推动分叉的只是“几个基本上有交易所的局外人，多数只想赚快钱”。Flashbots 的策略负责人 Hasu 在推特上说，这条分叉链会是“一个巨大的散户陷阱”，矿工、交易所和交易者都在出于私利替它造势<a class="ref" href="#s24">[24]</a>。到 9 月 13 日，Uniswap Labs 也已承诺支持合并后的权益证明链<a class="ref" href="#s25">[25]</a>。</p>
+        <h3>矿工：转去 ETC，或者自己分叉</h3>
+        <p>合并以后，矿机在以太坊上没了用处。TechCrunch 报道，不少矿工在设备上投入很大，没有离场，转去挖 Ethereum Classic。那是 2016 年以太坊为追回 The DAO 被盗资金硬分叉时留下的另一条链，经过见被盗站的<a href="../../hacks/events/2016-the-dao.html">The DAO 重入攻击</a>。一位 2017 年起挖矿的矿工对 TechCrunch 说：“ETH 是被以太坊基金会抛弃的项目，我们是被抛弃的矿工。”他还说，矿工没有停，只是换了别的币挖，耗电还在继续<a class="ref" href="#s28">[28]</a>。</p>
+        <p>另一部分矿工自己分叉。9 月 13 日，名为 ETHPoW、代币为 ETHW 的项目宣布，主网会在合并后 24 小时内启动，在合并区块之后先补 2,048 个空区块；消息发出后，ETHW 24 小时内涨了 58%，到 45.21 美元，随后回落到 29.98 美元<a class="ref" href="#s25">[25]</a>。合并当天，项目在 GitHub 发布主网代码，说明里列出的改动包括：链 ID 可以在 1 和 10001 之间切换，网络 ID 也改用另一个值，把自己的广播消息和权益证明网络分开<a class="ref" href="#s16">[16]</a>。</p>
+        <h3>ETHPoW 上的重放攻击</h3>
+        <p>两条链从同一份状态分出来，同一笔交易或同一条跨链消息可能在两边都有效。MIT Technology Review 合并当天写道，有专家提醒用户留意重放攻击：骗子可以把旧链上的一笔交易记下来，未经许可在新链上重复执行<a class="ref" href="#s29">[29]</a>。合并前几周就有人担心 ETHPoW 不改链 ID 会被重放；创始人 Chandler Guo 当时对 Decrypt 说，这些担心被夸大了，网络会改掉链上所有的链 ID<a class="ref" href="#s34">[34]</a>。</p>
+        <p>问题出在跨链桥上。安全公司 BlockSec 发现，9 月 16 日，有攻击者先通过 Gnosis 链的 Omni Bridge 转了 200 WETH，再把同一条消息拿到工作量证明链上重放，多拿到 200 ETHW。BlockSec 说，根本原因是 PoW 链上的 Omni Bridge 用的是旧的链 ID，没有正确核对跨链消息的实际链 ID，别的协议可能也有类似问题。ETHPoW 的开发者确认了这件事，但强调 ETHW 已经执行 EIP-155，两条链之间的交易不会互相重放，受影响的只是 Omni Bridge。ETHW 随后跌了约 37%，低点 4.22 美元<a class="ref" href="#s34">[34]</a>。</p>
+        <h3>监管：质押可能算证券</h3>
+        <p>合并当天，SEC 主席 Gary Gensler 在参议院银行委员会作证，重申在近 1 万种加密代币里，他认为绝大多数是证券。作证之后，他对记者说，以太坊合并后实行的新质押系统可能落入证券规则。Fortune 写道，比特币和以太币一般被视为商品，归 CFTC 管辖，Gensler 的这句话让行业更不确定<a class="ref" href="#s33">[33]</a>。MIT Technology Review 当天写道，有法学学者认为，验证者一起批准交易、期待获得回报，可能被看作“共同事业”，以太坊因此更可能被认定为未注册的证券；也有专家认为这个论点不足以让 SEC 出手<a class="ref" href="#s29">[29]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>耗电：降幅接近，基数不同</h3>
+        <p>几家的估计都认为合并让耗电下降了 99.9% 以上，分歧在合并前到底耗多少电：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>来源</th><th>合并前每年</th><th>合并后每年</th><th>降幅</th></tr></thead>
+          <tbody>
+            <tr><td>以太坊基金会，2021 年 5 月（引 Digiconomist）</td><td>约 44.49 太瓦时</td><td>按权益证明约省 2,000 倍推算</td><td>至少约 99.95%<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>CCRI，2022 年 9 月</td><td>约 2,290 万兆瓦时（22.9 太瓦时）</td><td>约 2,601 兆瓦时</td><td>超过 99.988%<a class="ref" href="#s11">[11]</a></td></tr>
+            <tr><td>de Vries（Digiconomist），2022 年 9 月</td><td>约 78 太瓦时<a class="ref" href="#s11">[11]</a></td><td>未单列</td><td>约 99.98%<a class="ref" href="#s31">[31]</a></td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">基数差了三倍</span><p>CCRI 解释，de Vries 用自上而下的算法：假设矿工收入的一定比例花在电费上，电价按每千瓦时 0.1 美元，这个比例在 2022 年 9 月初接近 100%，由此得出约 78 太瓦时；CCRI 自己用自下而上的算法，按实测的硬件功耗加总<a class="ref" href="#s11">[11]</a>。CCRI 的报告由 ConsenSys 委托，The Verge 指出 ConsenSys 的创办人 Joseph Lubin 也是以太坊的联合创始人<a class="ref" href="#s31">[31]</a>。合并当天 TechCrunch 和 Ars Technica 引用的“99.95%”，出自以太坊基金会和 ethereum.org<a class="ref" href="#s27">[27]</a><a class="ref" href="#s30">[30]</a>，与以太坊基金会 2021 年的估算相同<a class="ref" href="#s10">[10]</a>；ethereum.org 现在引用 CCRI 的数字，全网每年约 0.0026 太瓦时<a class="ref" href="#s9">[9]</a>。</p></div>
+        <p>CCRI 估计，年化碳排放从约 1,101.6 万吨二氧化碳当量降到约 870 吨，降幅 99.992%<a class="ref" href="#s11">[11]</a>。这些数字只算以太坊本身。矿工转去挖 Ethereum Classic 等币，TechCrunch 认为可能抵消一部分环保上的好处<a class="ref" href="#s28">[28]</a>。</p>
+        <h3>发行：少了约九成</h3>
+        <p>按 ethereum.org 的计算，合并前矿工每天约得 13,000 ETH，质押者约 1,700 ETH（按约 1,400 万 ETH 质押计）；合并后只剩质押者的约 1,700 ETH，新增发行减少约 88%。合并前的年化发行率约 4.61%，其中执行层 4.09%、共识层 0.52%。供应量还要减去销毁：2021 年 8 月 <a href="2021-eip1559.html">London 升级</a>开始销毁交易的基础费，合并后不变；某一天平均 gas 价格达到约 16 gwei，销毁就能抵消当天发给验证者的约 1,700 ETH，净通胀为零或为负<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>质押集中</h3>
+        <p>TechCrunch 援引 Nansen 截至 2022 年 9 月 9 日的数据：合并前约有 8 万个地址参与质押，质押的 ETH 约占总量的 11.3%；Lido 持有约 31%，Coinbase、Kraken 和 Binance 三家交易所合计约 30%。流动性质押的做法是，用户把 ETH 交给 Lido 这样的服务代为质押，手里拿到一个可以流通的凭证。Nansen 的研究分析师 Beili Baraki 说，质押市场，尤其是流动性质押，很可能只产生少数赢家；如果没有 Lido 这类项目，中心化交易所很容易取而代之，而交易所没有直接的办法去中心化。Lido 自己的治理代币也集中：除金库外，前 9 个地址握有约 46% 的投票权<a class="ref" href="#s26">[26]</a>。</p>
+        <h3>审查：过滤发生在协议之外</h3>
+        <p>合并后，验证者可以通过 MEV-Boost 向专门的构建者买块，不必自己组装区块：构建者竞价，出价最高的区块经 relay 交给验证者，验证者因此拿到比自己出块更多的 MEV 收入<a class="ref" href="#s18">[18]</a>。2022 年 8 月 8 日，美国财政部 OFAC 制裁了 <a href="2022-tornado-sanctions.html">Tornado Cash</a><a class="ref" href="#s17">[17]</a>，一些 relay 随后拒绝传播含有与被制裁地址交互的交易的区块<a class="ref" href="#s18">[18]</a>。</p>
+        <p>Wahrstätter 等人的论文发现，合并后两个月里，至少 46% 的区块出自为遵守 OFAC 制裁而审查交易的参与者；Flashbots 的 relay 占 relay 市场的 79%，一直不转发含 Tornado Cash 交易的区块；转入权益证明并采用提议者与构建者分离以后，被审查的交易上链平均多等 85%<a class="ref" href="#s17">[17]</a>。MEV Watch 统计的审查型 relay 交付份额，2022 年 10 月 26 日到过 94.8%<a class="ref" href="#s18">[18]</a>。</p>
+        <div class="note doubt"><span class="h">两个百分比的分母不同</span><p>论文的 46% 是合并后两个月里占全部区块的比例<a class="ref" href="#s17">[17]</a>。MEV Watch 的 94.8% 是审查型 relay 在 MEV-Boost 交付次数里的占比：一个区块可能由几个 relay 同时交付，按 relay 分别计数；哪些 relay 算审查型，是网站自己的归类；不经 MEV-Boost 的区块不在其中<a class="ref" href="#s18">[18]</a>。两个数字不能互相换算。</p></div>
+      </section>
+      <section id="aftermath">
+        <h2>后续</h2>
+        <h3>提款：等到 Shapella</h3>
+        <p>合并本身没有开放提款<a class="ref" href="#s1">[1]</a>。2023 年 4 月 12 日的 Shapella 升级（执行层 Shanghai、共识层 Capella）让质押者可以提款，并自动把奖励和全额退出的余额打到提款地址<a class="ref" href="#s6">[6]</a>。在那之前，质押的 ETH 取不出来，通过 Lido 等服务质押的人手里只有一个可以流通的凭证<a class="ref" href="#s26">[26]</a>。2022 年 6 月<a href="2022-three-arrows.html">三箭资本</a>和 <a href="2022-celsius.html">Celsius</a> 出事时手里的 stETH 就是这种凭证，经过见各自那一篇。</p>
+        <h3>监管：从调查到撤诉</h3>
+        <p>2024 年 6 月，SEC 回复 Consensys 的询问，说正在结束对“Ethereum 2.0”的调查。Fortune 认为“2.0”指的是 2022 年启用的权益证明系统，并写道，SEC 此前批准以太坊 ETF，等于承认 ETH 是商品<a class="ref" href="#s35">[35]</a>。同月 28 日，SEC 起诉 Consensys，称 MetaMask 的兑换和质押服务属于未注册的经纪业务；此前 SEC 已就质押业务起诉 Kraken 和 Coinbase，Kraken 以 3,000 万美元和解<a class="ref" href="#s36">[36]</a>。这起诉讼 2025 年 3 月 27 日被撤销<a class="ref" href="#s37">[37]</a>。</p>
+        <p>2025 年 5 月 29 日，SEC 公司融资部发表声明：协议层面的质押活动，包括节点运营者自己质押、资产所有者自己保管资产而把质押交给第三方节点运营者，以及托管方代客户质押，不涉及证券的发行和销售，参与者不需要向 SEC 注册。声明写明，它和所有工作人员声明一样没有法律效力，也不涉及流动性质押和再质押<a class="ref" href="#s19">[19]</a>。10 月 6 日，Grayscale 给旗下两只现货以太坊 ETF 加入质押，Decrypt 称这是美国投资者第一次能从追踪 ETH 现货价格的 ETF 拿到质押收益<a class="ref" href="#s38">[38]</a>。</p>
+        <h3>集中和审查的变化</h3>
+        <p>CryptoSlate 援引 Lido 2026 年上半年的报告：全网质押的 ETH 从年初的 3,630 万枚增加到 6 月 30 日的 4,310 万枚，Lido 只增加 38.6 万枚，到 913 万枚，份额从 23.93% 降到 21.18%。这个口径包括排队等待激活的 ETH，不包括排队退出的<a class="ref" href="#s39">[39]</a>，和 2022 年 Nansen 的口径不同，只能看趋势。MEV Watch 统计的审查型 relay 交付份额，2026 年 11 月 3 日是 14.6%<a class="ref" href="#s18">[18]</a>。</p>
+        <h3>此后的升级</h3>
+        <p>合并以后，执行层和共识层的升级改为同时上线，名字也合在一起：Shapella（2023 年 4 月 12 日）、Dencun（2024 年 3 月 13 日）、Pectra（2025 年 5 月 7 日）、Fusaka（2025 年 12 月 3 日）<a class="ref" href="#s6">[6]</a>。Vitalik Buterin 2022 年 7 月说过，合并以后以太坊只算完成了 55%<a class="ref" href="#s29">[29]</a>。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给协议开发者</span>
+          <ul>
+            <li>换共识可以分步来。Beacon Chain 先单独运行近两年，没有出现安全和活性故障，才接管主网<a class="ref" href="#s2">[2]</a>。</li>
+            <li>触发条件要防操纵。按区块高度触发，少数算力就能造出一条满足条件的分叉；EIP-3675 因此改用累计难度<a class="ref" href="#s2">[2]</a>。</li>
+            <li>先在真实的规模上演练。Kiln、多次影子分叉和三个公共测试网都走过一遍<a class="ref" href="#s12">[12]</a><a class="ref" href="#s13">[13]</a>；Ropsten 算力不稳，才有了先设一个极大的 TTD、再公布实际值的做法<a class="ref" href="#s13">[13]</a>。</li>
+            <li>出错时宁可停。不导入终端区块之后的工作量证明区块，是用活性换安全<a class="ref" href="#s2">[2]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给应用和跨链桥的开发者</span>
+          <ul>
+            <li>分叉以后要核对链 ID。ETHPoW 执行了 EIP-155，PoW 链上的 Omni Bridge 却沿用旧的链 ID，被重放拿走 200 ETHW<a class="ref" href="#s34">[34]</a>。</li>
+            <li>用 PREVRANDAO 取随机数，要用足够靠后的值，EIP-4399 建议前瞻至少四个 epoch<a class="ref" href="#s3">[3]</a>。</li>
+            <li>判断区块是否已经不可逆，看 finalized 标签<a class="ref" href="#s1">[1]</a>。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给质押者和监管者</span>
+          <ul>
+            <li>风险从矿池转到了质押服务商。合并前，Lido 和三家交易所合计持有约六成质押的 ETH<a class="ref" href="#s26">[26]</a>。</li>
+            <li>审查可以发生在协议之外的环节。合并后两个月里，至少 46% 的区块出自遵守 OFAC 制裁的参与者，过滤发生在构建者和 relay 这一层<a class="ref" href="#s17">[17]</a>。</li>
+            <li>共识机制一变，监管定性也会被重新讨论。Gensler 在合并当天说质押可能落入证券规则<a class="ref" href="#s33">[33]</a>；不到三年后，SEC 公司融资部称协议层面的质押不涉及证券，但这份声明没有法律效力<a class="ref" href="#s19">[19]</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">以太坊基金会博客（Protocol Support Team），《Mainnet Merge Announcement》，2022-08-24。<a href="https://blog.ethereum.org/2022/08/24/mainnet-merge-announcement">blog.ethereum.org</a></li>
+          <li id="s2">Mikhail Kalinin、Danny Ryan、Vitalik Buterin，EIP-3675《Upgrade consensus to Proof-of-Stake》，2021-07-22 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-3675">eips.ethereum.org</a></li>
+          <li id="s3">Mikhail Kalinin、Danny Ryan，EIP-4399《Supplant DIFFICULTY opcode with PREVRANDAO》，2021-10-30 提出，状态 Final。<a href="https://eips.ethereum.org/EIPS/eip-4399">eips.ethereum.org</a></li>
+          <li id="s4">ethereum/consensus-specs，v1.2.0-rc.3（2022-08-18 发布），specs/bellatrix/fork-choice.md、configs/mainnet.yaml。<a href="https://github.com/ethereum/consensus-specs/blob/v1.2.0-rc.3/specs/bellatrix/fork-choice.md">github.com</a></li>
+          <li id="s5">ethereum/go-ethereum，v1.10.23（2022-08-24 发布）及发布说明，consensus/beacon/consensus.go、params/config.go。<a href="https://github.com/ethereum/go-ethereum/blob/v1.10.23/consensus/beacon/consensus.go">github.com</a></li>
+          <li id="s6">ethereum.org，《Timeline of all Ethereum forks (2014 to present)》，2026 年 11 月查阅。<a href="https://ethereum.org/en/history/">ethereum.org</a></li>
+          <li id="s7">ethereum.org，《The Merge》，2026 年 11 月查阅。<a href="https://ethereum.org/en/roadmap/merge/">ethereum.org</a></li>
+          <li id="s8">ethereum.org，《How The Merge impacted ETH supply》，2026 年 11 月查阅。<a href="https://ethereum.org/en/roadmap/merge/issuance/">ethereum.org</a></li>
+          <li id="s9">ethereum.org，《Ethereum Energy Consumption》，页面更新于 2026-07-28。<a href="https://ethereum.org/en/energy-consumption/">ethereum.org</a></li>
+          <li id="s10">以太坊基金会博客（Carl Beekhuizen），《Ethereum's energy usage will soon decrease by ~99.95%》，2021-05-18。<a href="https://blog.ethereum.org/2021/05/18/country-power-no-more">blog.ethereum.org</a></li>
+          <li id="s11">Crypto Carbon Ratings Institute（CCRI），《The Merge – Implications on the Electricity Consumption and Carbon Footprint of the Ethereum Network》，2022 年 9 月，受 ConsenSys 委托。<a href="https://carbon-ratings.com/eth-report-2022">carbon-ratings.com</a></li>
+          <li id="s12">以太坊基金会博客，《Announcing the Kiln Merge Testnet》，2022-03-14。<a href="https://blog.ethereum.org/2022/03/14/kiln-merge-testnet">blog.ethereum.org</a></li>
+          <li id="s13">以太坊基金会博客，《Ropsten Merge Announcement》，2022-05-30（6 月 3 日补充实际 TTD）。<a href="https://blog.ethereum.org/2022/05/30/ropsten-merge-announcement">blog.ethereum.org</a></li>
+          <li id="s14">以太坊基金会博客，《Goerli/Prater Merge Announcement》，2022-07-27。<a href="https://blog.ethereum.org/2022/07/27/goerli-prater-merge-announcement">blog.ethereum.org</a></li>
+          <li id="s15">Vitalik Buterin 等，《Combining GHOST and Casper》，arXiv:2003.03052，2020-03-06。<a href="https://arxiv.org/abs/2003.03052">arxiv.org</a></li>
+          <li id="s16">ethereumpow/go-ethereum，《ETHWCore Published the 3rd (Mainnet) Code Update》（v1.10.23.1 发布说明），2022-09-15。<a href="https://github.com/ethereumpow/go-ethereum/releases/tag/v1.10.23.1">github.com</a></li>
+          <li id="s17">Anton Wahrstätter 等，《Blockchain Censorship》，arXiv:2305.18545，2023-05-29。<a href="https://arxiv.org/abs/2305.18545">arxiv.org</a></li>
+          <li id="s18">MEV Watch，首页统计（审查型 relay 在 MEV-Boost 交付中的份额，数据取自 relayscan.io），2026-11-03 读取。<a href="https://www.mevwatch.info/">mevwatch.info</a></li>
+          <li id="s19">美国 SEC 公司融资部，《Statement on Certain Protocol Staking Activities》，2025-05-29。<a href="https://www.sec.gov/newsroom/speeches-statements/statement-certain-protocol-staking-activities-052925">sec.gov</a></li>
+          <li id="s20">Fortune，《Ethereum just transitioned its oldest test network Ropsten to proof of stake in a 'very big event' for the merge and the crypto space》，2022-06-08。<a href="https://fortune.com/2022/06/08/ethereum-ropsten-test-network-merge-proof-of-stake/">fortune.com</a></li>
+          <li id="s21">Fortune，《Ethereum developers will likely delay the 'difficulty bomb' but say the merge timeline is unchanged》，2022-06-10。<a href="https://fortune.com/2022/06/10/ethereum-merge-developers-likely-delay-difficulty-bomb/">fortune.com</a></li>
+          <li id="s22">Fortune，《Ethereum just finished its second-to-last major 'merge' test, and the main upgrade could be just months away》，2022-07-06。<a href="https://fortune.com/2022/07/06/ethereum-merge-test-sepolia-proof-of-stake/">fortune.com</a></li>
+          <li id="s23">Fortune，《Ethereum just completed the Goerli 'merge.' The real deal is next—here's what to know》，2022-08-10。<a href="https://fortune.com/2022/08/10/final-ethereum-merge-test-goerli-complete/">fortune.com</a></li>
+          <li id="s24">Fortune，《Stablecoin giants Circle, Tether back Ethereum's 'merge'—a bad sign for those pushing a hard fork》，2022-08-09。<a href="https://fortune.com/2022/08/09/stablecoins-circle-tether-support-ethereum-merge-proof-of-stake/">fortune.com</a></li>
+          <li id="s25">Fortune，《Miners say they plan to fork Ethereum within 24 hours of merge》，2022-09-13。<a href="https://fortune.com/2022/09/13/ethereum-miners-fork-merge/">fortune.com</a></li>
+          <li id="s26">TechCrunch，《Lido, Coinbase, Kraken and Binance stake majority of ETH. Does that matter?》，2022-09-14。<a href="https://techcrunch.com/2022/09/14/lido-coinbase-kraken-and-binance-stake-majority-of-eth-does-that-matter/">techcrunch.com</a></li>
+          <li id="s27">TechCrunch，《Ethereum switches to proof-of-stake consensus after completing The Merge》，2022-09-15。<a href="https://techcrunch.com/2022/09/15/ethereum-switches-to-proof-of-stake-consensus-after-completing-the-merge/">techcrunch.com</a></li>
+          <li id="s28">TechCrunch，《Miners flee to Ethereum Classic as 'The Merge' arrives》，2022-09-15。<a href="https://techcrunch.com/2022/09/15/miners-ethereum-classic-the-merge/">techcrunch.com</a></li>
+          <li id="s29">MIT Technology Review，《The Merge is here: Ethereum has switched to proof of stake》，2022-09-15。<a href="https://www.technologyreview.com/2022/09/15/1059520/the-merge-is-here-ethereum-has-switched-to-proof-of-stake/">technologyreview.com</a></li>
+          <li id="s30">Ars Technica（Jon Brodkin），《Ethereum completes the "Merge," which ends mining and cuts energy use by 99.95%》，2022-09-15。<a href="https://arstechnica.com/tech-policy/2022/09/ethereum-completes-the-merge-which-ends-mining-and-cuts-energy-use-by-99-95/">arstechnica.com</a></li>
+          <li id="s31">The Verge（Justine Calma），《Ethereum just completed The Merge — here's how much energy it's saving》，2022-09-15。<a href="https://www.theverge.com/2022/9/15/23354619/ethereum-cryptocurrency-merge-energy-electricity-greenhouse-gas-emissions-reduction">theverge.com</a></li>
+          <li id="s32">Fortune，《Ethereum pulled off the Merge. Now what?》，2022-09-15。<a href="https://fortune.com/2022/09/15/ethereum-pulled-off-the-merge-now-what/">fortune.com</a></li>
+          <li id="s33">Fortune，《'Our rules have to evolve': The crypto industry is trapped in regulatory purgatory》，2022-09-19。<a href="https://fortune.com/2022/09/19/crypto-industry-trapped-regulatory-purgatory/">fortune.com</a></li>
+          <li id="s34">Decrypt（Andrew Asmakov），《Ethereum Fork ETHPoW Suffers Bridge Replay Exploit, Token Tanks 37%》，2022-09-19。<a href="https://decrypt.co/110023/ethereum-fork-ethpow-suffers-bridge-replay-exploit-token-tanks-37">decrypt.co</a></li>
+          <li id="s35">Fortune，《Ethereum wins a major battle against the SEC, but Gensler's war rages on》，2024-06-21。<a href="https://fortune.com/crypto/2024/06/21/ethereum-win-consensys-metamask-crypto-wallet-battle-with-sec/">fortune.com</a></li>
+          <li id="s36">Fortune，《SEC sues MetaMask developer Consensys as it extends legal crusade against crypto industry》，2024-06-28。<a href="https://fortune.com/crypto/2024/06/28/sec-sues-metamask-consensys-ethereum-crypto-gensler/">fortune.com</a></li>
+          <li id="s37">Decrypt（Logan Hitchcock），《From Coinbase to Ripple: The Biggest Crypto Cases Dumped by Trump's SEC》，2025-03-02（2026-03-18 更新）。Decrypt 在文中披露 Consensys 是它的投资方之一。<a href="https://decrypt.co/308273/trump-sec-ending-crypto-lawsuits-investigations">decrypt.co</a></li>
+          <li id="s38">Decrypt（Connor Sephton），《Grayscale Ethereum ETFs Are First in US to Add Staking》，2025-10-06。<a href="https://decrypt.co/343051/grayscale-ethereum-etfs-first-us-add-staking">decrypt.co</a></li>
+          <li id="s39">CryptoSlate（Liam 'Akiba' Wright），《Ethereum's institutional staking boom is growing, but Lido's share is shrinking》，2026-09-09。<a href="https://cryptoslate.com/ethereums-institutional-staking-boom-is-growing-but-lidos-share-is-shrinking/">cryptoslate.com</a></li>
+          <li id="s40">BBC（Will Gompertz），《Everydays: The First 5000 Days - Will Gompertz reviews Beeple's digital work》，2021-03-13。<a href="https://www.bbc.com/news/entertainment-arts-56368868">bbc.com</a></li>
+          <li id="s41">国家发展改革委等十一部门，《国家发展改革委等部门关于整治虚拟货币“挖矿”活动的通知》，发改运行〔2021〕1283 号，2021-09-03 落款，9 月 24 日发布（Internet Archive 存档）。<a href="https://web.archive.org/web/20210924125323/https://www.ndrc.gov.cn/xxgk/zcfb/tz/202109/t20210924_1297474.html">web.archive.org</a></li>
+          <li id="s42">以太坊基金会博客（Stephan Tual），《Ethereum Protocol Update 1》，2015-08-04。<a href="https://blog.ethereum.org/2015/08/04/ethereum-protocol-update-1">blog.ethereum.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

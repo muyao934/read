@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>USDC 合约与 Circle｜区块链基础知识</title>
+<meta name="description" content="FiatToken 的角色与铸币额度、冻结、原生与桥接 USDC">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/bs.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body class="bs" data-id="usdc">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链基础知识</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 02 章</p>
+    <h1>USDC 合约与 Circle</h1>
+    <p class="lede">USDC 在链上到底是什么：谁能印钱、谁能冻结、谁能升级，铸币额度怎么用，以及桥接 USDC 怎样才能“转正”。</p>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本章目录"></nav>
+    <article class="bs-article">
+<section id="what">
+  <h2 class="eyebrow">一句话</h2>
+  <p class="sub">USDC = Circle 发行的美元稳定币，在每条链上都是一份独立的合约</p>
+  <p class="lead">对用户来说，USDC 是“链上的 1 美元”。在技术上，它是 Circle 在每条链上各部署一份的 <b>FiatToken</b> 合约。合约里写着谁能印钱、谁能冻结、谁能暂停、谁能升级，而这些角色都在 Circle 手里。</p>
+  <div class="vs">
+    <div class="c-ok">
+      <h3 class="t-ok">常见说法里，对的部分</h3>
+      <ul>
+        <li>USDC 由 Circle 发行，储备是现金和短期美债，可以 1:1 赎回</li>
+        <li>它是标准的 ERC-20，6 位小数</li>
+        <li>CCTP 能把 USDC 在链之间“原生地”搬来搬去</li>
+      </ul>
+    </div>
+    <div class="c-warn">
+      <h3 class="t-warn">需要纠正的部分</h3>
+      <ul>
+        <li><b>没有“一个 USDC 合约”</b>。每条链各有一份合约、各有自己的总量，以太坊上的总量只是其中一部分</li>
+        <li><b>USDC 不是去中心化的</b>。Circle 能冻结任意地址、暂停整个合约、更换合约逻辑</li>
+        <li><b>叫 USDC 的不一定是 Circle 发的</b>。USDC.e、USDbC、BSC 上的 Binance-Peg USDC 都是别人桥过去或发出来的</li>
+        <li><b>CCTP 不是一个资金池</b>。它能工作，是因为 Circle 把 CCTP 的合约设成了每条链上 USDC 的“铸币员”</li>
+        <li><b>冻结不等于没收</b>。被冻结地址的余额还在原处，只是动不了；合约里没有“没收”函数</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="circle">
+  <h2 class="eyebrow">发行方</h2>
+  <div class="tbl"><table class="mw-620">
+    <thead><tr><th>档案</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><th>公司</th><td>美国公司，2025-06-04 IPO 定价每股 31 美元，2025-06-05 起在纽交所交易，代码 <code>CRCL</code></td></tr>
+      <tr><th>储备</th><td>现金、短期美国国债和隔夜国债回购；储备基金由 BlackRock 管理；每月发布第三方鉴证报告</td></tr>
+      <tr><th>谁能直接找 Circle 铸造和赎回</th><td>机构客户（交易所、做市商、钱包、银行等）通过 <b>Circle Mint</b> 直接铸造并 1:1 赎回。普通用户一般从交易所或链上兑换拿到 USDC</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table class="mw-620">
+    <thead><tr><th>产品</th><th>是什么</th><th>在本板块哪一章</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">USDC</td><td>美元稳定币</td><td>本章</td></tr>
+      <tr><td class="mono">EURC</td><td>欧元稳定币，合约代码和 USDC 是同一套 FiatToken</td><td>本章</td></tr>
+      <tr><td class="mono">CCTP</td><td>跨链协议：源链销毁 USDC，Circle 签证明，目标链铸造。2026-09-16 起扩展到 EURC 等其他资产</td><td><a href="cctp-ccip.html">第 04 章</a></td></tr>
+      <tr><td class="mono">xReserve</td><td>合作链用存在 Circle 储备合约里的 USDC 作为背书，发行自己的代币</td><td>—</td></tr>
+      <tr><td class="mono">USYC</td><td>代币化货币市场基金，持有短期美债，只面向非美国人士</td><td>—</td></tr>
+      <tr><td class="mono">Arc</td><td>Circle 自己的 L1，用 USDC 付 gas；2026-09-16 主网接入 CCTP</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="contract">
+  <h2 class="eyebrow">合约结构</h2>
+  <p class="sub">每个 USDC 其实是两个合约</p>
+  <p class="lead">USDC 用的是入门章“代理合约”那张卡讲过的结构。你看到的 USDC 地址是<b>代理合约</b>（FiatTokenProxy），余额等数据都存在这里；真正的代码在<b>实现合约</b>（FiatToken）里，代理用 <code>delegatecall</code> 把每次调用转过去。换实现合约，就是升级 USDC 的逻辑，地址和余额都不变。</p>
+  <h3>FiatToken 的版本</h3>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>版本</th><th>日期</th><th>加了什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1.0</td><td>2018-07</td><td>ERC-20 + 铸币 / 销毁、黑名单、暂停、Owner；代理合约</td></tr>
+      <tr><td class="mono">1.1</td><td>2020-05</td><td>Rescuer：可以把误转进合约的其他代币取出来</td></tr>
+      <tr><td class="mono">2.0</td><td>2020-07</td><td>EIP-2612 <code>permit</code>（签名授权）、<code>transferWithAuthorization</code>（签名转账，不用自己付 gas）</td></tr>
+      <tr><td class="mono">2.1</td><td>2021-02</td><td>把误转进 USDC 合约地址本身的币移到一个“失物招领”地址，并把合约自己拉进黑名单，以后再也转不进去</td></tr>
+      <tr><td class="mono">2.2</td><td>2023-11</td><td>支持智能合约钱包签名（ERC-1271）；余额和黑名单状态合并存储省 gas；被拉黑的地址也能调用 <code>approve</code>（反正转不出去）</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">2.2 之后还有两个变体：Celo 版（让 USDC 能在 Celo 上付 gas）和 2026-03 加入的 NativeFiatToken 版（通过预编译接口控制链的原生币）。</p>
+</section>
+<section id="roles">
+  <h2 class="eyebrow">核心机制</h2>
+  <p class="sub">七个角色：谁能做什么</p>
+  <p class="lead">FiatToken 把权力拆给了七个角色，每个角色是一个地址。拆开的目的是：任何一把钥匙丢了，损失都有边界。</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>角色</th><th>能做什么</th><th>谁任命它</th><th>不能做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">admin</td><td>升级：把代理指向新的实现合约（<code>upgradeTo</code>），更换 admin</td><td>自己</td><td>不能调用任何代币函数，连 <code>balanceOf</code> 都会被代理拒绝</td></tr>
+      <tr><td class="mono">owner</td><td>任命或更换下面所有角色，以及新的 owner</td><td>自己</td><td>不能更换 admin，不能直接铸币</td></tr>
+      <tr><td class="mono">masterMinter</td><td>添加铸币员并设定额度（<code>configureMinter</code>），移除铸币员</td><td>owner</td><td>自己不能铸币</td></tr>
+      <tr><td class="mono">minter（可多个）</td><td>在额度内铸币；销毁<b>自己持有</b>的币</td><td>masterMinter</td><td>不能超出额度，不能销毁别人的币</td></tr>
+      <tr><td class="mono">pauser</td><td>暂停 / 恢复整个合约</td><td>owner</td><td>不能冻结单个地址</td></tr>
+      <tr><td class="mono">blacklister</td><td>冻结 / 解冻单个地址</td><td>owner</td><td>不能暂停整个合约</td></tr>
+      <tr><td class="mono">rescuer</td><td>把误转进 USDC 合约的其他 ERC-20 代币转出</td><td>owner</td><td>不能动 USDC 本身的余额</td></tr>
+    </tbody>
+  </table></div>
+  <div class="bit wide"><div class="anim" data-anim="roles"></div></div>
+  <h3>以太坊上的 USDC，现在是这样配置的</h3>
+  <p>下面是我直接从以太坊主网读出来的（2026-10-28，区块约 26,287,944）。读法：admin 和实现地址从代理合约的存储槽读，其余调用合约的只读函数。</p>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>项目</th><th>链上值</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>代理（USDC 地址）</td><td class="mono">0xA0b8…eB48</td><td>大家用的 USDC 地址</td></tr>
+      <tr><td>实现合约</td><td class="mono">0x4350…02dd</td><td>字节码里有 <code>initializeV2_2</code>，是 FiatToken 2.2</td></tr>
+      <tr><td>admin</td><td class="mono">0x807a…95d2</td><td>普通地址（EOA）</td></tr>
+      <tr><td>owner / pauser / blacklister</td><td class="mono">0xfcb1…ae3a / 0x4914…8566 / 0x0a06…78f9</td><td>都是普通地址（EOA）</td></tr>
+      <tr><td>masterMinter</td><td class="mono">0xe982…de17</td><td>是一个 <b>MasterMinter 合约</b>，它管理的对象正是这个 USDC</td></tr>
+      <tr><td>rescuer</td><td class="mono">0x0000…0000</td><td>未设置</td></tr>
+      <tr><td>CCTP 的 TokenMinterV2 是铸币员吗</td><td class="y">是</td><td>剩余额度约 9.09 亿 USDC</td></tr>
+      <tr><td>USDC 合约自己被拉黑了吗</td><td class="y">是</td><td>2.1 版的设计，防止有人把币误转进合约地址</td></tr>
+      <tr><td>总量</td><td>约 473.6 亿 USDC</td><td>只是以太坊这一条链</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">“EOA”只说明链上看到的是普通地址，看不出背后是硬件加密机、多方计算还是别的保管方式，Circle 没有在链上公开这些。</p>
+</section>
+
+<section id="allowance">
+  <h2 class="eyebrow">铸币额度</h2>
+  <p class="lead">每个铸币员都有一个额度（<code>minterAllowance</code>）。铸多少就扣多少；销毁<b>不会</b>把额度加回来；要继续铸，只能由 masterMinter 重新设定。</p>
+  <div class="bit wide"><div class="anim" data-anim="allow"></div></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">configureMinter</span><h4>是“设为”，不是“加上”</h4></div>
+      <p>当前额度 700，再调用 <code>configureMinter(m, 1000)</code>，结果是 1000，不是 1700。合约暂停时不能调用。</p></div>
+    <div class="bit"><div class="bh"><span class="term">burn</span><h4>只能烧自己手里的</h4></div>
+      <p>只有铸币员能调用 <code>burn</code>，而且只能销毁自己地址上的余额。官方文档写明这是为了防止普通用户误销毁。所以 CCTP 要先把你的 USDC <code>transferFrom</code> 到它的 TokenMinter，再由 TokenMinter 销毁。</p></div>
+    <div class="bit"><div class="bh"><span class="term">mint</span><h4>四个条件同时满足才能铸</h4></div>
+      <p>合约没暂停；调用者是铸币员；铸币员和收款人都不在黑名单；金额不超过剩余额度。</p></div>
+    <div class="bit"><div class="bh"><span class="term">MasterMinter</span><h4>额度管理再拆一层</h4></div>
+      <p>以太坊上的 masterMinter 是一个合约：它的 owner 指定若干 controller，<b>每个 controller 只管一个铸币员</b>的额度。这样负责给 CCTP 补额度的人，动不了别的铸币员。</p></div>
+  </div>
+</section>
+
+<section id="freeze">
+  <h2 class="eyebrow">冻结与暂停</h2>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th></th><th>blacklist（冻结单个地址）</th><th>pause（暂停整个合约）</th></tr></thead>
+    <tbody>
+      <tr><th>谁操作</th><td>blacklister</td><td>pauser</td></tr>
+      <tr><th>影响谁</th><td>被冻结的那个地址</td><td>所有人</td></tr>
+      <tr><th>转账</th><td>它转不出去，别人也转不进来</td><td>全部停止</td></tr>
+      <tr><th>铸币 / 销毁</th><td>它作为铸币员或收款人时失败</td><td>全部停止，也不能新增铸币员</td></tr>
+      <tr><th>余额</th><td>原地不动，没有被拿走</td><td>原地不动</td></tr>
+      <tr><th>暂停期间仍可做的事</th><td colspan="2">冻结 / 解冻地址、移除铸币员、更换角色、升级合约。官方文档的解释：这些操作可能正是修复问题所需要的</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><p><b>没有“没收”函数，但有升级权。</b>FiatToken 2.2 的源码里没有把某个地址的余额划走的函数。不过 admin 能把合约换成新的实现，新代码里写什么都可以。所以说到底，USDC 的规则由“谁能升级”决定，这和入门章“代理合约”那张卡讲的是同一件事。</p></div>
+  <div class="bit wide">
+    <div class="bh"><span class="term">Simulator</span><h4>试一试：这个调用会成功吗</h4></div>
+    <p>选一个调用者、一个函数，再设定状态。结果里的报错文字和 FiatToken 2.2 源码里一字不差。为了聚焦权限，假设余额和额度都够用。</p>
+    <div class="tool">
+      <div class="row">
+        <label for="fwWho">调用者<select id="fwWho">
+          <option value="user">普通用户</option><option value="minter">铸币员（如 CCTP 的 TokenMinter）</option>
+          <option value="mm">masterMinter</option><option value="pauser">pauser</option><option value="bl">blacklister</option>
+          <option value="owner">owner</option><option value="admin">admin（代理管理员）</option></select></label>
+        <label for="fwFn">调用<select id="fwFn">
+          <option value="transfer">transfer（转账）</option><option value="mint">mint（铸币）</option><option value="burn">burn（销毁自己的）</option>
+          <option value="configureMinter">configureMinter（设额度）</option><option value="removeMinter">removeMinter（移除铸币员）</option>
+          <option value="blacklist">blacklist（冻结地址）</option><option value="pause">pause（暂停）</option>
+          <option value="updateMasterMinter">updateMasterMinter（换 masterMinter）</option><option value="upgradeTo">upgradeTo（升级）</option></select></label>
+      </div>
+      <div class="row">
+        <label class="chk" for="fwPaused"><input class="w-auto" id="fwPaused" type="checkbox">合约已暂停</label>
+        <label class="chk" for="fwBlSender"><input class="w-auto" id="fwBlSender" type="checkbox">调用者已被冻结</label>
+        <label class="chk" for="fwBlTo"><input class="w-auto" id="fwBlTo" type="checkbox">收款人已被冻结</label>
+      </div>
+      <div class="out" id="fwOut" aria-live="polite"></div>
+    </div>
+  </div>
+</section>
+<section id="bridged">
+  <h2 class="eyebrow">原生与桥接</h2>
+  <p class="sub">原生 USDC、桥接 USDC，以及“转正”</p>
+  <p class="lead"><b>原生 USDC</b>：这条链上的 FiatToken 由 Circle 控制所有角色，可以直接找 Circle 1:1 赎回。<b>桥接 USDC</b>：别人在以太坊上锁住真 USDC，在这条链上发一个代表它的代币，兑付靠桥里锁着的那份。</p>
+  <div class="tbl"><table class="mw-720">
+    <thead><tr><th>链</th><th>情况</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td><span class="dot bg-op"></span>OP Mainnet</td><td>先有官方桥搬来的 USDC；Circle 发原生 USDC 前，把旧的改名为 USDC.e</td><td>两个合约并存：原生 <code>0x0b2C…Ff85</code>，桥接 <code>0x7F5c…1607</code></td></tr>
+      <tr><td><span class="dot bg-base"></span>Base</td><td>2023-08 开放时只有桥接的 USDbC；2023-09-05 Circle 上线原生 USDC</td><td>两个合约并存，用户要自己换</td></tr>
+      <tr><td><span class="dot bg-eth"></span>Linea</td><td>按 Bridged USDC Standard 部署桥接 USDC.e；2025-03-16 暂停官方桥，角色移交 Circle，原地升级</td><td><b>同一个合约直接变成原生 USDC</b>，所有余额自动转正，没人需要迁移；随后接入 CCTP V2</td></tr>
+      <tr><td><span class="dot bg-bsc"></span>BSC</td><td>Circle 不在 BSC 上发原生 USDC</td><td>主流是 Binance-Peg USDC，18 位精度</td></tr>
+      <tr><td><span class="dot bg-qtum"></span>Qtum</td><td>Qtum 桥复用 FiatToken 代码发行 USDC.e</td><td>是 Qtum 桥自己的桥接代币，不在 Circle 名单里</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Bridged USDC Standard：给“转正”留好路</h3>
+  <p>这是 Circle 发布的一套部署规范。第三方团队按它部署桥接 USDC，将来如果双方都同意，Circle 可以接管合约、原地升级成原生 USDC，就像 Linea 那样。Circle 的原话是：这给了 Circle <b>选择权，但不是义务</b>；也<b>没有固定的总量或持有人门槛</b>，会综合看规模、增长、持有人和应用。</p>
+  <div class="bit wide"><div class="anim" data-anim="upgrade"></div></div>
+  <div class="bgrid">
+    <div class="bit"><div class="bh"><span class="term">Token</span><h4>代币合约的要求</h4></div>
+      <ul class="note-list">
+        <li>和原生 USDC 用同一份 FiatToken 源码，Solidity 0.6.12，尽量用相同的优化参数，并把编译元数据交给 Circle 核对字节码</li>
+        <li>名字建议 “Bridged USDC (团队名)”，符号 <code>USDC.e</code></li>
+        <li>部署后<b>不能升级到 Circle 之外的任何实现</b></li>
+        <li><code>initialize</code> 系列函数没有权限控制，必须在部署时立刻调用，最好在实现合约本身上也调用一次，否则谁都能抢先调用</li>
+        <li>测试网的代币和桥配置必须和主网一致</li>
+      </ul></div>
+    <div class="bit"><div class="bh"><span class="term">Bridge</span><h4>桥合约的要求</h4></div>
+      <ul class="note-list">
+        <li>两端都能<b>暂停桥接</b>，锁定总量</li>
+        <li>源链桥能<b>销毁锁住的 USDC</b>：暴露 <code>burnLockedUSDC()</code>，只允许 Circle 指定的地址调用，销毁数量<b>等于目标链最终锁定的桥接总量</b></li>
+        <li>Circle 决定转正之后，桥不能再做任何修改或升级</li>
+        <li>建议把目标链的桥设为唯一铸币员；其他角色可以交给桥或别的可升级合约，前提是将来能把角色移交给 Circle</li>
+      </ul></div>
+  </div>
+</section>
+
+<section id="cctp-link">
+  <h2 class="eyebrow">和其他章节的关系</h2>
+  <p class="lead">CCTP 没有资金池。它能跨链“搬”USDC，全靠本章讲的铸币员机制：Circle 在每条支持的链上，都把 CCTP 的 <code>TokenMinterV2</code> 设成了 USDC 的铸币员。</p>
+  <div class="tbl"><table class="mw-640">
+    <thead><tr><th>CCTP 步骤</th><th>实际发生在 FiatToken 上的事</th></tr></thead>
+    <tbody>
+      <tr><td>源链 <code>depositForBurn</code></td><td>TokenMessenger 先 <code>transferFrom</code> 把你的 USDC 转给 TokenMinter，TokenMinter 再调用 <code>burn</code>。源链总量减少</td></tr>
+      <tr><td>Circle 签发证明</td><td>链下发生，FiatToken 不参与</td></tr>
+      <tr><td>目标链 <code>receiveMessage</code></td><td>TokenMinter 调用 <code>mint</code> 给收款人（V2 里如果有手续费，再单独 mint 一笔给收费地址）。目标链总量增加，TokenMinter 的额度减少</td></tr>
+    </tbody>
+  </table></div>
+  <p>所以一条链要接入 CCTP，前提是这条链上有 Circle 控制的原生 USDC，并且 Circle 愿意把铸币权交给 TokenMinter。项目方没法自己完成这一步，这正是 Qtum 接不了 CCTP 的根本原因。CCIP 搬 USDC 时底层也走 CCTP，所以受同样的限制。</p>
+</section>
+
+<section id="sources">
+  <h2 class="eyebrow">资料来源</h2>
+  <div class="sources"><ol>
+    <li><a href="https://github.com/circlefin/stablecoin-evm" rel="noopener">circlefin/stablecoin-evm</a>（读取的 commit <code>fc85788</code>，2026-08-12）：<code>contracts/v1/FiatTokenV1.sol</code>、<code>Blacklistable.sol</code>、<code>Pausable.sol</code>、<code>v1.1/Rescuable.sol</code>、<code>v2/FiatTokenV2_2.sol</code>、<code>upgradeability/AdminUpgradeabilityProxy.sol</code>、<code>CHANGELOG.md</code></li>
+    <li>同一仓库文档：<code>doc/tokendesign.md</code>（角色、额度、暂停）、<code>doc/masterminter.md</code>、<code>doc/bridged_USDC_standard.md</code></li>
+    <li>以太坊主网只读调用（2026-10-28，公共 RPC <code>ethereum-rpc.publicnode.com</code>）：USDC 代理的 admin / 实现存储槽、各角色函数、<code>isMinter</code> / <code>minterAllowance</code>（TokenMinterV2）、MasterMinter 的 <code>getMinterManager</code></li>
+    <li><a href="https://developers.circle.com/cctp/references/contract-addresses" rel="noopener">Circle：CCTP 合约地址</a>；<a href="https://github.com/circlefin/evm-cctp-contracts" rel="noopener">circlefin/evm-cctp-contracts</a>（<code>TokenMinterV2.sol</code>、<code>BaseTokenMessenger.sol</code>）</li>
+    <li><a href="https://www.circle.com/bridged-usdc" rel="noopener">Circle：Bridged USDC FAQ</a>；<a href="https://www.circle.com/case-studies/linea" rel="noopener">Circle：Linea 案例</a></li>
+    <li><a href="https://www.circle.com/circle-mint" rel="noopener">Circle Mint</a>；<a href="https://www.circle.com/usyc" rel="noopener">USYC</a>；<a href="https://www.circle.com/transparency" rel="noopener">Circle 透明度页面</a>；Circle 新闻稿：IPO 定价</li>
+    <li><a href="https://github.com/qtumproject/bridge-evm-contracts/tree/a351a067f6ba06640c6ec000701fa86b1dd954d8" rel="noopener">bridge-evm-contracts @ a351a067</a>：<code>handlers/ERC20Handler.sol</code>、<code>bridge/BridgeV2.sol</code>、<code>utils/USDCManager.sol</code></li>
+  </ol>
+  <p>核查日期 2026-10-28。</p></div>
+</section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一章与下一章"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>本章整理自章末“本章依据”列出的公开资料和源码，核查日期写在该节末尾。</p>
+</div></footer>
+<script>
+(() => {
+  const {chip, blk} = Guide;
+  const A = {};
+  // 角色树：谁任命谁，CCTP 的 TokenMinter 怎么拿到铸币权
+  A.roles = {h:300,
+    b:[['ad',2,6,30,22,'admin · 升级'],['ow',36,6,28,22,'owner · 任命'],['px',68,6,30,22,'USDC 代理 → 实现'],
+       ['mm',2,38,30,24,'masterMinter'],['pa',36,38,28,24,'pauser'],['bl',68,38,30,24,'blacklister'],
+       ['mi',2,72,30,24,'minter · TokenMinterV2'],['us',36,72,62,24,'用户钱包']],
+    it:[
+      {id:'up', h:'<div class="lbl">能换实现<br>不能碰代币</div>', x:17, y:19},
+      {id:'impl', h:'<span class="cell">FiatToken 2.2</span>', x:83, y:19},
+      {id:'apt', h:'<div class="lbl m">任命 ↓ 下面所有角色</div>', x:50, y:19, hide:1},
+      {id:'mmc', h:'<div class="lbl">MasterMinter 合约<br><span class="m">每个 controller 管一个铸币员</span></div>', x:17, y:52, hide:1},
+      {id:'paus', h:'<div class="lbl">停下整个合约</div>', x:50, y:52, hide:1},
+      {id:'frz', h:'<div class="lbl">冻住单个地址</div>', x:83, y:52, hide:1},
+      {id:'alw', h:'<span class="cell">额度 1,000</span>', x:17, y:86, hide:1},
+      {id:'coin', h:chip('100 USDC','--usdc'), x:17, y:86, hide:1}],
+    s:[
+      {c:'最上层是 admin：它能把 USDC 代理指向新的实现合约，也就是升级。但它不能调用任何代币函数，连查余额都会被代理拒绝。', lit:['ad','px']},
+      {c:'owner 负责任命：masterMinter、pauser、blacklister、rescuer 都由它指定，它也能把 owner 转给别人。它唯一动不了的是 admin。', set:{apt:{hide:0}}, lit:['ow']},
+      {c:'在以太坊上，owner 把 masterMinter 指向了一个 MasterMinter 合约，额度管理又拆了一层：每个 controller 只管一个铸币员。', set:{mmc:{hide:0}}, lit:['mm']},
+      {c:'masterMinter 调用 configureMinter，把 CCTP 的 TokenMinterV2 设为铸币员并给它额度。现在它能铸币了，但只能在额度内。', set:{alw:{hide:0}}, lit:['mm','mi']},
+      {c:'有人通过 CCTP 跨链转入 100 USDC：TokenMinterV2 调用 mint，给用户铸 100。它的额度随之减少 100。', set:{coin:{hide:0, x:67}, alw:{h:'<span class="cell" style="color:var(--warn)">额度 900</span>'}}, lit:['mi','us']},
+      {c:'pauser 和 blacklister 是“刹车”：一个能停下整个合约，一个能冻住单个地址。它们都不能铸币，也不能升级。', set:{paus:{hide:0}, frz:{hide:0}}, lit:['pa','bl']},
+      {c:'为什么拆这么细：铸币员的钥匙丢了，损失不超过它的额度；blacklister 的钥匙丢了，最多乱冻地址，印不出钱。权力最大的是 admin 和 owner，它们的钥匙最要紧。', lit:['ad','ow']},
+    ]};
+  // 铸币额度：用掉就没了，销毁不会补回来
+  A.allow = {h:230,
+    b:[['mm',2,6,30,40,'masterMinter'],['mi',36,6,28,40,'铸币员 m'],['st',68,6,30,40,'合约里记着'],['log',2,54,96,40,'这一步调用']],
+    it:[
+      {id:'ok', h:'<div class="lbl m">还不是铸币员</div>', x:50, y:28},
+      {id:'a', h:'<span class="cell">m 的额度 0</span>', x:83, y:22}, {id:'s', h:'<span class="cell">总量 0</span>', x:83, y:36},
+      {id:'op', h:'<span class="cell">—</span>', x:50, y:76}],
+    s:[
+      {c:'铸币员 m 刚开始什么都没有。'},
+      {c:'masterMinter 调用 configureMinter(m, 1000)：m 成为铸币员，额度 1000。', lit:['mm','st'],
+       set:{ok:{h:'<div class="lbl g">是铸币员</div>'}, a:{h:'<span class="cell" style="color:var(--accent)">m 的额度 1000</span>'}, op:{h:'<span class="cell">configureMinter(m, 1000)</span>'}}},
+      {c:'有用户跨链转入：m 铸 300 给 Alice。总量 +300，额度 −300，剩 700。', lit:['mi','st'],
+       set:{a:{h:'<span class="cell">m 的额度 700</span>'}, s:{h:'<span class="cell" style="color:var(--ok)">总量 300</span>'}, op:{h:'<span class="cell">mint(alice, 300)</span>'}}},
+      {c:'有用户跨链转出 200：USDC 先转给 m，m 再销毁这 200。总量 −200，但额度没变，还是 700。销毁不会把额度加回来。', lit:['mi','st'],
+       set:{a:{h:'<span class="cell" style="color:var(--warn)">m 的额度 700（没变）</span>'}, s:{h:'<span class="cell">总量 100</span>'}, op:{h:'<span class="cell">burn(200)</span>'}}},
+      {c:'额度快用完时，masterMinter 再调用 configureMinter(m, 1000)：额度变成 1000，不是 700 + 1000。这个函数是“设为”，不是“加上”。', lit:['mm','st'],
+       set:{a:{h:'<span class="cell" style="color:var(--accent)">m 的额度 1000</span>'}, op:{h:'<span class="cell">configureMinter(m, 1000)</span>'}}},
+      {c:'removeMinter(m)：取消铸币员身份，额度清零。合约暂停时也能做，出事时可以先把可疑的铸币员撤掉。', bad:['mi'],
+       set:{ok:{h:'<div class="lbl w">已移除</div>'}, a:{h:'<span class="cell">m 的额度 0</span>'}, op:{h:'<span class="cell">removeMinter(m)</span>'}}},
+    ]};
+  // 桥接 USDC 转正：按 Bridged USDC Standard 的流程
+  A.upgrade = {h:300,
+    b:[['eth',2,4,96,42,'Ethereum（源链）'],['eb',4,14,44,28,'桥合约'],['ec',52,14,44,28,'USDC（Circle 发行）'],
+       ['dst',2,54,96,42,'目标链'],['db',4,64,44,28,'目标链的桥'],['dt',52,64,44,28,'USDC.e（FiatToken 代码）']],
+    it:[
+      {id:'lock', h:chip('锁着 500 USDC','--usdc'), x:26, y:32},
+      {id:'mr', h:'<div class="lbl">把桥设为<br>0 额度铸币员</div>', x:74, y:31, hide:1},
+      {id:'pz1', h:'<div class="lbl w">已暂停</div>', x:26, y:22, hide:1}, {id:'pz2', h:'<div class="lbl w">已暂停</div>', x:26, y:80, hide:1},
+      {id:'role', h:'<div class="lbl m">角色在项目方手里</div>', x:74, y:72},
+      {id:'sup', h:chip('总量 500 USDC.e','--usdc','wr'), x:74, y:84}],
+    s:[
+      {c:'开始：以太坊上的桥锁着 500 USDC，目标链上流通着 500 USDC.e。USDC.e 用的是 FiatToken 代码，但所有角色都在项目方手里。', lit:['eb','dt']},
+      {c:'① 双方决定转正。项目方暂停两端的桥，处理完路上的跨链请求，USDC.e 的总量就此锁定为 500。', set:{pz1:{hide:0}, pz2:{hide:0}}, lit:['eb','db']},
+      {c:'② 项目方把 USDC.e 的 owner 和代理 admin 移交给 Circle 控制的地址。', set:{role:{h:'<div class="lbl g">角色已交给 Circle</div>'}}, lit:['dt']},
+      {c:'③ Circle 临时把以太坊上的桥设为 USDC 的“零额度铸币员”：它能销毁自己持有的 USDC，但一个也铸不出来。', set:{mr:{hide:0}}, lit:['ec','eb']},
+      {c:'④ Circle 指定的地址调用桥的 burnLockedUSDC()，销毁数量等于目标链锁定的总量 500。以太坊上的 USDC 总量随之减少 500。', set:{lock:{hide:1}}, lit:['eb','ec']},
+      {c:'⑤ Circle 把 USDC.e 升级成原生 USDC。合约地址、余额、持有人、接入的应用都不变，只是现在由 Circle 发行，可以直接赎回。Linea 2025 年就是这么做的。', set:{sup:{h:chip('总量 500 USDC','--usdc')}, mr:{hide:1}}, lit:['dt']},
+      {c:'这条路是 Circle 的选择，不是义务。前面任何一步做不到（桥不能暂停、代币改过实现、测试网和主网配置不一致），这条路就走不通。', lit:['eth','dst']},
+    ]};
+  Guide.mount(A);
+  // 权限模拟器：按 FiatToken 2.2 源码里修饰器的先后顺序检查，报错文字照抄源码
+  const $ = id => document.getElementById(id);
+  const fwWho = $('fwWho'), fwFn = $('fwFn'), fwP = $('fwPaused'), fwBS = $('fwBlSender'), fwBT = $('fwBlTo'), fwOut = $('fwOut');
+  const DESC = {
+    transfer:'余额从调用者转给收款人。',
+    mint:'收款人余额增加，总量增加，铸币员的额度减少。',
+    burn:'调用者自己的余额和总量减少，额度不变。',
+    configureMinter:'目标地址成为铸币员，额度被设为新值。',
+    removeMinter:'目标地址不再是铸币员，额度清零。暂停中也能做。',
+    blacklist:'目标地址被冻结，余额原地不动。暂停中也能做。',
+    pause:'整个合约暂停：转账、铸币、销毁、新增铸币员全部停止。',
+    updateMasterMinter:'换了新的 masterMinter。暂停中也能做。',
+  };
+  const REV = s => `<span style="color:var(--warn)">revert：<b style="color:var(--warn)">${s}</b></span>`;
+  const OK = s => `<b style="color:var(--ok)">成功</b><span class="m">${s}</span>`;
+  function fwRun(){
+    const who = fwWho.value, fn = fwFn.value, P = fwP.checked, BS = fwBS.checked, BT = fwBT.checked;
+    const BL = 'Blacklistable: account is blacklisted', PZ = 'Pausable: paused';
+    let r;
+    if (who === 'admin') {
+      r = fn === 'upgradeTo' ? OK('代理指向新的实现合约。地址和余额不变，逻辑换了。')
+        : REV('Cannot call fallback function from the proxy admin') + '<span class="m">admin 调用代币函数会被代理直接拦下</span>';
+    } else if (fn === 'upgradeTo') {
+      r = REV('（没有报错文字）') + '<span class="m">只有 admin 调用时代理才处理 upgradeTo；其他人的调用被转给实现合约，而实现合约里没有这个函数</span>';
+    } else {
+      const chk = [], need = (ok, msg) => chk.push([ok, msg]);
+      if (fn === 'transfer') { need(!P, PZ); need(!BS, BL); need(!BT, BL); }
+      if (fn === 'mint') { need(!P, PZ); need(who === 'minter', 'FiatToken: caller is not a minter'); need(!BS, BL); need(!BT, BL); }
+      if (fn === 'burn') { need(!P, PZ); need(who === 'minter', 'FiatToken: caller is not a minter'); need(!BS, BL); }
+      if (fn === 'configureMinter') { need(!P, PZ); need(who === 'mm', 'FiatToken: caller is not the masterMinter'); }
+      if (fn === 'removeMinter') need(who === 'mm', 'FiatToken: caller is not the masterMinter');
+      if (fn === 'blacklist') need(who === 'bl', 'Blacklistable: caller is not the blacklister');
+      if (fn === 'pause') need(who === 'pauser', 'Pausable: caller is not the pauser');
+      if (fn === 'updateMasterMinter') need(who === 'owner', 'Ownable: caller is not the owner');
+      const bad = chk.find(c => !c[0]);
+      r = bad ? REV(bad[1]) : OK(DESC[fn]);
+    }
+    const hint = (fn === 'transfer' || fn === 'mint') ? '' : '<span class="m">“收款人已被冻结”只对 transfer 和 mint 有影响</span>';
+    fwOut.innerHTML = r + hint;
+  }
+  [fwWho, fwFn, fwP, fwBS, fwBT].forEach(e => e.addEventListener('change', fwRun));
+  fwRun();
+})();
+</script>
+</body>
+</html>

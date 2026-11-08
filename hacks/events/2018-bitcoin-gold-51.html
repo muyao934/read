@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitcoin Gold 51% 双花攻击｜区块链被盗事件编年史</title>
+<meta name="description" content="2018 年 5 月攻击者租用算力对 Bitcoin Gold 发动 51% 攻击、在交易所双花的经过：最长链规则、私挖与重组、Bittrex 的损失与下架、2020 年再次被攻击，以及 Ethereum Classic 的同类攻击和 MESS 防御。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2018-bitcoin-gold-51">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2018 年　/　智能合约登场</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Bitcoin Gold 51% 双花攻击</h1>
+    <p class="lede">2018 年 5 月 16 日至 19 日，攻击者通过算力租赁市场 NiceHash 租到了超过 Bitcoin Gold 全网一半的算力，先在交易所充值、换成别的币提走，再用私下挖出的更长链把这些充值从历史里抹掉。最深的一次改写了 22 个已确认的区块。这次事件说明，规模较小的工作量证明链，安全性取决于外面能租到多少算力。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">工作量证明链以“累计工作量最大的链”为准。一笔交易得到的确认越多，要推翻它需要补做的工作量就越大，但这只在攻击者的算力少于其余所有矿工时成立。Bitcoin Gold（BTG）用 Equihash 算法挖矿，同一算法下的 Zcash 算力比它大一个数量级，租来的一小部分 Equihash 算力就足以压过 BTG 全网<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。</p>
+        <p>三天半里，攻击者反复在交易所存入大笔 BTG、换币提走，再公布一条私下挖好的更长的链，让原来的充值作废。部分交易所当时只要求不到 5 个确认，而最深的一次重组用 25 个区块替换了 22 个<a class="ref" href="#s1">[1]</a>。媒体普遍引用的损失约 38.8 万枚 BTG（约 1,800 万美元），这是按疑似攻击交易加总的估计，BTG 团队自己说无法确定有多少次攻击真正得手<a class="ref" href="#s3">[3]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <p>受害最重的已知交易所是 Bittrex。它要求 BTG 团队赔偿 12,372 枚 BTG，遭到拒绝后在 2018 年 9 月下架了 BTG<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。BTG 在 7 月硬分叉换用新的挖矿算法，但 2020 年 1 月又被攻击了两次<a class="ref" href="#s8">[8]</a>。Ethereum Classic 在 2019 年和 2020 年遭到同类攻击，后来在节点软件里加入了惩罚深度重组的规则 MESS，以太坊转向权益证明之后又把它停用了<a class="ref" href="#s9">[9]</a><a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Bitcoin Gold 是 2017 年从比特币硬分叉出来的币，目的是让普通显卡挖矿重新有利可图，所以把挖矿算法换成了 Equihash<a class="ref" href="#s13">[13]</a>。项目由非营利的 Bitcoin Gold 组织维护，启动时挖出了 10 万枚 BTG 作为基金，其中 6 万枚从 2017 年 11 月起锁定，最长三年<a class="ref" href="#s5">[5]</a>。</p>
+        <p>工作量证明的安全前提，比特币白皮书第 3 页写得很清楚：只要多数算力掌握在诚实节点手中，诚实链就会增长得最快，超过任何竞争链。Coinbase 在分析 Ethereum Classic 被攻击时把多数算力被掌控的情形称为工作量证明模型“已知的局限”<a class="ref" href="#s9">[9]</a>。</p>
+        <p>问题在于算力可以买卖。BTG 团队在事后的文章里解释：比特币的算力比同样使用 SHA-256 的 Bitcoin Cash、DigiByte 大一个数量级，所以比特币相对安全；同理，Zcash 的算力比同样使用 Equihash 的 BTG、ZenCash、Komodo 大一个数量级，所以 Zcash 相对安全，而后者不安全。至于为什么偏偏攻击 BTG，团队的看法是它上了更多大型交易所，流动性和订单簿深度足以让攻击者获利<a class="ref" href="#s3">[3]</a>。NiceHash 这样的算力租赁市场，让人可以临时租到某一种算法的大量算力，BTG 团队事后确认攻击者用的就是从 NiceHash 租来的算力<a class="ref" href="#s5">[5]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2017-11</time><div class="ev">Bitcoin Gold 主网上线<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="atk key"><time>2018-05-16 22:37</time><div class="ev">已知的第一次攻击，针对区块 528735（UTC）<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2018-05-18</time><div class="ev">BTG 团队在论坛发帖：有人在用“51% 攻击”对交易所双花，建议所有交易所提高确认数、仔细审查大额充值，随后公布了攻击者的收款地址和挖矿地址<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="atk key"><time>2018-05-19 05:25</time><div class="ev">最后一次攻击在区块 529048 之后结束（UTC）。Bittrex 遭遇这次攻击中最后也是最大的一笔双花，攻击者从已被公布的地址存入 12,371 枚 BTG<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>2018-05-20</time><div class="ev">论坛更新：20 个确认已经不够，攻击者曾用 25 个区块替换掉 22 个区块，建议交易所提高到 50 个确认<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2018-05-24</time><div class="ev">BTG 团队发布《Responding to Attacks》，把原定 6 月底的挖矿算法升级尽量提前<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def key"><time>2018-07-03 21:59</time><div class="ev">区块 536200（UTC），BTG 硬分叉启用新的工作量证明算法 Equihash-BTG 和新的难度调整算法 LWMA<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="key"><time>2018-09-01</time><div class="ev">BTG 团队发表声明：因拒绝向 Bittrex 支付 12,372 枚 BTG，Bittrex 决定下架 BTG<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>2019-01-05</time><div class="ev">Coinbase 检测到 Ethereum Classic 的深度重组，暂停 ETC 的收发；到 1 月 7 日共发现 15 次重组，其中 12 次包含双花，合计 219,500 枚 ETC，约 110 万美元<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def"><time>2019-03-11</time><div class="ev">Coinbase 恢复 ETC 收发，提醒用户由于所需确认数很多，交易可能要 24 小时以上才能完成<a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk"><time>2020-01 下旬</time><div class="ev">BTG 两次被重组，攻击者分别双花约 1,900 枚和 5,267 枚 BTG，合计约 7.2 万美元<a class="ref" href="#s8">[8]</a>。</div></li>
+          <li class="atk"><time>2020-07-31–08-06</time><div class="ev">Ethereum Classic 在一周内两次遭到 51% 攻击，据报道损失约 560 万美元<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li class="def"><time>2020-09-09</time><div class="ev">ECBP-1100（MESS）提出，计划于 2020 年 10 月在 Core-Geth 客户端中、从区块 11,380,000 起启用<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>2023-09-17</time><div class="ev">ECBP-1110 提出停用 MESS：以太坊转为权益证明后，ETC 已成为兼容算力最大的去处，MESS 将在区块 19,250,000（Spiral 硬分叉）默认关闭<a class="ref" href="#s12">[12]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这次没有代码漏洞，共识规则完全按设计运行。节点在两条链之间做选择时，只看哪条链累计的工作量更大，以太坊系客户端里对应的代码是这样的：</p>
+<pre class="code"><code><span class="c">// core/blockchain.go（go-ethereum / core-geth），收到新区块时决定要不要切换到对方的链</span>
+// If the total difficulty is higher than our known, add it to the canonical chain
+<span class="bad">reorg := externTd.Cmp(localTd) &gt; 0   <span class="c">// 对方链的累计难度更大，就重组到对方链</span></span>
+<span class="c">// ……（累计难度相同时，按高度和是否本地挖出的块再做判断，从略）……</span></code></pre>
+        <p class="code-cap">来源：ECIP-1100 规范中引用的 etclabscore/core-geth 与 ethereum/go-ethereum 代码（core/blockchain.go）。比特币系客户端（包括 BTG）同样以累计工作量最大的链为准。中文注释是本站加的。</p>
+        <p>只要多数算力是诚实的，这条规则就能保证诚实链最长。攻击者要做的，是在一段时间里让自己的算力超过其余所有矿工之和，再利用节点总是切换到累计工作量更大的链这一点，用一条自己挖的链替换掉公开链上的一段历史。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 280" role="img" aria-labelledby="btg-race-t btg-race-d">
+            <title id="btg-race-t">私挖长链与双花</title>
+            <desc id="btg-race-d">两条链从同一个区块分开。上面是交易所看到的公开链，攻击者的充值交易 T 在这条链上得到若干确认，交易所入账，攻击者换成其他币提走。下面是攻击者私下挖出、暂不广播的链，同一批币在其中被付给攻击者自己，记为交易 T′。由于攻击者掌握多数算力，私链长得更快；攻击者公布私链后，全网按累计工作量最大的规则重组，交易 T 消失，T′ 生效。</desc>
+            <defs>
+              <marker id="btg-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="btg-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <text class="d-t s" x="160" y="26">公开链（交易所看到的）</text>
+            <text class="d-t s" x="160" y="240">攻击者的私链（先不广播）</text>
+            <rect class="d-box" x="20" y="102" width="120" height="56" rx="4"/>
+            <text class="d-t b" x="80" y="125" text-anchor="middle">分叉点</text>
+            <text class="d-t s" x="80" y="145" text-anchor="middle">共同的父块</text>
+            <path class="d-line" d="M140,118 C150,118 150,61 158,61" marker-end="url(#btg-ah)"/>
+            <path class="d-line atk" d="M140,142 C150,142 150,199 158,199" marker-end="url(#btg-ah-atk)"/>
+            <rect class="d-box" x="160" y="36" width="160" height="50" rx="4"/>
+            <text class="d-t b" x="240" y="58" text-anchor="middle">充值 T 上链</text>
+            <text class="d-t s" x="240" y="76" text-anchor="middle">币存进交易所</text>
+            <line class="d-line" x1="320" y1="61" x2="358" y2="61" marker-end="url(#btg-ah)"/>
+            <rect class="d-box" x="360" y="36" width="160" height="50" rx="4"/>
+            <text class="d-t b" x="440" y="58" text-anchor="middle">第 N 个确认</text>
+            <text class="d-t s" x="440" y="76" text-anchor="middle">交易所入账</text>
+            <line class="d-line" x1="520" y1="61" x2="558" y2="61" marker-end="url(#btg-ah)"/>
+            <rect class="d-box" x="560" y="36" width="180" height="50" rx="4"/>
+            <text class="d-t b" x="650" y="58" text-anchor="middle">换币、提走</text>
+            <text class="d-t s" x="650" y="76" text-anchor="middle">其他币离开交易所</text>
+            <rect class="d-box atk" x="160" y="174" width="160" height="50" rx="4"/>
+            <text class="d-t b" x="240" y="196" text-anchor="middle">T′ 付给自己</text>
+            <text class="d-t s" x="240" y="214" text-anchor="middle">同一批币</text>
+            <line class="d-line atk" x1="320" y1="199" x2="358" y2="199" marker-end="url(#btg-ah-atk)"/>
+            <rect class="d-box atk" x="360" y="174" width="160" height="50" rx="4"/>
+            <text class="d-t b" x="440" y="196" text-anchor="middle">多数算力私挖</text>
+            <text class="d-t s" x="440" y="214" text-anchor="middle">长得比公开链快</text>
+            <line class="d-line atk" x1="520" y1="199" x2="558" y2="199" marker-end="url(#btg-ah-atk)"/>
+            <rect class="d-box atk" x="560" y="174" width="180" height="50" rx="4"/>
+            <text class="d-t b" x="650" y="196" text-anchor="middle">更长的链</text>
+            <text class="d-t s" x="650" y="214" text-anchor="middle">累计工作量更大</text>
+            <line class="d-line atk" x1="650" y1="172" x2="650" y2="90" marker-end="url(#btg-ah-atk)"/>
+            <text class="d-t s atk halo" x="640" y="136" text-anchor="end">公布私链，全网重组</text>
+            <text class="d-t s" x="450" y="262" text-anchor="middle">重组后 T 消失、T′ 生效，交易所付出的币却已被提走</text>
+          </svg>
+          </div>
+          <figcaption>图 1：双花的结构，按 BTG 团队 2018 年的说明整理。确认数 N 只决定攻击者需要私挖多长；只要攻击者的算力超过其余矿工之和，私链迟早会超过公开链。</figcaption>
+        </figure>
+        <h3>确认数买到的是时间</h3>
+        <p>BTG 团队在攻击期间给交易所算过一笔账：要推翻 n 个确认，攻击者大约要挖 n+1 个区块，按当时每块 12.5 BTG 的奖励，20 个确认对应约 262.5 BTG 的挖矿成本。但攻击成功时，私链上的出块奖励归攻击者，约九成成本能收回来，净成本只有约 26 BTG；而观察到的每笔双花在 8,000 到 12,000 BTG 之间<a class="ref" href="#s1">[1]</a>。只看成本，确认数挡不住攻击。</p>
+        <p>团队指出，确认数真正的作用是时间。确认要求越高，攻击者需要私挖的时间越长，交易所越有机会发现异常、冻结账户；攻击失败时，私挖的成本全部白费，存进去的币还可能被冻结<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。攻击中最深的一次重组用 25 个区块替换了 22 个，团队因此把建议的确认数从 20 提高到 50<a class="ref" href="#s1">[1]</a>。</p>
+        <h3>节点层的补救：MESS</h3>
+        <p>Ethereum Classic 在 2020 年的攻击之后，给节点加了一条共识规则之外的判断，叫 MESS（修正的指数主观评分），原则是“小的重组正常且健康，大的重组可疑”。新链与本地链的分叉点越早，新链需要的累计难度就比本地链高出越多倍<a class="ref" href="#s11">[11]</a>：</p>
+<pre class="code"><code><span class="c"># ECBP-1100 规范中的曲线：分叉点距今 time_delta 秒时，新链所需的难度倍数（分子 / 128）</span>
+CURVE_FUNCTION_DENOMINATOR = 128
+def get_curve_function_numerator(time_delta: int) -&gt; int:
+    xcap = 25132 # = floor(8000*pi)
+    ampl = 15
+    height = CURVE_FUNCTION_DENOMINATOR * (ampl * 2)
+    x = min(time_delta, xcap)
+    # The sine approximator `y = 3*x**2 - 2*x**3` rescaled to the desired height and width
+    return CURVE_FUNCTION_DENOMINATOR + (3 * x**2 - 2 * x**3 // xcap) * height // xcap ** 2
+
+<span class="c"># 判定条件：新链的累计难度不够，就不切换，只把它当作侧链保存</span>
+<span class="good">if proposed_subchain_td * CURVE_FUNCTION_DENOMINATOR &lt; \</span>
+<span class="good">        get_curve_function_numerator(current.Time - commonAncestor.Time) * local_subchain_td:</span>
+<span class="good">    return notok</span>
+return ok</code></pre>
+        <p class="code-cap">来源：ECIP-1100《MESS (Modified Exponential Subjective Scoring)》规范，ethereumclassic/ECIPs 仓库。判定条件原为一行，这里为排版折成两行。</p>
+        <p>按这条曲线计算，分叉点在 10 分钟前时，新链只需比本地链多约 5% 的难度；30 分钟前约 1.44 倍；1 小时前约 2.66 倍；2 小时前约 7 倍；约 7 小时以前达到上限 31 倍（本站按规范公式计算）。没有通过的链段不会被丢弃，而是作为侧链保存，日后难度够了仍可能成为主链<a class="ref" href="#s11">[11]</a>。规范明确说这条规则在现有共识协议之外，由客户端实现，它不改变区块是否有效，只改变节点愿不愿意切换过去<a class="ref" href="#s11">[11]</a>。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下根据 BTG 团队在攻击期间和事后公布的信息整理。攻击者的身份至今不明。</p>
+        <ol class="steps">
+          <li><b>租用算力</b>BTG 团队认定攻击者从 NiceHash 租用了大量算力，“或许还借助了自己的矿池或 ASIC 矿机”<a class="ref" href="#s5">[5]</a>。攻击期间攻击者的节点在主网上挖出过 9 个块，出块间隔在 100 到 160 秒之间<a class="ref" href="#s1">[1]</a>，而 BTG 的目标出块间隔是 10 分钟<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>在交易所充值、换币、提走</b>攻击者向交易所存入大笔 BTG，等到入账后换成其他币提走<a class="ref" href="#s3">[3]</a>。被观察到的双花交易，每笔在 8,000 到 12,000 BTG 之间<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>公布私链</b>攻击者随后公布私下挖好的更长的链，原来的充值交易从链上消失，同一批币回到攻击者手里。攻击从 5 月 16 日 22:37（UTC）持续到 19 日 05:25，跨越区块 528735 到 529048，期间团队记录到十多次被推翻的分支，被替换的区块从几个到 22 个不等<a class="ref" href="#s1">[1]</a>。</li>
+          <li><b>反复进行</b>BTG 团队说，他们能看到发生了多少次攻击，但不能确定有多少次真正对交易所得手，也不能确定哪些交易所被攻击了<a class="ref" href="#s3">[3]</a>。一家被攻击的交易所告诉团队，他们“百分之百确定”这个人以前也试图对他们双花过比特币，在多个账户之间找到了很多关联<a class="ref" href="#s1">[1]</a>。</li>
+        </ol>
+        <h3>Bittrex 的那一笔</h3>
+        <p>按 BTG 团队的说法，Bittrex 遭遇的是这次攻击中最后也是最大的一笔双花：5 月 19 日，攻击者从团队此前已公开的那个地址存入 12,371 枚 BTG，几个小时后，Bittrex 允许对方交易并提走了一些其他币，随后这笔充值被双花作废<a class="ref" href="#s5">[5]</a>。团队说，他们事先把攻击者的地址告诉了 Bittrex，建议它提高确认数、标记和审查异常的大额充值，还在攻击开始时向它发出过警告；Bittrex 当时没有派人加入团队的紧急通知频道<a class="ref" href="#s5">[5]</a>。这些是 BTG 团队一方的陈述，本站没有找到 Bittrex 对事件经过的公开说明。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>项目</th><th class="n">数量</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>媒体估计的总损失</td><td class="n"><span class="dispute">约 38.8 万 BTG</span></td><td>约 1,800 万美元。ZDNet 援引“加密货币专家”的数字<a class="ref" href="#s6">[6]</a>；Fortune 引用 Bitcoinist 的说法：如果攻击者地址的 76 笔交易都属于攻击，损失约 1,800 万美元<a class="ref" href="#s7">[7]</a></td></tr>
+              <tr><td>单笔双花</td><td class="n">约 8,000–12,000 BTG</td><td>BTG 团队在攻击期间观察到的范围<a class="ref" href="#s1">[1]</a></td></tr>
+              <tr><td>Bittrex 被双花的充值</td><td class="n">12,371 BTG</td><td>Bittrex 被提走的其他币价值多少没有公开<a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>Bittrex 要求的赔偿</td><td class="n">12,372 BTG</td><td>约 25.6 万美元（按 2018 年 9 月价格）；后改为要求约一半<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a></td></tr>
+              <tr><td>2020 年 1 月的两次双花</td><td class="n">约 1,900 + 5,267 BTG</td><td>约 1.9 万和 5.3 万美元；据估计每次租算力的成本约 1,200 美元<a class="ref" href="#s8">[8]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>“38.8 万枚”这个数字流传最广，但要谨慎看待。从 Fortune 的转述看，它是把攻击者地址的一批交易全部算作攻击得到的，其中可能包括没有得手的尝试；BTG 团队自己说无法确定有多少次攻击真正成功<a class="ref" href="#s3">[3]</a>。把它理解成上限更稳妥。</p>
+        <p>攻击者在私链上挖出的区块，出块奖励也归他所有，这些币满 100 个区块后即可动用<a class="ref" href="#s1">[1]</a>。从交易所提走的是比特币等其他币，之后流向哪里，没有公开的追踪分析，也没有任何人因此被起诉。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>同类攻击</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>最深的重组</th><th class="n">双花金额</th><th>备注</th></tr></thead>
+            <tbody>
+              <tr><td>BTG，2018-05</td><td>25 个区块替换 22 个</td><td class="n">约 1,800 万美元（上限估计）</td><td>已知最大的单笔受害者是 Bittrex<a class="ref" href="#s1">[1]</a><a class="ref" href="#s5">[5]</a></td></tr>
+              <tr><td>ETC，2019-01</td><td>140 个区块替换 123 个</td><td class="n">219,500 ETC，约 110 万美元</td><td>Coinbase 观察到 15 次重组，12 次含双花，Coinbase 自身没有损失<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>BTG，2020-01</td><td>最深约 16 个区块</td><td class="n">约 7.2 万美元</td><td>两次重组，据估计每次租算力的成本约 1,200 美元<a class="ref" href="#s8">[8]</a></td></tr>
+              <tr><td>ETC，2020-07 至 08</td><td>未核实</td><td class="n">约 560 万美元</td><td>一周内两次攻击，金额据媒体报道<a class="ref" href="#s10">[10]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>受害的是交易所</h3>
+        <p>51% 攻击者能推翻的只是自己发出的交易，动不了别人的币。BTG 团队在攻击期间强调，普通用户和持有的 BTG 没有风险，唯一真正危险的，是在自动化系统上不知情地和攻击者做大额交易的一方，也就是交易所<a class="ref" href="#s1">[1]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <h3>确认数成了风控参数</h3>
+        <p>攻击之后，许多交易所大幅提高了 BTG 的确认要求，或者干脆关闭了充值钱包；7 月硬分叉成功后，BTG 团队才通知合作方可以把确认数恢复到分叉前的水平<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a>。2020 年的攻击说明这个参数需要随时调整：当时 Binance 的规则是 BTG 充值 6 个确认后可交易、12 个确认后可提现，研究者 James Lovejoy 指出，14 到 15 个区块的重组就能绕过这两道等待期，而攻击者的重组深达 16 个区块；事后 Binance 把 BTG 的提现确认数提高到 20<a class="ref" href="#s8">[8]</a>。</p>
+        <h3>谁来承担责任</h3>
+        <p>Bittrex 认为 BTG 团队应当“为自己的链负责”，要求团队赔偿 12,372 枚 BTG，后来又改为要求约 6,000 枚。BTG 团队的理事会认为，基金是为项目的长期运营设立的，无权拿来弥补一家私营公司因自身安全疏失造成的损失；51% 攻击和双花一直是工作量证明世界里已知的风险，责任在攻击者<a class="ref" href="#s5">[5]</a>。ZDNet 称，交易所要求币的开发团队赔偿黑客造成的损失，此前从未有过<a class="ref" href="#s6">[6]</a>。争执的结果是 Bittrex 下架了 BTG。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>BTG：从预警到换算法</h3>
+        <ol class="steps">
+          <li><b>攻击期间的预警</b>团队通过各交易所的客服渠道发出标注“CRITICAL RISK”的消息，建立紧急通知的 Telegram 频道，公开攻击者的地址，并对 NiceHash 上的 Equihash 算力市场做 24 小时自动监控，一有异常就通知频道里的交易所<a class="ref" href="#s5">[5]</a>。</li>
+          <li><b>2018 年 7 月 3 日硬分叉</b>新算法 Equihash-BTG 占用的内存远多于原来的 Equihash，现有的 ASIC 矿机无法再挖，3 GB 以上显存的显卡仍可以挖；算法还加入了“个性化”参数，让算力更难通过租赁市场转移过来。新的难度调整算法 LWMA 让出块时间更稳定。团队称，没有了租赁市场，也就去掉了一个主要的攻击途径<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>2020 年仍被攻击</b>2020 年 1 月的两次攻击中，研究者按 NiceHash 上的价格估算出每次的算力成本，说明新算法的算力后来又能租到了<a class="ref" href="#s8">[8]</a>。同年 7 月，BTG 发布紧急更新 0.17.2，以避开几天前出现的一条很长的攻击链<a class="ref" href="#s13">[13]</a>。</li>
+        </ol>
+        <h3>ETC：加确认数、改算法、加 MESS、再撤掉</h3>
+        <p>Coinbase 在 2019 年 3 月恢复 ETC 收发时，所需的确认数已经多到交易可能要 24 小时以上才能完成<a class="ref" href="#s9">[9]</a>。2020 年的攻击之后，社区讨论过把挖矿算法换成 RandomX 或 SHA-3，最终选择把 Ethash 的纪元长度从 30,000 加倍到 60,000，以缩小 DAG，让以太坊的矿工没法轻易把算力转到 ETC 上，这一改动称为 Thanos 升级<a class="ref" href="#s14">[14]</a>。同时推出的 MESS 从一开始就被定位为一个临时的补丁<a class="ref" href="#s12">[12]</a>。</p>
+        <p>2022 年 9 月以太坊转为权益证明，退出了工作量证明的算力市场，ETC 成了兼容算力最大的去处。ECBP-1110 据此认为，当初让 MESS 存在的外部风险已经大幅下降；而维持一套主观的链仲裁规则本身也有成本：它可能被精心设计的网络分裂攻击利用，有小概率造成严重故障，合并上游代码时还要额外维护。按 ECBP-1110 的估计，ETC 的算力已占可见兼容算力的约 85%。MESS 于是在 Spiral 硬分叉的区块 19,250,000 默认关闭<a class="ref" href="#s12">[12]</a>。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>确认数要按经济账来定。估算“租够算力改写 N 个区块要花多少钱”，再和单笔充值的金额比较；小币种的大额充值，用更高的确认数、人工审核或延迟提现来对冲。</li>
+            <li>入账和允许提走其他币之间要留出时间。BTG 和 Binance 的例子里，攻击者正是利用“入账后立即可以换币提走”的窗口。</li>
+            <li>实时监控链的重组，例如持续调用节点的 <code>getchaintips</code>。一旦重组涉及自己的充值交易，自动冻结相关账户。</li>
+            <li>加入项目方的紧急通知渠道。按 BTG 团队的说法，Bittrex 当时没有加入。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给公链设计者</span>
+          <ul>
+            <li>与一条大得多的链共用工作量证明算法的小链，安全上限就是外面能租到的算力。换算法只能争取一段时间，BTG 在 2020 年又被攻击就是例子。</li>
+            <li>MESS 这类共识之外的“终局性”规则可以抬高深度重组的代价，但会带来新的风险和维护成本，需要随算力格局的变化重新评估。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>交易所显示“已入账”，不等于这笔交易不可逆。在小市值的工作量证明链上，两者之间可以隔着几十个区块。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">Bitcoin Gold 团队，《Double-Spend Attack on Exchanges》，Bitcoin Gold 论坛，2018-05-18 起持续更新，Internet Archive 存档。<a href="https://web.archive.org/web/20180612143656/https://forum.bitcoingold.org/t/double-spend-attack-on-exchanges/1362">web.archive.org</a></li>
+          <li id="s2">MentalNomad，《Anatomy of a Double-Spend / 51% Attack》，Bitcoin Gold 论坛，2018-05-22，Internet Archive 存档。<a href="https://web.archive.org/web/20240414114923/https://forum.bitcoingold.org/t/anatomy-of-a-double-spend-51-attack/1398">web.archive.org</a></li>
+          <li id="s3">Edward Iskra，《Responding to Attacks》，Bitcoin Gold 官网，2018-05-24。<a href="https://bitcoingold.org/responding-to-attacks/">bitcoingold.org</a></li>
+          <li id="s4">Edward Iskra，《A Successful Network Upgrade》，Bitcoin Gold 官网，2018-07-08。<a href="https://bitcoingold.org/a-successful-network-upgrade/">bitcoingold.org</a></li>
+          <li id="s5">The Bitcoin Gold Organization，《Statement Regarding Bittrex》，2018-09-01，Internet Archive 存档。<a href="https://web.archive.org/web/2019/https://bitcoingold.org/statement-regarding-bittrex/">web.archive.org</a></li>
+          <li id="s6">Catalin Cimpanu，《Bitcoin Gold delisted from major cryptocurrency exchange after refusing to pay hack damages》，ZDNet，2018-09。<a href="https://www.zdnet.com/article/bitcoin-gold-delisted-from-major-cryptocurrency-exchange-after-refusing-to-pay-hack-damages/">zdnet.com</a></li>
+          <li id="s7">Jeff John Roberts，《Bitcoin Spinoff Hacked in Rare ‘51% Attack’》，Fortune，2018-05-29，Internet Archive 存档。<a href="https://web.archive.org/web/20190116061454/http://fortune.com/2018/05/29/bitcoin-gold-hack/">web.archive.org</a></li>
+          <li id="s8">David Canellis，《Bitcoin Gold hit by 51% attacks, $72K in cryptocurrency double-spent》，The Next Web，2020-01-27，Internet Archive 存档。<a href="https://web.archive.org/web/20200127152040/https://thenextweb.com/hardfork/2020/01/27/bitcoin-gold-51-percent-attack-blockchain-reorg-cryptocurrency-binance-exchange/">web.archive.org</a></li>
+          <li id="s9">Coinbase，《Deep Chain Reorganization Detected on Ethereum Classic (ETC)》，2019-01-07（2019-03-11 更新），Internet Archive 存档。<a href="https://web.archive.org/web/20211208093157/https://blog.coinbase.com/ethereum-classic-etc-is-currently-being-51-attacked-33be13ce32de">web.archive.org</a></li>
+          <li id="s10">Loana Berbedj，《La cryptomonnaie Ethereum Classic victime de deux attaques informatiques en une semaine》，Les Echos，2020-08-17，Internet Archive 存档。<a href="https://web.archive.org/web/20210206004502/https://www.lesechos.fr/finance-marches/marches-financiers/la-cryptomonnaie-ethereum-classic-victime-de-deux-attaques-informatiques-en-une-semaine-1232959">web.archive.org</a></li>
+          <li id="s11">Isaac，ECIP-1100《MESS (Modified Exponential Subjective Scoring)》，2020-09-09。<a href="https://github.com/ethereumclassic/ECIPs/blob/master/_specs/ecip-1100.md">github.com</a></li>
+          <li id="s12">Isaac，ECIP-1110《Deactivate MESS (Modified Exponential Subjective Scoring)》，2023-09-17。<a href="https://github.com/ethereumclassic/ECIPs/blob/master/_specs/ecip-1110.md">github.com</a></li>
+          <li id="s13">维基百科，《Bitcoin Gold》。<a href="https://en.wikipedia.org/wiki/Bitcoin_Gold">en.wikipedia.org</a></li>
+          <li id="s14">维基百科，《Ethereum Classic》。<a href="https://en.wikipedia.org/wiki/Ethereum_Classic">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

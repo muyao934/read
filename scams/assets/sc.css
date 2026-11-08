@@ -1,0 +1,49 @@
+/* 区块链诈骗与骗局：在两站共用的样式（../../shared/base.css）之上追加的组件。
+   用色沿用两站约定：红色只表示损失或攻击方，蓝色只表示链接、防守或追踪（时间线里是监管、处置与执法），
+   琥珀色表示存疑或未确认，绿色表示已追回，其余用墨色和灰阶。
+   首页泳道复用 .seismo / .tip / .sz-grid / .sz-ax，列表复用 .era / .ledger / .row。 */
+
+/* 规模不是损失时，大字用墨色 */
+.facts-loss.sc-neutral .v, .r-loss.sc-neutral { color: var(--ink); }
+/* 事件要素里较长的“结局”（崩盘类以外叫“后续”）占满两列 */
+.facts dl .sc-wide { grid-column: 1 / -1; }
+
+/* ---------- 首页：顶栏纸边，四类各占四分之一，顺序和泳道一致 ---------- */
+body.sc-home .topbar::after {
+  background: linear-gradient(90deg, var(--e2) 0 25%, var(--e1) 0 50%, var(--e3) 0 75%, var(--e4) 0);
+}
+/* 详情页四类小条：本类那一行垫本类的底色 */
+.sc-lane.on .sc-track { background: var(--era-wash); }
+
+/* ---------- 首页：四条泳道 ---------- */
+.sc-lane-line { stroke: var(--rule); stroke-width: 1; }
+.sc-lane-lab { fill: var(--ink-2); font-size: 13px; }
+.sc-lane-empty { fill: var(--ink-3); font-size: 12.5px; }
+.sc-dot { fill: var(--ink-2); stroke: var(--paper); stroke-width: 2; }
+.sc-mark.loss .sc-dot { fill: var(--loss-mark); }
+.sc-mark.on .sc-dot { stroke: var(--ink); stroke-width: 2.5; }
+/* 详写在被盗事件编年史的事件：空心点 */
+.sc-mark.ext .sc-dot { fill: var(--paper); stroke: var(--ink-2); stroke-width: 2; }
+.sc-mark.ext.on .sc-dot { stroke: var(--ink); stroke-width: 2.5; }
+.sc-mark-lab { fill: var(--ink); font-size: 12.5px; }
+.sc-mark.on .sc-mark-lab { font-weight: 600; }
+
+/* ---------- 详情页：四类小条（本篇在全部事件中的位置） ---------- */
+.sc-lane { display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; height: 14px; }
+.sc-lab { font-size: 12px; line-height: 1; color: var(--ink-3); }
+.sc-lane.on .sc-lab { color: var(--ink); font-weight: 600; }
+.sc-track { position: relative; height: 100%; border-bottom: 1px solid var(--rule-2); }
+.sc-tick { position: absolute; top: 0; bottom: 0; width: 12px; margin-left: -6px; }
+.sc-tick::before {
+  content: ""; position: absolute; left: 5px; top: 3px; bottom: 3px; width: 2px;
+  background: var(--ink-3); opacity: .6;
+}
+.sc-tick.loss::before { background: var(--loss-mark); }
+.sc-tick.cur::before { left: 4px; width: 4px; top: 0; bottom: 0; opacity: 1; background: var(--ink); }
+.sc-tick:hover::before { opacity: 1; background: var(--trace-mark); }
+.sc-strip .cap { margin-left: 40px; }
+
+/* ---------- 示意图 ---------- */
+/* 版心 1600px 和宽屏整页放大在共用层 */
+/* 示意图的框占满正文栏，框里的图最宽 900px 并居中，图里的字和正文差不多大 */
+.diagram svg { max-width: 900px; margin: 0 auto; }

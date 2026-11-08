@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Genesis 债权人被骗 4,100 枚 BTC｜区块链被盗事件编年史</title>
+<meta name="description" content="2024 年 8 月，诈骗团伙冒充 Google 和 Gemini 客服，诱导华盛顿特区一名持币者重置 2FA、用 AnyDesk 共享屏幕，骗走约 4,138 枚 BTC 的完整经过：通话步骤、链上记录、ZachXBT 的追踪和随后的 RICO 案。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2024-genesis-creditor">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2024 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>Genesis 债权人被骗 4,100 枚 BTC</h1>
+    <p class="lede">2024 年 8 月 18 日夜间（美国东部时间），几名靠网络游戏结识的年轻人先后冒充 Google 和 Gemini 的客服给一名老牌持币者打电话，在两个多小时里拿走了他交易所账户和本地 Bitcoin Core 钱包里的比特币。公开资料里没有提到任何软件漏洞，受害者每一步都是在对方引导下自己操作的。这是美国已知金额最大的针对个人的盗窃案之一，团伙一个月后因挥霍和链上追踪落网，案子随后扩大为 18 名被告的 RICO 案。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">据起诉书和 ZachXBT 的调查，团伙先冒充 Google 客服，用伪造的来电号码拿到受害者个人账户的访问权；随后冒充 Gemini 客服，称他的交易所账户被黑，引导他重置双重验证（2FA），把 Gemini 里的比特币转到团伙控制的钱包；最后让他用 AnyDesk 共享屏幕，从他电脑上的 Bitcoin Core 钱包里看到了私钥<a class="ref" href="#s6">[6]</a><a class="ref" href="#s3">[3]</a>。</p>
+        <p>链上记录显示，2024 年 8 月 19 日 01:48 至 04:05（UTC）之间，受害者的地址分三笔转出约 4,138.6 枚 BTC，其中最后一笔 4,064 枚，按当时价格约 2.38 亿美元<a class="ref" href="#s17">[17]</a><a class="ref" href="#s7">[7]</a>。司法部起诉书写作“超过 4,100 枚 BTC”，各份文件给出的美元金额在 2.3 亿到 2.63 亿美元之间，原因见下文“资金去向”。</p>
+        <p>赃款很快被分给几名成员，经 15 家以上的交易所在 BTC、LTC、ETH 和门罗币（XMR）之间来回兑换。团伙随后在洛杉矶和迈阿密的夜店、豪车和名表上花掉了数百万美元，屏幕共享录像和聊天记录又暴露了他们的真名。9 月 18 日，FBI 在迈阿密和洛杉矶逮捕了 Malone Lam 和 Jeandiel Serrano<a class="ref" href="#s1">[1]</a>。ZachXBT 称与合作方一起冻结了 900 万美元以上<a class="ref" href="#s6">[6]</a>。</p>
+        <p>检方此后把案子扩大为针对整个团伙的 RICO（有组织犯罪）指控：数据库黑客、目标筛选、电话诈骗、洗钱和入室盗窃各有分工，活动时间从 2023 年 10 月持续到 2025 年 5 月，涉案金额超过 2.63 亿美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。2026 年 9 月 8 日，Lam 在华盛顿联邦法院承认一项 RICO 共谋罪<a class="ref" href="#s5">[5]</a>，据美联社报道，他是 18 名被告中第 11 个认罪的<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <h3>受害者</h3>
+        <p>司法部文件没有公开受害者的名字，2024 年的起诉书称他为 Victim-1，2025 年的追加起诉书称他为 Victim-7，只说他当时在华盛顿特区的家中<a class="ref" href="#s8">[8]</a><a class="ref" href="#s3">[3]</a>。据美联社报道，检方说团伙选中他，是因为他是“一位富有的长期加密货币投资者”<a class="ref" href="#s14">[14]</a>。ZachXBT 称他是 Genesis 的一名债权人<a class="ref" href="#s6">[6]</a><a class="ref" href="#s12">[12]</a>，The Block 的后续报道补充说他通过 Gemini 持有资金<a class="ref" href="#s16">[16]</a>。</p>
+        <p>Genesis 是一家加密货币借贷公司，2022 年 11 月 16 日暂停提币，2023 年 1 月 19 日申请破产保护，申报的债权人超过 10 万名；它的重组在 2024 年 8 月完成，随后开始向债权人分配资产<a class="ref" href="#s18">[18]</a>。ZachXBT 在调查中提到，团伙成员 Danny（Danish Zulfiqar）手里有“多个破产案的数据库”<a class="ref" href="#s6">[6]</a>。公开资料没有说明团伙具体是怎样选中这名受害者的。</p>
+        <h3>团伙</h3>
+        <p>检方把这个团伙称为“SE Enterprise”（社会工程集团）。起诉书说，它起源于成员们在网络游戏平台上结下的友谊，最晚从 2023 年 10 月开始作案，成员分布在加利福尼亚、康涅狄格、纽约、佛罗里达和海外<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a>。据《海峡时报》报道，新加坡籍的 Lam 在 2023 年 10 月、19 岁时独自飞到得克萨斯州，和几个在 Minecraft 里认识的玩家同住<a class="ref" href="#s15">[15]</a>。</p>
+        <p>团伙内部分工明确。起诉书列出的角色有：数据库黑客，入侵网站或在暗网购买加密货币相关的用户数据库；组织者和目标筛选人，把多个数据库交叉比对，找出最有钱的目标；“caller”（打电话的人），冒充 Google、Yahoo 的安全技术员或 Gemini、Coinbase 的客服；洗钱人，把赃款换成现金或电汇；还有入室盗窃者，专门上门偷硬件钱包<a class="ref" href="#s3">[3]</a>。</p>
+        <p>这起案子之前，团伙已经多次得手。2024 年 2 月，成员 Marlon Ferro 闯进得克萨斯州一名受害者家中，偷走一个存有约 100 枚 BTC 的硬件钱包；7 月，他砸窗闯入新墨西哥州一户人家，Lam 同时通过受害者的 iCloud 账户监视对方的位置<a class="ref" href="#s11">[11]</a>。7 月 24 日，Lam 等人用电话诈骗从另一名受害者那里拿走约 1,400 万美元<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方、调查与司法行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li><time>2023-10</time><div class="ev">起诉书认定的团伙作案起始时间，最晚不晚于此月<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk"><time>2024-07-24</time><div class="ev">Lam 等人从另一名受害者处骗走约 1,400 万美元<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="atk key"><time>2024-08-19 01:48 UTC</time><div class="ev">第一笔转账：受害者的 Gemini 资金中 59.34 枚 BTC 转入团伙控制的地址；02:30 又转出 14.88 枚。美国东部时间此时仍是 8 月 18 日晚上<a class="ref" href="#s6">[6]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="atk key"><time>2024-08-19 04:05 UTC</time><div class="ev">受害者 Bitcoin Core 钱包里的 4,064 枚 BTC 被一笔交易转出，打包在区块 857,425<a class="ref" href="#s6">[6]</a><a class="ref" href="#s17">[17]</a>。</div></li>
+          <li class="def"><time>2024-08-19 11:46 UTC</time><div class="ev">ZachXBT 在 Telegram 频道发布预警，称一笔 4,064 BTC（2.38 亿美元）的可疑转账去向了 THORChain、eXch、Avalanche Bridge、ChangeNow、KuCoin 和 Railgun<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="atk"><time>2024-08-19 至 09-10</time><div class="ev">Lam 和同伴在洛杉矶夜店花掉 400 万美元以上；8 月下旬又通过洗钱人换出约 300 万美元现金用来租豪宅<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2024-08 下旬</time><div class="ev">案发约一周后，成员 Veer Chetal 的父母在康涅狄格州丹伯里被绑架，绑匪以为 Chetal 手里有大量加密货币；一名路过的休班 FBI 探员等目击者报警，绑匪很快被捕<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2024-09-09</time><div class="ev">FBI 搜查 Chetal 的住处，他随后交出了价值 3,700 万至 3,900 万美元的加密货币（不同报道数字不同）<a class="ref" href="#s14">[14]</a><a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def key"><time>2024-09-18</time><div class="ev">FBI 在迈阿密逮捕 Lam，在洛杉矶机场逮捕 Serrano。Lam 事先得到风声，把手机扔进了比斯坎湾<a class="ref" href="#s3">[3]</a><a class="ref" href="#s14">[14]</a>。</div></li>
+          <li class="def"><time>2024-09-19</time><div class="ev">起诉书解封，Lam 和 Serrano 被控电信欺诈共谋和洗钱共谋。同日 ZachXBT 发布完整调查，称已冻结 900 万美元以上、50 万美元以上已返还受害者<a class="ref" href="#s1">[1]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li><time>2024-09 至 2025-03</time><div class="ev">据追加起诉书，Lam 在羁押期间仍通过他人传话指挥团伙、收取赃款<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def"><time>2024-11</time><div class="ev">Chetal 秘密认罪并同意配合调查，此事到 2025 年 6 月才解封<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2025-03-25</time><div class="ev">Chetal 被美国法警逮捕。检方发现他开始配合调查后，又在 2024 年 10 月参与了一起约 200 万美元的盗窃，法官随后下令羁押<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def key"><time>2025-05-15</time><div class="ev">追加起诉书解封，新增 12 名被告，罪名包括 RICO 共谋、电信欺诈共谋、洗钱和妨碍司法，涉案金额超过 2.63 亿美元<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>2025-10 至 12</time><div class="ev">Ferro（10 月 17 日）、洗钱人 Kunal Mehta（11 月 18 日）、Evan Tangeman（12 月 8 日）先后认罪。第二次追加起诉书新增 3 名被告，其中 Danish Zulfiqar 和 Mustafa Ibrahim 在迪拜被捕<a class="ref" href="#s11">[11]</a><a class="ref" href="#s9">[9]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2026-04 至 05</time><div class="ev">Tangeman 被判 70 个月监禁（4 月 24 日），Ferro 被判 78 个月并赔偿 250 万美元（5 月 6 日）<a class="ref" href="#s10">[10]</a><a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def key"><time>2026-09-08</time><div class="ev">Lam 承认一项 RICO 共谋罪，法官 Colleen Kollar-Kotelly 定于 12 月 8 日开庭审查后续程序。据《海峡时报》看到的没收令，已从他名下没收至少 28 辆豪车<a class="ref" href="#s5">[5]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">截至本页更新时，Lam 尚未宣判；据美联社 9 月的报道，Serrano 的指控仍未了结<a class="ref" href="#s14">[14]</a>。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>这起案子没有被利用的代码漏洞。受害者的资产受三道各自独立的防线保护：个人邮箱和云盘、交易所账户、本地的 Bitcoin Core 钱包。团伙每一步都让受害者亲手打开一道门，前一步拿到的信息又让下一通电话更可信。</p>
+        <h3>第一步：让“安全警报”先到</h3>
+        <p>追加起诉书描述的标准流程是：动手之前，先对目标的账户制造“未经授权的登录尝试”，让受害者手机上弹出真实的安全推送，这样随后打来的“客服电话”就像是对这条警报的跟进<a class="ref" href="#s3">[3]</a>。推送本身是真的，所以受害者无从分辨。</p>
+        <h3>第二步：冒充 Google，拿下邮箱和云盘</h3>
+        <p>ZachXBT 的调查称，第一通电话冒充 Google Support，用的是伪造的来电号码<a class="ref" href="#s6">[6]</a>。电话网络里主叫号码是由发起方自己填写的，很多线路不做核验，所以来电显示可以是任意号码。据美联社对庭审材料的报道，对方说服受害者交出了 Google Drive 的访问权和安全验证码<a class="ref" href="#s14">[14]</a>。起诉书说，团伙拿到邮箱、Google Drive、iCloud 的密码后，会在里面搜索助记词和私钥<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>第三步：冒充 Gemini，重置 2FA 并提走交易所余额</h3>
+        <p>第二通电话冒充 Gemini，称他的交易所账户已被黑。团伙在这一步让受害者重置了 2FA，并把 Gemini 里的资金转到一个已被他们控制的钱包，两笔共 74.22 枚 BTC<a class="ref" href="#s6">[6]</a><a class="ref" href="#s17">[17]</a>。ZachXBT 认为扮演 Gemini 客服的是 Serrano<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>第四步：AnyDesk 屏幕共享，看到 Bitcoin Core 里的私钥</h3>
+        <p>最大的一笔不在交易所，而在受害者自己电脑上的 Bitcoin Core 钱包里。团伙让他安装远程桌面软件 AnyDesk 并共享屏幕，私钥在共享画面中泄露<a class="ref" href="#s6">[6]</a><a class="ref" href="#s3">[3]</a>。公开资料没有说明私钥是怎样被显示出来的。两个多小时后，04:05（UTC），4,064 枚 BTC 被一笔交易转走<a class="ref" href="#s6">[6]</a><a class="ref" href="#s17">[17]</a>。</p>
+        <p>对开发者来说，这一步说明了自托管的边界在哪里：私钥只要以明文出现在屏幕上，无论是钱包的导出、备份还是控制台输出，屏幕共享就等于把它交了出去。远程桌面软件本身没有漏洞，它只是忠实地传输了画面。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 780 500" role="img" aria-labelledby="gen-seq-t gen-seq-d">
+            <title id="gen-seq-t">两通电话、一次屏幕共享的时序</title>
+            <desc id="gen-seq-d">攻击者先触发真实的安全推送，再冒充 Google 客服来电，拿到受害者的邮箱和云盘；随后冒充 Gemini 客服，让受害者重置 2FA，Gemini 里的 74.2 枚 BTC 被转走；最后让受害者用 AnyDesk 共享屏幕并打开 Bitcoin Core，私钥出现在画面上，4,064 枚 BTC 在 04:05 UTC 被一笔转走。</desc>
+            <defs>
+              <marker id="gen-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="gen-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <line class="d-line dash" x1="80" y1="64" x2="80" y2="440"/>
+            <line class="d-line dash" x1="235" y1="64" x2="235" y2="440"/>
+            <line class="d-line dash" x1="390" y1="64" x2="390" y2="440"/>
+            <line class="d-line dash" x1="545" y1="64" x2="545" y2="440"/>
+            <line class="d-line dash" x1="700" y1="64" x2="700" y2="440"/>
+            <rect class="d-box atk" x="10" y="12" width="140" height="52" rx="4"/>
+            <text class="d-t b" x="80" y="35" text-anchor="middle">诈骗团伙</text>
+            <text class="d-t s" x="80" y="54" text-anchor="middle">伪造号码来电</text>
+            <rect class="d-box" x="165" y="12" width="140" height="52" rx="4"/>
+            <text class="d-t b" x="235" y="35" text-anchor="middle">受害者</text>
+            <text class="d-t s" x="235" y="54" text-anchor="middle">每一步都亲手操作</text>
+            <rect class="d-box" x="320" y="12" width="140" height="52" rx="4"/>
+            <text class="d-t b" x="390" y="35" text-anchor="middle">Google 账户</text>
+            <text class="d-t s" x="390" y="54" text-anchor="middle">邮箱、云盘</text>
+            <rect class="d-box" x="475" y="12" width="140" height="52" rx="4"/>
+            <text class="d-t b" x="545" y="35" text-anchor="middle">Gemini 账户</text>
+            <text class="d-t s" x="545" y="54" text-anchor="middle">交易所托管</text>
+            <rect class="d-box" x="630" y="12" width="140" height="52" rx="4"/>
+            <text class="d-t b" x="700" y="35" text-anchor="middle">Bitcoin Core</text>
+            <text class="d-t s" x="700" y="54" text-anchor="middle">本地自托管钱包</text>
+            <line class="d-line atk" x1="80" y1="100" x2="233" y2="100" marker-end="url(#gen-ah-atk)"/>
+            <text class="d-t atk halo" x="157" y="92" text-anchor="middle">① 触发真实的安全推送</text>
+            <line class="d-line atk" x1="80" y1="140" x2="233" y2="140" marker-end="url(#gen-ah-atk)"/>
+            <text class="d-t atk halo" x="157" y="132" text-anchor="middle">② 冒充 Google 来电</text>
+            <line class="d-line atk" x1="80" y1="180" x2="388" y2="180" marker-end="url(#gen-ah-atk)"/>
+            <text class="d-t atk halo" x="235" y="172" text-anchor="middle">③ 拿到验证码，登录邮箱和云盘</text>
+            <line class="d-line atk" x1="80" y1="220" x2="233" y2="220" marker-end="url(#gen-ah-atk)"/>
+            <text class="d-t atk halo" x="157" y="212" text-anchor="middle">④ 冒充 Gemini 来电</text>
+            <line class="d-line" x1="235" y1="260" x2="543" y2="260" marker-end="url(#gen-ah)"/>
+            <text class="d-t halo" x="390" y="252" text-anchor="middle">⑤ 重置 2FA，提币到“安全钱包”</text>
+            <line class="d-line atk" x1="545" y1="300" x2="82" y2="300" marker-end="url(#gen-ah-atk)"/>
+            <text class="d-t atk halo" x="312" y="292" text-anchor="middle">⑥ 01:48 和 02:30 UTC 转走 74.2 BTC</text>
+            <line class="d-line atk" x1="80" y1="340" x2="233" y2="340" marker-end="url(#gen-ah-atk)"/>
+            <text class="d-t atk halo" x="157" y="332" text-anchor="middle">⑦ AnyDesk 共享屏幕</text>
+            <line class="d-line" x1="235" y1="380" x2="698" y2="380" marker-end="url(#gen-ah)"/>
+            <text class="d-t halo" x="467" y="372" text-anchor="middle">⑧ 打开 Bitcoin Core，私钥出现在画面上</text>
+            <line class="d-line atk" x1="700" y1="420" x2="82" y2="420" marker-end="url(#gen-ah-atk)"/>
+            <text class="d-t atk halo" x="390" y="412" text-anchor="middle">⑨ 04:05 UTC 一笔转出 4,064 BTC</text>
+            <rect class="d-box soft" x="90" y="452" width="600" height="34" rx="4"/>
+            <text class="d-t s" x="390" y="474" text-anchor="middle">链上可见的部分从 01:48 到 04:05 UTC，约 2 小时 17 分；三道防线都是被受害者自己打开的</text>
+          </svg>
+          </div>
+          <figcaption>图 1：根据 ZachXBT 的调查、起诉书和链上记录整理的攻击顺序。红色是团伙的动作和资金流出，灰色（⑤ ⑧）是受害者在对方引导下的操作。</figcaption>
+        </figure>
+        <div class="compare">
+          <div>
+            <h4>交易所账户为什么没挡住</h4>
+            <p>2FA 防的是“别人拿着密码登录”。受害者在电话引导下自己重置了 2FA、自己发起提币，这些操作在系统看来都来自账户本人。公开资料没有说明 Gemini 在这次重置和提币中触发过哪些风控。</p>
+          </div>
+          <div>
+            <h4>自托管钱包为什么没挡住</h4>
+            <p>Bitcoin Core 的私钥只存在受害者自己的电脑上，远程攻击者本来拿不到。屏幕共享把这台电脑的显示内容实时传给了对方，私钥一旦出现在画面上，自托管的边界就不存在了。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>下面的步骤综合了两份起诉书、ZachXBT 的调查和庭审报道。通话的具体内容没有公开，只能还原到“谁冒充谁、让受害者做了什么”这一层。</p>
+        <ol class="steps">
+          <li><b>筛选目标</b>团伙手里有大量被盗或购买的加密货币相关数据库。2024 年 9 月 8 日，Lam 一次就把约 40 个整理好的数据库分享给同伙<a class="ref" href="#s3">[3]</a>。数据库黑客负责入库，组织者交叉比对，挑出持币最多的人交给打电话的人。</li>
+          <li><b>铺垫</b>对目标账户制造登录尝试，让真实的安全推送先到受害者手机上<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>第一通电话：Google</b>用伪造号码冒充 Google Support，以“账户正受攻击、我们在帮你加固”为由，拿到 Google Drive 访问权和安全验证码<a class="ref" href="#s6">[6]</a><a class="ref" href="#s14">[14]</a>。起诉书引用的聊天记录显示，团伙里负责登录 Gmail 账户的是 Lam 本人<a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>第二通电话：Gemini</b>冒充 Gemini 客服称账户被黑，引导受害者重置 2FA，把交易所余额转进团伙控制的钱包。8 月 19 日 01:48 和 02:30（UTC），59.34 枚和 14.88 枚 BTC 先后到账<a class="ref" href="#s6">[6]</a><a class="ref" href="#s17">[17]</a>。</li>
+          <li><b>远程桌面</b>让受害者在电脑上装 AnyDesk 并共享屏幕，团伙成员在画面中看到了 Bitcoin Core 钱包的私钥<a class="ref" href="#s6">[6]</a><a class="ref" href="#s3">[3]</a>。</li>
+          <li><b>一次转空</b>04:05（UTC），4,064 枚 BTC 被一笔交易转走<a class="ref" href="#s6">[6]</a>。ZachXBT 后来公开了一段私人录像，记录了几名成员看到到账金额时的反应<a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>立即洗钱</b>赃款先在几名成员之间分账，随即分散到 15 家以上的交易所，在 BTC、LTC、ETH 和 XMR 之间反复兑换<a class="ref" href="#s6">[6]</a>。起诉书称，Aakash Anand 帮一名同谋在“以不要求身份证件著称的交易所”上洗钱<a class="ref" href="#s3">[3]</a>；ZachXBT 的调查说，他帮 Chetal 用的是 eXch 和 THORSwap<a class="ref" href="#s6">[6]</a>。</li>
+        </ol>
+        <p>这个团伙并不只做这一单。起诉书引用的聊天记录里，成员们把受害者叫作“targs”，把分成比例写成“30/30/30/10”，打电话的人拿 10%；一名成员在 9 月 9 日对 Lam 说，他们曾让另一名受害者“5 分钟内就交出了 Gmail 密码并输入了助记词”<a class="ref" href="#s3">[3]</a>。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <ol class="flow">
+          <li class="atk"><b>三笔转出</b>约 4,138.6 枚 BTC 进入团伙地址，其中 4,064 枚来自 Bitcoin Core 钱包</li>
+          <li class="atk"><b>分账与换币</b>分给多名成员，经 15 家以上交易所在 BTC、LTC、ETH、XMR 之间兑换</li>
+          <li class="atk"><b>换成现金并挥霍</b>无牌照的“币换现金”服务收 7%–10% 手续费，钱花在夜店、豪车、名表、豪宅和私人飞机上</li>
+          <li class="ok"><b>冻结与没收</b>900 万美元以上被冻结，Chetal 交出数千万美元加密货币，至少 28 辆车被没收</li>
+        </ol>
+        <p>ZachXBT 在调查中列出了当时仍留在几名成员名下的资金：Chetal 的一个地址里有 3,450 万美元，与 Lam 有关的地址里有 350 万美元，与 Serrano 有关的地址里有 1,800 万美元；另有一组与 Serrano 和 Chetal 都相关的 ETH 地址，几周内从两家交易所收到 4,100 万美元以上，主要付给了汽车、手表和名牌服装的中间商<a class="ref" href="#s6">[6]</a>。他说大部分赃款已经换成 XMR，但两人都有把洗过的钱和赃款直接连起来的失误：Chetal 在屏幕共享中露出了一个买衣服用的地址，Serrano 重复使用了一个充值地址<a class="ref" href="#s6">[6]</a>。据美联社报道，Serrano 在一家交易所开户时没有隐藏 IP，这个账户里有将近 3,000 万美元赃款，调查人员由此找到他在恩西诺月租 4.75 万美元的住处<a class="ref" href="#s14">[14]</a>。</p>
+        <p>换成法币主要靠团伙里的洗钱人。Mehta 收取 10% 的手续费，用名下多家空壳公司的银行账户收发电汇，把豪车登记在空壳公司或找人代签的名下，本人承认至少洗了 2,500 万美元<a class="ref" href="#s9">[9]</a>；有一次，5 万美元现金被塞进 Squishmallow 毛绒玩具里邮寄<a class="ref" href="#s3">[3]</a>。</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>用途或去向</th><th class="n">金额或数量</th><th>出处</th></tr></thead>
+            <tbody>
+              <tr><td>洛杉矶夜店（2024-08-19 至 09-10）</td><td class="n">400 万美元以上</td><td>追加起诉书<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>单晚夜店消费上限</td><td class="n">50 万美元</td><td>司法部新闻稿<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>Lam 在 2024 年 8–9 月买的车</td><td class="n">30 辆以上</td><td>登记在虚构的 Crypto Administration LLC 名下<a class="ref" href="#s3">[3]</a></td></tr>
+              <tr><td>一次换现金租洛杉矶豪宅</td><td class="n">约 300 万美元</td><td>经 Tangeman 等人办理<a class="ref" href="#s4">[4]</a></td></tr>
+              <tr><td>ZachXBT 协助冻结 / 已返还受害者</td><td class="n">900 万以上 / 50 万以上美元</td><td>2024-09-19 的调查<a class="ref" href="#s6">[6]</a></td></tr>
+              <tr><td>Chetal 交给调查人员的加密货币</td><td class="n">3,700 万至 3,900 万美元</td><td>两家报道数字不同<a class="ref" href="#s14">[14]</a><a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>从 Lam 处没收的车辆 / 珠宝手表衣物</td><td class="n">至少 28 辆 / 至少 95 件</td><td>没收令<a class="ref" href="#s15">[15]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>金额为什么对不上</h3>
+        <p>不同文件对这一单的金额说法不一。2024 年的起诉书说“超过 4,100 枚 BTC，当时价值超过 2.3 亿美元”<a class="ref" href="#s8">[8]</a>；2025 年追加起诉书写的是“约 245,093,239 美元”<a class="ref" href="#s3">[3]</a>；2025 年 11 月和 12 月的司法部新闻稿又说这 4,100 枚 BTC“当时价值 2.63 亿美元”<a class="ref" href="#s9">[9]</a><a class="ref" href="#s4">[4]</a>，而 2.63 亿美元正是整个团伙的涉案总额<a class="ref" href="#s2">[2]</a>。ZachXBT 的数字是 2.43 亿美元，标题里写的 4,064 BTC（2.38 亿美元）只是最大的一笔<a class="ref" href="#s6">[6]</a>。本站按链上三笔合计约 4,138.6 枚、按 2024 年 8 月 19 日约 58,750 美元的价格折算，得到约 2.43 亿美元，与 ZachXBT 一致，因此取 <span class="dispute">2.43 亿美元</span>。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>个人被骗也能到交易所被盗的量级</h3>
+        <p>这一单的金额和同年 <a href="2024-wazirx.html">WazirX</a> 多签钱包被盗（约 2.35 亿美元）相当，而受害方只是一个人。此后一年多里又出现了几起同一量级的个人案件：2025 年 4 月一名美国老年持币者被骗约 3,520 枚 BTC（<a href="2025-us-holder-btc.html">见此页</a>），2026 年 1 月又有人因冒充硬件钱包客服的诈骗损失约 2.82 亿美元（<a href="2026-hw-wallet-scam.html">见此页</a>）。2025 年 8 月 19 日，又有一名受害者在交易所和硬件钱包客服都被冒充后损失 783 枚 BTC，ZachXBT 特意指出这天正好是本案一周年<a class="ref" href="#s7">[7]</a>。</p>
+        <h3>线上诈骗和线下暴力连在了一起</h3>
+        <p>这个团伙同时做电话诈骗和入室盗窃，硬件钱包骗不出来就派人上门偷。案发一周后，成员 Chetal 的父母在康涅狄格州被另一伙人绑架，对方以为能从他身上勒索加密货币；后来被捕的一名同案人此前和 Chetal 在迈阿密夜店起过肢体冲突<a class="ref" href="#s13">[13]</a>。炫富也让成员的行踪在网上几乎公开，ZachXBT 就是靠朋友们每晚在社交媒体上发的定位找到 Lam 的<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>被当作有组织犯罪起诉</h3>
+        <p>检方没有把这单当作一次孤立的诈骗，而是用 RICO 法起诉整个团伙，把数据库黑客、洗钱人、负责销毁证据的人都纳入同一个案子<a class="ref" href="#s2">[2]</a>。FBI 在 Mehta 认罪时提醒公众：不要回复索要密码、PIN 码或一次性验证码的电话、邮件和短信；自称公司“代表”的人联系你时，挂断后自己拨打该公司公布的客服电话<a class="ref" href="#s9">[9]</a>。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>抓捕和销毁证据</h3>
+        <p>追加起诉书称，2024 年 9 月 18 日，Lam 从一名休班执法人员那里得知有人要来抓他，随即走到迈阿密租住豪宅后的码头，把手机扔进比斯坎湾<a class="ref" href="#s3">[3]</a>。他被捕后，Tangeman 登录住宅的安防系统截取 FBI 搜查的画面，并让另一名成员去 Lam 在洛杉矶的住处取走电子设备销毁<a class="ref" href="#s4">[4]</a>。Lam 在羁押期间仍通过 Ferro 等人传话，用赃款支付律师费，还让人给他在迈阿密的女友送去爱马仕铂金包<a class="ref" href="#s2">[2]</a><a class="ref" href="#s11">[11]</a>。</p>
+        <h3>私人调查者的作用</h3>
+        <p>ZachXBT 和 Cryptoforensic Investigators、zeroShadow 以及币安安全团队一起追踪资金，他说这帮助促成了逮捕和冻结<a class="ref" href="#s6">[6]</a>。他公开了几名嫌疑人在屏幕共享和聊天中暴露真名的证据，但被问到录像的来源时只回答“有些事最好不说”<a class="ref" href="#s12">[12]</a>。2025 年 12 月，他称团伙成员 Danish Zulfiqar 可能已在迪拜被捕、约 1,858 万美元加密资产被扣押<a class="ref" href="#s16">[16]</a>；三天后司法部确认 Zulfiqar 在迪拜因相关指控被捕<a class="ref" href="#s4">[4]</a>。</p>
+        <h3>被告与进展（截至 2026 年 10 月）</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>被告</th><th>角色</th><th>进展</th></tr></thead>
+            <tbody>
+              <tr><td>Malone Lam（新加坡籍）</td><td>检方称其为组织者，挑选目标、协调分工</td><td>2026-09-08 承认 RICO 共谋，最高刑期 20 年，尚未宣判<a class="ref" href="#s5">[5]</a><a class="ref" href="#s15">[15]</a></td></tr>
+              <tr><td>Jeandiel Serrano</td><td>据 ZachXBT，本案中扮演 Gemini 客服</td><td>2024-09-18 被捕，承认手里有约 2,000 万美元赃款，指控仍未了结<a class="ref" href="#s14">[14]</a></td></tr>
+              <tr><td>Veer Chetal</td><td>被控与 Lam、Serrano 共同实施本案</td><td>2024-11 认罪并配合调查，因再次作案被羁押，量刑指南为 19–24 年<a class="ref" href="#s13">[13]</a></td></tr>
+              <tr><td>Marlon Ferro</td><td>入室盗窃、洗钱</td><td>2025-10-17 认罪，2026-05-06 被判 78 个月并赔偿 250 万美元<a class="ref" href="#s11">[11]</a></td></tr>
+              <tr><td>Kunal Mehta</td><td>洗钱，至少 2,500 万美元</td><td>2025-11-18 认罪，是第 8 个认罪的被告<a class="ref" href="#s9">[9]</a></td></tr>
+              <tr><td>Evan Tangeman</td><td>洗钱、租房、指使销毁设备</td><td>2025-12-08 认罪，2026-04-24 被判 70 个月<a class="ref" href="#s10">[10]</a></td></tr>
+              <tr><td>Danish Zulfiqar 等 3 人</td><td>第二次追加起诉书点名的 3 人，Zulfiqar 被指参与本案</td><td>2025-12 分别在迈阿密和迪拜被捕<a class="ref" href="#s4">[4]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>据美联社 2026 年 9 月的报道，全案共有 18 名被告，Lam 是第 11 个认罪的；检方估计他的量刑指南建议刑期至少 14 年<a class="ref" href="#s14">[14]</a>。《海峡时报》看到的没收令显示，从 Lam 处没收了至少 28 辆豪车，其中至少 7 辆兰博基尼，另有至少 95 件珠宝、手表、衣物和鞋<a class="ref" href="#s15">[15]</a>。受害者最终能拿回多少，公开资料没有给出数字。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给持币者</span>
+          <ul>
+            <li>交易所、Google、钱包厂商都不会主动打电话让你“加固账户”。接到这类电话直接挂断，自己去官网查号码回拨。来电显示可以伪造，手机上的安全推送也可能是对方故意触发的。</li>
+            <li>不要在任何人的引导下安装远程桌面软件。共享屏幕时，不打开钱包、密码管理器和邮箱。</li>
+            <li>助记词、私钥和钱包备份不要放在邮箱或云盘里。起诉书写明，团伙拿到邮箱和云盘权限后做的第一件事就是在里面搜这些。</li>
+            <li>大额资产不要放在日常上网的电脑里。多签或离线签名的方案，至少能让“一次屏幕共享”不足以转走全部资产。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所和钱包开发者</span>
+          <ul>
+            <li>“新设备登录、重置 2FA、随即全额提币”是一条高风险序列，应当触发延时或人工复核，并通过旧的联系渠道通知用户。</li>
+            <li>提币白名单新增地址要有冷静期，用户可以在冷静期内一键撤销。</li>
+            <li>钱包软件在显示或导出私钥、助记词时，可以检测远程桌面进程并明确警告。</li>
+            <li>在 App 里反复写明“我们永远不会主动打电话给你”，并给用户一个能核验来电真伪的入口。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给持有用户数据的机构</span>
+          <p>交易所的 KYC 库、破产案的债权人名单，在诈骗团伙手里就是一份按资产排序的目标清单。这个团伙专门设了“数据库黑客”的分工。数据一旦泄露，受害者面对的不再是群发的钓鱼短信，而是叫得出名字、说得出持仓的电话。</p>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">美国司法部哥伦比亚特区检察官办公室，《Indictment Charges Two in $230 Million Cryptocurrency Scam》，2024-09-19。<a href="https://www.justice.gov/usao-dc/pr/indictment-charges-two-230-million-cryptocurrency-scam">justice.gov</a></li>
+          <li id="s2">美国司法部哥伦比亚特区检察官办公室，《Additional 12 Defendants Charged in RICO Conspiracy for over $263 Million Cryptocurrency Thefts, Money Laundering, Home Break-Ins》，2025-05-15。<a href="https://www.justice.gov/usao-dc/pr/additional-12-defendants-charged-rico-conspiracy-over-263-million-cryptocurrency-thefts">justice.gov</a></li>
+          <li id="s3">United States v. Malone Lam et al.，追加起诉书（Superseding Indictment），案号 1:24-cr-00417，美国哥伦比亚特区联邦地区法院，2025 年 5 月解封，共 42 页（扫描件，本站做了文字识别）。<a href="https://www.justice.gov/usao-dc/media/1400531/dl">justice.gov</a></li>
+          <li id="s4">美国司法部哥伦比亚特区检察官办公室，《Guilty Plea and Superseding Indictment Announced in Social Engineering Scheme that Stole $263 Million in Cryptocurrency》，2025-12-08。<a href="https://www.justice.gov/usao-dc/pr/guilty-plea-and-superseding-indictment-announced-social-engineering-scheme-stole-263">justice.gov</a></li>
+          <li id="s5">美国司法部哥伦比亚特区检察官办公室，《Singaporean Ringleader of $245 Million Cryptocurrency Racketeering Enterprise Pleads Guilty in Washington D.C.》，2026-09-08。<a href="https://www.justice.gov/usao-dc/pr/singaporean-ringleader-245-million-cryptocurrency-racketeering-enterprise-pleads-guilty">justice.gov</a></li>
+          <li id="s6">ZachXBT，关于 Greavys、Wiz、Box 盗窃 2.43 亿美元的调查帖（X，共 13 条），2024-09-19。<a href="https://x.com/zachxbt/status/1836752923830702392">x.com</a></li>
+          <li id="s7">ZachXBT，Telegram 频道 @investigations 第 149 条（2024-08-19，4,064 BTC 可疑转账预警）、第 270 条（2025-08-21，783 BTC 被骗）。<a href="https://t.me/investigations/149">t.me</a></li>
+          <li id="s8">United States v. Malone Lam and Jeandiel Serrano，起诉书（Indictment），案号 1:24-cr-00417，2024-09-17 立案，共 6 页。<a href="https://www.justice.gov/usao-dc/media/1369661/dl">justice.gov</a></li>
+          <li id="s9">美国司法部哥伦比亚特区检察官办公室，《Cryptocurrency Money Launderer Pleads Guilty to RICO Conspiracy in Scheme that Stole $263 Million in Crypto》，2025-11-18。<a href="https://www.justice.gov/usao-dc/pr/cryptocurrency-money-launderer-pleads-guilty-rico-conspiracy-scheme-stole-263-million">justice.gov</a></li>
+          <li id="s10">美国司法部哥伦比亚特区检察官办公室，《California Money Launderer Sentenced in D.C. to 70 Months for Role in Scheme that Stole $263 Million》，2026-04-24。<a href="https://www.justice.gov/usao-dc/pr/california-money-launderer-sentenced-dc-70-months-role-scheme-stole-263-million">justice.gov</a></li>
+          <li id="s11">美国司法部哥伦比亚特区检察官办公室，《‘GothFerrari’ Sentenced to 78 Months in Prison for Role in Massive Cryptocurrency Heist》，2026-05-06。<a href="https://www.justice.gov/usao-dc/pr/gothferrari-sentenced-78-months-prison-role-massive-cryptocurrency-heist">justice.gov</a></li>
+          <li id="s12">The Block，《Blockchain sleuth ZachXBT alleges three attackers involved in $243 million theft of single Genesis creditor》，2024-09-19。<a href="https://www.theblock.co/news/regulation/2024-09-19-blockchain-sleuth-zachxbt-alleges-three-perps-involved-in-243-million-theft-of-single-genesis-creditor-317349">theblock.co</a></li>
+          <li id="s13">Hartford Courant（美联社稿），《CT man whose parents were kidnapped after $245M Bitcoin theft pleaded guilty》，2025-06-20。<a href="https://www.courant.com/2025/06/20/kidnapping-crypto-theft-guilty-plea/">courant.com</a></li>
+          <li id="s14">NBC Washington（美联社稿），《Party's over for scammers who went on a spending spree after a $240M bitcoin theft》，2026-09-07。<a href="https://www.nbcwashington.com/news/local/partys-over-for-scammers-who-went-on-a-spending-spree-after-a-240m-bitcoin-theft/4151017/">nbcwashington.com</a></li>
+          <li id="s15">The Straits Times，《From Minecraft to $309 million crypto heist: Singaporean forfeits 28 cars to US after guilty plea》，2026-09-09。<a href="https://www.straitstimes.com/singapore/courts-crime/from-minecraft-to-us245-million-crypto-heist-sporean-forfeits-28-cars-to-us-after-guilty-plea">straitstimes.com</a></li>
+          <li id="s16">The Block，《Crypto sleuth ZachXBT claims British threat actor tied to $243 million Genesis creditor theft 'likely arrested'》，2025-12-05。<a href="https://www.theblock.co/news/regulation/2025-12-05-crypto-sleuth-zachxbt-claims-british-threat-actor-tied-to-243-million-genesis-creditor-theft-likely-arrested-381481">theblock.co</a></li>
+          <li id="s17">比特币链上记录（mempool.space）：交易 <span class="addr">e747b963…6360</span>（59.34 BTC，区块 857,413）、<span class="addr">7c7ebed7…e9e3</span>（14.88 BTC，区块 857,417）、<span class="addr">4b277ba2…9090</span>（4,064.38 BTC，区块 857,425）。<a href="https://mempool.space/tx/4b277ba298830ea538086114803b9487558bb093b5083e383e94db687fbe9090">mempool.space</a></li>
+          <li id="s18">维基百科，《Genesis Global Trading》（暂停提币、破产与重组时间）。<a href="https://en.wikipedia.org/wiki/Genesis_Global_Trading">en.wikipedia.org</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

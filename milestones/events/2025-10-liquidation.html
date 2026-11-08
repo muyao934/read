@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2025 年 10 月 10 日连环清算｜区块链大事记</title>
+<meta name="description" content="2025 年 10 月 10 日特朗普宣布对华加征 100% 关税后，加密市场 24 小时内超过 190 亿美元的仓位被强平：强平、盘口变薄和自动减仓怎样层层放大跌势，Binance 为什么按自家盘口给 USDe 等抵押品估值，以及赔付、规则调整和国会调查。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/ms.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2025-10-liquidation">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链大事记</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2025 年　/　<a href="../index.html#cat-crash">崩盘与暴雷</a></p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>2025 年 10 月 10 日连环清算</h1>
+    <p class="lede">2025 年 10 月 10 日 20:50 UTC，特朗普宣布对中国进口加征 100% 关税。此后 40 分钟里，加密市场约 69 亿美元的杠杆仓位被强制平仓，24 小时内超过 190 亿美元，按名义金额是有记录以来最大的一次；Ethena 的合成美元 USDe 在 Binance 上一度只值 0.65 美元左右。这一天值得记下来，是因为它显示了杠杆、保证金计价和清算规则怎样在几分钟里把一条宏观消息放大成全市场的连环平仓。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">2025 年 10 月 6 日，BTC 创下 126,080 美元的历史新高<a class="ref" href="#s16">[16]</a>。四天后的 20:50 UTC，特朗普在 Truth Social 宣布 11 月 1 日起对中国进口加征 100% 关税，并管制“所有关键软件”的出口<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。此后 40 分钟内约 69.3 亿美元的仓位被强平，最多的一分钟约 32.1 亿美元；24 小时内超过 190 亿美元、160 多万个账户被清算<a class="ref" href="#s16">[16]</a>。</p>
+        <p>放大跌势的是交易所自己的风险规则。被强平的仓位以市价单卖进订单簿，做市商同时收缩挂单，盘口越薄，价格被砸得越深，又有更多账户跌破维持保证金<a class="ref" href="#s2">[2]</a>。Binance 按自家盘口给 USDe、wBETH、BNSOL 估值，它们在 Binance 上被砸穿后，用它们作抵押的账户也被强平<a class="ref" href="#s4">[4]</a><a class="ref" href="#s10">[10]</a>。Hyperliquid 两年多来第一次触发全仓自动减仓，按规则平掉对手方的盈利仓位来填补亏空<a class="ref" href="#s8">[8]</a><a class="ref" href="#s9">[9]</a>。</p>
+        <p>主要交易所的永续合约未平仓量一天内少了 43%<a class="ref" href="#s16">[16]</a>。Binance 称向受脱锚影响的用户赔付约 2.83 亿美元，并改了这几种资产的计价方式<a class="ref" href="#s5">[5]</a>。一个多月后，BTC 的挂单深度仍比崩盘前少近三分之一<a class="ref" href="#s12">[12]</a>。2026 年 9 月，众议院监督委员会把预测市场内幕交易调查扩大到 Hyperliquid，信中引用的分析提到关税公告前约 30 小时建立、约 11 亿美元的 BTC 和 ETH 空单<a class="ref" href="#s14">[14]</a>。</p>
+      </section>
+      <section id="background">
+        <h2>背景</h2>
+        <h3>崩盘前的杠杆</h3>
+        <p>BTC 10 月 6 日创下历史新高，四天后就崩盘<a class="ref" href="#s16">[16]</a>。CoinDesk 一年后回顾说，崩盘前未平仓量接近历史高位，交易者押注 BTC 会照以往的四年周期继续上涨<a class="ref" href="#s15">[15]</a>。按 CoinDesk Research 的测算，主要交易所的永续合约未平仓量约 2,170 亿美元；BTC 的未平仓量约占其市值的 3.7%<a class="ref" href="#s16">[16]</a>。Galaxy 写道，过去几个月“永续 DEX”成了加密市场的主要叙事，出现一次清洗只是时间问题<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>永续合约怎样被清算</h3>
+        <p>永续合约没有到期日，靠资金费率让价格贴近现货；盈亏在共享的保证金池里结算，不交割实物<a class="ref" href="#s6">[6]</a>。以 Hyperliquid 公开的规则为例，维持保证金是最高杠杆下初始保证金的一半，按资产不同在 1.25%（最高 40 倍）到 16.7%（最高 3 倍）之间，账户净值跌破维持保证金就会被强平<a class="ref" href="#s7">[7]</a>。按这个规则推算，用满 40 倍杠杆的仓位，价格反向变动约 1.25% 就会触发强平。</p>
+        <h3>两个场所和三种挂钩资产</h3>
+        <p>Hyperliquid 是在自己的区块链上运行的永续合约交易所，以 Binance 的竞争者自居；CZ 则在推广 BNB Chain 上的同类平台 Aster<a class="ref" href="#s11">[11]</a>。Binance 上有三种挂钩资产：Ethena 发行的合成美元 USDe，靠现货加空头期货的 delta 中性组合维持 1 美元；Binance 的以太坊质押凭证 wBETH；Binance 发行的 Solana 质押凭证 BNSOL<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。它们可以放在 Binance Earn 里生息，也可以在合约、杠杆和借贷账户里作抵押品<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>关税消息</h3>
+        <p>10 月 10 日（周五）白天，特朗普因中国新出台的稀土出口管制，威胁“大幅”提高对华关税，并暗示取消在韩国 APEC 峰会期间与习近平的会面；全球约 70% 的稀土产自中国<a class="ref" href="#s1">[1]</a>。几小时后，他宣布 11 月 1 日起在现有关税之外再加征 100%，同日对“所有关键软件”实施出口管制<a class="ref" href="#s1">[1]</a>。当天纳斯达克跌 3.6%、标普 500 跌 2.7%，都是 4 月以来最差的单日表现<a class="ref" href="#s2">[2]</a>。20:50 UTC 时美股已经收盘，加密市场照常交易。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">清算与脱锚</span><span class="def">平台应对与调查</span><span>其他事件</span></p>
+        <p>下表时间为 UTC，只写时分的条目都在 2025 年 10 月 10 日。</p>
+        <ol class="timeline">
+          <li><time>2025-10-06</time><div class="ev">BTC 创下 126,080 美元的历史新高<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li><time>10-09 04:40</time><div class="ev">一个 Hyperliquid 账户存入 8,000 万 USDC，此后逐步建立约 4 亿美元的 BTC 空单，到 10 日 20:49 停止<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li><time>10-10 白天</time><div class="ev">特朗普因稀土出口管制威胁大幅提高对华关税，美股下跌<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="key"><time>20:50</time><div class="ev">特朗普在 Truth Social 宣布 11 月 1 日起对华加征 100% 关税<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>20:50–21:30</time><div class="ev">约 69.3 亿美元的仓位被强平，最多的一分钟约 32.1 亿美元<a class="ref" href="#s16">[16]</a>；BTC 日内跌约 10%，ETH 跌约 13%<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="atk"><time>21:20–21:51</time><div class="ev">BTC、ETH 触及日内低点后，USDe 在 Binance 上跌破 1 美元，21:42 至 21:51 间低至约 0.65 美元。wBETH 不到两分钟跌掉八成，最低约 430 美元；BNSOL 随后七分钟跌掉八成，最低 34.90 美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="atk"><time>当晚</time><div class="ev">多个永续合约平台启动自动减仓<a class="ref" href="#s2">[2]</a>；ATOM 在 Binance 上一度跌破 0.01 美元<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li><time>21:51 起</time><div class="ev">清算退潮。USDe 最先回到 1 美元，wBETH、BNSOL 夜里慢慢回归<a class="ref" href="#s2">[2]</a>。</div></li>
+          <li class="def"><time>10-11</time><div class="ev">Binance 联合创始人何一在 X 上道歉，请受损用户登记、逐案审核；Binance 宣布包装资产改按兑换比例计价<a class="ref" href="#s4">[4]</a>。主要交易所永续合约未平仓量降到约 1,230 亿美元<a class="ref" href="#s16">[16]</a>。</div></li>
+          <li class="def"><time>10-12</time><div class="ev">Binance 称已分两批赔付约 2.83 亿美元，并把赎回价加入这几种资产的指数、给 USDe 的参考指数设软价格下限<a class="ref" href="#s5">[5]</a>。USDe 市值从 10 日的 148 亿美元降到 126 亿美元<a class="ref" href="#s10">[10]</a>。</div></li>
+          <li><time>10-13</time><div class="ev">Protos 报道 Hyperliquid 联合创始人 Jeff Yan 与 CZ 在社交媒体上争论清算数据的统计口径<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li><time>11-11</time><div class="ev">BTC 中间价 1% 以内的挂单深度约 1,400 万美元，崩盘前约 2,000 万美元<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2025-12</time><div class="ev">10x Research 估算 10 月 10 日以来 USDe 净流出约 83 亿美元<a class="ref" href="#s13">[13]</a>。</div></li>
+          <li class="def"><time>2026-09-29</time><div class="ev">众议院监督委员会主席 James Comer 把预测市场内幕交易调查扩大到 Hyperliquid Labs，信中引用的分析提到关税公告前约 30 小时建立的约 11 亿美元 BTC、ETH 永续合约空单<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2026-10-11</time><div class="ev">一年后 BTC 约 83,100 美元，比前高低约 34%<a class="ref" href="#s16">[16]</a>。</div></li>
+        </ol>
+      </section>
+      <section id="mechanism">
+        <h2>崩盘机制</h2>
+        <p>Galaxy 的概括是：高杠杆、薄订单簿，再加一条宏观消息<a class="ref" href="#s2">[2]</a>。消息只是起点，把下跌变成连环清算的，是交易所的保证金和清算规则。下面分三层讲：强平怎样一层层往下传，盘口为什么突然变薄，Binance 的抵押品为什么会“脱锚”。</p>
+        <h3>风险瀑布：从市价强平到自动减仓</h3>
+        <p>永续合约平台处理亏穿的账户，通常按固定顺序一层层往下，前一层接不住才轮到下一层<a class="ref" href="#s6">[6]</a>。以 Hyperliquid 公开的规则为例<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>：</p>
+        <ol class="steps">
+          <li><b>市价强平</b>账户净值跌破维持保证金时，系统按整个仓位的规模向订单簿发市价单；平掉一部分后满足了维持保证金，剩下的保证金还给交易者。</li>
+          <li><b>后备接管</b>订单簿接不住，净值跌到维持保证金的三分之二以下时，仓位和保证金整体转给清算金库。其他平台在这一步用保险基金等缓冲资金<a class="ref" href="#s6">[6]</a>。</li>
+          <li><b>自动减仓（ADL）</b>账户价值变成负数时，系统给对手方的盈利账户排序，按上一个标记价格平掉排在前面的仓位，抵消亏空，平台不留坏账。</li>
+        </ol>
+        <p>Hyperliquid 文档写出了自动减仓的排序指标：</p>
+        <pre class="code"><code>(mark_price / entry_price)
+  * (notional_position / account_value)</code></pre>
+        <p class="code-cap">出处：Hyperliquid 文档“Auto-deleveraging”（2026 年 11 月查阅）<a class="ref" href="#s8">[8]</a>。文档同时规定，没有持仓的用户不分摊平台的任何损失。规则可能随版本调整，本页没有核对 2025 年 10 月时的文本。</p>
+        <p>CoinDesk 转述了 Ambient Finance 创始人 Doug Colkitt 的解释：各平台的排序综合未实现盈利、实际杠杆和仓位大小，排在最前面的通常是赚得最多、杠杆最高、仓位最大的账户；他把自动减仓比作航班超售，加价也找不到自愿改签的乘客，总得有人被请下飞机<a class="ref" href="#s6">[6]</a>。被减仓的往往是方向做对了的仓位。如果它原本用来对冲别处的风险，对冲会在最需要的时候被拆掉。Galaxy 把做市商收缩敞口和几个永续合约平台启动自动减仓放在一起，称这是盘口单薄时的顺周期组合<a class="ref" href="#s2">[2]</a>。</p>
+        <p>清算金库在暴跌中不一定亏钱。Colkitt 提到，周五崩盘期间有一个小时，Hyperliquid 的金库赚了约 4,000 万美元：它在恐慌中低价接下仓位，再在反弹里卖出。但金库的风险容量有限，用完之后就只剩自动减仓<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>盘口为什么突然变薄</h3>
+        <p>强平单是市价单，成交在什么价位，取决于那一刻订单簿上有多少挂单。Galaxy 的时间线显示，帖子发出后几分钟内期权隐含波动率跳升，做市商为新的不确定性重新定价，流动性变薄<a class="ref" href="#s2">[2]</a>。AltLayer 创始人 YQ Jia 的解释是，Binance 约占全球现货成交量的一半；Binance 承压时，做市商既没法对冲，也看不到最大的市场在发生什么，就不会在 2,000 美元给 wBETH 挂买单。他把这比作 1987 年股灾里的组合保险，为正常市场设计的机制在崩盘时成了顺周期的加速器<a class="ref" href="#s4">[4]</a>。Binance 自己则说，ATOM 等代币上挂了多年的旧限价单加剧了下跌<a class="ref" href="#s5">[5]</a>。</p>
+        <p>盘口变薄以后，同样大小的强平单会把价格砸得更深，于是更多账户跌破维持保证金，又产生新的强平单。Risk Dimensions 的 Mark Connors 一年后对 CoinDesk 说，这次行情完全是衍生品造成的，不是链上的买卖<a class="ref" href="#s15">[15]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 400" role="img" aria-labelledby="liq-loop-t liq-loop-d">
+            <title id="liq-loop-t">连环清算的循环</title>
+            <desc id="liq-loop-d">关税消息压低标记价格，账户跌破维持保证金被强平，强平单以市价卖进订单簿，做市商收缩挂单使盘口变薄，价格被砸得更低，又触发新一轮强平。清算金库接不住时，平台用自动减仓平掉对手方的盈利仓位。在 Binance，USDe、wBETH、BNSOL 按自家盘口估值，被砸低后，用它们作抵押的账户也被强平。</desc>
+            <defs>
+              <marker id="liq-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+            </defs>
+            <rect class="d-box soft" x="20" y="30" width="170" height="64" rx="3"/>
+            <text class="d-t b" x="105" y="58" text-anchor="middle">关税消息</text>
+            <text class="d-t s" x="105" y="80" text-anchor="middle">20:50 UTC 发帖</text>
+            <rect class="d-box" x="220" y="30" width="250" height="64" rx="3"/>
+            <text class="d-t b" x="345" y="58" text-anchor="middle">标记价格下跌</text>
+            <text class="d-t s" x="345" y="80" text-anchor="middle">BTC 日内约 −10%，ETH 约 −13%</text>
+            <rect class="d-box atk" x="500" y="30" width="250" height="64" rx="3"/>
+            <text class="d-t b" x="625" y="58" text-anchor="middle">跌破维持保证金</text>
+            <text class="d-t s" x="625" y="80" text-anchor="middle">账户被强制平仓</text>
+            <rect class="d-box" x="500" y="200" width="250" height="64" rx="3"/>
+            <text class="d-t b" x="625" y="228" text-anchor="middle">强平单以市价卖出</text>
+            <text class="d-t s" x="625" y="250" text-anchor="middle">40 分钟约 69 亿美元</text>
+            <rect class="d-box" x="220" y="200" width="250" height="64" rx="3"/>
+            <text class="d-t b" x="345" y="228" text-anchor="middle">盘口变薄，越卖越低</text>
+            <text class="d-t s" x="345" y="250" text-anchor="middle">做市商收缩挂单</text>
+            <text class="d-t s" x="485" y="152" text-anchor="middle">下跌触发强平，强平又压低价格</text>
+            <rect class="d-box soft" x="20" y="310" width="330" height="64" rx="3"/>
+            <text class="d-t b" x="185" y="338" text-anchor="middle">Binance：抵押品按自家盘口重估</text>
+            <text class="d-t s" x="185" y="360" text-anchor="middle">USDe 约 0.65 美元，账户再被强平</text>
+            <rect class="d-box soft" x="500" y="310" width="250" height="64" rx="3"/>
+            <text class="d-t b" x="625" y="338" text-anchor="middle">金库接不住：自动减仓</text>
+            <text class="d-t s" x="625" y="360" text-anchor="middle">平掉对手方的盈利仓位</text>
+            <line class="d-line" x1="190" y1="62" x2="216" y2="62" marker-end="url(#liq-ah)"/>
+            <line class="d-line" x1="470" y1="62" x2="496" y2="62" marker-end="url(#liq-ah)"/>
+            <line class="d-line" x1="625" y1="94" x2="625" y2="196" marker-end="url(#liq-ah)"/>
+            <line class="d-line" x1="500" y1="232" x2="474" y2="232" marker-end="url(#liq-ah)"/>
+            <line class="d-line" x1="345" y1="200" x2="345" y2="98" marker-end="url(#liq-ah)"/>
+            <line class="d-line" x1="625" y1="264" x2="625" y2="306" marker-end="url(#liq-ah)"/>
+            <line class="d-line" x1="300" y1="264" x2="300" y2="306" marker-end="url(#liq-ah)"/>
+          </svg>
+          </div>
+          <figcaption>时间和金额据 Galaxy 的时间线<a class="ref" href="#s2">[2]</a>和 FinanceFeeds 转述的 Amberdata 分钟级数据<a class="ref" href="#s16">[16]</a>，强平和自动减仓的顺序据 Hyperliquid 公开的规则<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。上面四个框是各交易所共有的循环；左下是 Binance 特有的放大环节，它按自家盘口给 USDe、wBETH、BNSOL 估值<a class="ref" href="#s4">[4]</a>；右下是清算金库也接不住时的最后一步。</figcaption>
+        </figure>
+        <h3>Binance 的抵押品为什么“脱锚”</h3>
+        <p>wBETH、BNSOL 应当跟着 ETH、SOL 走，USDe 应当值 1 美元。Binance 却按自家现货盘口的成交价给这些包装资产估值；平时套利者会把价格拉回去，那晚做市商和套利者在 Binance 上下不了单，价格就和底层资产脱了钩<a class="ref" href="#s4">[4]</a>。21Shares 指出，保证金系统按被砸穿的现货价重估抵押品，用 USDe 作抵押的账户因此被强平，强平又继续卖出 USDe<a class="ref" href="#s10">[10]</a>。Galaxy 提到，Binance 当时正在把这几种资产的保证金算法从按价格改为参考赎回价等基本面，还没改完<a class="ref" href="#s2">[2]</a>。</p>
+        <p>同一枚 USDe，那天晚上在不同地方的价格差得很远：</p>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>场所</th><th>价格从哪里来</th><th>当晚</th></tr></thead>
+          <tbody>
+            <tr><td>Binance 的保证金系统</td><td>Binance 自家现货盘口</td><td>21:42 至 21:51 UTC 低至约 0.65 美元，用它作抵押的账户被强平<a class="ref" href="#s2">[2]</a><a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>Ethena 铸造和赎回</td><td>协议本身的铸造和赎回</td><td>照常运行，24 小时内在主要 DeFi 场所赎回约 20 亿美元<a class="ref" href="#s13">[13]</a></td></tr>
+            <tr><td>Curve 等链上市场</td><td>AMM 曲线；预言机按多个场所的价格做时间加权</td><td>离 1 美元近得多<a class="ref" href="#s10">[10]</a></td></tr>
+            <tr><td>Aave</td><td>把 USDe 的价格硬锚在 USDT 上</td><td>没有跟着交易所报价的闪崩形成清算循环<a class="ref" href="#s2">[2]</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>Ethena CEO Guy Young 不同意“USDe 脱锚”的说法：只有一个场所的价格偏离，流动性最深的那些池子没有出现异常<a class="ref" href="#s5">[5]</a>；他把原因归于那家交易所内部的预言机<a class="ref" href="#s13">[13]</a>。Galaxy 的看法更谨慎：恐慌时，协议的价值和交易所的标记价格可以不一样；Aave 的硬锚这次管用，却可能掩盖真实的风险，选哪种算法，就是选承担哪一种尾部风险<a class="ref" href="#s2">[2]</a>。</p>
+        <p>这和 <a href="2022-terra-ust.html">Terra/UST 崩盘</a>不同。UST 的问题出在兑换机制本身，它把抛压变成了 LUNA 的大量增发；这一次，USDe 的铸造和赎回一直能用，套利者可以在链上低价买入再赎回，USDe 也最先回到 1 美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s10">[10]</a>。</p>
+      </section>
+      <section id="unfold">
+        <h2>崩盘过程</h2>
+        <h3>第一波：消息后的 40 分钟</h3>
+        <p>帖子发出后几分钟内，加密期货下挫，期权隐含波动率跳升<a class="ref" href="#s2">[2]</a>。Datawallet 引用 Amberdata 的分钟级数据称，20:50 至 21:30 UTC 约 69.3 亿美元的仓位被强平，最多的一分钟约 32.1 亿美元<a class="ref" href="#s16">[16]</a>。CoinDesk 一年后回顾说，BTC 从约 12.2 万美元跌到 10.5 万美元，大部分跌幅发生在几分钟内<a class="ref" href="#s15">[15]</a>。次日的报道显示，191 亿美元的清算中约 167 亿美元是多头<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>第二波：Binance 上的挂钩资产</h3>
+        <p>21:20 前后 BTC、ETH 触及日内低点，USDe 在 Binance 上开始跌破 1 美元，脱锚和清算相互加速<a class="ref" href="#s2">[2]</a>。约 21:40，wBETH 低至 430 美元，同一时间 ETH/USDT 在 3,800 美元以上，折价 88%<a class="ref" href="#s4">[4]</a>。何一事后说，过去 16 小时行情剧烈波动、用户大量涌入，部分用户的交易出了问题<a class="ref" href="#s4">[4]</a>。</p>
+        <p>社交媒体上有一种说法：有人攻击 Binance 造成脱锚，脱锚再引发全市场崩盘。Binance 否认，称崩盘在先<a class="ref" href="#s5">[5]</a>。Galaxy 的时间线也显示，三种资产的错位出现在 BTC、ETH 的主跌段之后，又因抵押品价值崩塌加深了清算<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>第三波：小币种和自动减仓</h3>
+        <p>流动性最差的币种跌得最深。ATOM 在 Binance 上闪崩 99.9%<a class="ref" href="#s11">[11]</a>，据报道一度跌破 0.01 美元，后来回到约 3.5 美元<a class="ref" href="#s5">[5]</a>。几个永续合约平台启动了自动减仓<a class="ref" href="#s2">[2]</a>。据 WuBlockchain，2025 年 10 月 Hyperliquid 运行两年多来第一次触发全仓自动减仓，平台自己的金库 HLP 没能完全吸收清算风险<a class="ref" href="#s9">[9]</a>。</p>
+        <h3>退潮</h3>
+        <p>21:51 之后清算减弱，USDe 靠铸造和赎回最先回到 1 美元，wBETH 和 BNSOL 在夜里慢慢回归<a class="ref" href="#s2">[2]</a>。到 11 日，主要交易所的永续合约未平仓量约 1,230 亿美元，比崩盘前少 43%<a class="ref" href="#s16">[16]</a>。Galaxy 认为次日的反弹说明，这次下跌主要来自市场微观结构，不反映基本面<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>那笔空单</h3>
+        <p>Galaxy 记录了一个 Hyperliquid 账户：10 月 9 日存入 8,000 万 USDC，逐步建立约 4 亿美元的 BTC 空单，在帖子发出前一分钟停止加仓，此后获利丰厚。Galaxy 说无法证明这是内幕交易，通常也不采信这类说法；它认为 4 亿美元的空单不足以单独推倒市场，顺序是空单在前，普跌在后，Binance 脱锚再在其后<a class="ref" href="#s2">[2]</a>。</p>
+        <div class="note doubt"><span class="h">空单规模的两种说法</span><p>Galaxy 写的是约 4 亿美元的 BTC 空单<a class="ref" href="#s2">[2]</a>。2026 年 9 月众议院监督委员会的信件引用的分析则是约 11 亿美元，横跨 BTC 和 ETH 永续合约，在公告前约 30 小时建立；据 Benzinga 转述 The Block 的报道，最后一笔在发帖前约一分钟，获利超过 1.5 亿美元<a class="ref" href="#s14">[14]</a>。两者可能统计的是不同的仓位或时段，公开资料里没有对照。信件没有指认交易者，也没有说国会已认定其事先知情<a class="ref" href="#s14">[14]</a>。</p></div>
+      </section>
+      <section id="contagion">
+        <h2>传染</h2>
+        <h3>集中在哪些场所</h3>
+        <p>Galaxy 引用 CoinGlass 的数据称，75% 的清算发生在 Hyperliquid 和 Bybit 这两个永续合约平台；Binance 有自己的问题，放大了那里的清算；CoinGlass 不统计 Aster<a class="ref" href="#s2">[2]</a>。这些统计本身也有争议。Hyperliquid 联合创始人 Jeff Yan 没有点名，批评中心化交易所把成千上万笔强平合并成一条推送，低估了清算规模；CZ 则为 Binance 运行了八年多的合并推送辩护<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>合成美元的信心</h3>
+        <p>USDe 的市值从 10 日的 148 亿美元降到 12 日的 126 亿美元<a class="ref" href="#s10">[10]</a>。流出没有就此停下：Cointelegraph 引 10x Research 称，10 月 10 日以来 USDe 净流出约 83 亿美元；按 CoinMarketCap 的数据，它的市值从 10 月 9 日约 147 亿美元降到两个多月后约 64 亿美元<a class="ref" href="#s13">[13]</a>。Ethena 方面说，崩盘期间铸造和赎回一直正常<a class="ref" href="#s3">[3]</a><a class="ref" href="#s13">[13]</a>。</p>
+        <h3>做市商没有马上回来</h3>
+        <p>CoinDesk Research 的数据显示，10 月初 BTC 在中间价 1% 以内的平均挂单深度接近 2,000 万美元，11 月 11 日约 1,400 万美元，少了近三分之一；ETH 的走势几乎一样。报道认为这是做市商的收缩，不是暂时的错位，背后有 ETF 资金流出、降息预期变化和方向不明；SOL、XRP、ATOM、ENS 的深度恢复得快一些<a class="ref" href="#s12">[12]</a>。Cointelegraph 写道，此后加密市场成交量降了约 50%，10 月下旬以来美国现货 BTC ETF 净流出约 50 亿美元；10x Research 认为，十月的抛售让市场从牛市转入去杠杆<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>和 2022 年的方向相反</h3>
+        <p>2022 年的 <a href="2022-terra-ust.html">Terra</a>、<a href="2022-three-arrows.html">三箭资本</a>、<a href="2022-celsius.html">Celsius</a> 和 <a href="2022-ftx.html">FTX</a>，问题出在加密行业内部：稳定币的设计，基金和平台的资产负债表，损失再沿借贷关系传出去。这一次，冲击从宏观消息传进加密市场，再被交易所的清算规则放大；同一天美股也大跌<a class="ref" href="#s2">[2]</a>。</p>
+      </section>
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>规模：几种口径</h3>
+        <div class="tbl-wrap"><table class="data">
+          <thead><tr><th>口径</th><th>来源</th><th class="n">数字</th></tr></thead>
+          <tbody>
+            <tr><td>24 小时清算</td><td>CoinGlass，经 CoinDesk Research 转引<a class="ref" href="#s16">[16]</a></td><td class="n">超过 190 亿美元</td></tr>
+            <tr><td>其中多头</td><td>CoinDesk 次日的报道<a class="ref" href="#s3">[3]</a></td><td class="n">约 167 亿美元</td></tr>
+            <tr><td>20:50 至 21:30 UTC</td><td>Amberdata，经 Datawallet 转引<a class="ref" href="#s16">[16]</a></td><td class="n">约 69.3 亿美元</td></tr>
+            <tr><td>最多的一分钟</td><td>同上<a class="ref" href="#s16">[16]</a></td><td class="n">约 32.1 亿美元</td></tr>
+            <tr><td>被清算账户</td><td>Datawallet 据 CoinGlass<a class="ref" href="#s16">[16]</a></td><td class="n">超过 160 万个</td></tr>
+            <tr><td>崩盘前永续合约未平仓量</td><td>CoinDesk Research<a class="ref" href="#s16">[16]</a></td><td class="n">约 2,170 亿美元</td></tr>
+            <tr><td>10 月 11 日未平仓量</td><td>同上<a class="ref" href="#s16">[16]</a></td><td class="n">约 1,230 亿美元</td></tr>
+            <tr><td>未平仓量减少</td><td>CoinGlass，经 Cointelegraph 转引<a class="ref" href="#s13">[13]</a></td><td class="n">650 亿美元</td></tr>
+            <tr><td>清算额占加密总市值</td><td>Galaxy<a class="ref" href="#s2">[2]</a></td><td class="n">45 个基点</td></tr>
+          </tbody>
+        </table></div>
+        <div class="note doubt"><span class="h">这些数字不能直接相加或比较</span><p>清算额是被平掉的仓位的名义金额，不是交易者实际亏掉的钱。各家统计的范围也不同：CoinGlass 不统计 Aster<a class="ref" href="#s2">[2]</a>，Jeff Yan 认为中心化交易所的合并推送低估了清算<a class="ref" href="#s11">[11]</a>。未平仓量减少多少有两种说法：用 CoinDesk Research 的两个数相减约 940 亿美元<a class="ref" href="#s16">[16]</a>，Cointelegraph 转引的 CoinGlass 数字是 650 亿美元<a class="ref" href="#s13">[13]</a>，可能统计的交易所和时点不同。BTC 的低点也因交易所和时点而异：Galaxy 写 10.6 万至 10.7 万美元<a class="ref" href="#s2">[2]</a>，CoinDesk 一年后的回顾写 10.5 万美元<a class="ref" href="#s15">[15]</a>，次日的报道说一度跌破 11 万美元<a class="ref" href="#s3">[3]</a>。</p></div>
+        <h3>放在历史里看</h3>
+        <p>按名义金额，这是有记录以来最大的加密清算，第二大是 2021 年 4 月 17 日的约 100 亿美元。按占总市值的比例，两次差得不多：这次相当于加密总市值 4.2 万亿美元的 45 个基点，2021 年 4 月（总市值 2.3 万亿美元）是 40 个基点<a class="ref" href="#s2">[2]</a>。</p>
+        <h3>一年以后</h3>
+        <p>2026 年 10 月 11 日，BTC 约 83,100 美元，比 126,080 美元的前高低约 34%。BTC 的未平仓量约占市值的 3.2%，崩盘前约 3.7%；9 月山寨币永续合约的未平仓量已超过 BTC，投机杠杆不再只集中在 BTC 上<a class="ref" href="#s16">[16]</a>。CoinDesk 一年后采访的分析师认为，造成那次崩盘的风险还在，杠杆和拥挤的押注仍在左右 BTC 的短期走势，只是交易者现在能看到更好的订单簿和持仓数据<a class="ref" href="#s15">[15]</a>。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>Binance：道歉、赔付和改计价</h3>
+        <p>何一在 X 上道歉，请把损失归因于 Binance 的用户联系客服登记，逐案审核；行情波动造成的损失和未实现的利润不在赔付范围内<a class="ref" href="#s4">[4]</a>。崩盘后 24 小时内，Binance 宣布包装资产改按兑换比例计价，wBETH 按每枚实际代表的 ETH 数量估值，不再看现货盘口<a class="ref" href="#s4">[4]</a>。</p>
+        <p>10 月 12 日，Binance 称已分两批赔付约 2.83 亿美元。对象是 21:36 至 22:16 UTC 之间以 USDe、BNSOL 或 wBETH 作抵押而受影响的合约、杠杆和借贷用户，以及内部划转、Earn 赎回中有核实损失的用户。它还把赎回价加入这几种资产的指数权重，给 USDe 的参考指数设了软价格下限<a class="ref" href="#s5">[5]</a>。</p>
+        <div class="note doubt"><span class="h">赔付金额</span><p>The Block 报道的 2.83 亿美元是 Binance 自报的已付金额<a class="ref" href="#s5">[5]</a>。Galaxy 的写法是约 3 亿美元已经发放、不向获利者追回，另有 1 亿美元给做市商的低息贷款；Binance 明确表示不为交易者的亏损承担责任，把这些措施说成恢复信心，不是认错<a class="ref" href="#s2">[2]</a>。两个数字是否指同一笔钱，本页没能核实：核对时 Binance 官网的公告页打不开。</p></div>
+        <h3>Hyperliquid：自动减仓的争议</h3>
+        <p>这是 Hyperliquid 两年多来第一次触发全仓自动减仓<a class="ref" href="#s9">[9]</a>。按规则，被减掉的是对手方的盈利仓位<a class="ref" href="#s8">[8]</a>；CoinDesk 的标题说，这一机制能让老练的交易者也震惊、愤怒。Colkitt 的辩护是：有了自动减仓，平台才能提供不到期的高杠杆合约，而不必承诺对面永远有亏钱的人；缓冲资金更厚，自动减仓才能保持应有的样子，很少用到，但不能忽视<a class="ref" href="#s6">[6]</a>。</p>
+        <h3>Ethena</h3>
+        <p>Ethena 团队说铸造和赎回一直正常，空头仓位的未实现收益兑现后，USDe 的超额抵押反而更高<a class="ref" href="#s3">[3]</a>。资金仍在流出，到 12 月，USDe 的市值不到崩盘前的一半<a class="ref" href="#s13">[13]</a>。</p>
+        <h3>国会</h3>
+        <p>2026 年 9 月 29 日，众议院监督委员会主席 James Comer 把预测市场内幕交易调查扩大到 Hyperliquid Labs，同时致函 Crypto.com 和运营 PredictIt 的 Aristotle Exchange，要它们提供身份核验记录，说明怎样识别利用未公开或机密信息的可疑交易，10 月 13 日前答复。信中还质疑 Hyperliquid 的身份核验是否足够，有没有把可疑交易者移交美国执法部门的流程<a class="ref" href="#s14">[14]</a>。截至 2026 年 11 月，本页查到的公开资料里没有调查结论。</p>
+      </section>
+      <section id="lessons">
+        <h2>教训</h2>
+        <div class="note lesson">
+          <span class="h">给交易者</span>
+          <ul>
+            <li>强平价不是止损价。40 分钟里约 69 亿美元的仓位被平掉，薄盘口里的成交价可能离强平价很远。</li>
+            <li>方向做对也可能被平仓。自动减仓按盈利和杠杆排序，赚得最多的仓位排在前面；用永续合约做对冲的人，要预料到对冲会在最需要的时候被拆掉。</li>
+            <li>挂钩资产作抵押品，值多少要看平台怎样计价。同一枚 USDe，在多数场所接近 1 美元，在 Binance 的保证金系统里一度只算 0.65 美元左右。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给交易所</span>
+          <ul>
+            <li>抵押品不能只按自家一个盘口计价。Binance 事后改按兑换比例和赎回价计价，这项改动崩盘前已在进行，没赶上。</li>
+            <li>清算数据要能核对。Jeff Yan 和 CZ 的争论说明，统计口径不透明时，外界连一晚清算了多少都难以确定。</li>
+            <li>自动减仓的排序规则要事先公开。Hyperliquid 把排序公式写进了文档，交易者至少能事先知道按什么排序。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给协议设计者</span>
+          <ul>
+            <li>预言机只跟一家交易所的价格，会把那个场所的局部踩踏带进系统；把价格硬锚住，又可能掩盖真实的风险。按 Galaxy 的说法，这是在选择承担哪一种尾部风险。</li>
+            <li>链上清算有自己的失灵方式。2020 年 3 月的黑色星期四是另一种情形，经过见<a href="2020-black-thursday.html">黑色星期四与 MakerDAO 零出价拍卖</a>。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">CNBC，《Trump puts extra 100% tariff on China imports, adds export controls on 'critical software'》，2025-10-10。<a href="https://www.cnbc.com/2025/10/10/trump-trade-tariffs-china-software.html">cnbc.com</a></li>
+          <li id="s2">Galaxy Research，Thaddeus Pinakiewicz，《Crypto’s Most Violent Flash Crash Yet》，2025-10-15。Galaxy 在文末披露持有 Binance 和 Hyperliquid 的权益。<a href="https://www.galaxy.com/insights/research/cryptos-flash-crash-liquidation-binance-adl-auto-deleveraging">galaxy.com</a></li>
+          <li id="s3">CoinDesk，Sam Reynolds，《$16B in Longs Liquidated as Wall Street Sell-Off Extends BTC, ETH, Broader Crypto Market Meltdown》，2025-10-11（Internet Archive 存档）。<a href="https://web.archive.org/web/20251011000000/https://www.coindesk.com/markets/2025/10/10/usd16b-in-longs-liquidated-as-wall-street-sell-off-extends-btc-eth-broader-crypto-market-meltdown">web.archive.org</a></li>
+          <li id="s4">CoinDesk，Omkar Godbole，《Binance to Compensate Users Affected by Crash in wBETH, BNSOL, and Ethena’s USDe》，2025-10-12 发布（Yahoo Finance 2025-10-13 转载）。<a href="https://finance.yahoo.com/news/binance-compensate-users-affected-crash-171252621.html">finance.yahoo.com</a></li>
+          <li id="s5">The Block，Zack Abrams，《Binance pays $283 million in compensation following Friday's depegs, covering user losses》，2025-10-12（Internet Archive 存档）。<a href="https://web.archive.org/web/2025/https://www.theblock.co/news/markets/2025-10-12-binance-pays-283-million-in-compensation-following-fridays-depegs-covering-user-losses-374295">web.archive.org</a></li>
+          <li id="s6">CoinDesk，Siamak Masnavi，《How Auto-Deleveraging on Crypto Perp Trading Platforms Can Shock and Anger Even Advanced Traders》，2025-10-11（Internet Archive 存档；文章注明部分内容由 AI 工具辅助生成）。<a href="https://web.archive.org/web/20251012000000/https://www.coindesk.com/markets/2025/10/11/how-adl-on-crypto-perp-trading-platforms-can-shock-and-anger-even-advanced-traders">web.archive.org</a></li>
+          <li id="s7">Hyperliquid 文档，《Liquidations》（2026-11 查阅）。<a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/liquidations">hyperliquid.gitbook.io</a></li>
+          <li id="s8">Hyperliquid 文档，《Auto-deleveraging》（2026-11 查阅）。<a href="https://hyperliquid.gitbook.io/hyperliquid-docs/trading/auto-deleveraging">hyperliquid.gitbook.io</a></li>
+          <li id="s9">WuBlockchain，《Hyperliquid Activates Cross-Margin Auto-Deleveraging for the First Time: What Are HLP and ADL?》，2025-11-27。<a href="https://wublock.substack.com/p/hyperliquid-activates-cross-margin">wublock.substack.com</a></li>
+          <li id="s10">21Shares，Karim AbdelMawla，《Why did Ethena’s stablecoin remain stable onchain but depegged on Binance?》，2025-10-20。<a href="https://www.21shares.com/en-eu/insights/why-did-ethenas-stablecoin-remain-stable-onchain-but-depegged-on-binance">21shares.com</a></li>
+          <li id="s11">Protos，《Hyperliquid vs Binance drama unfolds in real-time》，2025-10-13。<a href="https://protos.com/hyperliquid-vs-binance-drama-unfolds-in-real-time/">protos.com</a></li>
+          <li id="s12">CoinDesk，Oliver Knight，《Crypto Liquidity Still Hollow After October Crash, Risking Sharp Price Swings》，2025-11-15（Internet Archive 存档）。<a href="https://web.archive.org/web/20251116000000/https://www.coindesk.com/markets/2025/11/15/crypto-liquidity-still-hollow-after-october-crash-risking-sharp-price-swings">web.archive.org</a></li>
+          <li id="s13">Cointelegraph（TradingView 转载），《Ethena’s USDe loses $8.3B since October crash amid ‘loss of confidence’》，2025-12-23。<a href="https://www.tradingview.com/news/cointelegraph:4bc2a9faa094b:0-ethena-s-usde-loses-8-3b-since-october-crash-amid-loss-of-confidence/">tradingview.com</a></li>
+          <li id="s14">Benzinga（Yahoo Finance 转载），Daragh Thomas，《House Targets Hyperliquid in Insider Trading Probe, Cites $1.1B Crypto Short Before Trump Tariffs》，2026-09-30。<a href="https://finance.yahoo.com/markets/crypto/articles/house-targets-hyperliquid-insider-trading-183009740.html">finance.yahoo.com</a></li>
+          <li id="s15">CoinDesk，Helene Braun，《Bitcoin's $19 billion wake-up call: One-year after flash crash, has crypto learned anything?》，2026-10-10（Internet Archive 存档）。<a href="https://web.archive.org/web/20261011000000/https://www.coindesk.com/markets/2026/10/10/bitcoin-s-usd19-billion-wake-up-call-one-year-later-has-crypto-learned-anything">web.archive.org</a></li>
+          <li id="s16">FinanceFeeds，Abdelaziz Fathi，《One Year After Crypto’s $19 Billion Liquidation, Bitcoin Sits Near $83,100 – and Leverage Is Creeping Back》，2026-10-11。<a href="https://financefeeds.com/one-year-after-cryptos-19-billion-liquidation-bitcoin-sits-near-83100-and-leverage-is-creeping-back/">financefeeds.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="同类上一篇与下一篇"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>规模数字的口径见首页“收录与口径”。本页内容整理自文末列出的公开资料，截至 2026 年 11 月。</p>
+</div></footer>
+</body>
+</html>

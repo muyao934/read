@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HTX 与 Heco 跨链桥同日被盗｜区块链被盗事件编年史</title>
+<meta name="description" content="2023 年 11 月 22 日 HTX 热钱包与 Heco 跨链桥同日被盗的经过：各方金额口径、运营账户与私钥失守、两个月内孙宇晨相关平台的三起事件、资金四个月后进入 Tornado Cash，以及朝鲜归因的依据。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2023-htx-heco">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2023 年　/　国家级黑客与人的弱点</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>HTX 与 Heco 跨链桥同日被盗</h1>
+    <p class="lede">2023 年 11 月 22 日，交易所 HTX 的热钱包和连接 Heco 链与以太坊的 Heco 跨链桥在同一天被转走资产，各方统计的合计损失在 9,700 万到 1.13 亿美元之间。这是两个月内孙宇晨相关平台第三次出现热钱包或私钥失守。被盗资金沉寂四个月后进入 Tornado Cash，联合国专家小组把它列为疑似朝鲜所为的攻击。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">HTX 是原火币（Huobi）交易所改名后的品牌<a class="ref" href="#s7">[7]</a>，孙宇晨任顾问<a class="ref" href="#s3">[3]</a>。Heco 是火币早年推出的公链，Heco 跨链桥负责在 Heco 和以太坊之间搬运代币。11 月 22 日，两者同时出事。安全公司 Halborn 的说法是：Heco 跨链桥的运营账户被攻破，HTX 则是私钥被盗<a class="ref" href="#s8">[8]</a>。HTX 和 Heco 都没有发布技术复盘。</p>
+        <p>当天 12:34（UTC），孙宇晨在 X 上确认两者遭到黑客攻击，表示 HTX 将全额赔付热钱包的损失，存取款暂停<a class="ref" href="#s1">[1]</a>。被盗的 ETH、USDT、USDC、HBTC 等很快在去中心化交易所换成 ETH<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。12 月，孙宇晨称 HTX 已按美元价值恢复了 95% 的资产<a class="ref" href="#s3">[3]</a>。</p>
+        <p>损失金额各方说法不一：CoinDesk 当天报道合计 9,700 万美元，DefiLlama 记为 HTX 1,360 万、Heco 跨链桥 8,660 万，Elliptic 和 SlowMist 记为约 1.13 亿美元<a class="ref" href="#s2">[2]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s10">[10]</a>。2024 年 3 月 13 日起，这批 ETH 开始流入 Tornado Cash，PeckShield 统计 8 天内约 40,391.8 枚<a class="ref" href="#s4">[4]</a>。</p>
+        <p>Elliptic 等机构根据攻击特征和资金流向把这起事件归因于朝鲜 Lazarus<a class="ref" href="#s5">[5]</a>；联合国安理会专家小组 2024 年 3 月的报告把 HTX 和 Heco 列入它正在调查的疑似朝鲜网络攻击<a class="ref" href="#s6">[6]</a>。美国 FBI 没有就此案发布公开认定。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>Heco（Huobi Eco Chain）由火币建立。CoinDesk 当时报道，HTX 仍是 Heco 的维护方之一，但 HTX 的发言人表示 HTX 和 Heco Chain“各自独立运营”<a class="ref" href="#s2">[2]</a>。Heco 跨链桥让代币在 Heco 和以太坊之间转移<a class="ref" href="#s2">[2]</a>：用户在以太坊一侧存入的资产由桥锁定，Heco 上发行对应的映射代币，用户回到以太坊时，由桥的运营方放出锁定的资产。</p>
+        <p>DefiLlama 记录的 Heco 链锁仓量在 2021 年 5 月达到约 29.5 亿美元的高点，到 2023 年 11 月事发前只剩约 2,000 万美元<a class="ref" href="#s10">[10]</a>。这个数字不包括跨链桥在以太坊一侧锁定的资产。</p>
+        <h3>两个月内的三起事件</h3>
+        <p>这次之前，孙宇晨相关的平台刚出过两次事。2023 年 9 月 24 日，HTX 一个热钱包被转走 5,000 枚 ETH，约 800 万美元。HTX 在链上喊话，承诺 10 月 2 日前归还即给 5% 的白帽奖励；孙宇晨 9 月 25 日表示 HTX 已全额承担损失<a class="ref" href="#s7">[7]</a><a class="ref" href="#s11">[11]</a>。10 月 7 日，攻击者归还了 4,999 枚 ETH<a class="ref" href="#s7">[7]</a>，媒体报道 HTX 给出的奖励是 250 枚 ETH<a class="ref" href="#s12">[12]</a>。11 月 10 日，孙宇晨投资的交易所 <a href="2023-poloniex.html">Poloniex</a> 热钱包被转走约 1.14 亿至 1.26 亿美元，Halborn 认为攻击者是 Lazarus<a class="ref" href="#s3">[3]</a><a class="ref" href="#s9">[9]</a>。十二天后，HTX 和 Heco 跨链桥被盗。</p>
+      </section>
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <ol class="timeline">
+          <li class="atk"><time>2023-09-24</time><div class="ev">HTX 一个热钱包被转走 5,000 枚 ETH，约 800 万美元；次日 HTX 迁移热钱包<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2023-09-25</time><div class="ev">孙宇晨称 HTX 已全额承担损失，用户资产安全<a class="ref" href="#s11">[11]</a>。HTX 链上喊话，10 月 2 日前归还给 5% 奖励<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="def"><time>2023-10-07</time><div class="ev">攻击者归还 4,999 枚 ETH<a class="ref" href="#s7">[7]</a>。</div></li>
+          <li class="atk"><time>2023-11-10</time><div class="ev"><a href="2023-poloniex.html">Poloniex</a> 热钱包被盗约 1.14 亿至 1.26 亿美元<a class="ref" href="#s3">[3]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="atk key"><time>2023-11-22</time><div class="ev">Heco 跨链桥和 HTX 热钱包相继被转走资产。Cyvers 标记了约 8,500 万美元与 Heco 跨链桥有关的可疑转账；Wintermute 的研究员 Igor Igamberdiev 指出另一笔 HTX 的可疑转账，模式与 Heco 跨链桥相似<a class="ref" href="#s2">[2]</a><a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-11-22 12:34</time><div class="ev">孙宇晨确认 HTX 和 Heco 跨链桥遭到攻击：HTX 全额赔付热钱包损失，存取款暂停，查明原因后恢复服务<a class="ref" href="#s1">[1]</a>。HTX 把另一个热钱包的资金转入“恢复钱包”<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li class="def"><time>2023-12-13</time><div class="ev">孙宇晨称 HTX 已按美元价值恢复 95% 的资产，Poloniex 约 85%；两家交易所按快照每 1 美元代币空投 1 USDT<a class="ref" href="#s3">[3]</a>。</div></li>
+          <li class="def key"><time>2024-03-07</time><div class="ev">联合国安理会朝鲜制裁专家小组发布报告，正在调查的 58 起疑似朝鲜网络攻击中包括 Poloniex、HTX 和 Heco 跨链桥<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="atk"><time>2024-03-13</time><div class="ev">沉寂近四个月的被盗资金开始流入 Tornado Cash<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="atk"><time>2024-03-22</time><div class="ev">PeckShield 统计，8 天内约 40,391.8 枚 ETH（约 1.457 亿美元）转入 Tornado Cash<a class="ref" href="#s4">[4]</a>。</div></li>
+          <li><time>2024-05</time><div class="ev">路透社援引联合国制裁监察员称，朝鲜黑客 3 月用 Tornado Cash 洗出了 1.475 亿美元从 HTX 盗得的资金<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li><time>2026-10</time><div class="ev">DefiLlama 记录的 Heco 链锁仓量为 0<a class="ref" href="#s10">[10]</a>。没有找到针对此案的起诉、没收或资金追回的公开记录。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>攻击原理</h2>
+        <p>HTX 和 Heco 都没有公布技术复盘，公开资料只到结论这一层。Halborn 的说法是，Heco 跨链桥的运营账户被攻破，HTX 是私钥被盗<a class="ref" href="#s8">[8]</a>；Cyvers 对 CoinDesk 说，原因疑似私钥泄露，泄露者借此能动用 Heco 跨链桥<a class="ref" href="#s2">[2]</a>。下面只按这些结论讲清楚结构上的问题，具体的入侵途径没有公开。</p>
+        <h3>运营账户就是桥的钥匙</h3>
+        <p>Heco 跨链桥锁在以太坊一侧的资产，放款由运营方控制。用户在 Heco 上发起回到以太坊的转账，运营方的账户签名放出对应资产。合约和签名系统只认这个账户的签名，分辨不出签名的是运营方还是偷到私钥的人。这和 <a href="2022-ronin-bridge.html">Ronin</a>、<a href="2022-harmony-horizon.html">Harmony Horizon</a> 是同一种结构，区别是 Heco 跨链桥从未公开过运营账户需要几个签名、私钥由谁保管。</p>
+        <p>交易所热钱包的道理相同。热钱包要随时响应提币，私钥必须在线。私钥一旦被盗，攻击者签出的转账和交易所自己签出的没有区别。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 800 372" role="img" aria-labelledby="htx-seq-t htx-seq-d">
+            <title id="htx-seq-t">2023 年 9 月至 2024 年 3 月孙宇晨相关平台的被盗事件</title>
+            <desc id="htx-seq-d">时间轴上依次是：2023 年 9 月 24 日 HTX 热钱包被转走 5,000 ETH，后来归还；11 月 10 日 Poloniex 热钱包被盗约 1.14 亿至 1.26 亿美元；11 月 22 日 HTX 热钱包和 Heco 跨链桥被盗约 0.97 亿至 1.13 亿美元；12 月 13 日孙宇晨称 HTX 恢复 95% 资产；2024 年 3 月 13 日起被盗资金进入 Tornado Cash。</desc>
+            <line class="d-line" x1="30" y1="170" x2="780" y2="170"/>
+            <line class="d-line" x1="120" y1="116" x2="120" y2="170"/>
+            <line class="d-line atk" x1="420" y1="116" x2="420" y2="170"/>
+            <line class="d-line atk" x1="700" y1="116" x2="700" y2="170"/>
+            <line class="d-line atk" x1="270" y1="170" x2="270" y2="220"/>
+            <line class="d-line def" x1="570" y1="170" x2="570" y2="220"/>
+            <circle class="d-head" cx="120" cy="170" r="5"/>
+            <circle class="d-head atk" cx="270" cy="170" r="5"/>
+            <circle class="d-head atk" cx="420" cy="170" r="6"/>
+            <circle class="d-head def" cx="570" cy="170" r="5"/>
+            <circle class="d-head atk" cx="700" cy="170" r="5"/>
+            <rect class="d-box ok" x="25" y="36" width="190" height="80" rx="4"/>
+            <text class="d-t s" x="120" y="58" text-anchor="middle">2023-09-24</text>
+            <text class="d-t b" x="120" y="80" text-anchor="middle">HTX 热钱包</text>
+            <text class="d-t s" x="120" y="102" text-anchor="middle">5,000 ETH，后被归还</text>
+            <rect class="d-box atk" x="310" y="36" width="220" height="80" rx="4"/>
+            <text class="d-t s" x="420" y="58" text-anchor="middle">2023-11-22</text>
+            <text class="d-t b" x="420" y="80" text-anchor="middle">HTX 热钱包 + Heco 跨链桥</text>
+            <text class="d-t s" x="420" y="102" text-anchor="middle">约 0.97 亿至 1.13 亿美元</text>
+            <rect class="d-box atk" x="605" y="36" width="190" height="80" rx="4"/>
+            <text class="d-t s" x="700" y="58" text-anchor="middle">2024-03-13 起</text>
+            <text class="d-t b" x="700" y="80" text-anchor="middle">资金进入 Tornado Cash</text>
+            <text class="d-t s" x="700" y="102" text-anchor="middle">8 天约 40,391.8 ETH</text>
+            <rect class="d-box atk" x="165" y="220" width="210" height="80" rx="4"/>
+            <text class="d-t s" x="270" y="242" text-anchor="middle">2023-11-10</text>
+            <text class="d-t b" x="270" y="264" text-anchor="middle">Poloniex 热钱包</text>
+            <text class="d-t s" x="270" y="286" text-anchor="middle">约 1.14 亿至 1.26 亿美元</text>
+            <rect class="d-box def" x="465" y="220" width="210" height="80" rx="4"/>
+            <text class="d-t s" x="570" y="242" text-anchor="middle">2023-12-13</text>
+            <text class="d-t b" x="570" y="264" text-anchor="middle">孙宇晨称 HTX 恢复 95%</text>
+            <text class="d-t s" x="570" y="286" text-anchor="middle">两家交易所空投 USDT</text>
+            <rect class="d-box soft" x="20" y="312" width="760" height="54" rx="4"/>
+            <text class="d-t s" x="36" y="334">Elliptic 等根据攻击特征和资金流向，把 11 月 22 日的事件归因于朝鲜 Lazarus。</text>
+            <text class="d-t s" x="36" y="355">联合国专家小组把 Poloniex、HTX、Heco 跨链桥都列为疑似朝鲜攻击；FBI 没有公开认定。</text>
+          </svg>
+          </div>
+          <figcaption>图 1：孙宇晨相关平台在半年里的几起事件，红色为损失，蓝色为平台方的处置，绿色为资金已归还。横轴只表示先后顺序，不按比例<a class="ref" href="#s3">[3]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a><a class="ref" href="#s7">[7]</a>。</figcaption>
+        </figure>
+        <div class="note doubt">
+          <span class="h">HTX 与 Heco“各自独立”</span>
+          <p>HTX 的发言人强调两者独立运营<a class="ref" href="#s2">[2]</a>，但它们在同一天被攻破，Igor Igamberdiev 也指出两边的转账模式相似<a class="ref" href="#s4">[4]</a>。这说明两者的密钥或运营环境很可能有共同的弱点。具体是哪一环，官方没有说明。</p>
+        </div>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>攻击者一侧的细节，公开资料只给到下面这些。本文不对攻击交易做进一步还原。</p>
+        <ol class="steps">
+          <li><b>动用 Heco 跨链桥的运营账户</b>攻击者控制了运营账户后，把桥在以太坊一侧锁定的 ETH、USDT、USDC、HBTC 等转出<a class="ref" href="#s4">[4]</a><a class="ref" href="#s8">[8]</a>。Cyvers 当天标记了约 8,500 万美元的可疑转账<a class="ref" href="#s2">[2]</a>。</li>
+          <li><b>转走 HTX 热钱包</b>HTX 一个热钱包出现可疑转出，Igor Igamberdiev 估计约 2,340 万美元，转账模式与 Heco 跨链桥相似<a class="ref" href="#s4">[4]</a>。</li>
+          <li><b>立即换成 ETH</b>被盗的代币随即在去中心化交易所换成 ETH<a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a>。稳定币换掉以后，发行方就无法再冻结。</li>
+          <li><b>沉寂四个月</b>资金一直没动，直到 2024 年 3 月 13 日才开始进入 Tornado Cash<a class="ref" href="#s5">[5]</a>。</li>
+        </ol>
+      </section>
+      <section id="funds">
+        <h2>资金去向</h2>
+        <h3>损失金额的几种口径</h3>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th class="n">HTX 热钱包</th><th class="n">Heco 跨链桥</th><th class="n">合计</th></tr></thead>
+            <tbody>
+              <tr><td>CoinDesk（2023-11-22）</td><td class="n">未单列</td><td class="n">约 8,500 万</td><td class="n">9,700 万</td></tr>
+              <tr><td>Halborn（2023-12）</td><td class="n">未单列</td><td class="n">未单列</td><td class="n">约 9,900 万</td></tr>
+              <tr><td>DefiLlama</td><td class="n">1,360 万</td><td class="n">8,660 万</td><td class="n">1.002 亿</td></tr>
+              <tr><td>The Block（Heco 跨链桥据 PeckShield，HTX 据 Igor Igamberdiev）</td><td class="n">约 2,340 万</td><td class="n">约 1.11 亿</td><td class="n">未给出</td></tr>
+              <tr><td>Elliptic（2024-03）</td><td class="n">未单列</td><td class="n">未单列</td><td class="n">1.125 亿</td></tr>
+              <tr><td>SlowMist</td><td class="n">未单列</td><td class="n">未单列</td><td class="n">1.133 亿</td></tr>
+              <tr><td>联合国专家小组（经 The Record）</td><td class="n">3,000 万</td><td class="n">8,600 万</td><td class="n">1.16 亿</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>单位为美元，各行依次出自<a class="ref" href="#s2">[2]</a><a class="ref" href="#s8">[8]</a><a class="ref" href="#s10">[10]</a><a class="ref" href="#s4">[4]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a><a class="ref" href="#s6">[6]</a>。HTX 热钱包一项的口径从 1,360 万到 3,000 万美元不等，可能与统计了几个热钱包、按什么时点的价格折算有关。HTX 没有公布官方数字。DefiLlama 的两项相加约为 1.002 亿美元，页首的案情要素采用这个数字。</p>
+        <h3>四个月后进入 Tornado Cash</h3>
+        <ol class="flow">
+          <li class="atk"><b>Heco 跨链桥与 HTX 热钱包</b>ETH、USDT、USDC、HBTC 等</li>
+          <li class="atk"><b>去中心化交易所</b>当天全部换成 ETH</li>
+          <li class="doubt"><b>沉寂</b>2023-11-22 至 2024-03-13，资金没有移动</li>
+          <li class="atk"><b>Tornado Cash</b>8 天约 40,391.8 ETH，约 1.457 亿美元</li>
+        </ol>
+        <p>Elliptic 统计，3 月 13 日之后经 Tornado Cash 转出的这批 ETH 超过 1 亿美元<a class="ref" href="#s5">[5]</a>；PeckShield 统计 8 天内转入约 40,391.8 枚 ETH，约 1.457 亿美元<a class="ref" href="#s4">[4]</a>；路透社援引的联合国监察员数字是 1.475 亿美元<a class="ref" href="#s12">[12]</a>。洗钱金额高于被盗时的金额，是因为同样数量的 ETH 在这四个月里涨了价。</p>
+        <p>Elliptic 指出了这次回到 Tornado Cash 的背景：2022 年 8 月 Tornado Cash <a href="../../milestones/events/2022-tornado-sanctions.html">被美国财政部制裁</a>后，Lazarus 一度改用比特币混币器 Sinbad.io 和跨链桥洗钱；2023 年 11 月 Sinbad.io 被美国当局查封。Tornado Cash 是链上合约，不能像中心化混币器那样被查封关停<a class="ref" href="#s5">[5]</a>。本文没有找到这笔资金被冻结或追回的公开记录。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>对用户</h3>
+        <p>孙宇晨当天承诺的是全额赔付“HTX 热钱包的损失”<a class="ref" href="#s1">[1]</a>，CoinDesk 转述为全额赔付“源自交易所的损失”<a class="ref" href="#s2">[2]</a>。两种说法都没有提到 Heco 跨链桥。被转走的是用户锁在桥里的资产，桥上的映射代币因此失去储备，但本文没有找到针对 Heco 跨链桥用户的赔付方案或公告。</p>
+        <p>交易所一侧，孙宇晨 12 月 13 日说，HTX 已经按美元价值恢复了 95% 的资产，Poloniex 约 85%，“客户资产 100% 安全”<a class="ref" href="#s3">[3]</a>。同一篇报道提到，当时 Poloniex 上的 BTC 和 TRX 交易存在溢价，用户想换成可提取的币种离场，最多要折价 10%<a class="ref" href="#s3">[3]</a>。</p>
+        <h3>Heco 链</h3>
+        <p>DefiLlama 记录的 Heco 链锁仓量在事发后一个月约 1,900 万美元，2024 年 6 月降到约 68 万美元，2026 年为 0<a class="ref" href="#s10">[10]</a>。本文没有找到 Heco 宣布停止运行的官方公告；hecochain.com 在撰写本文时无法访问。</p>
+        <h3>2023 年的朝鲜盗币潮</h3>
+        <p>联合国专家小组列出的 2023 年疑似朝鲜攻击里，有 <a href="2023-atomic-wallet.html">Atomic Wallet</a>、Alphapo、CoinsPaid、Stake.com、CoinEx、Poloniex、HTX 和 Heco 跨链桥，单起损失从数千万到上亿美元<a class="ref" href="#s6">[6]</a>。其中多数是钱包或交易所一侧的资金被直接转走，不涉及合约漏洞。攻击的目标从代码转向了签名的私钥和管理它的人。</p>
+      </section>
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>交易所</h3>
+        <p>HTX 当天暂停存取款，把另一个热钱包的资金转入“恢复钱包”<a class="ref" href="#s1">[1]</a><a class="ref" href="#s4">[4]</a>。孙宇晨承诺全额赔付热钱包损失，并表示查明原因后恢复服务<a class="ref" href="#s1">[1]</a>。12 月，HTX 和 Poloniex 按快照向持有人空投 USDT，每 1 美元代币对应 1 USDT<a class="ref" href="#s3">[3]</a>。HTX 没有公布原因调查的结论。</p>
+        <p>与 9 月那次不同，这一次没有公开信息显示 HTX 与攻击者谈判，或者攻击者退回了资金。9 月那次，攻击者拿了 5% 的白帽奖励，退回了 4,999 枚 ETH<a class="ref" href="#s7">[7]</a><a class="ref" href="#s12">[12]</a>。</p>
+        <h3>归因与执法</h3>
+        <div class="compare">
+          <div>
+            <h4>已有的判断</h4>
+            <p>Halborn 认为 Poloniex 的攻击者是 Lazarus，依据是攻击类型和链上行为特征<a class="ref" href="#s9">[9]</a>。Elliptic 等机构根据攻击特征和资金流向，把 HTX 与 Heco 跨链桥归因于 Lazarus<a class="ref" href="#s5">[5]</a>。联合国专家小组把三起都列入调查中的疑似朝鲜攻击<a class="ref" href="#s6">[6]</a>，路透社援引的联合国监察员称洗钱者是朝鲜黑客<a class="ref" href="#s12">[12]</a>。</p>
+          </div>
+          <div>
+            <h4>还没有的</h4>
+            <p>FBI 没有像 <a href="2022-harmony-horizon.html">Harmony Horizon</a> 那样发布认定公告，也没有找到起诉书或没收诉讼。三起事件是不是同一批人所为，本文没有找到公开的链上关联分析；能确认的只是它们被分别归因于 Lazarus，并被联合国列在同一份清单里。</p>
+          </div>
+        </div>
+        <p>2024 年 1 月 19 日，HTX 又遭到 DDoS 攻击，应用一度中断<a class="ref" href="#s7">[7]</a>。这次不涉及资金损失。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给交易所和跨链桥运营方</span>
+          <ul>
+            <li>“各自独立运营”不是安全边界。同一个团队、同一套运维流程管理的热钱包和跨链桥，可能在同一天一起失守。</li>
+            <li>热钱包只放日常提币需要的余额。大额转出要经过多签或门限签名，并设置异常时自动暂停的规则。</li>
+            <li>跨链桥锁定的资产要有签名之外的第二道防线：单笔与每日限额、大额延迟、独立监控。运营账户的签名门槛和私钥保管方式应当公开。</li>
+            <li>一次事故之后，要按整个密钥体系的失守来处理，而不是只换掉被盗的那一把。两个月里三起事件，说明问题不在某一个钱包。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给用户</span>
+          <ul>
+            <li>跨链映射资产的价值取决于另一条链上的储备，也取决于桥运营方的私钥安全。</li>
+            <li>交易所的“全额赔付”通常只覆盖交易所自己的账户。这次的承诺针对的是 HTX 热钱包，没有提到 Heco 跨链桥。</li>
+          </ul>
+        </div>
+      </section>
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">孙宇晨（@justinsuntron），关于 HTX 与 Heco 跨链桥遭攻击的声明，X，2023-11-22 12:34 UTC。<a href="https://twitter.com/justinsuntron/status/1727304656622326180">twitter.com</a></li>
+          <li id="s2">Shaurya Malwa，《Justin Sun Confirms HTX, Heco Chain Exploited After $100M in Suspicious Transfers》，CoinDesk，2023-11-22。<a href="https://www.coindesk.com/tech/2023/11/22/justin-sun-confirms-htx-heco-chain-exploited-after-100m-in-suspicious-transfers/">coindesk.com</a></li>
+          <li id="s3">Oliver Knight，《HTX, Poloniex Assets Are ‘100% Safe’ Says Justin Sun After $200M Hack》，CoinDesk，2023-12-13。<a href="https://www.coindesk.com/business/2023/12/13/htx-poloniex-assets-are-100-safe-says-justin-sun-after-200m-hack/">coindesk.com</a></li>
+          <li id="s4">James Hunt，《Heco Bridge exploiters launder over $145 million in ether via Tornado Cash》，The Block，2024-03-22。<a href="https://www.theblock.co/post/284107/heco-bridge-exploiters-launder-145-million-usd-eth-tornado-cash">theblock.co</a></li>
+          <li id="s5">Elliptic，《North Korean hackers return to Tornado Cash despite sanctions》，2024-03-14。<a href="https://www.elliptic.co/blog/north-korean-hackers-return-to-tornado-cash-despite-sanctions">elliptic.co</a></li>
+          <li id="s6">Jonathan Greig，《UN probing 58 alleged crypto heists by North Korea worth $3 billion》，The Record，2024-03-22（报道联合国安理会专家小组 2024-03-07 的报告）。<a href="https://therecord.media/north-korea-cryptocurrency-hacks-un-experts">therecord.media</a></li>
+          <li id="s7">SlowMist，SlowMist Hacked 区块链被黑档案库，HTX 相关条目（2023-09-24、2023-11-22、2024-01-19）。<a href="https://hacked.slowmist.io/">hacked.slowmist.io</a></li>
+          <li id="s8">Halborn，《Month in Review: Top DeFi Hacks of November 2023》，2023-12。<a href="https://www.halborn.com/blog/post/month-in-review-top-defi-hacks-of-november-2023">halborn.com</a></li>
+          <li id="s9">Rob Behnke（Halborn），《Explained: The Poloniex Hack (November 2023)》，2023-11-17。<a href="https://www.halborn.com/blog/post/explained-the-poloniex-hack-november-2023">halborn.com</a></li>
+          <li id="s10">DefiLlama，被盗事件库（Heco Bridge、Huobi 条目）与 Heco 链 TVL 历史数据，2026-10-31 读取。<a href="https://defillama.com/chain/Heco">defillama.com</a></li>
+          <li id="s11">孙宇晨（@justinsuntron），关于 HTX 损失 5,000 ETH 的声明，X，2023-09-25 14:14 UTC。<a href="https://twitter.com/justinsuntron/status/1706311251024822748">twitter.com</a></li>
+          <li id="s12">ForkLog，《North Korean Hackers Launder $147 Million Stolen from HTX via Tornado Cash》，2024-05-16（援引路透社对联合国制裁监察员报告的报道）。<a href="https://forklog.com/en/north-korean-hackers-launder-147-million-stolen-from-htx-via-tornado-cash/">forklog.com</a></li>
+        </ol>
+      </section>
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>

@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BNB Chain 跨链桥伪造证明｜区块链被盗事件编年史</title>
+<meta name="description" content="2022 年 BSC Token Hub 跨链桥被伪造的 IAVL 证明骗出 200 万枚 BNB 的完整经过：证明校验代码与修复、攻击步骤、名义 5.7 亿美元与实际转出约 1 亿美元的区别、全网停链与地址黑名单、Venus 抵押仓位的清理，以及“去中心化”之争。">
+<link rel="stylesheet" href="../../shared/base.css">
+<link rel="stylesheet" href="../assets/style.css">
+<script src="../../shared/base.js"></script>
+<script src="../assets/data.js"></script>
+<script src="../assets/page.js"></script>
+</head>
+<body data-id="2022-bnb-bridge">
+<header class="topbar"><div class="wrap">
+  <a class="home" href="../index.html">区块链被盗事件编年史</a>
+  <span data-slot="theme"></span>
+</div></header>
+
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href="../index.html">总览</a>　/　2022 年　/　跨链桥之年</p>
+    <p class="case-no" data-slot="caseno"></p>
+    <h1>BNB Chain 跨链桥伪造证明</h1>
+    <p class="lede">2022 年 10 月 6 日，攻击者两次伪造跨链消息，让 BNB Chain 的原生跨链桥 BSC Token Hub 各放出 100 万枚 BNB，按当时价格约 5.7 亿美元。问题出在一个通用库的默克尔证明校验上：证明里多塞进去的一个哈希不参与根哈希计算，却被当成另一片叶子的依据。几小时后，BNB Chain 逐个联系验证者把整条链停了下来，大部分 BNB 被困在攻击者地址和借贷协议 Venus 里，但约 1 亿美元已经换成稳定币转到了其他链。</p>
+    <div class="facts" data-slot="facts"></div>
+    <div class="strip" data-slot="strip"></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" data-slot="toc" aria-label="本页目录"></nav>
+    <article class="article">
+
+      <section id="summary">
+        <h2>概要</h2>
+        <p class="tldr">用户从 BNB Beacon Chain 往 BNB Smart Chain（BSC）转币时，由中继者（relayer）把跨链消息和一份 IAVL 默克尔证明提交给 BSC 上的 <code>CrossChain</code> 合约。证明通过，<code>TokenHub</code> 合约就从自己的余额里放出相应的 BNB。校验证明用的是 Cosmos 生态的 IAVL 库里的 RangeProof 代码，它在计算根哈希时，遇到同时带有左右两个哈希的节点只用左边，右边被忽略；可在另一段逻辑里，这个右哈希又被当作下一片叶子所在子树的哈希来核对。</p>
+        <p>攻击者押 100 BNB 注册成中继者，拿 Beacon Chain 一个旧区块（高度 110217401）上一笔真实跨链消息的证明做底子，在里面加了一片自己编的叶子：内容是“向攻击者地址转入 100 万 BNB”。算出来的根哈希和那个旧区块的完全一样，证明就通过了。同样的伪造做了两次，一共拿到 200 万 BNB<a class="ref" href="#s4">[4]</a><a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>。</p>
+        <p>攻击者把其中 90 万枚 BNB 存进 BSC 上的借贷协议 Venus，借出约 1.47 亿美元的稳定币，再经 Stargate、Multichain 等跨链桥分批转走<a class="ref" href="#s12">[12]</a>。BNB Chain 随后协调验证者停链约 8 小时，发布紧急版本把攻击者地址写进节点的黑名单，留在 BSC 上的资金因此动不了<a class="ref" href="#s5">[5]</a><a class="ref" href="#s15">[15]</a>。对实际被转走的金额，各方估计从 7,000 万到 1.37 亿美元不等，官方的说法是约 1 亿美元未能追回<a class="ref" href="#s2">[2]</a>。攻击者的身份至今没有公开。</p>
+      </section>
+
+      <section id="background">
+        <h2>背景</h2>
+        <p>2022 年的 BNB Chain 由两条链组成。BNB Beacon Chain 基于 Tendermint 和 Cosmos SDK，承载 BEP2 资产和质押、治理；BNB Smart Chain（BSC）兼容 EVM，采用 PoSA 共识，Venus、PancakeSwap 等 DeFi 应用都在这条链上。两条链的原生币都是 BNB，BNB 在两条链之间移动靠的是原生跨链桥，官方称为 BSC Token Hub<a class="ref" href="#s1">[1]</a>。</p>
+        <p>这座桥是 BSC 自带的一组系统合约加两个预编译合约。<code>TokenHub</code>（地址 <span class="addr">0x…1004</span>）保管 BNB；<code>CrossChain</code>（<span class="addr">0x…2000</span>）接收并分发跨链包；<code>TendermintLightClient</code>（<span class="addr">0x…1003</span>）保存从 Beacon Chain 同步来的区块头和其中的 AppHash，作用相当于以太坊的状态根；<code>RelayerHub</code>（<span class="addr">0x…1006</span>）管理中继者登记。节点里内置了两个预编译合约：地址 100 校验 Tendermint 区块头，地址 101 的 <code>iavlMerkleProofValidate</code> 校验默克尔证明<a class="ref" href="#s7">[7]</a><a class="ref" href="#s8">[8]</a>。</p>
+        <p><code>TokenHub</code> 放出 BNB 时，先检查自己的余额是否足够，再把 BNB 直接转给收款人，没有铸币的步骤。它的余额来自创世：BSC 的创世文件给 <code>TokenHub</code> 预存了一大笔 BNB 作为储备，生成创世文件的脚本里默认值是 176,405,560.9 枚<a class="ref" href="#s8">[8]</a>。用户从 Beacon Chain 转到 BSC，Beacon Chain 一侧锁定，<code>TokenHub</code> 放出等量 BNB；反方向则反过来。所以 <code>TokenHub</code> 在 Beacon Chain 没有锁定的情况下放钱，效果等于凭空增发。BNB Chain 的公告把这次事故描述为“extra mining”（多挖出了币），说的就是这一点<a class="ref" href="#s2">[2]</a>。</p>
+        <p>中继者负责把 Beacon Chain 的区块头和跨链包搬到 BSC。当时任何人在 <code>RelayerHub</code> 里押 100 BNB 就能登记为中继者<a class="ref" href="#s8">[8]</a>。这种设计的前提是：跨链包是否真实由密码学证明决定，不取决于中继者是否可信，中继者最多只能拖延，不能伪造。BNB Chain 在修复说明里也是这样描述的：BSC 上的合约跟踪 Beacon Chain 的共识状态，来自 Beacon Chain 的消息都要对照 AppHash 校验，“所以它们的完整性能得到保证”<a class="ref" href="#s4">[4]</a>。这个前提只在证明校验本身没有漏洞时才成立。</p>
+        <p>BSC 当时有 44 个验证者，其中 26 个处于活跃状态<a class="ref" href="#s1">[1]</a>。BNB Chain 自己给出的中本聪系数是 8，并表示正在向 41 个活跃验证者扩容<a class="ref" href="#s2">[2]</a>。</p>
+      </section>
+
+      <section id="timeline">
+        <h2>时间线</h2>
+        <p class="tl-legend"><span class="atk">攻击方行动</span><span class="def">防守方与社区行动</span><span>其他事件</span></p>
+        <p>以下时间为 UTC。BleepingComputer 的报道用的是美国东部时间，10 月正值夏令时（UTC−4），本页据此换算；换算后的攻击开始时间与 Nansen 给出的 18:26 UTC 基本吻合<a class="ref" href="#s12">[12]</a><a class="ref" href="#s15">[15]</a>。</p>
+        <ol class="timeline">
+          <li class="atk"><time>2022-10-05</time><div class="ev">一个属于即时兑换服务 ChangeNOW 的钱包向攻击者地址转入 100 BNB，攻击者用它登记成为 Token Hub 的中继者。ChangeNOW 事后表示，其反洗钱系统当时没有发现这个地址有异常<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk key"><time>10-06 18:26</time><div class="ev">攻击者提交第一个伪造的跨链包，证明所用的 Beacon Chain 高度是 110217401。<code>TokenHub</code> 向攻击者地址放出 100 万 BNB<a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>10-06 18:30–18:36</time><div class="ev">攻击者先后把 60 万和 30 万 BNB 存入 Venus 作抵押，借出约 6,240 万 BUSD、5,000 万 USDT 和近 3,500 万 USDC，随后经 Stargate、Multichain 等跨链桥分批转到其他 EVM 链，每笔 40 万到 500 万美元<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk"><time>10-06 20:32–20:42</time><div class="ev">攻击者又尝试了 15 次，全部因“sequence not in order”失败<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="atk key"><time>10-06 20:43</time><div class="ev">第二个伪造的跨链包成功，又放出 100 万 BNB，累计 200 万 BNB<a class="ref" href="#s12">[12]</a>。</div></li>
+          <li class="def key"><time>10-06 约 22:19</time><div class="ev">据 BleepingComputer，Binance 方面此时公开承认安全事件并暂停 BSC<a class="ref" href="#s15">[15]</a>。官方事后说，链不是设计来被停下的，他们只能逐个联系分布在不同时区的验证者，这拖慢了停链<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>10-06 23:35</time><div class="ev">安全研究员 samczsun 发布分析推文串：攻击者用的高度始终是 110217401，证明比正常提现短得多，问题在 IAVL 证明可以被伪造。他说，最先是 ZachXBT 把攻击者地址发给了他<a class="ref" href="#s11">[11]</a>。</div></li>
+          <li class="def"><time>10-06 约 23:51</time><div class="ev">Binance CEO 赵长鹏（CZ）发推确认 BSC Token Hub 被利用，已请所有验证者暂停 BSC，“The issue is contained now”<a class="ref" href="#s14">[14]</a><a class="ref" href="#s15">[15]</a>。</div></li>
+          <li class="def key"><time>10-07 04:00</time><div class="ev">BSC 发布紧急硬分叉版本 v1.1.15（Nano），分叉高度 21,962,149：攻击者的两个地址被写入节点黑名单，跨链相关的两个预编译合约直接返回错误，所有跨链转账暂停<a class="ref" href="#s5">[5]</a>。</div></li>
+          <li class="def"><time>10-07 约 06:30</time><div class="ev">BSC 恢复出块，Binance 恢复充提，停链约 8 小时<a class="ref" href="#s15">[15]</a>。BNB Chain 发表道歉公告，提出四项链上投票：是否冻结被盗资金、是否用 BNB Auto-Burn 弥补缺口、每个重大漏洞 100 万美元的白帽计划、最高为追回金额 10% 的缉拿赏金<a class="ref" href="#s1">[1]</a>。</div></li>
+          <li class="def"><time>2022-10-08</time><div class="ev">Cosmos 核心团队发布安全公告 Dragonfruit，说明问题影响所有使用 IAVL RangeProof 的项目；IAVL v0.19.3 发布，拒绝左右哈希同时存在的内部节点<a class="ref" href="#s10">[10]</a><a class="ref" href="#s9">[9]</a>。</div></li>
+          <li class="def key"><time>2022-10-12</time><div class="ev">BSC v1.1.16 的 Moran 硬分叉在主网高度 22,107,423 生效：修补证明校验，跨链合约增加“区块头高度不得倒退”的检查，中继者限定为白名单，跨链转账恢复<a class="ref" href="#s5">[5]</a><a class="ref" href="#s3">[3]</a>。</div></li>
+          <li><time>2022-10-24</time><div class="ev">CZ 对 CNBC 说执法部门提供了线索，Binance 正在“缩小范围”<a class="ref" href="#s14">[14]</a>。</div></li>
+          <li><time>2022-10-28</time><div class="ev">BEP-171《跨链模块安全增强》提出<a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2022-11-27</time><div class="ev">Venus 执行 VIP-79，指定 BNB Chain 为攻击者在 Venus 上仓位的唯一清算人，避免约 90 万 BNB 在市场上被清算抛售<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2023-02-26</time><div class="ev">Venus 执行 VIP-99，允许 BNB Chain 把攻击者账户约 6,000 万美元的 BUSD 债务换成其他稳定币和 ETH 债务<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a>。</div></li>
+          <li class="def"><time>2023-04-12</time><div class="ev">BEP-171 随 BSC 的 Planck 硬分叉启用，发布说明预计的生效日是这一天（主网高度 27,281,024）。新增大额跨链转账锁定期、伪造证明的挑战机制、验证者紧急暂停跨链<a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>。</div></li>
+          <li class="def"><time>2024-01</time><div class="ev">Venus 先后执行 VIP-224 和 VIP-244：允许强制清算攻击者账户的 USDT、USDC 债务，并把其他账户约 3,470 万美元的坏账转到攻击者账户名下，用它的抵押品偿还<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>2024-11-19</time><div class="ev">BNB Beacon Chain 停止运行，它与 BSC 之间的跨链通信随之永久关闭<a class="ref" href="#s21">[21]</a>。</div></li>
+          <li class="def key"><time>2025-05-31</time><div class="ev">Venus 执行名为 VIP-503 的提案（链上编号 504），取出攻击者账户剩余的全部 107,816 BNB，销毁其中 90%，其余 10% 转入 Venus 风险基金，这个账户在 Venus 上的仓位就此了结<a class="ref" href="#s19">[19]</a>。</div></li>
+          <li><time>截至 2026-10</time><div class="ev">攻击者的两个地址仍在 BSC 客户端源码的黑名单里<a class="ref" href="#s7">[7]</a>。我们没有找到针对此案的公开起诉，也没有找到官方的身份认定或归因。</div></li>
+        </ol>
+      </section>
+
+      <section id="mechanism">
+        <h2>漏洞原理</h2>
+        <h3>一条跨链消息怎样被认定为真</h3>
+        <p>从 Beacon Chain 往 BSC 转 BNB，消息要走过下面几步。漏洞在第三步，第二步的检查也比看上去宽松。</p>
+        <ol class="flow">
+          <li><b>Beacon Chain 与中继者</b>BNB 被锁定，跨链包写进状态树；中继者把区块头、跨链包和证明提交给 BSC</li>
+          <li><b>CrossChain 合约</b>检查调用者是否中继者、区块头是否已同步、序号是否连续</li>
+          <li class="doubt"><b>预编译合约 101</b>按区块头里的 AppHash 校验 IAVL 证明</li>
+          <li><b>TokenHub</b>从自己的余额里放出 BNB 给收款人</li>
+        </ol>
+        <p>下面是攻击发生时 BSC 系统合约 <code>CrossChain</code> 的入口函数<a class="ref" href="#s8">[8]</a>：</p>
+<pre class="code"><code><span class="c">// CrossChain.sol（bsc-genesis-contract，2022-08 版本），为排版拆成多行</span>
+function handlePackage(bytes calldata payload, bytes calldata proof,
+    uint64 height, uint64 packageSequence, uint8 channelId)
+  onlyInit
+  onlyRelayer                                 <span class="c">// 登记过的中继者：押 100 BNB 即可</span>
+  sequenceInOrder(packageSequence, channelId) <span class="c">// 序号必须等于该通道下一个期望值</span>
+<span class="bad">  blockSynced(height)                         <span class="c">// 只要求这个高度的区块头已同步，旧高度也行</span></span>
+  channelSupported(channelId)
+  external {
+  ……
+  require(MerkleProof.validateMerkleProof(
+      ILightClient(LIGHT_CLIENT_ADDR).getAppHash(height), <span class="c">// 该高度的 AppHash</span>
+      STORE_NAME,
+      generateKey(packageSequence, channelId),           <span class="c">// 键：通道号 + 序号</span>
+      payloadLocal, proofLocal), "invalid merkle proof");
+  ……</code></pre>
+        <p class="code-cap">来源：bnb-chain/bsc-genesis-contract 提交 dd9bd84（2022-08-17），contracts/CrossChain.sol 第 192–196 行，原文的函数签名和 require 各在一行内。</p>
+        <p>这个证明要说明的是：在 Beacon Chain 高度 <code>height</code> 的状态里，“通道 <code>channelId</code> 的第 <code>packageSequence</code> 号跨链包”的内容就是 <code>payload</code>。<code>validateMerkleProof</code> 调用地址 101 的预编译合约，节点里的 Go 代码依次运行两步证明：第一步 <code>iavl:v</code> 从 IAVL 证明算出跨链子存储的根哈希，并确认这个键值在树里；第二步 <code>multistore</code> 把这个根和其他子存储的根合成 AppHash，与轻客户端里存的值比较<a class="ref" href="#s7">[7]</a><a class="ref" href="#s11">[11]</a>。samczsun 指出，第二步很难做手脚，伪造者需要让第一步输出的根哈希和真实的一模一样<a class="ref" href="#s11">[11]</a>。第一步的实现如下：</p>
+<pre class="code"><code><span class="c">// proof_iavl_value.go（tendermint/iavl v0.12.0）</span>
+func (op IAVLValueOp) Run(args [][]byte) ([][]byte, error) {
+    ……
+    // Compute the root hash and assume it is valid.
+    // The caller checks the ultimate root later.
+    root := op.Proof.ComputeRootHash()       <span class="c">// 根哈希从证明自身算出</span>
+    err := op.Proof.Verify(root)
+    ……
+    err = op.Proof.VerifyItem([]byte(op.key), value) <span class="c">// 键是否在证明的叶子里</span>
+    ……
+    return [][]byte{root}, nil                <span class="c">// 交给 multistore 一步</span>
+}</code></pre>
+        <p class="code-cap">来源：cosmos/iavl（当时名为 tendermint/iavl）v0.12.0 标签，proof_iavl_value.go 第 61–82 行，省略了错误处理。BSC 当时在 go.mod 中依赖的就是这个版本<a class="ref" href="#s4">[4]</a>。</p>
+        <p>根哈希由证明里的叶子和路径算出；<code>VerifyItem</code> 只检查要找的键是否在这份证明的叶子里、值的哈希是否一致。所以问题归结为：能不能往证明里加一片叶子，而算出来的根哈希不变。如果能，根哈希仍然是真实的，后面的 multistore 和 AppHash 校验都不会察觉。</p>
+        <h3>RangeProof：为一串叶子设计的证明</h3>
+        <p>IAVL 是 Cosmos 生态的带版本 AVL 默克尔树。它的 RangeProof 可以一次证明一串相邻的叶子，比逐个证明省事<a class="ref" href="#s4">[4]</a>。一份 RangeProof 有三部分：<code>LeftPath</code> 是从根到最左边那片叶子的路径；<code>InnerNodes</code> 是后面每片叶子各自需要补充的路径；<code>Leaves</code> 是所有叶子，比 <code>InnerNodes</code> 多一个。路径上每个内部节点记录高度、大小、版本，再加上 <code>Left</code> 或 <code>Right</code> 中的一个：路径从左边往下走，就记右边兄弟的哈希，反之亦然。正常情况下，两者只应有一个非空<a class="ref" href="#s13">[13]</a>。</p>
+        <p>验证时要做两件事，下面两段代码分别来自两个文件：</p>
+<pre class="code"><code><span class="c">// proof.go（tendermint/iavl v0.12.0）：由下层哈希算出本节点哈希</span>
+func (pin proofInnerNode) Hash(childHash []byte) []byte {
+    ……                                      <span class="c">// 先编码 Height、Size、Version</span>
+    if len(pin.Left) == 0 {                 <span class="c">// Left 为空：下层在左，右边用 Right</span>
+        amino.EncodeByteSlice(buf, childHash)
+        amino.EncodeByteSlice(buf, pin.Right)
+<span class="bad">    } else {                                <span class="c">// Left 非空：认定下层在右，Right 不参与计算</span></span>
+        amino.EncodeByteSlice(buf, pin.Left)
+        amino.EncodeByteSlice(buf, childHash)
+    }
+    ……
+}
+
+<span class="c">// proof_range.go（同一版本）：COMPUTEHASH 中“沿路径证明后续叶子”的循环</span>
+for len(path) &gt; 0 {
+    rpath, lpath := path[:len(path)-1], path[len(path)-1]
+    path = rpath
+<span class="bad">    if len(lpath.Right) == 0 {              <span class="c">// 只看 Right 是否为空，不管 Left 是否也有值</span></span>
+        continue
+    }
+    inners, rinnersq := innersq[0], innersq[1:]   <span class="c">// 取下一条补充路径</span>
+    innersq = rinnersq
+    derivedRoot, treeEnd, done, err := COMPUTEHASH(inners, rightmost &amp;&amp; rpath.isRightmost())
+    ……
+<span class="bad">    if !bytes.Equal(derivedRoot, lpath.Right) {   <span class="c">// 下一片叶子只需对上这个 Right</span></span>
+        return nil, treeEnd, false, cmn.ErrorWrap(ErrInvalidRoot, ……)
+    }
+    if done {
+        return hash, treeEnd, true, nil     <span class="c">// 返回的仍是最左叶子算出的根哈希</span>
+    }
+}</code></pre>
+        <p class="code-cap">来源：cosmos/iavl v0.12.0 标签，proof.go 第 53–86 行、proof_range.go 第 256–284 行。省略了原文每次编码后的 <code>err == nil</code> 判断，部分调用合并为一行，中文注释为本站所加。</p>
+        <p>两段代码对同一个节点的理解不一样。<code>Hash()</code> 看到 <code>Left</code> 非空，就认为下层在右边，<code>Right</code> 被忽略；循环看到 <code>Right</code> 非空，就认为右边还有叶子，要求下一片叶子算出的哈希等于 <code>Right</code>。如果一个节点同时填了 <code>Left</code> 和 <code>Right</code>，<code>Right</code> 不进入根哈希，却被当成下一片叶子的依据，它可以是任何值。BNB Chain 在修复说明里写道：左右都存在时，摘要会忽略右边的字段，所以只要路径上的节点都带左右两个值，任意改动右边的值，根哈希都不变<a class="ref" href="#s4">[4]</a>。</p>
+        <figure class="diagram">
+          <div class="scroll">
+          <svg viewBox="0 0 760 404" role="img" aria-labelledby="bnb-proof-t bnb-proof-d">
+            <title id="bnb-proof-t">伪造 IAVL 证明的结构</title>
+            <desc id="bnb-proof-d">合法叶子沿原路径逐层计算到节点 P，再到根哈希 R，R 等于区块 110217401 的真实值。节点 P 的 Left 是兄弟子树哈希，参与计算；攻击者把 P 的 Right 改成 X，Hash() 计算时忽略 Right，所以 R 不变。范围校验要求下一片叶子的哈希等于 X，攻击者追加的伪造叶子正好满足，于是伪造叶子被当成证明的一部分。</desc>
+            <defs>
+              <marker id="bnb-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker>
+              <marker id="bnb-ah-atk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head atk"/></marker>
+            </defs>
+            <rect class="d-box ok" x="270" y="14" width="220" height="50" rx="4"/>
+            <text class="d-t b" x="380" y="36" text-anchor="middle">根哈希 R</text>
+            <text class="d-t s" x="380" y="55" text-anchor="middle">= 区块 110217401 的真实值</text>
+            <line class="d-line" x1="380" y1="104" x2="380" y2="66" marker-end="url(#bnb-ah)"/>
+            <text class="d-t s halo" x="392" y="90">Hash() 逐层上算，结果不变</text>
+            <rect class="d-box" x="90" y="104" width="200" height="76"/>
+            <text class="d-t b" x="190" y="134" text-anchor="middle">LeftPath 上的节点 P</text>
+            <text class="d-t s m" x="190" y="156" text-anchor="middle">Height / Size / Version</text>
+            <rect class="d-box" x="290" y="104" width="200" height="76"/>
+            <text class="d-t" x="390" y="134" text-anchor="middle"><tspan class="m">Left</tspan> = 兄弟子树哈希</text>
+            <text class="d-t s" x="390" y="156" text-anchor="middle">参与 <tspan class="m">Hash()</tspan> 计算</text>
+            <rect class="d-box atk" x="490" y="104" width="200" height="76"/>
+            <text class="d-t atk" x="590" y="134" text-anchor="middle"><tspan class="m">Right</tspan> = X（被改写）</text>
+            <text class="d-t s" x="590" y="156" text-anchor="middle"><tspan class="m">Hash()</tspan> 时被忽略</text>
+            <rect class="d-box" x="90" y="262" width="280" height="54" rx="4"/>
+            <text class="d-t b" x="230" y="284" text-anchor="middle">合法叶子（原证明唯一的叶子）</text>
+            <text class="d-t s" x="230" y="304" text-anchor="middle">一笔真实的旧跨链包</text>
+            <line class="d-line dash" x1="190" y1="262" x2="190" y2="182" marker-end="url(#bnb-ah)"/>
+            <text class="d-t s halo" x="202" y="226">沿原路径逐层上算</text>
+            <rect class="d-box atk" x="430" y="262" width="280" height="54" rx="4"/>
+            <text class="d-t b atk" x="570" y="284" text-anchor="middle">伪造叶子（攻击者追加）</text>
+            <text class="d-t s" x="570" y="304" text-anchor="middle">转入 100 万 BNB 给攻击者</text>
+            <line class="d-line atk" x1="590" y1="262" x2="590" y2="182" marker-end="url(#bnb-ah-atk)"/>
+            <text class="d-t atk halo" x="578" y="222" text-anchor="end">范围校验：哈希须等于 X</text>
+            <text class="d-t s halo" x="578" y="242" text-anchor="end">经一条空的补充路径</text>
+            <rect class="d-box soft" x="30" y="338" width="700" height="56" rx="4"/>
+            <text class="d-t" x="380" y="360" text-anchor="middle">根哈希只由左侧路径决定，加上伪造叶子前后完全一样</text>
+            <text class="d-t s" x="380" y="381" text-anchor="middle">所以 multistore 和 AppHash 校验照样通过，<tspan class="m">VerifyItem</tspan> 也能在叶子里找到伪造的键</text>
+          </svg>
+          </div>
+          <figcaption>图 1：伪造证明的结构（示意）。红色是攻击者添加或改写的部分。节点 P 同时带有 <code>Left</code> 和 <code>Right</code>：根哈希的计算只用 <code>Left</code>，范围校验却拿 <code>Right</code> 去核对伪造叶子。</figcaption>
+        </figure>
+        <h3>拼出一份假证明</h3>
+        <p>samczsun 在事发当晚复现了伪造过程。他观察到，正常跨链包的证明只有一片叶子，没有补充路径，<code>LeftPath</code> 很长。在这样一份真实证明上做三处改动就够了<a class="ref" href="#s11">[11]</a>：</p>
+        <ol class="steps">
+          <li><b>追加一片伪造叶子</b>键是攻击者要用的跨链包序号，值的哈希对应伪造的跨链包内容：向攻击者地址转入 100 万 BNB。</li>
+          <li><b>补一条空的补充路径</b>在 <code>InnerNodes</code> 里加一条空路径，满足“叶子比补充路径多一个”的数量检查。</li>
+          <li><b>让伪造叶子“提前结束并返回正确的根哈希”</b>这是 samczsun 的说法。对照上面的代码，就是在 <code>LeftPath</code> 上找一个 <code>Left</code> 已有值的节点，填入 <code>Right</code>，取值等于伪造叶子算出的哈希。循环核对通过后，直接返回原来那个根哈希。</li>
+        </ol>
+        <p>samczsun 也说明，攻击者实际用的证明路径比他复现的短得多，他不清楚对方是怎样生成的，但利用的是同一个缺陷<a class="ref" href="#s11">[11]</a>。</p>
+        <h3>为什么能用一个旧区块</h3>
+        <p>合约层的另外几项检查都没有挡住这份证明。高度 110217401 的区块头早已同步进轻客户端，<code>blockSynced</code> 通过。<code>sequenceInOrder</code> 只核对序号，攻击者把通道当时期望的下一个序号写进伪造叶子的键就行。合约也没有要求跨链包的高度不低于之前处理过的高度，所以同一个旧区块可以反复拿来伪造，每次换上新的序号即可。两次成功之间的 15 次失败，报错都是“sequence not in order”<a class="ref" href="#s12">[12]</a>。公开资料没有说明攻击者为什么选了这个区块。</p>
+        <div class="note">
+          <span class="h">上游为什么没出事</span>
+          <p>Cosmos 核心团队在公告里说，这个问题影响所有版本的 IAVL RangeProof；但 IBC、Cosmos SDK 和 Cosmos Hub 不受影响，因为它们不用 RangeProof，用的是另一套独立定义的证明格式 ICS23<a class="ref" href="#s10">[10]</a>。BSC 跨链桥依赖的，正好是上游自己在生产中不用的那条代码路径。Halborn 的总结是：证明路径上的每个内部节点只应有一个子哈希，范围证明的校验代码本该检查这一点，但没有检查<a class="ref" href="#s13">[13]</a>。</p>
+        </div>
+        <h3>修复：三层</h3>
+        <p>第一层是 10 月 7 日的 v1.1.15，它不修漏洞，只是在 Nano 分叉之后把地址 100、101 两个预编译合约换成直接返回 <code>suspend</code> 错误的版本，跨链桥整个停用<a class="ref" href="#s5">[5]</a><a class="ref" href="#s7">[7]</a>。</p>
+        <p>第二层是 10 月 12 日生效的 Moran 分叉（v1.1.16，PR #1121）。预编译合约在运行证明之前先过四道检查：不接受“不存在”证明（absence proof）；值证明只能有一片叶子，路径上不能有左右哈希同时存在的节点；multistore 里不能有重名的子存储；不接受 simple value 证明<a class="ref" href="#s4">[4]</a>。针对这次漏洞的是第二道：</p>
+<pre class="code"><code><span class="c">// contracts_lightclient.go（bnb-chain/bsc v1.1.16）</span>
+func singleValueOpVerifier(op merkle.ProofOperator) error {
+    if op == nil {
+        return nil
+    }
+    if valueOp, ok := op.(iavl.IAVLValueOp); ok {
+<span class="good">        if len(valueOp.Proof.Leaves) != 1 {          <span class="c">// 只允许一片叶子，不再接受范围证明</span></span>
+            return cmn.NewError("range proof suspended")
+        }
+        for _, innerNode := range valueOp.Proof.LeftPath {
+<span class="good">            if len(innerNode.Right) &gt; 0 &amp;&amp; len(innerNode.Left) &gt; 0 { <span class="c">// 左右不能同时有值</span></span>
+                return cmn.NewError("both right and left hash exit!")
+            }
+        }
+    }
+    return nil
+}</code></pre>
+        <p class="code-cap">来源：bnb-chain/bsc v1.1.16 标签，core/vm/contracts_lightclient.go 第 228–243 行；第 146–154 行把这道检查和另外三道一起挂到地址 101 的预编译合约上。报错文字里的“exit”是原文的拼写。</p>
+        <p>BSC 的 IAVL 库仍是 v0.12.0，没有升级。修复的做法是把 tendermint 依赖换成 BNB Chain 自己维护的分支，在证明运行器外面加上这层检查<a class="ref" href="#s4">[4]</a>。上游 IAVL 在 10 月 8 日发布 v0.19.3，直接在 <code>Hash()</code> 里拒绝左右子哈希同时存在的节点<a class="ref" href="#s9">[9]</a>。</p>
+        <p>第三层在合约里。10 月 9 日起的几次提交给 <code>handlePackage</code> 加了两个修饰器：一个要求跨链包的高度不能低于这个通道上次处理的高度；另一个要求调用者是写死在合约里的两个白名单中继者地址之一，<span class="addr">0xb005741528b86F5952469d80A8614591E3c5B632</span> 和 <span class="addr">0x446AA6E0DC65690403dF3F127750da1322941F3e</span><a class="ref" href="#s8">[8]</a>。</p>
+<pre class="code"><code><span class="c">// CrossChain.sol（bsc-genesis-contract，2022-10-11 版本）</span>
+modifier headerInOrder(uint64 height, uint8 channelId) {
+<span class="good">    require(height &gt;= channelSyncedHeaderMap[channelId], "too old header"); <span class="c">// 高度不得倒退</span></span>
+    if (height != channelSyncedHeaderMap[channelId]) {
+        channelSyncedHeaderMap[channelId] = height;
+    }
+    _;
+}</code></pre>
+        <p class="code-cap">来源：bnb-chain/bsc-genesis-contract 提交 c184a00（2022-10-11），contracts/CrossChain.sol 第 74–80 行；白名单修饰器在同一版本的 contracts/System.sol 第 87–90 行。</p>
+        <p>有了这两项，即使证明校验再出问题，攻击者也拿不到旧区块做底子，新登记的中继者也提交不了跨链包。代价是，中继从“押币即可参与”变成了只有官方指定的两个地址能做。</p>
+      </section>
+
+      <section id="attack">
+        <h2>攻击过程</h2>
+        <p>以下步骤根据 samczsun 和 Nansen 的分析整理<a class="ref" href="#s11">[11]</a><a class="ref" href="#s12">[12]</a>。攻击者没有公开过自己的代码。</p>
+        <ol class="steps">
+          <li><b>准备干净地址，登记中继者</b>攻击前一天，ChangeNOW 的一个钱包给攻击者转来 100 BNB，正好是 <code>RelayerHub</code> 登记中继者所需的押金<a class="ref" href="#s8">[8]</a>。Nansen 指出，攻击者在各条链上都用了新建的一次性地址。</li>
+          <li><b>选一份真实证明做底子</b>取 Beacon Chain 高度 110217401 上一笔真实跨链包的证明。这个高度的区块头和 AppHash 早已存在 BSC 的轻客户端里。</li>
+          <li><b>伪造叶子，拼装证明</b>按上一节的方法，把“向攻击者地址转入 100 万 BNB”的跨链包写进伪造叶子，键用通道当时期望的下一个序号。</li>
+          <li><b>第一次提交</b>18:26 调用 <code>handlePackage</code>，<code>TokenHub</code> 从自己的余额里把 100 万 BNB 转给攻击者。</li>
+          <li><b>把 BNB 换成能带走的东西</b>4 分钟后，攻击者把 60 万 BNB 存进 Venus，借出 6,240 万 BUSD 和 5,000 万 USDT；18:36 再存 30 万 BNB，借出近 3,500 万 USDC。Nansen 指出，以往的攻击者多半直接把钱打到中心化交易所或 Tornado Cash，这一次攻击者用借贷协议把不好抛售的 BNB 变成了稳定币。</li>
+          <li><b>跨链转出</b>稳定币经 Stargate、Multichain 等跨链桥分批转到多条 EVM 链，在 Curve、Uniswap、Geist 等协议里兑换、抵押，再分散到新地址。</li>
+          <li><b>第二次提交</b>20:32 到 20:42 连续 15 次因序号不对失败，20:43 第二个跨链包成功，又拿到 100 万 BNB。</li>
+        </ol>
+        <p>公开资料里只有这两次伪造成功。samczsun 的总结是，这个缺陷本可以让攻击者伪造任意消息，攻击者只伪造了两条，“the damage could have been far worse”（损失本可能大得多）<a class="ref" href="#s11">[11]</a>。为什么停在两次，没有公开解释。</p>
+      </section>
+
+      <section id="funds">
+        <h2>资金去向</h2>
+        <p>按 BNB Chain 的说法，验证者升级节点之后，大部分资金留在攻击者的地址里动不了，合作方也在其他链上帮助控制了一部分资金；约 1 亿美元已被转出链外，未能追回<a class="ref" href="#s2">[2]</a>。</p>
+        <ol class="flow">
+          <li class="atk"><b>TokenHub 放出</b>200 万 BNB，两笔各 100 万</li>
+          <li class="atk"><b>存入 Venus</b>90 万 BNB 作抵押，借出约 1.47 亿美元稳定币</li>
+          <li class="doubt"><b>跨链转出</b>经 Stargate、Multichain 转到其他链，各方估计 7,000 万到 1.37 亿美元</li>
+          <li class="def"><b>冻结</b>Tether 拉黑攻击者地址，合作方冻结约 700 万美元</li>
+        </ol>
+        <p>稳定币数额来自 Nansen 对借款交易的统计（6,240 万 BUSD、5,000 万 USDT、近 3,500 万 USDC）<a class="ref" href="#s12">[12]</a>，冻结来自 Halborn 和 CNBC 的报道<a class="ref" href="#s13">[13]</a><a class="ref" href="#s14">[14]</a>。没有存进 Venus 的那部分 BNB 留在攻击者的 BSC 地址里，被节点黑名单锁住；其中有多少在停链前已在链上换成别的资产，我们没有找到公开的精确数字。</p>
+        <h3>到底转出去多少</h3>
+        <p>“实际转出”的数字在头几天里不断变化，来源之间也不一致：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>来源</th><th>日期（2022）</th><th class="n">估计</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>BNB Chain 最初估计（BleepingComputer、Forkast 转述）</td><td>10-07</td><td class="n">7,000 万–8,000 万美元</td><td>其中约 700 万美元已冻结<a class="ref" href="#s15">[15]</a><a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>BNB Chain 早先估计（CNBC 转述）</td><td>10-07</td><td class="n">1 亿–1.1 亿美元</td><td>同一篇报道称已冻结 700 万美元<a class="ref" href="#s14">[14]</a></td></tr>
+              <tr><td>CZ</td><td>10-07</td><td class="n">约 1 亿美元</td><td>Forkast 转述<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>SlowMist</td><td>10-07</td><td class="n">超过 1.1 亿美元</td><td>Forkast 转述<a class="ref" href="#s16">[16]</a></td></tr>
+              <tr><td>BNB Chain 官方博客</td><td>10-11</td><td class="n">约 1 亿美元</td><td>“未能追回、被转出链外”<a class="ref" href="#s2">[2]</a></td></tr>
+              <tr><td>Nansen</td><td>10-15</td><td class="n">约 1.37 亿美元</td><td>转到其他链的总额，数据截至 10 月 10 日<a class="ref" href="#s12">[12]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>两份 10 月 7 日的媒体报道转述的“BNB Chain 最初估计”就不一样，可见早期数字很不稳定。较晚的两个口径相差约 3,700 万美元，可能的原因是统计范围不同：Nansen 统计的是转到其他链的总额，BNB Chain 说的是扣除冻结后仍未追回的部分。两者都没有公布逐笔明细，本页无法核对。CZ 后来对 CNBC 说，BNB Chain 阻止了 80% 到 90% 的目标资金被带走<a class="ref" href="#s14">[14]</a>。</p>
+        <div class="note warn">
+          <span class="h">名义 5.7 亿美元和实际损失</span>
+          <p>5.7 亿美元是 200 万 BNB 乘以当时的价格。这些 BNB 由 <code>TokenHub</code> 在 Beacon Chain 没有对应锁定的情况下放出，相当于凭空多出来的供应量，没有哪个用户的余额因此减少。价值真正流失，是在攻击者把它们变成真实资产的那一步：90 万枚没有任何背书的 BNB 在 Venus 换来了约 1.47 亿美元真实的稳定币。</p>
+          <p>Venus 因此留下一个由“空气 BNB”抵押的巨额债务仓位。BNB 价格稳住，抵押品足够，Venus 就不会出现坏账；价格跌得够深，要么 90 万 BNB 在市场上被清算抛售，要么 Venus 出现资金缺口。BNB Chain 说“没有用户或用户资金受到影响”<a class="ref" href="#s2">[2]</a>，就用户余额而言属实，但成本转到了 BNB 的总供应量和 Venus 的风险敞口上。</p>
+        </div>
+        <h3>Venus 仓位怎样收场</h3>
+        <p>BNB Chain 在 Venus 社区的提案里说，90 万 BNB 的仓位如果一次被清算，可能产生连锁效应，伤及 Venus、BNB 和整个 BNB Chain。它的方案是由 BNB Chain 担任这个仓位的唯一清算人，在仓位触及清算线时联合 Binance 等生态方自己出钱还债<a class="ref" href="#s18">[18]</a>。之后的步骤都通过 Venus 的治理提案执行：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th class="n">时间</th><th>事项</th><th>仓位情况</th></tr></thead>
+            <tbody>
+              <tr><td class="n">2022-10</td><td>攻击者存入抵押、借出稳定币</td><td>90 万 BNB 抵押，约 1.47 亿美元借款<a class="ref" href="#s12">[12]</a></td></tr>
+              <tr><td class="n">2022-11</td><td>VIP-79：BNB Chain 成为唯一清算人</td><td>避免公开市场清算<a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><td class="n">2023-02</td><td>VIP-99：把约 6,000 万美元 BUSD 债务换成更易清算的资产</td><td>BUSD 流动性下降，清算风险上升<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><td class="n">2023-12</td><td>BNB Chain 提出清理方案</td><td>抵押 630,240 BNB，借款 5,844 万 USDT、3,744 万 USDC<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td class="n">2024-01</td><td>VIP-224、VIP-244：强制清算部分债务，并接收其他账户约 3,470 万美元坏账</td><td>转移前抵押约 1.383 亿美元，债务约 1.105 亿美元<a class="ref" href="#s18">[18]</a><a class="ref" href="#s19">[19]</a></td></tr>
+              <tr><td class="n">2025-04</td><td>BNB Chain 提出最后一步</td><td>经过此前的清算，剩约 327,863 BNB<a class="ref" href="#s18">[18]</a></td></tr>
+              <tr><td class="n">2025-05</td><td>“VIP-503”执行</td><td>取出剩余 107,816 BNB，90% 销毁，10% 进入风险基金<a class="ref" href="#s19">[19]</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>从 327,863 BNB 到 107,816 BNB 之间的差额，按论坛提案的步骤是先强制清算剩余债务再取出余额，差额应是用于还债，但 Venus 没有公布逐步明细。最后被销毁的约 9.7 万 BNB，等于把 2022 年多出来的供应量收回了一部分。</p>
+      </section>
+
+      <section id="impact">
+        <h2>影响</h2>
+        <h3>BSC 第一次全网暂停</h3>
+        <p>BNB Chain 说，这是 BSC 上线以来第一次暂停。它强调链没有回滚，只是由 CoinbaseCloud、Figment 等 26 个验证者同步暂停、再同步恢复<a class="ref" href="#s2">[2]</a>。Forkast 的报道写道，BSC 的快速反应总体受到称赞，但它之所以能这么快停下来，正是因为验证者数量少：44 个验证者中 26 个活跃，能够迅速协调<a class="ref" href="#s17">[17]</a>。</p>
+        <div class="compare">
+          <div>
+            <h4>BNB Chain 的说法</h4>
+            <p>去中心化有程度之分，是一个逐步推进的过程。BNB Chain 不如以太坊去中心化，但比很多链更去中心化，中本聪系数为 8。Binance 现在只是赞助方。协调一致的应对与去中心化本来就很难兼得，紧急情况下快速反应对用户最有利<a class="ref" href="#s2">[2]</a>。</p>
+          </div>
+          <div>
+            <h4>批评者的说法</h4>
+            <p>CoinStats 创始人 Narek Gevorgyan 对 Forkast 说，这次事件暴露了网络的单点故障，网络要靠少数人的信任才能运转。AAX 的研究与策略主管 Ben Caselin 说，受益于中心化的链有其位置，但创新和活动最终会流向真正去中心化的链<a class="ref" href="#s17">[17]</a>。</p>
+          </div>
+        </div>
+        <p>Forkast 在同一篇报道里把这次分叉与 2016 年以太坊为 <a href="2016-the-dao.html">The DAO</a> 做的分叉相比较。Kraken 澳大利亚负责人 Jonathon Miller 说，这样的分叉在一定程度上损害了账本不可篡改的原则，“可以修改过去”的想法与货币不相容<a class="ref" href="#s17">[17]</a>。这个类比不太准确：BSC 这次没有回滚，也没有改写任何余额。但他指出的问题成立：谁有能力临时改变链的规则。</p>
+        <h3>暂停是临时的，黑名单是永久的</h3>
+        <p>从 v1.1.15 起，运行官方客户端的节点会拒绝一切由攻击者这两个地址发出或发往这两个地址的交易。这条规则写在共识代码里，与任何合约的冻结功能无关：</p>
+<pre class="code"><code><span class="c">// core/types/blacklist.go（bnb-chain/bsc v1.1.15）</span>
+// This is introduced because of the Tendermint IAVL Merkel Proof verification exploitation.
+var NanoBlackList = []common.Address{
+    common.HexToAddress("0x489A8756C18C0b8B24EC2a2b9FF3D4d447F79BEc"),
+    common.HexToAddress("0xFd6042Df3D74ce9959922FeC559d7995F3933c55"),
+    // Test Account
+    common.HexToAddress("0xdb789Eb5BDb4E559beD199B8b82dED94e1d056C9"),
+}
+
+<span class="c">// core/state_transition.go（master 分支，2026-10）：Nano 分叉之后的每笔交易</span>
+if st.evm.ChainConfig().IsNano(st.evm.Context.BlockNumber) {
+    for _, blackListAddr := range types.NanoBlackList {
+<span class="bad">        if blackListAddr == msg.From {                  <span class="c">// 发送方在黑名单：拒绝</span></span>
+            return nil, errors.New("block blacklist account")
+        }
+<span class="bad">        if msg.To != nil &amp;&amp; *msg.To == blackListAddr { <span class="c">// 接收方在黑名单：拒绝</span></span>
+            return nil, errors.New("block blacklist account")
+        }
+    }
+}</code></pre>
+        <p class="code-cap">来源：bnb-chain/bsc v1.1.15 标签 core/types/blacklist.go 第 5–11 行（引入时的 PR #1109 同时改了交易池 core/tx_pool.go）；master 分支 core/state_transition.go 第 563–572 行。截至 2026 年 10 月，master 分支的 blacklist.go 里仍是这两个地址，注释中的“Merkel”已改为“Merkle”。</p>
+        <p>BNB Chain 在 10 月 7 日的公告里说，要用链上投票决定“是否冻结被盗资金”<a class="ref" href="#s1">[1]</a>。从时间上看，冻结在同一天发布的版本里就已生效，早于任何投票。我们没有找到这次投票的公开记录或结果。</p>
+        <h3>Cosmos 的连锁反应</h3>
+        <p>缺陷在通用的 IAVL 库里，Cosmos 在两天内发布了 Dragonfruit 公告<a class="ref" href="#s10">[10]</a>。据 Cosmos 当年 12 月的复盘，10 月 8 日起，以 Osmosis 的 Dev Ojha 为首的一小组工程师针对 BSC 事件对 ICS-23 做了集中安全审查，又发现两个漏洞：ICS-23 里的 Dragonberry 可以伪造 IBC 超时，进一步升级为 ICS-20 双花，所有 IBC 通道里的资金都受威胁；Cosmos SDK Authz 模块里的 Elderflower 可以绕过部分消息认证。两者都在造成资金损失之前修补完毕<a class="ref" href="#s20">[20]</a>。</p>
+        <h3>“跨链桥之年”</h3>
+        <p>Chainalysis 统计，2022 年被盗的加密资产共 38 亿美元，其中 31 亿来自 DeFi 协议，这 31 亿里又有 64% 来自跨链桥<a class="ref" href="#s22">[22]</a>。本站收录的 2022 年跨链桥事件：</p>
+        <div class="tbl-wrap">
+          <table class="data">
+            <thead><tr><th>事件</th><th>时间（2022）</th><th class="n">损失</th><th>失守的环节</th></tr></thead>
+            <tbody>
+              <tr><td><a href="2022-wormhole.html">Wormhole</a></td><td>2 月</td><td class="n">约 3.26 亿美元</td><td>Solana 程序没有校验传入的系统账户地址，签名检查被绕过</td></tr>
+              <tr><td><a href="2022-ronin-bridge.html">Ronin</a></td><td>3 月</td><td class="n">约 6.24 亿美元</td><td>9 个验证者中 5 个的签名落入攻击者手中</td></tr>
+              <tr><td><a href="2022-harmony-horizon.html">Harmony Horizon</a></td><td>6 月</td><td class="n">约 1 亿美元</td><td>5 个多签签名者中 2 把私钥被盗</td></tr>
+              <tr><td><a href="2022-nomad-bridge.html">Nomad</a></td><td>8 月</td><td class="n">约 1.9 亿美元</td><td>升级时可信根被初始化为 0x00</td></tr>
+              <tr><td>BNB Bridge（本页）</td><td>10 月</td><td class="n">名义约 5.7 亿美元</td><td>IAVL 范围证明忽略右侧哈希；实际转出约 1 亿美元</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>这五起分两类。Ronin 和 Harmony 丢的是签名私钥；Wormhole、Nomad 和 BNB Bridge 没有泄露任何私钥，出问题的是“怎样确认一条跨链消息是真的”这段校验逻辑。</p>
+      </section>
+
+      <section id="aftermath">
+        <h2>后续处置</h2>
+        <h3>紧急止血</h3>
+        <p>停链让 BSC 不再出块，攻击者留在 BSC 上的 BNB 和 Venus 仓位都被原地定住。v1.1.15 随后用硬分叉写入黑名单、暂停跨链，链恢复之后攻击者仍然动不了这些资产<a class="ref" href="#s5">[5]</a>。“先停链、再用分叉写黑名单”只在验证者少、能迅速联系上时才做得到。BNB Chain 自己的说法是，26 个活跃验证者分散在不同时区，只能逐个联系；协调一致的应对仍花了约 5 小时，导致超过 1 亿美元未能追回<a class="ref" href="#s1">[1]</a><a class="ref" href="#s2">[2]</a>。</p>
+        <h3>Moran：临时补丁与恢复跨链</h3>
+        <p>v1.1.16 的发布说明把它称为“临时的紧急补丁”，包含三项改动：修补 IAVL 哈希检查的漏洞，最终迁移到 ICS23 规范；在 <code>CrossChain</code> 合约里加入区块头顺序检查；中继者限定为创世候选者组成的白名单，之后再用 BEP 规定中继者的产生方式<a class="ref" href="#s5">[5]</a>。BNB Chain 当时表示，停链期间被暂停的跨链转账会在 10 月 12 日升级生效后处理完毕<a class="ref" href="#s2">[2]</a>。v1.1.15 的说明也提醒用户，这段时间发起的跨链转账会被冻结，等中继恢复后再放行<a class="ref" href="#s5">[5]</a>。</p>
+        <h3>BEP-171：结构性补强</h3>
+        <p>BEP-171 于 2022 年 10 月 28 日提出，随 2023 年 4 月的 Planck 硬分叉启用<a class="ref" href="#s3">[3]</a><a class="ref" href="#s5">[5]</a><a class="ref" href="#s6">[6]</a>：</p>
+        <ul>
+          <li>IAVL 证明校验升级到 ICS23 规范，与 Cosmos Hub 共享同一套实现和安全更新。</li>
+          <li>大额跨链转账锁定：超过阈值（BNB 默认 1 万枚，可由治理调整）的转账先在 <code>TokenHub</code> 锁定 12 小时才能提取。</li>
+          <li>挑战机制：任何人都可以提交通道和序号相同、都能通过默克尔校验、但内容不同的两个跨链包；挑战成立，跨链自动暂停。</li>
+          <li>紧急权限：Cabinet 验证者可以暂停跨链，也可以取消攻击者处于锁定期的转账。</li>
+        </ul>
+        <p>挑战机制直接针对这次的手法：伪造包和真实包的通道、序号相同，都能通过默克尔校验，但内容不同，BEP-171 把这一点明确写成了伪造的特征。如果 2022 年已有锁定期，单笔 100 万 BNB 远超阈值，会在 <code>TokenHub</code> 里停留 12 小时，而不是 4 分钟后就进了 Venus。</p>
+        <h3>投票与赏金</h3>
+        <p>10 月 7 日公告里的四项投票和缉拿赏金<a class="ref" href="#s1">[1]</a>，我们没有找到是否举行、结果如何的公开记录，也没有找到“追回金额 10%”的赏金被支付的记录。真正持续进行的是 Venus 仓位的清理，前后约两年半，见上一节。</p>
+        <h3>攻击者是谁</h3>
+        <p>2022 年 10 月下旬，CZ 说执法部门提供了线索，Binance 正在缩小范围<a class="ref" href="#s14">[14]</a>。此后我们没有找到公开的进展：没有执法机构公布嫌疑人或起诉，我们查阅的安全公司也没有把这起事件归因于某个团伙。Nansen 根据链上行为判断，攻击者熟悉跨链中继的工作方式，使用全新的地址，在短时间内借助一系列 DeFi 产品转移资金，没有立刻把钱转到交易所<a class="ref" href="#s12">[12]</a>。Chainalysis 估计 2022 年与朝鲜有关的黑客盗取了约 17 亿美元，但我们读到的这篇报告没有把本案列入其中<a class="ref" href="#s22">[22]</a>，本页不做推测。</p>
+        <h3>跨链桥的终结</h3>
+        <p>2024 年 11 月 19 日，BNB Beacon Chain 按计划停止运行，它与 BSC 之间的跨链通信随之永久关闭<a class="ref" href="#s21">[21]</a>。这次事故涉及的 IAVL 证明校验路径，从此不再承载实际的跨链流量。</p>
+      </section>
+
+      <section id="lessons">
+        <h2>教训与防御</h2>
+        <div class="note lesson">
+          <span class="h">给跨链桥和轻客户端的开发者</span>
+          <ul>
+            <li>证明格式里不能有“哈希计算会忽略”的字段。格式允许出现的每一个字节，要么进入哈希，要么被校验直接拒绝。这次的根源就是一个既不进哈希、也不被拒绝、却被后续逻辑信任的 <code>Right</code>。</li>
+            <li>只需要单值证明，就只接受单值证明。BSC 的修复关掉了范围证明、不存在证明和 simple value 证明，这些能力跨链桥都用不上，却都扩大了攻击面。</li>
+            <li>证明的高度不能倒退，最好有时效要求。轻客户端保存了全部历史区块头，任何一个旧区块都可能被拿来当伪造的底子；要求高度单调或设定有效期，攻击者就无法拿一份伪造证明反复使用。</li>
+            <li>大额转账要有限速和锁定期。BEP-171 的 12 小时锁定实现成本很低，换来的是反应时间；这次攻击从第一次放币到存进 Venus 只用了 4 分钟。</li>
+            <li>监控跨链桥最直接的不变量：目标链放出的量不应超过源链锁定的量。单笔放出 100 万 BNB、源链却没有对应锁定，这种检查一眼就能发现。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给依赖开源库的团队</span>
+          <ul>
+            <li>选库还要看用的是哪条代码路径。Cosmos 自己的 IBC 用 ICS23，不用 IAVL 的 RangeProof；BSC 依赖的是一个知名库里少有人审视的分支。要问的是：上游自己在生产中用不用这段代码。</li>
+            <li>门槛很低的开放登记，等于把校验代码直接交给攻击者测试。当时成为中继者只要 100 BNB。无需许可的角色，背后的校验逻辑必须经得起任意输入；做不到，就先用白名单收紧入口。</li>
+          </ul>
+        </div>
+        <div class="note lesson">
+          <span class="h">给借贷协议和链的治理者</span>
+          <ul>
+            <li>抵押品可能是“真币但没有背书”。Venus 的预言机给 BNB 的报价没错，错在这批 BNB 是凭空放出的。对单一抵押品设供应上限、对异常大额的存入和借款设告警，是这类事故里下游的最后一道防线。</li>
+            <li>停链和黑名单有效，也有代价。紧急权力最好事先写进明确的规则：谁能触发、范围多大、如何恢复，而不是临时逐个联系验证者。BEP-171 的 Cabinet 暂停机制是这个方向上的一步。</li>
+            <li>“没有用户受影响”不等于没有损失。损失转进了总供应量和借贷协议的风险敞口，应当说清楚。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="sources">
+        <h2>参考来源</h2>
+        <ol class="sources">
+          <li id="s1">BNB Chain，《BNB Chain Ecosystem Update》，官方博客，2022-10-07。<a href="https://www.bnbchain.org/en/blog/bnb-chain-ecosystem-update">bnbchain.org</a></li>
+          <li id="s2">BNB Chain，《BNB Chain: A Decentralized Response》，官方博客，2022-10-11。<a href="https://www.bnbchain.org/en/blog/bnb-chain-a-decentralized-response">bnbchain.org</a></li>
+          <li id="s3">BNB Chain，《Technology Update of BNB Chain in October 2022》（v1.1.16、BEP-171），官方博客，2022-11-08。<a href="https://www.bnbchain.org/en/blog/technology-update-of-bnb-chain-in-october-2022">bnbchain.org</a></li>
+          <li id="s4">bnb-chain/bsc PR #1121，《vm: add two proof verifier to fix the vulnerability in range proof》（漏洞说明与修复代码），合并于 2022-10-11。<a href="https://github.com/bnb-chain/bsc/pull/1121">github.com</a></li>
+          <li id="s5">bnb-chain/bsc 发布说明：v1.1.15（Nano，2022-10-07）、v1.1.16（Moran，2022-10-11）、v1.1.21（Planck，2023-03-27）。<a href="https://github.com/bnb-chain/bsc/releases/tag/v1.1.15">v1.1.15</a> · <a href="https://github.com/bnb-chain/bsc/releases/tag/v1.1.16">v1.1.16</a> · <a href="https://github.com/bnb-chain/bsc/releases/tag/v1.1.21">v1.1.21</a></li>
+          <li id="s6">BNB Chain，《BEP-171: Security Enhancement for Cross-Chain Module》，2022-10-28 提出。<a href="https://github.com/bnb-chain/BEPs/blob/master/BEPs/BEP171.md">github.com</a></li>
+          <li id="s7">bnb-chain/bsc 源码：core/vm/contracts_lightclient.go、core/vm/lightclient（v1.1.14–v1.1.16 标签），core/types/blacklist.go（v1.1.15 标签与 master 分支），core/state_transition.go（master 分支，2026-10）；PR #1109。<a href="https://github.com/bnb-chain/bsc/blob/v1.1.16/core/vm/contracts_lightclient.go">contracts_lightclient.go</a> · <a href="https://github.com/bnb-chain/bsc/blob/master/core/types/blacklist.go">blacklist.go</a> · <a href="https://github.com/bnb-chain/bsc/pull/1109">PR #1109</a></li>
+          <li id="s8">bnb-chain/bsc-genesis-contract 源码：contracts/CrossChain.sol、TokenHub.sol、RelayerHub.sol、System.sol、generate-genesis.js（提交 dd9bd84 与 c184a00）。<a href="https://github.com/bnb-chain/bsc-genesis-contract/blob/dd9bd8495c94/contracts/CrossChain.sol">dd9bd84</a> · <a href="https://github.com/bnb-chain/bsc-genesis-contract/blob/c184a00160b6/contracts/CrossChain.sol">c184a00</a></li>
+          <li id="s9">cosmos/iavl 源码 v0.12.0 标签（proof.go、proof_range.go、proof_iavl_value.go）与 CHANGELOG 中 v0.19.3（2022-10-08）条目。<a href="https://github.com/cosmos/iavl/blob/v0.12.0/proof_range.go">v0.12.0</a> · <a href="https://github.com/cosmos/iavl/blob/master/CHANGELOG.md">CHANGELOG</a></li>
+          <li id="s10">Ethan Buchman，《Cosmos-SDK Security Advisory Dragonfruit》，Cosmos 论坛，2022-10-08。<a href="https://forum.cosmos.network/t/cosmos-sdk-security-advisory-dragonfruit/7614">forum.cosmos.network</a></li>
+          <li id="s11">samczsun，关于 Binance Bridge 被盗 200 万 BNB 的推文串，2022-10-06（经 Thread Reader 镜像阅读）。<a href="https://x.com/samczsun/status/1578167198203289600">x.com</a> · <a href="https://threadreaderapp.com/thread/1578167198203289600.html">threadreaderapp.com</a></li>
+          <li id="s12">Nansen，《BNB Chain’s Cross-Chain Bridge Exploit Explained》，2022-10-15。<a href="https://nansen.ai/post/bnb-chains-cross-chain-bridge-exploit-explained">nansen.ai</a></li>
+          <li id="s13">Rob Behnke，《Explained: The BNB Chain Hack (October 2022)》，Halborn，2022-10-21。<a href="https://www.halborn.com/blog/post/explained-the-bnb-chain-hack-october-2022">halborn.com</a></li>
+          <li id="s14">Ryan Browne，《$570 million worth of Binance’s BNB token stolen in another major crypto hack》，CNBC，2022-10-07；《Binance is ‘narrowing down’ identity of hacker behind $570 million crypto attack, CEO says》，CNBC，2022-10-24。<a href="https://www.cnbc.com/2022/10/07/more-than-100-million-worth-of-binances-bnb-token-stolen-in-another-major-crypto-hack.html">10-07</a> · <a href="https://www.cnbc.com/2022/10/24/binance-narrowing-down-identity-of-hacker-behind-bnb-crypto-hack-ceo.html">10-24</a></li>
+          <li id="s15">Lawrence Abrams，《Hacker steals $566 million worth of crypto from Binance Bridge》，BleepingComputer，2022-10-06（10-07 更新）。<a href="https://www.bleepingcomputer.com/news/security/hacker-steals-566-million-worth-of-crypto-from-binance-bridge/">bleepingcomputer.com</a></li>
+          <li id="s16">Timmy Shen，《BNB Chain back online after around US$100 mln lost in possible exploit》，Forkast，2022-10-07。<a href="https://forkast.news/bnb-chain-back-online-after-around-100-mln-lost-in-possible-exploit/">forkast.news</a></li>
+          <li id="s17">Lachlan Keller，《Binance to hard fork BNB Smart Chain amid heated debate around decentralization》，Forkast，2022-10-12。<a href="https://forkast.news/binance-hard-fork-bnb-smart-chain-decentralization/">forkast.news</a></li>
+          <li id="s18">BNB Chain 核心团队在 Venus 社区论坛的提案：唯一清算人（2022-11-23）、置换 BUSD 债务（2023-02-18）、攻击者账户清理（2023-12-15）、清理收尾（2025-04-11）；社区提案：向攻击者账户转移坏账（2024-01-23）。<a href="https://community.venus.io/t/bnb-chain-core-team-as-the-sole-liquidator-of-the-bnb-exploiter-address/3202">3202</a> · <a href="https://community.venus.io/t/swap-busd-debt-on-behalf-of-the-exploiters-account-into-other-assets/3342">3342</a> · <a href="https://community.venus.io/t/proposal-bnb-bridge-exploiter-account-remediation/3974">3974</a> · <a href="https://community.venus.io/t/move-bad-debt-from-the-current-debtors-to-the-bnb-bridge-exploiter-account-to-eliminate-remaining-shortfall/4071">4071</a> · <a href="https://community.venus.io/t/0x48-9bec-account-remediation-concluding-steps/5034">5034</a></li>
+          <li id="s19">Venus Protocol 治理提案 VIP-79、VIP-99、VIP-224、VIP-244 与“VIP-503”（链上编号 504）的提案文本和执行记录，Venus 治理接口与 VenusProtocol/vips 仓库。<a href="https://app.venus.io/#/governance/proposal/79?chainId=56">VIP-79</a> · <a href="https://app.venus.io/#/governance/proposal/504?chainId=56">提案 504</a> · <a href="https://github.com/VenusProtocol/vips">github.com</a></li>
+          <li id="s20">Ethan Buchman，《Cosmos-SDK &amp; IBC Vulnerability Retrospective: Security Advisories Dragonberry and Elderflower (October 2022)》，Cosmos 论坛，2022-12-16。<a href="https://forum.cosmos.network/t/cosmos-sdk-ibc-vulnerability-retrospective-security-advisories-dragonberry-and-elderflower-october-2022/8735">forum.cosmos.network</a></li>
+          <li id="s21">BNB Chain，《Final Sunset plan of BNB Beacon Chain》，官方博客，2024-10-16。<a href="https://www.bnbchain.org/en/blog/final-sunset-plan-of-bnb-beacon-chain">bnbchain.org</a></li>
+          <li id="s22">Chainalysis，《2022 Biggest Year Ever For Crypto Hacking with $3.8 Billion Stolen》，2023-02-01。<a href="https://www.chainalysis.com/blog/2022-biggest-year-ever-for-crypto-hacking/">chainalysis.com</a></li>
+        </ol>
+      </section>
+
+    </article>
+  </div>
+
+  <nav class="pager" data-slot="pager" aria-label="上一起与下一起"></nav>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <p>金额按事发时的市场价格折算，不同来源的统计口径可能不同。本页内容整理自文末列出的公开资料，截至 2026 年 10 月。</p>
+</div></footer>
+</body>
+</html>
