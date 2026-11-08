@@ -1,0 +1,6 @@
+---
+// 知识卡片：term 是英文术语（小标签，垫本文分类的纸色），title 是中文标题；正文写 <p>、<ul>
+const { term, title } = Astro.props;
+if (!title) throw new Error("Card 要有 title");
+---
+<div class="bit"><div class="bh">{term && <span class="term">{term}</span>}<h4>{title}</h4></div><slot /></div>

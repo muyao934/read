@@ -1,0 +1,70 @@
+---
+// 阅读库首页：照被盗站首页（blockchain/hacks/index.html）的分章节列表。文章按分类分章节，每章一个纸色，章内新的在前；专题卡片在下面
+import Base from "../layouts/Base.astro";
+import { CATS, TOPICS, TYPES, sortedNotes, validate } from "../lib/notes.js";
+import { url } from "../lib/url.js";
+validate(Object.keys(import.meta.glob("../notes/*.astro")).map((p) => p.split("/").pop().replace(/\.astro$/, "")));
+const notes = sortedNotes();
+const groups = CATS.map((c) => ({ c, list: notes.filter((n) => n.cat === c.id) })).filter((g) => g.list.length);
+---
+<Base title="阅读库" desc="工作、学习、生活中遇到的新东西，每篇把一个问题讲清楚。" bodyClass="lib-home">
+<main class="wrap">
+  <section class="hero">
+    <h1>阅读库<span class="yr">技术 · 工作 · 学习 · 生活</span></h1>
+    <p class="lede">工作、学习、生活中遇到的新东西，每篇把一个问题讲清楚：先给结论，再讲原理和例子，最后列出来源。</p>
+  </section>
+
+  <section class="sec" id="notes">
+    <h2>文章</h2>
+    <p class="intro">共 {notes.length} 篇，按分类排，每类里新的在前。</p>
+    <div class="lib-tools">
+      <input class="lib-search" id="q" type="search" placeholder="搜索标题、摘要、标签" aria-label="搜索文章">
+      <p class="lib-count" id="count" aria-live="polite"></p>
+    </div>
+    {groups.map(({ c, list }) => (
+      <section class={`era tint-${c.tint}`} id={`cat-${c.id}`}>
+        <div class="era-head">
+          <p class="yrs">{c.name}</p>
+          <div><h3>{c.head}</h3><p class="meta">{list.length} 篇</p></div>
+        </div>
+        <ol class="ledger">{list.map((n, i) => (
+          <li data-q={[n.title, n.desc, ...(n.tags || [])].join(" ").toLowerCase()}>
+            <a class="row" href={url(`notes/${n.slug}.html`)}>
+              <span class="r-no">{String(i + 1).padStart(2, "0")}</span>
+              <span class="r-date">{n.date}</span>
+              <span class="r-main">
+                <span class="r-name">{n.title}</span>
+                <span class="r-sum">{n.desc}</span>
+                <span class="r-tags"><span class="tag">{TYPES[n.type].name}</span>{(n.tags || []).map((t) => <span class="tag">{t}</span>)}</span>
+              </span>
+            </a>
+          </li>
+        ))}</ol>
+      </section>
+    ))}
+    <p class="lib-empty" id="empty" hidden>没有符合条件的文章。</p>
+  </section>
+
+  <section class="sec" id="topics">
+    <h2>专题</h2>
+    <p class="intro">成套的内容，有自己的首页和目录。</p>
+    <ul class="lib-topics">{TOPICS.map((t) => <li><a class={`tint-${t.tint}`} href={url(t.href)}><b>{t.title}</b><span class="d">{t.desc}</span></a></li>)}</ul>
+  </section>
+</main>
+<p slot="foot">内容由 AI 协助整理，每篇末尾列出来源；涉及版本、价格、政策的说法以成文日期为准。</p>
+<script is:inline>
+  // 搜索：按标题、摘要、标签过滤，没有命中的分类整章隐藏
+  (function () {
+    var q = document.getElementById("q"), count = document.getElementById("count"), empty = document.getElementById("empty");
+    var rows = document.querySelectorAll(".ledger > li"), eras = document.querySelectorAll("#notes .era");
+    function run() {
+      var kw = q.value.trim().toLowerCase(), shown = 0;
+      rows.forEach(function (li) { var hit = !kw || li.dataset.q.indexOf(kw) >= 0; li.hidden = !hit; if (hit) shown++; });
+      eras.forEach(function (s) { s.hidden = !s.querySelector(".ledger > li:not([hidden])"); });
+      count.textContent = kw ? "找到 " + shown + " 篇" : "";
+      empty.hidden = shown > 0;
+    }
+    q.addEventListener("input", run);
+  })();
+</script>
+</Base>

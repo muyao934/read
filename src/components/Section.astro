@@ -1,0 +1,16 @@
+---
+// 正文的一节：<Section id title short?>。目录显示 short（不超过 8 个字）；没写时按 id 取下面的默认短名，再没有就用 title
+const DEFAULT = {
+  why: "为什么要懂", core: "核心概念", how: "怎么运作", example: "实际例子", pitfalls: "常见误区", history: "发展过程", sources: "来源",
+  when: "适用场景", prep: "准备", steps: "步骤", verify: "确认做成", trouble: "出问题时",
+  what: "各是什么", table: "对比表", choose: "怎么选",
+};
+const { id, title, short } = Astro.props;
+if (!id || !title) throw new Error("Section 要有 id 和 title");
+const s = short || DEFAULT[id] || title;
+if ([...s].length > 8) throw new Error(`Section #${id} 的目录短名“${s}”超过 8 个字，用 short 给一个短的`);
+---
+<section id={id} data-short={s}>
+  <h2>{title}</h2>
+  <slot />
+</section>

@@ -1,12 +1,10 @@
-# 只提交网页需要的文件：先忽略根目录全部，再放行站点目录
-/*
-!/.gitignore
-!/.nojekyll
-!/index.html
-!/assets/
-!/notes/
-!/blockchain/
-# 检查脚本、样板、内部文档（含本机路径，网页不引用）
+# 依赖和构建产物
+node_modules/
+dist/
+.astro/
+# 本地检查脚本、内部文档（含本机路径）
+/tools/
 /blockchain/tools/
 *.md
 .DS_Store
+!/README.md

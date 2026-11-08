@@ -1,0 +1,192 @@
+---
+// 概念类：why → core → how → example → pitfalls → sources（中间可以加节）
+// 阅读库的示范文章：用到了全部组件，新文章照这一篇的写法
+import { Section, Note, Cards, Card, Flow, Table, Code, Timeline, Diagram, Anim, Sources } from "../components/index.js";
+import { chip, lbl, key } from "../lib/anim.js";
+
+// TLS 1.3 握手：浏览器 ↔ 服务器，一个来回
+const HANDSHAKE = {
+  h: 300,
+  b: [["c", 2, 8, 26, 84, "浏览器"], ["s", 72, 8, 26, 84, "服务器"]],
+  it: [
+    { id: "ch", h: chip("ClientHello", "--accent"), x: 15, y: 28, hide: 1 },
+    { id: "ka", h: lbl("临时公钥 A", "m"), x: 15, y: 40, hide: 1 },
+    { id: "sh", h: chip("ServerHello", "--accent"), x: 85, y: 28, hide: 1 },
+    { id: "kb", h: lbl("临时公钥 B", "m"), x: 85, y: 40, hide: 1 },
+    { id: "k1", h: key("钥"), x: 15, y: 60, hide: 1 },
+    { id: "k2", h: key("钥"), x: 85, y: 60, hide: 1 },
+    { id: "eve", h: lbl("路上的人：只看到 A、B", "m"), x: 50, y: 60, hide: 1 },
+    { id: "cert", h: chip("证书 + 签名", "--ok", "out"), x: 85, y: 78, hide: 1 },
+    { id: "ok", h: lbl("证书验证通过", "g"), x: 15, y: 88, hide: 1 },
+    { id: "enc", h: chip("加密的 HTTP", "--ok"), x: 50, y: 88, hide: 1 },
+  ],
+  s: [
+    { c: "浏览器连上服务器的 443 端口。这时双方没有任何共享的秘密，线路上的每个字节，路上的人都能看到。", lit: ["c", "s"] },
+    { c: "浏览器发出 ClientHello：支持哪些 TLS 版本和加密套件、要访问哪个域名，还附上一个临时公钥 A。对应的私钥 a 只留在浏览器里。",
+      set: { ch: { hide: 0 }, ka: { hide: 0 } }, lit: ["c"] },
+    { c: "ClientHello 是明文，到达服务器。路上的人能看到域名和公钥 A，但这不要紧：公钥本来就是公开的。",
+      set: { ch: { x: 85 }, ka: { x: 85 } }, lit: ["s"] },
+    { c: "服务器回 ServerHello：选定版本和加密套件，附上自己的临时公钥 B。私钥 b 留在服务器。",
+      set: { ch: { hide: 1 }, ka: { hide: 1 }, sh: { hide: 0 }, kb: { hide: 0 } }, lit: ["s"] },
+    { c: "ServerHello 到达浏览器。现在双方都有了对方的公钥。",
+      set: { sh: { x: 15 }, kb: { x: 15 } }, lit: ["c"] },
+    { c: "双方各算一次：浏览器用 a 和 B，服务器用 b 和 A，算出同一个数，从中派生出会话密钥。路上的人只有 A 和 B，没有 a 或 b，算不出来。这就是 ECDHE 密钥交换。",
+      set: { sh: { hide: 1 }, kb: { hide: 1 }, k1: { hide: 0 }, k2: { hide: 0 }, eve: { hide: 0 } }, lit: ["c", "s"] },
+    { c: "从这一步起，服务器发的内容都已加密。服务器发来证书，并用证书对应的私钥给前面的握手内容签名，证明这张证书是它自己的。",
+      set: { cert: { hide: 0 } }, lit: ["s"] },
+    { c: "浏览器验证：证书链能一级级追到系统信任的根证书；证书里的域名和地址栏一致；还在有效期内；签名能用证书里的公钥验过。四项都通过，才确认对面就是这个网站。",
+      set: { cert: { x: 15 }, ok: { hide: 0 } }, lit: ["c"] },
+    { c: "双方互发 Finished，确认握手内容没被改过。之后的 HTTP 请求和网页都用会话密钥加密传输。整个握手只用了一个来回。",
+      set: { cert: { hide: 1 }, enc: { hide: 0 } }, lit: ["c", "s"] },
+  ],
+};
+
+// 2026-11-08 在 Mac 上实测本站
+const CURL = `curl -sv -o /dev/null https://muyao934.github.io/read/    # -v 打印握手过程
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256
+* ALPN: server accepted h2
+*  subject: CN=*.github.io
+*  start date: Sep 30 23:44:46 2026 GMT
+*  expire date: Dec 29 23:44:45 2026 GMT
+*  subjectAltName: host "muyao934.github.io" matched cert's "*.github.io"
+*  issuer: C=US; O=Let's Encrypt; CN=YR1`;
+
+const CHAIN = `echo | openssl s_client -connect muyao934.github.io:443 -servername muyao934.github.io
+ 0 s:CN=*.github.io
+   i:C=US, O=Let's Encrypt, CN=YR1
+ 1 s:C=US, O=Let's Encrypt, CN=YR1
+   i:C=US, O=ISRG, CN=Root YR
+ 2 s:C=US, O=ISRG, CN=Root YR
+   i:C=US, O=Internet Security Research Group, CN=ISRG Root X1
+New, TLSv1.3, Cipher is TLS_AES_128_GCM_SHA256
+Verify return code: 0 (ok)`;
+
+const HISTORY = [
+  { date: "1995", text: "Netscape 发布 SSL 2.0，第一个公开的版本（1.0 没有发布）。" },
+  { date: "1999", text: "IETF 接手标准化，改名 TLS，发布 TLS 1.0（RFC 2246）。" },
+  { date: "2008", text: "TLS 1.2（RFC 5246），之后十年的主力版本。" },
+  { date: "2014-10", text: "POODLE 攻击公开，SSL 3.0 不再安全。", kind: "warn" },
+  { date: "2015-06", text: "RFC 7568 正式废弃 SSL 3.0。", kind: "tip" },
+  { date: "2016-04", text: "Let's Encrypt 结束公测，免费、自动签发证书，HTTPS 迅速普及。", kind: "tip", key: true },
+  { date: "2018-08", text: "TLS 1.3（RFC 8446）：握手一个来回，去掉不带前向保密的旧算法。", kind: "tip", key: true },
+  { date: "2021-03", text: "RFC 8996 正式废弃 TLS 1.0 和 1.1。", kind: "tip" },
+  { date: "2026–2029", text: "CA/B 论坛 SC-081：公开证书的最长有效期从 398 天分阶段缩到 47 天，2026 年 3 月开始。" },
+];
+
+const SOURCES = [
+  { title: "RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3", url: "https://www.rfc-editor.org/rfc/rfc8446", by: "IETF，2018", note: "握手流程、ECDHE、前向保密。" },
+  { title: "RFC 8996: Deprecating TLS 1.0 and TLS 1.1", url: "https://www.rfc-editor.org/rfc/rfc8996", by: "IETF，2021" },
+  { title: "RFC 7568: Deprecating Secure Sockets Layer Version 3.0", url: "https://www.rfc-editor.org/rfc/rfc7568", by: "IETF，2015" },
+  { title: "Ballot SC-081v3: Introduce Schedule of Reducing Validity and Data Reuse Periods", url: "https://cabforum.org/2025/04/11/ballot-sc081v3-introduce-schedule-of-reducing-validity-and-data-reuse-periods/", by: "CA/Browser Forum，2025", note: "398 天到 47 天，2026 年 3 月开始、2029 年 3 月结束。" },
+  { title: "FAQ", url: "https://letsencrypt.org/docs/faq/", by: "Let's Encrypt", note: "默认证书有效期 90 天。" },
+  { title: "本站实测", note: "2026-11-08 在 macOS 上用 curl -v 和 openssl s_client 连接 muyao934.github.io，输出见“实际例子”。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>不加密的 HTTP，请求和网页是明文在网络上走的。你连的 Wi-Fi 路由器、运营商、中间的每一跳网络，都能看到你在读什么、填了什么，也能改：插一段广告，把下载链接换成别的文件。HTTPS 要解决三件事：</p>
+  <ul>
+    <li><b>保密</b>：路上的人看不到内容。</li>
+    <li><b>完整</b>：内容被改过一个字节，接收方都能发现。</li>
+    <li><b>身份</b>：确认对面就是你要找的网站，而不是冒充它的人。</li>
+  </ul>
+  <Note kind="info" title="现在几乎都是 HTTPS">主流浏览器会把没有 HTTPS 的网站标成“不安全”，GitHub Pages 这类托管服务默认就开着 HTTPS。所以要弄清的不是用不用，而是它到底保证了什么、没保证什么。</Note>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="TLS" title="TLS：HTTPS 里的 S">
+      <p>HTTPS 就是跑在 TLS 上的 HTTP。TLS 的前身叫 SSL，所以“SSL 证书”这个叫法一直沿用到现在，实际用的都是 TLS。现在常用 TLS 1.2 和 1.3，更早的版本已被正式废弃。</p>
+    </Card>
+    <Card term="Session Key" title="会话密钥">
+      <p>网页内容用<b>对称加密</b>传输：加密和解密用同一把密钥，速度快。难点在于双方怎么在一条不安全的线路上，商量出同一把只有彼此知道的密钥。</p>
+    </Card>
+    <Card term="ECDHE" title="临时密钥交换">
+      <p>双方各生成一对临时的公钥和私钥，只把公钥发给对方。各自用自己的私钥和对方的公钥计算，会得到同一个数。路上的人拿到两个公钥也算不出这个数。临时密钥用完就扔，以后服务器的长期私钥泄露了，以前录下来的流量也解不开，这叫<b>前向保密</b>。</p>
+    </Card>
+    <Card term="Certificate" title="证书">
+      <p>证书写着：这个域名的公钥是这个，有效期到哪天，下面是证书颁发机构（CA）的签名。服务器在握手时用证书对应的私钥签名，证明证书是它自己的，不是从别处抄来的。</p>
+    </Card>
+    <Card term="Chain of Trust" title="信任链">
+      <p>网站证书由中间 CA 签发，中间 CA 由根 CA 签发。根证书预装在操作系统和浏览器里。浏览器一级一级验签名，能追到一个它信任的根，才认这张证书。</p>
+    </Card>
+  </Cards>
+  <Table cap="两种加密在 HTTPS 里分工：非对称加密只在握手时用，商量出会话密钥以后，全部内容用对称加密。">
+    <tr><th></th><th>对称加密</th><th>非对称加密</th></tr>
+    <tr><td>密钥</td><td>双方用同一把</td><td>一对：公钥公开，私钥自己留着</td></tr>
+    <tr><td>速度</td><td>快，适合大量数据</td><td>慢</td></tr>
+    <tr><td>在 HTTPS 里做什么</td><td>加密网页内容</td><td>交换密钥、签名证明身份</td></tr>
+  </Table>
+</Section>
+
+<Section id="how" title="一次握手发生了什么" short="怎么运作">
+  <p>下面是 TLS 1.3 的握手，点“下一步”逐步看。浏览器和服务器之间只来回一次，就商量好了密钥，也确认了身份。</p>
+  <Anim data={HANDSHAKE} label="TLS 1.3 握手：浏览器和服务器交换临时公钥，各自算出会话密钥，浏览器验证证书，之后加密传输" />
+  <Flow items={[
+    { t: "交换临时公钥", d: "ClientHello、ServerHello，明文" },
+    { t: "算出会话密钥", d: "双方各算一次，结果相同", kind: "tip" },
+    { t: "验证证书", d: "信任链、域名、有效期、签名", kind: "doubt" },
+    { t: "加密传输", d: "之后的内容全部加密", kind: "ok" },
+  ]} />
+  <Note kind="tip" title="TLS 1.2 和 1.3 的区别">TLS 1.2 握手要两个来回，还允许浏览器用证书里的公钥直接加密传送密钥，这种方式没有前向保密。TLS 1.3 去掉了这些旧选项，每次都用临时密钥交换。</Note>
+</Section>
+
+<Section id="example" title="实际例子：打开本站时发生了什么" short="实际例子">
+  <p>2026 年 11 月 8 日在 Mac 上用 <code>curl -v</code> 打开本站首页，握手相关的几行：</p>
+  <Code code={CURL} cap="实际输出更长，这里只保留了握手相关的行。" />
+  <Table>
+    <tr><th>输出</th><th>意思</th></tr>
+    <tr><td><code>TLSv1.3</code></td><td>用的是 TLS 1.3，握手一个来回</td></tr>
+    <tr><td><code>AEAD-CHACHA20-POLY1305-SHA256</code></td><td>加密套件：负责加密网页内容的对称算法</td></tr>
+    <tr><td><code>ALPN: server accepted h2</code></td><td>握手时顺便商量好了用 HTTP/2</td></tr>
+    <tr><td><code>CN=*.github.io</code></td><td>通配证书，覆盖所有 <code>xxx.github.io</code>，所以和地址栏的域名匹配</td></tr>
+    <tr><td><code>start date</code> 到 <code>expire date</code></td><td>有效期 90 天，由 GitHub 到期前自动换新</td></tr>
+    <tr><td><code>issuer: … CN=YR1</code></td><td>签发者是 Let's Encrypt 的中间 CA “YR1”</td></tr>
+  </Table>
+  <p>再用 <code>openssl s_client</code> 看完整的证书链。<code>s:</code> 是这张证书属于谁，<code>i:</code> 是谁签发的：</p>
+  <Code code={CHAIN} good={[9]} cap="0 号是网站证书，由 YR1 签发；YR1 由 Root YR 签发；Root YR 由 ISRG Root X1 签发。ISRG Root X1 预装在系统里，所以验证结果是 ok。" />
+  <Note kind="info" title="同一个网站，两次的加密套件不一样">curl 用的是 ChaCha20，openssl 用的是 AES-128-GCM。两个客户端在 ClientHello 里列出的偏好顺序不同，服务器从中挑一个。两种都是 TLS 1.3 的标准套件，强度相当。</Note>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="有小锁，这个网站就可信">
+      <p>小锁只说明两件事：连接是加密的，证书上的域名和地址栏一致。钓鱼网站一样能免费申请证书，<code>paypa1.com</code> 也有小锁。该核对的是域名本身。</p>
+    </Card>
+    <Card term="误区 2" title="用了 HTTPS，别人就不知道我上了哪个网站">
+      <p>加密的是网页内容和网址的路径。DNS 查询、连接的 IP、ClientHello 里的域名（SNI）通常是明文，网络管理者能看到你访问了哪个站。新的 ECH 扩展能把 SNI 也加密，但支持的网站还不多。</p>
+    </Card>
+    <Card term="误区 3" title="贵的证书加密更强">
+      <p>免费证书和几百美元的证书加密强度一样。区别只在 CA 核实申请者身份的严格程度（DV、OV、EV）。浏览器现在已经不在地址栏特别展示 EV 了。</p>
+    </Card>
+    <Card term="误区 4" title="证书警告点“继续”也没事">
+      <p>警告说明浏览器确认不了对面是谁。点了继续，连接仍然是加密的，但可能是在和冒充者加密通信，见下图。</p>
+    </Card>
+  </Cards>
+  <Diagram cap="中间人攻击：攻击者夹在中间，和两边各建一条加密连接。它拿不出这个域名的有效证书，浏览器就会报警。只要不点“继续访问”，攻击就不成立。">
+    <svg viewBox="0 0 680 190" role="img" aria-label="浏览器和服务器之间的攻击者出示伪造证书，浏览器报警">
+      <defs><marker id="mitm-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="d-head" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+      <rect class="d-box" x="10" y="50" width="160" height="70" rx="4"/>
+      <text class="d-t b" x="90" y="80" text-anchor="middle">浏览器</text>
+      <text class="d-t s" x="90" y="102" text-anchor="middle">弹出证书警告</text>
+      <rect class="d-box atk" x="260" y="50" width="160" height="70" rx="4"/>
+      <text class="d-t b atk" x="340" y="80" text-anchor="middle">攻击者</text>
+      <text class="d-t s" x="340" y="102" text-anchor="middle">没有有效证书</text>
+      <rect class="d-box soft" x="510" y="50" width="160" height="70" rx="4"/>
+      <text class="d-t b" x="590" y="80" text-anchor="middle">真服务器</text>
+      <text class="d-t m" x="590" y="102" text-anchor="middle">muyao934.github.io</text>
+      <line class="d-line atk" x1="258" y1="85" x2="172" y2="85" marker-end="url(#mitm-ar)"/>
+      <line class="d-line" x1="422" y1="85" x2="508" y2="85" marker-end="url(#mitm-ar)"/>
+      <text class="d-t s atk" x="215" y="40" text-anchor="middle">伪造证书</text>
+      <text class="d-t s" x="465" y="40" text-anchor="middle">正常连接</text>
+      <text class="d-t s" x="340" y="160" text-anchor="middle">两条连接都加密，但浏览器那条的另一端不是真网站</text>
+    </svg>
+  </Diagram>
+</Section>
+
+<Section id="history" title="发展过程">
+  <Timeline items={HISTORY} legend={{ warn: "出问题", tip: "改进" }} />
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>

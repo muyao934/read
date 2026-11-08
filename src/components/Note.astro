@@ -1,0 +1,8 @@
+---
+// 提示框：kind = info 灰（补充）、tip 蓝（推荐做法）、doubt 琥珀（注意、存疑）、warn 红（风险）；title 不写时用默认标题
+const KIND = { info: ["note", "补充"], tip: ["note lesson", "推荐做法"], doubt: ["note doubt", "注意"], warn: ["note warn", "风险"] };
+const { kind = "info", title } = Astro.props;
+if (!KIND[kind]) throw new Error(`Note 的 kind 只能是 ${Object.keys(KIND).join(" / ")}，不能是 ${kind}`);
+const [cls, def] = KIND[kind];
+---
+<div class={cls}><span class="h">{title || def}</span><slot /></div>

@@ -1,0 +1,12 @@
+---
+// 示意图：<Diagram cap="图注"><svg viewBox="…" role="img" aria-label="…">…</svg></Diagram>
+// SVG 里只用 d-box / d-line / d-head / d-t 这些语义类，不写颜色，深浅色自动切换；手机上在框里横向滑动。
+// 图按宽度等比缩放，最宽只放大到主文字（.d-t，14 个 viewBox 单位）和正文一样大：从 viewBox 宽度算出 --vbw，lib.css 用它限制最宽
+// （2026-11-08 用户：图里的字太大了，要和正文一样）
+const { cap } = Astro.props;
+const svg = await Astro.slots.render("default");
+const vb = (svg.match(/\sviewBox="([^"]+)"/) || [])[1];
+const vbw = vb ? +vb.trim().split(/[\s,]+/)[2] : NaN;
+if (!(vbw > 0)) throw new Error("Diagram 里的 <svg> 要有 viewBox");
+---
+<figure class="diagram" style={`--vbw:${vbw}`}><div class="scroll"><Fragment set:html={svg} /></div>{cap && <figcaption set:html={cap} />}</figure>

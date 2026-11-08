@@ -1,0 +1,73 @@
+---
+// 文章页外壳：标题区（分类纸签、h1、导语、标签、一句话）、目录、翻页、页脚。文章文件里只有正文的 <Section>。
+// 构建时检查正文：节的 id 不重复，内容类型要求的节按顺序都在，每节用到了要求的组件。不满足就构建失败。
+import Base from "./Base.astro";
+import { catOf, TYPES, fmtDate } from "../lib/notes.js";
+import { url } from "../lib/url.js";
+const { note, prev, next } = Astro.props;
+const cat = catOf(note.cat), type = TYPES[note.type];
+
+const html = await Astro.slots.render("default");
+const secs = [];
+for (const m of html.matchAll(/<section\b([^>]*)>([\s\S]*?)<\/section>/g)) {
+  const id = (m[1].match(/\sid="([^"]+)"/) || [])[1], short = (m[1].match(/\sdata-short="([^"]+)"/) || [])[1];
+  secs.push({ id, short, body: m[2] });
+}
+const errs = [], ids = secs.map((s) => s.id);
+if (/<section\b[^>]*>(?:(?!<\/section>)[\s\S])*<section\b/.test(html)) errs.push("Section 不能嵌套");
+ids.forEach((id, i) => { if (!id) errs.push(`第 ${i + 1} 节没有 id`); else if (ids.indexOf(id) !== i) errs.push(`节 id “${id}” 重复`); });
+let at = -1;
+for (const req of type.sections) {
+  const i = ids.indexOf(req.id);
+  if (i < 0) { errs.push(`${type.name}类文章要有 id="${req.id}" 的一节`); continue; }
+  if (i < at) errs.push(`id="${req.id}" 这一节的位置不对，${type.name}类的顺序是 ${type.sections.map((s) => s.id).join(" → ")}`);
+  at = Math.max(at, i);
+  for (const need of req.need) {
+    if (!need.split("|").some((c) => new RegExp(`class="[^"]*\\b${c}\\b`).test(secs[i].body)))
+      errs.push(`#${req.id} 这一节要用到 ${need.split("|").join(" 或 ")} 组件`);
+  }
+}
+if (ids[ids.length - 1] !== "sources") errs.push("最后一节要是来源（id=\"sources\"）");
+if (errs.length) throw new Error(`notes/${note.slug}：\n  ` + errs.join("\n  "));
+---
+<Base title={`${note.title} · 阅读库`} desc={note.desc} bodyClass={`note-page tinted tint-${cat.tint}`}>
+<main class="wrap">
+  <header class="case-head">
+    <p class="crumbs"><a href={url("index.html")}>阅读库</a> / {cat.name}</p>
+    <p class="case-no">{cat.name} · {type.name} · <time datetime={note.date}>{fmtDate(note.date)}</time></p>
+    <h1>{note.title}</h1>
+    <p class="lede">{note.lede}</p>
+    {note.tags && note.tags.length > 0 && <p class="case-meta">{note.tags.map((t) => <span class="tag">{t}</span>)}</p>}
+    <div class="tldr-box"><span class="h">一句话</span><p set:html={note.tldr} /></div>
+  </header>
+
+  <div class="case-body">
+    <nav class="toc" aria-label="本文目录">
+      <p>本文内容</p>
+      <ol>{secs.map((s) => <li><a href={`#${s.id}`}>{s.short}</a></li>)}</ol>
+    </nav>
+    <article class="article"><Fragment set:html={html} /></article>
+  </div>
+
+  {(prev || next) && (
+    <nav class="pager" aria-label="翻页">
+      {prev && <a class="prev" href={url(`notes/${prev.slug}.html`)}><span class="k">上一篇（更早）</span>{prev.title}</a>}
+      {next && <a class="next" href={url(`notes/${next.slug}.html`)}><span class="k">下一篇（更新）</span>{next.title}</a>}
+    </nav>
+  )}
+</main>
+<p slot="foot">成文于 {fmtDate(note.date)}。{note.foot || "涉及版本、价格、政策的说法以成文日期为准。"}</p>
+<script>import "../scripts/anim-engine.js";</script>
+<script is:inline>
+  // 目录高亮当前一节
+  (function () {
+    var links = {}, secs = document.querySelectorAll(".article > section[id]");
+    document.querySelectorAll(".toc a").forEach(function (a) { links[a.getAttribute("href").slice(1)] = a; });
+    if (!("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) for (var id in links) links[id].classList.toggle("on", id === e.target.id); });
+    }, { rootMargin: "-72px 0px -70% 0px" });
+    secs.forEach(function (s) { io.observe(s); });
+  })();
+</script>
+</Base>

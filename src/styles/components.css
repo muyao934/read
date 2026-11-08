@@ -1,0 +1,60 @@
+/* 阅读库的正文组件样式，在 base.css 之后加载。
+   base.css 原样取自区块链站（blockchain/shared/base.css），提供币安事件页用的组件：
+   案卷头、目录、提示框、流程块、步骤、表格、代码、时间线、示意图、来源、翻页。
+   这里补上 KMS 一章（blockchain/basics/assets/bs.css）的组件：知识卡片、对照、分步小动画、按钮。
+   样式照搬，只把间距改成适合 .article 正文栏（base.css 给 .article 的 p / ul 设了下边距，卡片内部改用 grid 的 gap）。 */
+
+/* guide 原来的变量名，映射到 base.css 的语义色：蓝 = 推荐 / 当前，红 = 风险，灰 = 次要 */
+:root { --card: var(--sheet); --muted: var(--ink-3); --accent: var(--trace-mark); --warn: var(--loss-mark); }
+
+/* ---------- 知识卡片：<Cards><Card term title> ---------- */
+.bgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; margin: 16px 0 20px; }
+.bit { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+.bit .bh { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.bit .bh h4 { font: 700 16.5px/1.5 var(--serif); margin: 0; }
+/* 术语标签垫本文分类的纸色（同 KMS 一章垫本章主题的纸色） */
+.bit .term { font: 700 11.5px/1.6 var(--mono); color: var(--ink); background: var(--era-wash, var(--paper)); border: 1px solid var(--era, var(--rule)); border-radius: 3px; padding: 1px 6px; }
+.article .bit p, .article .bit ul, .article .bit ol { margin: 0; font-size: 15px; color: var(--ink-2); }
+.article .bit li { margin: 0 0 4px; }
+.bit b, .bit strong { color: var(--ink); }
+
+/* ---------- 对照：<Compare items>，一列排，上沿 3px 色线是语气 ---------- */
+.vs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 16px 0 20px; }
+.vs > div { background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--c, var(--ink-3)); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.vs h4 { margin: 0; font-size: 16.5px; line-height: 1.5; }
+.article .vs p { margin: 0; }
+.vs .one { font-size: 16.5px; }
+.article .vs ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: 15px; color: var(--ink-2); }
+.article .vs li { margin: 0; }
+.c-ok { --c: var(--ok); } .c-warn { --c: var(--warn); } .c-accent { --c: var(--accent); }
+
+/* ---------- 分步小动画：<Anim data>（元素按百分比定位，靠 transition 移动） ---------- */
+.anim { display: grid; gap: 10px; min-width: 0; margin: 16px 0 24px; }
+.article .anim-fallback { margin: 0; }
+.mini { position: relative; border-radius: var(--radius); background: var(--paper); border: 1px solid var(--rule); overflow: hidden; }
+.mini .bx { position: absolute; border: 1.5px dashed var(--rule); border-radius: var(--radius); transition: border-color .4s, background-color .4s; }
+.mini .bx > span { position: absolute; left: 6px; top: 3px; font: 11px var(--mono); color: var(--ink-3); white-space: nowrap; }
+.mini .bx.lit { border-style: solid; border-color: var(--accent); background: var(--trace-wash); }
+.mini .bx.bad { border-style: solid; border-color: var(--warn); background: var(--loss-wash); }
+.mini .it { position: absolute; transform: translate(-50%, -50%); transition: left .8s cubic-bezier(.6, .05, .3, 1), top .8s cubic-bezier(.6, .05, .3, 1), opacity .5s, background-color .4s, color .4s, border-color .4s; white-space: nowrap; z-index: 2; }
+.mini .it.hide { opacity: 0; }
+/* 小圆角标签：底色是 --c 指定的语义色，文字用页面底色，深浅色下都能看清 */
+.ch { font: 600 11.5px var(--mono); padding: 3px 8px; border-radius: 12px; color: var(--paper); background: var(--c, var(--ink-3)); }
+.ch.out { background: var(--sheet); color: var(--c, var(--ink)); border: 1.5px solid var(--c, var(--rule)); }
+.lbl { font: 12px var(--serif); color: var(--ink); text-align: center; line-height: 1.35; }
+.lbl.m { color: var(--ink-3); } .lbl.w { color: var(--warn); font-weight: 700; } .lbl.g { color: var(--ok); font-weight: 700; }
+.blk { font: 600 11.5px var(--mono); width: 44px; height: 30px; display: grid; place-items: center; border-radius: 4px; border: 2px solid var(--ink); background: var(--sheet); color: var(--ink); }
+.keyi { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 11.5px var(--mono); border: 2px solid var(--rule); background: var(--sheet); color: var(--ink-3); }
+.keyi.on { border-color: var(--ok); background: var(--ok); color: var(--paper); }
+.mctl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mctl .btn { font-size: 13px; padding: 4px 12px; }
+.mcap { font-size: 14.5px; color: var(--ink); border-left: 2px solid var(--accent); padding-left: 10px; }
+.article .mcap { margin: 0; }
+
+/* ---------- 按钮 ---------- */
+.btn { font: 500 14px var(--serif); border: 1px solid var(--ink); background: var(--ink); color: var(--paper); border-radius: var(--radius); padding: 6px 14px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn:disabled { opacity: .4; cursor: default; }
+.prog { font: 13px var(--mono); color: var(--ink-3); margin-left: auto; }
+
+@media (prefers-reduced-motion: reduce) { .mini .it, .mini .bx { transition: none; } }

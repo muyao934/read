@@ -1,0 +1,7 @@
+---
+// 表格：<Table cap="说明"><tr><th>…</th></tr><tr><td>…</td></tr></Table>。数字列的 th、td 加 class="n"（右对齐）
+// 外层固定是 .tbl-wrap：列多时只在表格里横向滑动，整页不会左右晃
+const { cap } = Astro.props;
+---
+<div class="tbl-wrap"><table class="data"><slot /></table></div>
+{cap && <p class="code-cap" set:html={cap} />}

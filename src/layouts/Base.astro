@@ -1,0 +1,47 @@
+---
+// 全站外壳：<head>、顶栏、主题按钮、页脚。首页和文章页都用它，不在页面里另写。
+// 主题和区块链站共用 localStorage 键 chronicle-theme，切换后两边一致。
+import "../styles/base.css";
+import "../styles/components.css";
+import "../styles/lib.css";
+import { url } from "../lib/url.js";
+const { title, desc, bodyClass = "" } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<meta name="description" content={desc}>
+<script is:inline>
+  // 绘制前套上主题，避免闪一下
+  (function () {
+    try { var t = localStorage.getItem("chronicle-theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+  })();
+</script>
+</head>
+<body class={bodyClass}>
+<header class="topbar"><div class="wrap">
+  <a class="home" href={url("index.html")}>阅读库</a>
+  <button type="button" class="theme-toggle" id="theme-toggle">主题：跟随系统</button>
+</div></header>
+<slot />
+<footer class="site-foot"><div class="wrap"><slot name="foot" /></div></footer>
+<script is:inline>
+  (function () {
+    var KEY = "chronicle-theme", L = { auto: "主题：跟随系统", light: "主题：浅色", dark: "主题：深色" };
+    var btn = document.getElementById("theme-toggle"), cur = "auto";
+    try { cur = localStorage.getItem(KEY) || "auto"; } catch (e) {}
+    btn.textContent = L[cur] || L.auto;
+    btn.addEventListener("click", function () {
+      cur = cur === "auto" ? "light" : cur === "light" ? "dark" : "auto";
+      try { localStorage.setItem(KEY, cur); } catch (e) {}
+      if (cur === "auto") document.documentElement.removeAttribute("data-theme");
+      else document.documentElement.setAttribute("data-theme", cur);
+      btn.textContent = L[cur];
+    });
+  })();
+</script>
+</body>
+</html>

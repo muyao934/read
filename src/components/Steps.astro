@@ -1,0 +1,7 @@
+---
+// 步骤：items = [{ t: 这一步的短标题, d: 做什么、为什么（可含 HTML） }]。要照着做的操作用它
+const { items } = Astro.props;
+if (!Array.isArray(items) || items.length < 2) throw new Error("Steps 至少要 2 步");
+for (const i of items) if (!i.t || !i.d) throw new Error("Steps 的每一步要有 t 和 d");
+---
+<ol class="steps">{items.map((i) => <li><b>{i.t}</b><Fragment set:html={i.d} /></li>)}</ol>

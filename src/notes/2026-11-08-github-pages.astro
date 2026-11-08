@@ -1,0 +1,104 @@
+---
+// 操作类：when → prep → steps → verify → trouble → sources（中间可以加节）
+import { Section, Note, Flow, Steps, Compare, Table, Code, Sources } from "../components/index.js";
+
+const CURL = `curl -sI https://用户名.github.io/仓库名/   # 只看响应头
+HTTP/2 200
+server: GitHub.com
+cache-control: max-age=600`;
+
+const SSH = `Host github-work
+    HostName ssh.github.com
+    Port 443                    # 走 443 端口，22 端口被封的网络也能用
+    User git
+    IdentityFile ~/.ssh/id_ed25519_work
+    IdentitiesOnly yes          # 只用这把 key，不去试别的`;
+
+const REMOTE = `ssh -T git@github-work      # 应回复 Hi 账号名!
+git remote set-url origin git@github-work:账号名/仓库名.git`;
+
+const EMAIL = `git config user.name  "账号名"
+git config user.email "数字ID+账号名@users.noreply.github.com"`;
+
+const SOURCES = [
+  { title: "What is GitHub Pages?", url: "https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages", by: "GitHub Docs", note: "各账户类型能否从私有仓库发布、访问控制。" },
+  { title: "Configuring a publishing source for your GitHub Pages site", url: "https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site", by: "GitHub Docs", note: "Deploy from a branch、.nojekyll。" },
+  { title: "GitHub Pages limits", url: "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits", by: "GitHub Docs", note: "站点大小等限制。" },
+  { title: "Using SSH over the HTTPS port", url: "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/using-ssh-over-the-https-port", by: "GitHub Docs", note: "ssh.github.com 的 443 端口。" },
+  { title: "Setting your commit email address", url: "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address", by: "GitHub Docs", note: "noreply 地址和两个隐私选项。" },
+  { title: "缓存时间实测", note: "2026-11-08 curl -I https://muyao934.github.io/read/ 返回 cache-control: max-age=600。" },
+];
+---
+<Section id="when" title="什么时候用">
+  <p>GitHub Pages 把仓库某个分支里的文件当成网站发布。纯 HTML、CSS、JS 的站点不需要服务器，推上去就是网页。在仓库里直接点开一个 <code>.html</code> 文件，GitHub 只显示源码；要看渲染后的页面，得开 Pages。</p>
+  <Flow items={[
+    { t: "git push", d: "推送到 main 分支" },
+    { t: "自动部署", d: "GitHub Actions 跑一次，约一两分钟" },
+    { t: "上线", d: "用户名.github.io/仓库名/", kind: "ok" },
+  ]} />
+  <Table>
+    <tr><th>账户</th><th>能从哪种仓库发布</th><th>网站谁能看</th></tr>
+    <tr><td>Free</td><td>只能公开仓库</td><td>所有人</td></tr>
+    <tr><td>Pro、Team</td><td>公开或私有仓库</td><td>仍是所有人</td></tr>
+    <tr><td>Enterprise Cloud</td><td>公开或私有仓库</td><td>可以限制为组织成员</td></tr>
+  </Table>
+  <Note kind="warn" title="仓库私有不等于网站私有">只有 Enterprise Cloud 能给 Pages 加访问控制。其他情况下，只要开了 Pages，知道网址的人都能看。不要往里放公司内部资料、密钥、个人信息。</Note>
+</Section>
+
+<Section id="prep" title="准备">
+  <ul>
+    <li>一个 GitHub 账号和一个空的公开仓库。</li>
+    <li>首页叫 <code>index.html</code>，放在仓库根目录。</li>
+    <li>页面之间的链接全写相对路径，例如 <code>assets/a.css</code>、<code>../index.html</code>。</li>
+    <li>文件名一律小写：Pages 区分大小写，macOS 不区分，本地能开的链接上线可能 404。</li>
+  </ul>
+</Section>
+
+<Section id="steps" title="发布步骤">
+  <Steps items={[
+    { t: "推送", d: "把本地文件夹推到仓库的 <code>main</code> 分支。" },
+    { t: "打开 Pages", d: "仓库 Settings → Pages，Source 选 “Deploy from a branch”，Branch 选 <code>main</code>，目录选 <code>/ (root)</code>，保存。" },
+    { t: "等部署完成", d: "Actions 页能看到 pages-build-deployment 的进度，约一两分钟。" },
+    { t: "以后更新", d: "每次 <code>git push</code> 都会自动重新部署，不用再改设置。" },
+  ]} />
+</Section>
+
+<Section id="verify" title="怎么确认发布成功">
+  <p>Actions 页里那次部署是绿色对勾，再打开 <code>https://用户名.github.io/仓库名/</code>。也可以只看响应头：</p>
+  <Code code={CURL} />
+  <Note kind="doubt" title="刚保存设置时的 404">部署完成之前，访问网址看到的是 GitHub 的 404 页“There isn't a GitHub Pages site here”，这是正常的，等一两分钟再刷新。</Note>
+</Section>
+
+<Section id="trouble" title="本地正常、上线出问题">
+  <p>本地双击打开走的是 <code>file://</code>，上线后是 <code>https://</code>，服务器也换成了 Linux。下面几种情况本地看不出来：</p>
+  <Table>
+    <tr><th>现象</th><th>原因</th><th>怎么办</th></tr>
+    <tr><td>某些页面 404</td><td>链接写 <code>About.html</code>、文件叫 <code>about.html</code>，本地能开，线上打不开</td><td>文件名一律小写，链接照抄文件名</td></tr>
+    <tr><td>样式、图片全丢</td><td>链接以 <code>/</code> 开头，指向的是 <code>用户名.github.io/</code> 而不是 <code>/仓库名/</code></td><td>全部写相对路径</td></tr>
+    <tr><td>以下划线开头的文件 404</td><td>Pages 默认先用 Jekyll 处理，Jekyll 会跳过 <code>_</code> 开头的文件和目录</td><td>在根目录放一个空文件 <code>.nojekyll</code></td></tr>
+    <tr><td>改完推送，刷新还是旧的</td><td>Pages 返回 <code>cache-control: max-age=600</code>，浏览器最多缓存 10 分钟</td><td>等部署完成后强制刷新，或换隐身窗口</td></tr>
+  </Table>
+  <p>反过来也有：用 <code>fetch()</code> 读本地 JSON 的页面，双击打开会失败，上线后反而正常。</p>
+</Section>
+
+<Section id="accounts" title="一台电脑用两个 GitHub 账号" short="两个账号">
+  <p>推送时 GitHub 认的是 SSH key，不看 <code>git config user.name</code>。默认的 <code>git@github.com</code> 只会用一把 key，所以第二个账号要在 <code>~/.ssh/config</code> 里起一个别名，指定它自己的 key：</p>
+  <Code code={SSH} />
+  <p>然后把远程地址里的 <code>github.com</code> 换成别名，先测一下认的是哪个账号：</p>
+  <Code code={REMOTE} />
+  <Compare items={[
+    { title: "推送身份：SSH key", tone: "accent", one: "决定有没有权限推送到这个仓库。", points: ["key 不对会报 <code>Permission denied (publickey)</code>"] },
+    { title: "提交作者：user.name / user.email", one: "写进每条提交，公开仓库里任何人都能看到。", points: ["和推送用的是哪个账号无关"] },
+  ]} />
+</Section>
+
+<Section id="email" title="别让邮箱跟着提交公开" short="提交邮箱">
+  <p>提交里的邮箱推上去以后就留在历史里。不想公开真实邮箱，在仓库里单独设成 GitHub 给的 noreply 地址，只影响这个仓库：</p>
+  <Code code={EMAIL} />
+  <p>noreply 地址在 GitHub 的 Settings → Emails 里能看到。同一页勾上 “Keep my email addresses private” 和 “Block command line pushes that expose my email”，以后用真实邮箱的提交会被拒绝推送。</p>
+  <Note kind="doubt" title="已经推上去的怎么办">只能改写提交历史再强制推送（<code>git commit --amend --reset-author</code> 加 <code>git push --force</code>）。强制推送会覆盖远程历史，别人已经拉过的副本里还留着旧邮箱。</Note>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>

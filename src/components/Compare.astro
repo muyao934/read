@@ -1,0 +1,17 @@
+---
+// 对照：items = [{ title, tone?: ok 绿 | warn 红 | accent 蓝（上沿色线）, one?: 一句话, points?: [要点（可含 HTML）] }]，2–4 项，一列排
+const TONE = { "": undefined, ok: "c-ok", warn: "c-warn", accent: "c-accent" };
+const { items } = Astro.props;
+if (!Array.isArray(items) || items.length < 2 || items.length > 4) throw new Error("Compare 要有 2–4 项");
+for (const i of items) {
+  if (!i.title) throw new Error("Compare 的每项要有 title");
+  if (!((i.tone || "") in TONE)) throw new Error(`Compare 的 tone 只能是 ok / warn / accent，不能是 ${i.tone}`);
+}
+---
+<div class="vs">{items.map((i) => (
+  <div class={TONE[i.tone || ""]}>
+    <h4>{i.title}</h4>
+    {i.one && <p class="one" set:html={i.one} />}
+    {i.points && <ul>{i.points.map((p) => <li set:html={p} />)}</ul>}
+  </div>
+))}</div>

@@ -1,0 +1,15 @@
+---
+// 每篇文章一页：src/notes/<slug>.astro 的正文套上 Article 外壳，输出 notes/<slug>.html
+import Article from "../../layouts/Article.astro";
+import { sortedNotes, validate } from "../../lib/notes.js";
+
+export function getStaticPaths() {
+  validate(Object.keys(import.meta.glob("../../notes/*.astro")).map((p) => p.split("/").pop().replace(/\.astro$/, "")));
+  const all = sortedNotes();   // 新的在前：上一篇是更早的，下一篇是更新的
+  return all.map((note, i) => ({ params: { slug: note.slug }, props: { note, next: all[i - 1] || null, prev: all[i + 1] || null } }));
+}
+const bodies = import.meta.glob("../../notes/*.astro", { eager: true });
+const { note, prev, next } = Astro.props;
+const Body = bodies[`../../notes/${note.slug}.astro`].default;
+---
+<Article note={note} prev={prev} next={next}><Body /></Article>

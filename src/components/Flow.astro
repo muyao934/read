@@ -1,0 +1,12 @@
+---
+// 流程块：items = [{ t: 短标题, d: 一句说明（可含 HTML）, kind?: tip 蓝 | doubt 琥珀 | warn 红 | ok 绿 }]，2–5 项。
+// 宽屏一行等宽，640px 以下竖排；步骤多、每步要解释时改用 <Steps>
+const KIND = { "": undefined, tip: "def", doubt: "doubt", warn: "atk", ok: "ok" };
+const { items } = Astro.props;
+if (!Array.isArray(items) || items.length < 2 || items.length > 5) throw new Error("Flow 要有 2–5 项（iPad 竖屏上 6 项会太窄），多了改用 Steps");
+for (const i of items) {
+  if (!i.t) throw new Error("Flow 的每项要有 t");
+  if (!((i.kind || "") in KIND)) throw new Error(`Flow 的 kind 只能是 tip / doubt / warn / ok，不能是 ${i.kind}`);
+}
+---
+<ul class="flow">{items.map((i) => <li class={KIND[i.kind || ""]}><b>{i.t}</b><Fragment set:html={i.d || ""} /></li>)}</ul>

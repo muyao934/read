@@ -1,0 +1,14 @@
+---
+// 时间线：items = [{ date, text（可含 HTML）, kind?: warn 出问题（红点）| tip 应对（蓝点）, key?: true 关键节点加粗 }]
+// legend 改图例里两种点的说法，默认“出问题 / 应对”
+const K = { "": "", warn: "atk", tip: "def" };
+const { items, legend = {} } = Astro.props;
+if (!Array.isArray(items) || items.length < 2) throw new Error("Timeline 至少要 2 条");
+for (const i of items) {
+  if (!i.date || !i.text) throw new Error("Timeline 的每条要有 date 和 text");
+  if (!((i.kind || "") in K)) throw new Error(`Timeline 的 kind 只能是 warn / tip，不能是 ${i.kind}`);
+}
+const cls = (i) => [K[i.kind || ""], i.key && "key"].filter(Boolean).join(" ") || undefined;
+---
+<p class="tl-legend"><span class="atk">{legend.warn || "出问题"}</span><span class="def">{legend.tip || "应对"}</span><span>其他</span></p>
+<ol class="timeline">{items.map((i) => <li class={cls(i)}><time>{i.date}</time><div class="ev" set:html={i.text} /></li>)}</ol>

@@ -1,0 +1,9 @@
+---
+// 来源：items = [{ title, url?, by?: 出处, note?: 用到了哪部分 }]，至少 3 条，官方资料和一手实测优先
+const { items } = Astro.props;
+if (!Array.isArray(items) || items.length < 3) throw new Error("Sources 至少要 3 条");
+for (const i of items) if (!i.title) throw new Error("Sources 的每条要有 title");
+---
+<ol class="sources">{items.map((i) => (
+  <li>{i.url ? <a href={i.url}>{i.title}</a> : i.title}{i.by && <> {i.by}。</>}{i.note && <span class="src-note">{i.note}</span>}</li>
+))}</ol>

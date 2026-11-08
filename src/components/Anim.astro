@@ -1,0 +1,24 @@
+---
+// 分步小动画（同 KMS 一章）：data = { h: 高度 px, b: 区域框, it: 元素, s: 每一步 }，label 是给读屏的一句话说明。
+//   b  = [[id, x%, y%, w%, h%, 标签], …]
+//   it = [{ id, h: HTML（用 lib/anim.js 的 chip / lbl / key 生成）, x%, y%, hide? }, …]
+//   s  = [{ c: 这一步的说明, set?: { 元素id: { x, y, h, hide } }, lit?: [框id], bad?: [框id] }, …]
+// 构建时检查 id 是否都对得上、坐标是否在 0–100 之间；在浏览器里由 scripts/anim-engine.js 播放
+const { data, label } = Astro.props;
+const errs = [];
+if (!label) errs.push("要有 label");
+if (!data || !(data.h > 0) || !Array.isArray(data.b) || !Array.isArray(data.it) || !Array.isArray(data.s) || data.s.length < 2) errs.push("data 要有 h、b、it 和至少 2 步 s");
+else {
+  const bid = new Set(data.b.map((b) => b[0])), iid = new Set(data.it.map((o) => o.id));
+  const pct = (v, w) => { if (v != null && (v < 0 || v > 100)) errs.push(`${w} 的坐标 ${v} 不在 0–100 之间`); };
+  data.b.forEach(([id, x, y, w, h]) => { pct(x, id); pct(y, id); pct(x + w, id); pct(y + h, id); });
+  data.it.forEach((o) => { if (!o.h) errs.push(`元素 ${o.id} 没有 h`); pct(o.x, o.id); pct(o.y, o.id); });
+  data.s.forEach((st, k) => {
+    if (!st.c) errs.push(`第 ${k + 1} 步没有说明 c`);
+    for (const id in st.set || {}) { if (!iid.has(id)) errs.push(`第 ${k + 1} 步改了不存在的元素 ${id}`); pct(st.set[id].x, id); pct(st.set[id].y, id); }
+    for (const id of (st.lit || []).concat(st.bad || [])) if (!bid.has(id)) errs.push(`第 ${k + 1} 步点亮了不存在的框 ${id}`);
+  });
+}
+if (errs.length) throw new Error("Anim：\n  " + errs.join("\n  "));
+---
+<div class="anim" data-anim={JSON.stringify(data)} role="group" aria-label={label}><p class="anim-fallback">{label}</p></div>

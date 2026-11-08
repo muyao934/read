@@ -1,0 +1,19 @@
+---
+// 代码块：code 是原文字符串（不用转义）；lang = sh（# 注释）、js（// 注释）、text（不标注释）；
+// bad / good 是要垫红底 / 绿底的行号（从 1 数）；cap 是代码下方的说明（可含 HTML）
+const { code, lang = "sh", bad = [], good = [], cap } = Astro.props;
+if (typeof code !== "string") throw new Error("Code 要有 code 字符串");
+if (!["sh", "js", "text"].includes(lang)) throw new Error(`Code 的 lang 只能是 sh / js / text，不能是 ${lang}`);
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const RE = { sh: /(^|\s)#/, js: /(^|\s)\/\//, text: null }[lang];
+const lines = code.replace(/^\n+|\s+$/g, "").split("\n").map((ln, i) => {
+  let h = esc(ln);
+  const k = RE ? ln.search(RE) : -1;
+  if (k >= 0) { const at = ln.indexOf(lang === "js" ? "//" : "#", k); h = esc(ln.slice(0, at)) + `<span class="c">${esc(ln.slice(at))}</span>`; }
+  if (bad.includes(i + 1)) return `<span class="bad">${h}</span>`;
+  if (good.includes(i + 1)) return `<span class="good">${h}</span>`;
+  return h;
+});
+---
+<pre class="code"><code set:html={lines.join("\n")} /></pre>
+{cap && <p class="code-cap" set:html={cap} />}
