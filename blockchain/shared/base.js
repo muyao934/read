@@ -66,6 +66,27 @@
     return Math.round(n).toLocaleString("zh-CN") + " 美元";
   }
 
+  // ---------- 示意图：字不比正文大 ----------
+  // 图按正文栏宽度等比缩放，栏越宽字越大，MacBook 宽度下主文字有 17–20px（2026-11-08 用户：图里的字太大了，要和正文一样大）。
+  // 按 viewBox 宽度和图里最大的字号算出最宽，让主文字最大显示成正文字号；各站样式原有的最宽（大事记、诈骗站 900px）更窄时不动。
+  // 宽屏时图在框里居中；窄屏仍按样式里的最小宽度在框里横向滑动。只改 .diagram 和 .svgscroll 里的图，首页的统计图不受影响
+  function fitDiagrams() {
+    var body = parseFloat(getComputedStyle(document.body).fontSize) || 16;
+    // 不用 svg[viewBox] 选择器：SVG 上大小写混合的属性名用属性选择器匹配不可靠，改为在下面读 viewBox
+    document.querySelectorAll(".diagram svg, .svgscroll svg").forEach(function (svg) {
+      var vb = svg.viewBox && svg.viewBox.baseVal, big = 0;
+      if (!vb || !vb.width) return;
+      svg.querySelectorAll("text").forEach(function (t) { big = Math.max(big, parseFloat(getComputedStyle(t).fontSize) || 0); });
+      if (!big) return;
+      var w = vb.width * body / big, mx = getComputedStyle(svg).maxWidth;
+      // 只认 px：base.css 的 max-width: 100% 读出来是 "100%"，parseFloat 会误当成 100px
+      if (/px$/.test(mx) && parseFloat(mx) <= w) return;
+      svg.style.maxWidth = Math.round(w) + "px";
+      svg.style.marginLeft = svg.style.marginRight = "auto";
+    });
+  }
+  document.addEventListener("DOMContentLoaded", fitDiagrams);
+
   window.SiteBase = { readTheme: readTheme, applyTheme: applyTheme, mountThemeToggle: mountThemeToggle,
-    el: el, sv: sv, fmtDate: fmtDate, fmtUsd: fmtUsd };
+    el: el, sv: sv, fmtDate: fmtDate, fmtUsd: fmtUsd, fitDiagrams: fitDiagrams };
 })();
