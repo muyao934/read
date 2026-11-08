@@ -3,45 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>区块链总览</title>
-<meta name="description" content="把区块链被盗事件编年史、区块链大事记和区块链诈骗与骗局放在同一条时间轴上：被盗与黑客事件，协议与技术、崩盘与暴雷、监管与政策、市场与文化四类重大事件，以及各类骗局。">
-<link rel="stylesheet" href="shared/base.css">
-<link rel="stylesheet" href="assets/home.css">
-<script src="shared/base.js"></script>
-<script src="hacks/assets/data.js"></script>
-<script src="milestones/assets/data.js"></script>
-<script src="scams/assets/data.js"></script>
-<script src="basics/assets/data.js"></script>
-<script src="assets/home.js"></script>
+<title>阅读库</title>
+<meta name="description" content="工作、学习、生活中遇到的新东西，每篇把一个问题讲清楚。">
+<link rel="stylesheet" href="assets/read.css">
+<script src="assets/read.js"></script>
+<script src="notes/data.js"></script>
 </head>
-<body class="hm-home">
+<body class="lib-home">
 <header class="topbar"><div class="wrap">
-  <a class="home" href="index.html">区块链总览</a>
+  <a class="home" href="index.html">阅读库</a>
   <span data-slot="theme"></span>
 </div></header>
 
 <main class="wrap">
   <section class="hero">
-    <h1>区块链总览<span class="yr">被盗 · 大事记 · 诈骗 · 基础知识</span></h1>
-    <p class="lede">这里是四个板块的入口：三个按时间收录事件，一个讲读懂这些事件要用到的基础知识。</p>
-    <ul class="hm-entries">
-      <li><a class="hm-to-hacks" href="hacks/index.html"><b>区块链被盗事件编年史</b><span class="hm-n"><span data-slot="hacks">55</span> 起</span><span class="hm-d">黑客攻击和盗币：怎么发生、为什么能成功、之后怎样了</span></a></li>
-      <li><a class="hm-to-ms" href="milestones/index.html"><b>区块链大事记</b><span class="hm-n"><span data-slot="ms">30</span> 篇</span><span class="hm-d">被盗之外的重大事件：协议与技术、崩盘与暴雷、监管与政策、市场与文化</span></a></li>
-      <li><a class="hm-to-sc" href="scams/index.html"><b>区块链诈骗与骗局</b><span class="hm-n"><span data-slot="sc">0</span> 篇</span><span class="hm-d">受害者被骗着自己转出钱的骗局：庞氏与传销、跑路与拉盘、杀猪盘、钓鱼与授权</span></a></li>
-      <li><a class="hm-to-bs" href="basics/index.html"><b>区块链基础知识</b><span class="hm-n"><span data-slot="bs">14</span> 章</span><span class="hm-d">稳定币、钱包地址、gas，几条链怎么记账，跨链桥、CCTP 与 CCIP，审计和签名</span></a></li>
-    </ul>
+    <h1>阅读库<span class="yr">技术 · 工作 · 学习 · 生活</span></h1>
+    <p class="lede">工作、学习、生活中遇到的新东西，每篇把一个问题讲清楚。</p>
   </section>
 
-  <section class="sec" id="timeline">
-    <h2>时间轴</h2>
-    <p class="intro">前三个板块的 <span data-slot="total">85</span> 起事件放在同一条时间轴上。点击任一事件，打开它所在站点的详情页。</p>
-    <div class="seismo" id="chart"><div class="tip" hidden aria-live="polite"></div></div>
-    <p class="seismo-cap">上半部分每条竖线是一起被盗事件，高度是损失金额（美元，对数刻度，每格相差 10 倍）；空心点表示没有可比的被盗金额，琥珀色虚线表示金额尚未确认。下半部分是大事记的四类事件和诈骗与骗局，红点的金额是损失，其他点的规模口径各不相同。悬停或用方向键查看，点击打开详情。</p>
-  </section></main>
+  <section class="sec" id="notes">
+    <h2>文章</h2>
+    <div class="lib-tools">
+      <input class="lib-search" id="q" type="search" placeholder="搜索标题、摘要、标签" aria-label="搜索文章">
+      <div class="lib-cats" id="cats" role="group" aria-label="按分类筛选"></div>
+    </div>
+    <p class="lib-count" id="count" aria-live="polite"></p>
+    <ol class="lib-list" id="list"></ol>
+  </section>
+
+  <section class="sec" id="topics-sec">
+    <h2>专题</h2>
+    <p class="intro">成套的内容，有自己的首页和目录。</p>
+    <ul class="lib-topics" id="topics"></ul>
+  </section>
+</main>
 
 <footer class="site-foot"><div class="wrap">
-  <p>金额、日期和处置结果都读各站自己的数据，以各站详情页中引用的原始资料为准。</p>
-  <p data-slot="updated"></p>
+  <p>内容由 AI 协助整理，每篇末尾列出来源；涉及版本、价格、政策的说法以成文日期为准。</p>
 </div></footer>
 </body>
 </html>

@@ -4,11 +4,9 @@
 !/.nojekyll
 !/index.html
 !/assets/
-!/shared/
-!/hacks/
-!/milestones/
-!/scams/
-!/basics/
-# 内部文档（含本机路径，网页不引用）
+!/notes/
+!/blockchain/
+# 检查脚本、样板、内部文档（含本机路径，网页不引用）
+/blockchain/tools/
 *.md
 .DS_Store
