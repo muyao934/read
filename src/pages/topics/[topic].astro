@@ -1,0 +1,38 @@
+---
+// 专题首页：topics/<id>.html。照被盗站首页的章节行列出全部章节，已写的和链到文章的可以点开，待写的列出要讲什么
+import Base from "../../layouts/Base.astro";
+import { TOPICS, chaptersOf } from "../../lib/topics.js";
+import { url } from "../../lib/url.js";
+
+export function getStaticPaths() {
+  return TOPICS.filter((t) => t.chapters).map((t) => ({ params: { topic: t.id }, props: { topic: t } }));
+}
+const { topic } = Astro.props;
+const chs = chaptersOf(topic), done = chs.filter((c) => c.status !== "todo").length;
+const STATUS = { link: "见文章", todo: "待写" };
+---
+<Base title={`${topic.title} · 阅读库`} desc={topic.desc} bodyClass={`topic-home tinted tint-${topic.tint}`}>
+<main class="wrap">
+  <section class="hero">
+    <p class="crumbs"><a href={url("index.html")}>阅读库</a> / 专题</p>
+    <h1>{topic.title}<span class="yr">{topic.sub}</span></h1>
+    <p class="lede">{topic.lede}</p>
+  </section>
+
+  <section class="sec" id="chapters">
+    <h2>章节</h2>
+    <p class="intro">共 {chs.length} 章，已写 {done} 章。建议按顺序读；还没写的章节先列出要讲什么。</p>
+    <div class={`era tint-${topic.tint}`}>
+      <ol class="ledger">{chs.map((c) => {
+        const inner = <Fragment>
+          <span class="r-no">{String(c.n).padStart(2, "0")}</span>
+          <span class="r-date">{c.status === "written" ? c.date : STATUS[c.status]}</span>
+          <span class="r-main"><span class="r-name">{c.title}</span><span class="r-sum">{c.desc}</span></span>
+        </Fragment>;
+        return <li>{c.href ? <a class="row" href={c.href}>{inner}</a> : <div class="row todo">{inner}</div>}</li>;
+      })}</ol>
+    </div>
+  </section>
+</main>
+<p slot="foot">每章先给结论，再讲原理和例子，最后列出来源。涉及版本、价格、政策的说法以每章的成文日期为准。</p>
+</Base>

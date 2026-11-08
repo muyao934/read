@@ -1,11 +1,13 @@
 ---
-// 文章页外壳：标题区（分类纸签、h1、导语、标签、一句话）、目录、翻页、页脚。文章文件里只有正文的 <Section>。
+// 文章和专题章节共用的外壳：标题区（路径、案卷号纸签、h1、导语、标签、一句话）、目录、翻页、页脚。正文文件里只有 <Section>。
+//   meta    title desc date type lede tldr tags? foot?（文章来自 notes.js，章节来自 topics.js）
+//   tint    纸色 e1…e6；caseNo 案卷号前半段（“技术”“AI 编程 · 第 01 章”）；crumbs [{ t, href }]
+//   prev / next  { title, href, k }，k 是“上一篇”“下一章”这类小字；where 是报错时显示的位置
 // 构建时检查正文：节的 id 不重复，内容类型要求的节按顺序都在，每节用到了要求的组件。不满足就构建失败。
 import Base from "./Base.astro";
-import { catOf, TYPES, fmtDate } from "../lib/notes.js";
-import { url } from "../lib/url.js";
-const { note, prev, next } = Astro.props;
-const cat = catOf(note.cat), type = TYPES[note.type];
+import { TYPES, fmtDate } from "../lib/notes.js";
+const { meta, tint, caseNo, crumbs, prev, next, where } = Astro.props;
+const type = TYPES[meta.type];
 
 const html = await Astro.slots.render("default");
 const secs = [];
@@ -19,7 +21,7 @@ ids.forEach((id, i) => { if (!id) errs.push(`第 ${i + 1} 节没有 id`); else i
 let at = -1;
 for (const req of type.sections) {
   const i = ids.indexOf(req.id);
-  if (i < 0) { errs.push(`${type.name}类文章要有 id="${req.id}" 的一节`); continue; }
+  if (i < 0) { errs.push(`${type.name}类要有 id="${req.id}" 的一节`); continue; }
   if (i < at) errs.push(`id="${req.id}" 这一节的位置不对，${type.name}类的顺序是 ${type.sections.map((s) => s.id).join(" → ")}`);
   at = Math.max(at, i);
   for (const need of req.need) {
@@ -28,17 +30,17 @@ for (const req of type.sections) {
   }
 }
 if (ids[ids.length - 1] !== "sources") errs.push("最后一节要是来源（id=\"sources\"）");
-if (errs.length) throw new Error(`notes/${note.slug}：\n  ` + errs.join("\n  "));
+if (errs.length) throw new Error(`${where}：\n  ` + errs.join("\n  "));
 ---
-<Base title={`${note.title} · 阅读库`} desc={note.desc} bodyClass={`note-page tinted tint-${cat.tint}`}>
+<Base title={`${meta.title} · 阅读库`} desc={meta.desc} bodyClass={`note-page tinted tint-${tint}`}>
 <main class="wrap">
   <header class="case-head">
-    <p class="crumbs"><a href={url("index.html")}>阅读库</a> / {cat.name}</p>
-    <p class="case-no">{cat.name} · {type.name} · <time datetime={note.date}>{fmtDate(note.date)}</time></p>
-    <h1>{note.title}</h1>
-    <p class="lede">{note.lede}</p>
-    {note.tags && note.tags.length > 0 && <p class="case-meta">{note.tags.map((t) => <span class="tag">{t}</span>)}</p>}
-    <div class="tldr-box"><span class="h">一句话</span><p set:html={note.tldr} /></div>
+    <p class="crumbs">{crumbs.map((c, i) => <Fragment>{i > 0 && " / "}<a href={c.href}>{c.t}</a></Fragment>)}</p>
+    <p class="case-no">{caseNo} · {type.name} · <time datetime={meta.date}>{fmtDate(meta.date)}</time></p>
+    <h1>{meta.title}</h1>
+    <p class="lede">{meta.lede}</p>
+    {meta.tags && meta.tags.length > 0 && <p class="case-meta">{meta.tags.map((t) => <span class="tag">{t}</span>)}</p>}
+    <div class="tldr-box"><span class="h">一句话</span><p set:html={meta.tldr} /></div>
   </header>
 
   <div class="case-body">
@@ -51,12 +53,12 @@ if (errs.length) throw new Error(`notes/${note.slug}：\n  ` + errs.join("\n  ")
 
   {(prev || next) && (
     <nav class="pager" aria-label="翻页">
-      {prev && <a class="prev" href={url(`notes/${prev.slug}.html`)}><span class="k">上一篇（更早）</span>{prev.title}</a>}
-      {next && <a class="next" href={url(`notes/${next.slug}.html`)}><span class="k">下一篇（更新）</span>{next.title}</a>}
+      {prev && <a class="prev" href={prev.href}><span class="k">{prev.k}</span>{prev.title}</a>}
+      {next && <a class="next" href={next.href}><span class="k">{next.k}</span>{next.title}</a>}
     </nav>
   )}
 </main>
-<p slot="foot">成文于 {fmtDate(note.date)}。{note.foot || "涉及版本、价格、政策的说法以成文日期为准。"}</p>
+<p slot="foot">成文于 {fmtDate(meta.date)}。{meta.foot || "涉及版本、价格、政策的说法以成文日期为准。"}</p>
 <script>import "../scripts/anim-engine.js";</script>
 <script is:inline>
   // 目录高亮当前一节

@@ -1,0 +1,134 @@
+---
+// AI 编程 · 第 01 章（概念类）：why → core → how → example → pitfalls → sources
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 预测下一个 token 的循环；后半段演示信息缺失时怎么“编”出一个函数名。概率是示意值
+const LOOP = {
+  h: 300,
+  b: [["ctx", 2, 8, 96, 26, "上下文：模型此刻看得到的全部内容"], ["mdl", 2, 42, 44, 50, "模型"], ["cand", 54, 42, 44, 50, "下一个 token 的候选"]],
+  it: [
+    { id: "code", h: chip("function add(a, b)", "--muted", "out"), x: 50, y: 22 },
+    { id: "mt", h: lbl("对每个可能的 token<br>算出概率", "m"), x: 24, y: 68, hide: 1 },
+    { id: "c1", h: chip("{ 92%", "--accent"), x: 76, y: 58, hide: 1 },
+    { id: "c2", h: chip(": 4%"), x: 76, y: 72, hide: 1 },
+    { id: "c3", h: chip("=> 2%"), x: 76, y: 86, hide: 1 },
+  ],
+  s: [
+    { c: "模型拿到的只有上下文里已有的文字。这里是一行还没写完的代码。", lit: ["ctx"] },
+    { c: "它给词表里每个可能的 token 算一个概率。见过的代码里，函数头后面几乎总是跟着 {，所以 { 的概率最高。",
+      set: { mt: { hide: 0 }, c1: { hide: 0 }, c2: { hide: 0 }, c3: { hide: 0 } }, lit: ["mdl", "cand"] },
+    { c: "按概率抽一个 token 写出来，抽中的 { 接到上下文末尾。概率高的更容易被抽中，但不一定每次都是最高的那个，所以同一个问题问两次，回答可能不一样。",
+      set: { code: { h: chip("function add(a, b) {", "--muted", "out") }, mt: { hide: 1 }, c1: { hide: 1 }, c2: { hide: 1 }, c3: { hide: 1 } }, lit: ["ctx"] },
+    { c: "再来一轮：整段内容，包括刚写的 {，重新作为输入，预测下一个。这次 return 的概率最高。",
+      set: { mt: { hide: 0 }, c1: { hide: 0, h: chip("return 88%", "--accent") }, c2: { hide: 0, h: chip("const 6%") }, c3: { hide: 0, h: chip("let 3%") } }, lit: ["mdl", "cand"] },
+    { c: "写代码就是这一步重复成百上千次：每次写一小段，写出来的每一段都成为下一步的输入。",
+      set: { code: { h: chip("function add(a, b) { return a + b; }", "--muted", "out") }, mt: { hide: 1 }, c1: { hide: 1 }, c2: { hide: 1 }, c3: { hide: 1 } }, lit: ["ctx"] },
+    { c: "换一种情况：要调用项目里读配置的函数，但定义它的那个文件不在上下文里。模型看不到这个函数真正叫什么。",
+      set: { code: { h: chip("const cfg = utils.", "--muted", "out") } }, bad: ["ctx"] },
+    { c: "它照样会算概率。在见过的大量项目里，parseConfig 这种名字最常见。概率高只说明“像”，不说明“对”。",
+      set: { mt: { hide: 0 }, c1: { hide: 0, h: chip("parseConfig 41%", "--doubt") }, c2: { hide: 0, h: chip("loadConfig 22%") }, c3: { hide: 0, h: chip("readCfg 9%") } }, lit: ["mdl", "cand"], bad: ["ctx"] },
+    { c: "于是写出 utils.parseConfig()，语气和写 return 时一样确定。项目里如果根本没有这个函数，这就是编造：它不是在撒谎，而是信息缺了，用最像的内容补上了。",
+      set: { code: { h: chip("const cfg = utils.parseConfig()", "--warn", "out") }, mt: { hide: 1 }, c1: { hide: 1 }, c2: { hide: 1 }, c3: { hide: 1 } }, bad: ["ctx"] },
+  ],
+};
+
+const CMDS = `/context    # 用彩色格子显示上下文用了多少、被哪些内容占着
+/compact    # 把到目前为止的对话总结成摘要，腾出空间；可以附一句“总结时重点保留什么”
+/clear      # 开一段空白的新对话；之前的对话可以用 /resume 找回
+/memory     # 编辑 CLAUDE.md，查看和开关自动记忆`;
+
+const SOURCES = [
+  { title: "Glossary", url: "https://platform.claude.com/docs/en/about-claude/glossary", by: "Anthropic", note: "token、上下文窗口、预训练、温度的定义；token 和字符的换算。" },
+  { title: "Context windows", url: "https://platform.claude.com/docs/en/build-with-claude/context-windows", by: "Anthropic", note: "上下文窗口包含什么、context rot、1M token 和 128k 输出上限。" },
+  { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations", by: "Anthropic", note: "编造的定义和减少编造的做法。" },
+  { title: "Commands", url: "https://code.claude.com/docs/en/commands", by: "Claude Code Docs", note: "/context、/compact、/clear、/memory 的说明。" },
+  { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents", by: "Anthropic Engineering", note: "为什么上下文要挑，而不是越多越好。" },
+  { title: "本站的真实例子", note: "2026-11-08 搭建本站时，图字号的修复声称完成，实测仍是 20px：脚本把 max-width: 100% 读成了 100px。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>用 Claude Code 写代码时，常见的几种“它怎么又这样”：</p>
+  <ul>
+    <li>前面说过的要求，聊久了它不照做了。</li>
+    <li>调用了一个项目里根本没有的函数，还写得很自信。</li>
+    <li>说“已经修好了”，一跑还是错的。</li>
+  </ul>
+  <p>这些都不是偶然出错，是大模型的工作方式带来的。弄懂它怎么生成代码、此刻看得到什么，就知道什么时候该补信息、什么时候该清理上下文、什么时候必须自己验证。</p>
+  <Note kind="info" title="这一章讲的是通用原理">下面讲的适用于所有大模型。后面几章讲 Claude Code 在这之上加了什么：工具、记忆、权限。</Note>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="Token" title="模型读写的最小单位">
+      <p>token 可以是一个词、半个词、一个字或几个字节。Anthropic 给的换算：早期 Claude 模型一个 token 约等于 3.5 个英文字符；Claude 4.7 起换了新的分词方式，同样的文字要多用约 30% 的 token。中文、代码的比例又不一样，要算准就用官方的 token 计数接口。</p>
+    </Card>
+    <Card term="Next Token" title="一次只预测下一个">
+      <p>大模型的底子是在海量文字和代码上训练出来的“接下去会是什么”：给它前面的内容，它预测下一个 token。之后再经过微调和人类反馈训练（RLHF），才变成会听指令的助手。但生成方式不变：一个 token 一个 token 地往后写。</p>
+    </Card>
+    <Card term="Context Window" title="上下文窗口：它的工作记忆">
+      <p>模型生成回答时能参考的全部文字，包括正在写的回答本身。Claude Code 里，系统提示、工具定义、CLAUDE.md、你说的每句话、它读过的每个文件和每条命令输出，都在里面。现在的 Claude 模型上下文窗口最大 1M token，一次最多输出 128k。</p>
+    </Card>
+    <Card term="Context Rot" title="不是越多越好">
+      <p>官方文档的原话是：token 越多，准确率和召回率越会下降，这叫 context rot。重要的要求埋在几十万 token 的对话中间，就容易被“忘”。所以放进去什么，比窗口有多大更重要。</p>
+    </Card>
+    <Card term="Hallucination" title="编造">
+      <p>生成和事实或给定内容不符的文字。原因就在“预测下一个”：信息缺了，它不会停下来说不知道，而是写出最像的内容。明确允许它说“不知道”、要它引用原文作依据，都能减少编造，但不能消除。</p>
+    </Card>
+  </Cards>
+  <Table cap="分清这两样，就能解释大部分“它为什么这样”：训练数据决定它熟悉什么，上下文决定它此刻知道你的项目里有什么。">
+    <tr><th></th><th>训练数据</th><th>上下文</th></tr>
+    <tr><td>是什么</td><td>训练时读过的海量文字和代码</td><td>这一次请求里放进去的内容</td></tr>
+    <tr><td>什么时候定</td><td>训练时定好，有截止日期</td><td>每次请求重新组装</td></tr>
+    <tr><td>你能不能改</td><td>不能</td><td>能：贴代码、给文档、让它读文件</td></tr>
+    <tr><td>决定什么</td><td>熟悉哪些语言、库和常见写法</td><td>知不知道你的项目里有什么</td></tr>
+  </Table>
+</Section>
+
+<Section id="how" title="一段代码是怎么写出来的" short="怎么运作">
+  <p>点“下一步”看模型怎么一段一段写出代码。后半段演示信息缺了的时候，它怎么写出一个不存在的函数。图里的概率是示意，不是实测值。</p>
+  <Anim data={LOOP} label="大模型预测下一个 token：根据上下文给每个候选算概率，抽一个写出来再接回上下文；信息缺失时写出最像的函数名，造成编造" />
+  <Flow items={[
+    { t: "读上下文", d: "只看得到窗口里的内容" },
+    { t: "算概率", d: "每个可能的下一个 token" },
+    { t: "抽一个写出", d: "接回上下文末尾", kind: "tip" },
+    { t: "重复", d: "直到写完；缺信息就补最像的", kind: "doubt" },
+  ]} />
+</Section>
+
+<Section id="example" title="实际例子：Claude Code 的上下文里有什么" short="实际例子">
+  <p>在 Claude Code 里聊一次，上下文大致由这几部分组成，越往下越会随着对话变长：</p>
+  <Table>
+    <tr><th>内容</th><th>什么时候进来</th></tr>
+    <tr><td>系统提示</td><td>每次请求都带：它是谁、怎么工作、有哪些规则</td></tr>
+    <tr><td>工具定义</td><td>每次请求都带：能读文件、改文件、跑命令、上网等</td></tr>
+    <tr><td>CLAUDE.md 和记忆</td><td>会话开始时读入：项目约定、你的偏好</td></tr>
+    <tr><td>你说的话</td><td>每一轮累加</td></tr>
+    <tr><td>工具结果</td><td>每读一个文件、跑一条命令就加一段，往往是最占地方的部分</td></tr>
+    <tr><td>它自己的回答和思考</td><td>每一轮累加</td></tr>
+  </Table>
+  <p>Claude Code 提供了几个命令来看和管理上下文：</p>
+  <Code code={CMDS} cap="说明摘自 Claude Code 的命令参考。" />
+  <Note kind="tip" title="怎么用">一个任务做完、换下一个不相关的任务时，用 <code>/clear</code> 重新开始。同一个任务做了很久、上下文快满了，用 <code>/compact</code>，并告诉它总结时要保留哪些要求。长期有效的约定写进 CLAUDE.md，每次会话开始都会读到，不用每次重说。</Note>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="它会自己去查资料">
+      <p>不给工具时，它的回答全部来自训练学到的规律。Claude Code 能读文件、跑命令、上网，但只有真的去读、去跑了，结果进了上下文，它才“知道”。要它先读相关文件再动手，比直接问更可靠。</p>
+    </Card>
+    <Card term="误区 2" title="上下文越多越好">
+      <p>窗口大不等于记得牢。无关的内容越多，关键要求越容易被淹没。只放这一步需要的文件，做完一件事就清理。</p>
+    </Card>
+    <Card term="误区 3" title="它说改好了，就是改好了">
+      <p>“已经修复”也是生成出来的一段文字，不代表验证过。搭这个站时就有一次：修图字号的代码声称完成，实测还是 20px，原因是脚本把 <code>max-width: 100%</code> 读成了 100px。结论要靠测试、截图、实测数值确认。</p>
+    </Card>
+    <Card term="误区 4" title="同样的问题，回答应该一样">
+      <p>生成时按概率抽取，本来就有随机性。官方文档写明，即使把温度设为 0，结果也不是完全确定的。重要的结论可以让它重做一次对照，两次不一致的地方最可能有问题。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>

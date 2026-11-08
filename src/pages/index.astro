@@ -1,7 +1,8 @@
 ---
 // 阅读库首页：照被盗站首页（blockchain/hacks/index.html）的分章节列表。文章按分类分章节，每章一个纸色，章内新的在前；专题卡片在下面
 import Base from "../layouts/Base.astro";
-import { CATS, TOPICS, TYPES, sortedNotes, validate } from "../lib/notes.js";
+import { CATS, TYPES, sortedNotes, validate } from "../lib/notes.js";
+import { TOPICS, chaptersOf } from "../lib/topics.js";
 import { url } from "../lib/url.js";
 validate(Object.keys(import.meta.glob("../notes/*.astro")).map((p) => p.split("/").pop().replace(/\.astro$/, "")));
 const notes = sortedNotes();
@@ -48,7 +49,12 @@ const groups = CATS.map((c) => ({ c, list: notes.filter((n) => n.cat === c.id) }
   <section class="sec" id="topics">
     <h2>专题</h2>
     <p class="intro">成套的内容，有自己的首页和目录。</p>
-    <ul class="lib-topics">{TOPICS.map((t) => <li><a class={`tint-${t.tint}`} href={url(t.href)}><b>{t.title}</b><span class="d">{t.desc}</span></a></li>)}</ul>
+    <ul class="lib-topics">{TOPICS.map((t) => {
+      const chs = t.chapters && chaptersOf(t), done = chs && chs.filter((c) => c.status !== "todo").length;
+      return <li><a class={`tint-${t.tint}`} href={url(t.href || `topics/${t.id}.html`)}>
+        <b>{t.title}</b><span class="d">{t.desc}</span>{chs && <span class="n">{chs.length} 章 · 已写 {done} 章</span>}
+      </a></li>;
+    })}</ul>
   </section>
 </main>
 <p slot="foot">内容由 AI 协助整理，每篇末尾列出来源；涉及版本、价格、政策的说法以成文日期为准。</p>

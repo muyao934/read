@@ -1,7 +1,8 @@
 ---
 // 每篇文章一页：src/notes/<slug>.astro 的正文套上 Article 外壳，输出 notes/<slug>.html
 import Article from "../../layouts/Article.astro";
-import { sortedNotes, validate } from "../../lib/notes.js";
+import { sortedNotes, validate, catOf } from "../../lib/notes.js";
+import { url } from "../../lib/url.js";
 
 export function getStaticPaths() {
   validate(Object.keys(import.meta.glob("../../notes/*.astro")).map((p) => p.split("/").pop().replace(/\.astro$/, "")));
@@ -11,5 +12,9 @@ export function getStaticPaths() {
 const bodies = import.meta.glob("../../notes/*.astro", { eager: true });
 const { note, prev, next } = Astro.props;
 const Body = bodies[`../../notes/${note.slug}.astro`].default;
+const cat = catOf(note.cat);
+const pg = (n, k) => n && { title: n.title, href: url(`notes/${n.slug}.html`), k };
 ---
-<Article note={note} prev={prev} next={next}><Body /></Article>
+<Article meta={note} tint={cat.tint} caseNo={cat.name} where={`notes/${note.slug}`}
+  crumbs={[{ t: "阅读库", href: url("index.html") }, { t: cat.name, href: url(`index.html#cat-${cat.id}`) }]}
+  prev={pg(prev, "上一篇（更早）")} next={pg(next, "下一篇（更新）")}><Body /></Article>

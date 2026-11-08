@@ -1,7 +1,8 @@
 ---
 // 全站外壳：<head>、顶栏、主题按钮、页脚。首页和文章页都用它，不在页面里另写。
 // 主题和区块链站共用 localStorage 键 chronicle-theme，切换后两边一致。
-import "../styles/base.css";
+// 底层样式直接用区块链站的 base.css（2026-11-08 起不再留副本）：两边只有一套设计，改一处两边同时生效
+import "../../blockchain/shared/base.css";
 import "../styles/components.css";
 import "../styles/lib.css";
 import { url } from "../lib/url.js";

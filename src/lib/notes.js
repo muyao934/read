@@ -17,7 +17,8 @@ export const TYPES = {
     sections: [
       { id: "why", need: [] },
       { id: "core", need: ["bgrid"] },
-      { id: "how", need: ["anim|flow|diagram"] },
+      // “怎么运作”必须有分步小动画（2026-11-08 用户：可以交互、有利于理解的内容要做成动画，和 KMS 一章的动画类似）
+      { id: "how", need: ["anim"] },
       { id: "example", need: ["code|tbl-wrap"] },
       { id: "pitfalls", need: ["bgrid"] },
       { id: "sources", need: ["sources"] },
@@ -46,10 +47,7 @@ export const TYPES = {
   },
 };
 
-// 专题：成套的内容，有自己的首页
-export const TOPICS = [
-  { title: "区块链", href: "blockchain/index.html", tint: "e1", desc: "被盗事件编年史、大事记、诈骗与骗局，以及读懂这些事件要用的基础知识" },
-];
+// 专题在 topics.js
 
 export const NOTES = [
   {

@@ -1,0 +1,26 @@
+---
+// 专题章节页：src/topics/<id>/<slug>.astro 的正文套上 Article 外壳，输出 topics/<id>/<slug>.html。
+// 翻页在本专题内按章号走，跳过待写的章节；链到文章的章节也算一站
+import Article from "../../../layouts/Article.astro";
+import { TOPICS, chaptersOf, bodyOf } from "../../../lib/topics.js";
+import { url } from "../../../lib/url.js";
+
+export function getStaticPaths() {
+  const out = [];
+  for (const t of TOPICS.filter((x) => x.chapters)) {
+    const chs = chaptersOf(t), nav = chs.filter((c) => c.href);
+    for (const c of chs.filter((x) => x.status === "written")) {
+      const i = nav.indexOf(c);
+      out.push({ params: { topic: t.id, slug: c.slug }, props: { t, c, prev: nav[i - 1] || null, next: nav[i + 1] || null } });
+    }
+  }
+  return out;
+}
+const { t, c, prev, next } = Astro.props;
+const Body = bodyOf(t.id, c.slug);
+const no = (x) => String(x.n).padStart(2, "0");
+const pg = (x, k) => x && { title: `第 ${no(x)} 章 ${x.title}`, href: x.href, k };
+---
+<Article meta={c} tint={t.tint} caseNo={`${t.title} · 第 ${no(c)} 章`} where={`topics/${t.id}/${c.slug}`}
+  crumbs={[{ t: "阅读库", href: url("index.html") }, { t: t.title, href: url(`topics/${t.id}.html`) }]}
+  prev={pg(prev, "上一章")} next={pg(next, "下一章")}><Body /></Article>

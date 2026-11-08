@@ -32,11 +32,21 @@ body.lib-home .topbar::after { background: linear-gradient(90deg, var(--e5) 0 25
 .lib-search:focus { border-color: var(--ink-3); outline: none; }
 .lib-count { font-size: 14px; color: var(--ink-3); margin: 0; }
 .lib-empty { font-size: 14px; color: var(--ink-3); padding: 16px 0; margin: 0; }
-/* 文章行没有被盗站的金额列：三列 */
-.lib-home .row { grid-template-columns: 44px 108px minmax(0, 1fr); }
+/* 文章行、章节行没有被盗站的金额列：三列 */
+.lib-home .row, .topic-home .row { grid-template-columns: 44px 108px minmax(0, 1fr); }
 @media (max-width: 760px) {
-  .lib-home .row { grid-template-columns: 34px minmax(0, 1fr); grid-template-areas: "no date" "no main"; }
+  .lib-home .row, .topic-home .row { grid-template-columns: 34px minmax(0, 1fr); grid-template-areas: "no date" "no main"; }
 }
+
+/* ========== 专题首页（topics/<id>.html）：同首页的章节行 ========== */
+.hero .crumbs { margin: 0 0 14px; }
+/* 待写的章节不能点：名字用次要色，悬停不变色 */
+.row.todo { cursor: default; }
+.row.todo .r-name { color: var(--ink-3); font-weight: 400; }
+.era[class*="tint-"] .row.todo:hover, .row.todo:hover { background: none; }
+.row.todo:hover .r-name { text-decoration: none; }
+/* 阅读库首页的专题卡片：章数和进度 */
+.lib-topics .n { display: block; font-size: 13.5px; color: var(--ink-3); margin-top: 8px; }
 
 /* 专题卡片：上沿 4px 是专题的纸色 */
 .lib-topics { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
