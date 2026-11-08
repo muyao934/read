@@ -58,7 +58,7 @@
         <li><b>KMS 不是“帮你签交易”</b>。它只签 32 字节，不知道这 32 字节是哪笔交易，也不检查发给谁、多少钱</li>
         <li><b>“私钥在 HSM 里就安全”只对一半</b>。收回权限之前，能调用这把钥匙的人想签什么就签什么</li>
         <li><b>KMS 返回的签名，两条链都不能直接用</b>。格式要转，s 要规范，以太坊还要自己算 v</li>
-        <li><b><code>ECDSA_SHA_256</code> 不会再算一次 SHA256</b>。用 DIGEST 模式时 KMS 直接签签名服务给的 32 字节，所以以太坊的 keccak256 摘要也能交给它签</li>
+        <li><b>ECDSA_SHA_256 不会再算一次 SHA256</b>。用 DIGEST 模式时 KMS 直接签签名服务给的 32 字节，所以以太坊的 keccak256 摘要也能交给它签</li>
       </ul>
     </div>
   </div>
@@ -142,7 +142,7 @@
         <div class="tbl"><table>
           <thead><tr><th>名字</th><th>是什么</th><th>谁在用</th><th>"abc" 的结果（前 8 字节）</th></tr></thead>
           <tbody>
-            <tr><td class="mono">SHA256</td><td>美国 NIST 标准的哈希函数</td><td>比特币、Qtum；KMS 的 <code>ECDSA_SHA_256</code> 名字里的就是它</td><td class="mono">ba7816bf8f01cfea…</td></tr>
+            <tr><td class="mono">SHA256</td><td>美国 NIST 标准的哈希函数</td><td>比特币、Qtum；KMS 的 ECDSA_SHA_256 名字里的就是它</td><td class="mono">ba7816bf8f01cfea…</td></tr>
             <tr><td class="mono">双 SHA256</td><td>先算一次 SHA256，再对结果再算一次</td><td>比特币和 Qtum：交易 ID、签名摘要</td><td class="mono">4f8b42c22dd3729b…</td></tr>
             <tr><td class="mono">keccak256</td><td>Keccak 算法，后来被选为 SHA3 标准的原型</td><td>以太坊：地址、交易签名摘要、合约里的 <code>keccak256()</code></td><td class="mono">4e03657aea45a94f…</td></tr>
             <tr><td class="mono">SHA3-256</td><td>NIST 定稿 SHA3 时改了填充规则的版本</td><td>以太坊不用</td><td class="mono">3a985da74fe225b2…</td></tr>
@@ -368,7 +368,7 @@
     <tbody>
       <tr><td>密钥规格</td><td><code>ECC_SECG_P256K1</code>（就是 secp256k1），用途 <code>SIGN_VERIFY</code></td><td><span class="ok-tag">已核实</span></td></tr>
       <tr><td>取公钥</td><td><code>GetPublicKey</code>，返回 DER 编码的 X.509 SubjectPublicKeyInfo（SPKI）</td><td><span class="ok-tag">已核实</span></td></tr>
-      <tr><td>签名</td><td><code>Sign</code>，参数 <code>MessageType=DIGEST</code>、<code>SigningAlgorithm=ECDSA_SHA_256</code>、<code>Message</code>=32 字节摘要</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>签名</td><td><code>Sign</code>，参数 <code>MessageType=DIGEST</code>、SigningAlgorithm=ECDSA_SHA_256、<code>Message</code>=32 字节摘要</td><td><span class="ok-tag">已核实</span></td></tr>
       <tr><td>返回的签名</td><td>DER 编码的 <code>SEQUENCE { r INTEGER, s INTEGER }</code>（RFC 3279）</td><td><span class="ok-tag">已核实</span></td></tr>
       <tr><td>不返回的</td><td>恢复用的 v；也没有承诺 s 一定是低位</td><td><span class="ok-tag">已核实</span> 文档里没有这两项；AWS 官方以太坊示例自己补了</td></tr>
       <tr><td>权限</td><td>调用方要有这把钥匙的 <code>kms:Sign</code>、<code>kms:GetPublicKey</code>（见<a href="#iam">权限</a>）</td><td><span class="ok-tag">已核实</span></td></tr>
@@ -594,7 +594,7 @@
   ]
 }</pre>
   <ul>
-    <li>第一条只许用 <code>ECDSA_SHA_256</code>、只许签摘要。这两个条件只作用于 <code>Sign</code> 和 <code>Verify</code><span class="ok-tag">已核实</span>，所以 <code>GetPublicKey</code> 单独写一条。</li>
+    <li>第一条只许用 ECDSA_SHA_256、只许签摘要。这两个条件只作用于 <code>Sign</code> 和 <code>Verify</code><span class="ok-tag">已核实</span>，所以 <code>GetPublicKey</code> 单独写一条。</li>
     <li>IAM 默认拒绝：没有任何策略允许的操作都做不了。签名角色只挂这一份策略，就做不了 <code>kms:Decrypt</code>、<code>kms:ScheduleKeyDeletion</code> 这类操作。</li>
     <li>钥匙策略里也要有一条允许这个角色的语句，写法类似，多一个 <code>Principal</code> 字段指明是哪个角色。</li>
   </ul>
