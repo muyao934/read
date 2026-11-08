@@ -1,0 +1,142 @@
+---
+// AI 编程 · 第 03 章（概念类）：why → core → how → example → pitfalls → sources
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 一次会话里上下文的变化：装入 → 越堆越多 → 压缩 → 从磁盘重读 → 下一次会话
+const MEM = {
+  h: 300,
+  b: [["ctx", 2, 8, 62, 84, "上下文窗口"], ["disk", 68, 8, 30, 84, "磁盘上的文件"]],
+  it: [
+    { id: "dcm", h: chip("CLAUDE.md", "--ok", "out"), x: 83, y: 30 },
+    { id: "dmem", h: chip("MEMORY.md", "--ok", "out"), x: 83, y: 46 },
+    { id: "sys", h: chip("系统提示 · 工具", "--muted", "out"), x: 33, y: 22, hide: 1 },
+    { id: "cm", h: chip("CLAUDE.md", "--ok"), x: 83, y: 30, hide: 1 },
+    { id: "mem", h: chip("MEMORY.md", "--ok"), x: 83, y: 46, hide: 1 },
+    { id: "ask", h: chip("你：按钮改成蓝色", "--accent"), x: 33, y: 64, hide: 1 },
+    { id: "conv", h: chip("对话 + 工具结果 × 80", "--muted"), x: 33, y: 78, hide: 1 },
+  ],
+  s: [
+    { c: "新会话开始，上下文是空的。磁盘上有两样东西会被带进来：你写的 CLAUDE.md，和 Claude 自己记的自动记忆 MEMORY.md。", lit: ["disk"] },
+    { c: "你还没开口，Claude Code 先装进：系统提示和工具定义；从当前目录一路往上找到的 CLAUDE.md；MEMORY.md 的前 200 行或 25KB。",
+      set: { sys: { hide: 0 }, cm: { hide: 0, x: 33, y: 36 }, mem: { hide: 0, x: 33, y: 50 } }, lit: ["ctx"] },
+    { c: "你说：登录按钮改成蓝色。这句话只在对话里。", set: { ask: { hide: 0 } }, lit: ["ctx"] },
+    { c: "工作了很久：读了几十个文件，跑了很多命令。对话和工具结果越堆越多，上下文快满了。",
+      set: { conv: { hide: 0 } }, bad: ["ctx"] },
+    { c: "自动压缩：之前的对话被换成一份摘要。摘要会保留你的请求和关键代码，但早先说过的细节可能丢掉。",
+      set: { ask: { hide: 1 }, conv: { h: chip("摘要：你的请求 + 关键代码", "--doubt") } }, lit: ["ctx"] },
+    { c: "有些东西不靠摘要，而是从磁盘重新读入：系统提示照常在，项目根目录的 CLAUDE.md 和自动记忆从磁盘重读，最近改过的文件最多重读 5 个。",
+      set: { cm: { h: chip("CLAUDE.md（重读）", "--ok") }, mem: { h: chip("MEMORY.md（重读）", "--ok") } }, lit: ["ctx", "disk"] },
+    { c: "所以，“按钮用蓝色”这条要求如果只在对话里说过，摘要里可能就没有了。",
+      set: { ask: { hide: 0, h: lbl("“按钮用蓝色”可能不在摘要里", "w") } }, bad: ["ctx"] },
+    { c: "把它写进 CLAUDE.md，它就在磁盘上了：压缩以后重读，下一次会话开始时也会装进来。",
+      set: { dcm: { h: chip("CLAUDE.md +1 条", "--ok", "out") }, ask: { h: lbl("写进 CLAUDE.md，压缩后还在", "g") } }, lit: ["disk"] },
+    { c: "下一次新会话：上一次的对话一条都不会带过来，带过来的只有磁盘上的 CLAUDE.md 和自动记忆。用 /clear 开新对话也是一样。",
+      set: { ask: { hide: 1 }, conv: { hide: 1 }, cm: { h: chip("CLAUDE.md", "--ok") }, mem: { h: chip("MEMORY.md", "--ok") } }, lit: ["ctx"] },
+  ],
+};
+
+const SAMPLE = `# 项目约定
+
+- 测试命令是 npm test，改完代码必须跑一遍
+- 组件只用 src/components/ 里已有的，新组件先问我
+- 不要改 legacy/ 目录下的文件
+
+@docs/architecture.md`;
+
+const SOURCES = [
+  { title: "How Claude remembers your project", url: "https://code.claude.com/docs/en/memory", by: "Claude Code Docs", note: "CLAUDE.md 的四层位置和加载顺序、@ 导入、自动记忆的位置和加载量、写法建议。" },
+  { title: "Explore the context window", url: "https://code.claude.com/docs/en/context-window", by: "Claude Code Docs", note: "会话开始前装入什么，压缩后每种内容怎么处理。" },
+  { title: "How Claude Code works", url: "https://code.claude.com/docs/en/how-claude-code-works", by: "Claude Code Docs", note: "会话彼此独立；上下文快满时自动压缩，早先的详细要求可能丢掉。" },
+  { title: "本站的真实例子", note: "这个站自己的 CLAUDE.md、子目录 CLAUDE.md 和自动记忆的分工，见“实际例子”。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>前两章说过：模型只看得到上下文里的内容，而每个新会话的上下文都是空的。可你希望它记住的东西很多：项目怎么跑测试、哪些目录不能动、你喜欢什么写法。你也一定碰到过这种情况：</p>
+  <ul>
+    <li>开了个新会话，前天交代过的规矩它全不知道。</li>
+    <li>同一个会话聊了很久，开头说好的要求，后面不照做了。</li>
+  </ul>
+  <p>这两件事背后是同一套机制。弄懂了，就知道一句话该随口说、写进 CLAUDE.md，还是做成检查。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="Session" title="会话彼此独立">
+      <p>每个新会话都从一个空白的上下文窗口开始，不带上一次的对话。能带过去的只有两样：你写的 CLAUDE.md，和 Claude 自己记的自动记忆。</p>
+    </Card>
+    <Card term="CLAUDE.md" title="你写给它的长期说明">
+      <p>四个位置，从大到小：组织统一下发的；用户级 <code>~/.claude/CLAUDE.md</code>，对你所有项目生效；项目级 <code>./CLAUDE.md</code>，跟着仓库提交，团队共用；本地的 <code>./CLAUDE.local.md</code>，只给你自己，要加进 <code>.gitignore</code>。找到的文件全部拼在一起装进上下文，不是后面的覆盖前面的。</p>
+    </Card>
+    <Card term="Load Order" title="哪些一开始就装，哪些用到才装">
+      <p>当前目录和它上面每一层目录里的 CLAUDE.md，会话一开始就装进来。子目录里的 CLAUDE.md 不会马上装，等 Claude 读、写或改那个子目录里的文件时才装。CLAUDE.md 里可以用 <code>@路径</code> 导入别的文件，路径相对这个 CLAUDE.md 计算，最多嵌套四层。</p>
+    </Card>
+    <Card term="Auto Memory" title="自动记忆：它自己记的笔记">
+      <p>Claude 根据你的纠正和偏好，自己写下笔记，存在 <code>~/.claude/projects/&lt;项目&gt;/memory/</code>：一个索引 <code>MEMORY.md</code>，每条记忆一个文件。每次会话开始时装入索引的前 200 行或 25KB。可以在 <code>/memory</code> 里查看、编辑和关闭。</p>
+    </Card>
+    <Card term="Compaction" title="压缩：快满时把旧对话换成摘要">
+      <p>上下文快满时，Claude Code 会自动把之前的对话总结成一份摘要，会话不会因为满了而中断。摘要保留你的请求和关键代码，但开头说过的详细要求可能丢掉。也可以自己运行 <code>/compact</code>，后面写上要保留的重点。</p>
+    </Card>
+  </Cards>
+  <Table cap="两种记忆每次会话都会装进来，但模型把它们当作上下文，不是必须执行的配置。">
+    <tr><th></th><th>CLAUDE.md</th><th>自动记忆</th></tr>
+    <tr><td>谁写</td><td>你</td><td>Claude</td></tr>
+    <tr><td>写什么</td><td>规则和说明</td><td>从你的纠正里学到的东西</td></tr>
+    <tr><td>范围</td><td>组织、用户或项目</td><td>每个仓库一份</td></tr>
+    <tr><td>装进来多少</td><td>找到的全部</td><td>索引的前 200 行或 25KB</td></tr>
+  </Table>
+</Section>
+
+<Section id="how" title="一次会话里，上下文怎么变" short="怎么运作">
+  <p>点“下一步”，看一次会话从开始到压缩、再到下一次会话，上下文里有什么。</p>
+  <Anim data={MEM} label="一次会话的上下文：开始时装入系统提示、CLAUDE.md 和自动记忆；对话越堆越多后被压缩成摘要；CLAUDE.md 和记忆从磁盘重读，只在对话里说过的要求可能丢掉" />
+  <Table cap="压缩以后各种内容怎么处理（摘自官方文档，略有简化）。“重读”的不会丢，“归进摘要”的可能丢掉细节。">
+    <tr><th>内容</th><th>压缩以后</th></tr>
+    <tr><td>系统提示</td><td>照常在</td></tr>
+    <tr><td>项目根目录的 CLAUDE.md、自动记忆</td><td>从磁盘重读</td></tr>
+    <tr><td>最近读过或改过的文件</td><td>重读最多 5 个，最近改的优先</td></tr>
+    <tr><td>子目录里的 CLAUDE.md</td><td>归进摘要，再用到那个目录时重新装</td></tr>
+    <tr><td>你在对话里说过的话、工具结果</td><td>归进摘要</td></tr>
+  </Table>
+  <Flow items={[
+    { t: "会话开始", d: "装入 CLAUDE.md 和记忆", kind: "ok" },
+    { t: "越堆越多", d: "对话和工具结果" },
+    { t: "自动压缩", d: "旧对话换成摘要", kind: "doubt" },
+    { t: "从磁盘重读", d: "CLAUDE.md、记忆、最近的文件", kind: "tip" },
+  ]} />
+</Section>
+
+<Section id="example" title="实际例子：这个站是怎么分工的" short="实际例子">
+  <p>搭这个阅读库时，几层记忆是这样分工的：</p>
+  <Table>
+    <tr><th>放在哪</th><th>写什么</th><th>什么时候装进来</th></tr>
+    <tr><td>用户级 <code>~/.claude/CLAUDE.md</code></td><td>所有项目通用的偏好，比如回答用什么语言</td><td>每次会话开始</td></tr>
+    <tr><td>项目根目录的 CLAUDE.md</td><td>阅读库的约定：目录结构、组件、检查、发布流程</td><td>每次会话开始，压缩后重读</td></tr>
+    <tr><td><code>blockchain/CLAUDE.md</code></td><td>区块链站自己的约定</td><td>改区块链目录下的文件时才装进来</td></tr>
+    <tr><td>自动记忆</td><td>从纠正里记下的东西，比如“能交互的内容要做成动画”</td><td>每次会话开始</td></tr>
+  </Table>
+  <p>一份项目级 CLAUDE.md 大致长这样：短，写具体的规矩，用 <code>@</code> 导入详细的说明。</p>
+  <Code code={SAMPLE} lang="text" cap="最后一行导入 docs/architecture.md，路径相对这个 CLAUDE.md。官方建议每个 CLAUDE.md 控制在 200 行以内。" />
+  <Note kind="tip" title="一句话该放哪">这次对话用一下的，直接说。以后每次都要遵守的，写进 CLAUDE.md。只对某个目录有用的，写进那个目录的 CLAUDE.md。只给自己、不想提交的，写进 CLAUDE.local.md。必须做到、不能靠它自觉的，做成 hook 或检查脚本（第 07 章讲 hooks）。</Note>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="写进 CLAUDE.md，它就一定照做">
+      <p>官方文档写明，Claude 把 CLAUDE.md 当作上下文，不是强制执行的配置；不管它怎么判断都要拦住的操作，要用 hook。这个站的做法是把规矩写成构建检查：概念类文章的“怎么运作”一节没有分步动画，构建直接失败。</p>
+    </Card>
+    <Card term="误区 2" title="CLAUDE.md 写得越详细越好">
+      <p>官方建议每个文件控制在 200 行以内：越长越占上下文，照做的程度反而下降。只对一部分代码有用的规矩，挪到那个子目录的 CLAUDE.md，或者只在处理特定文件时才加载的规则里。</p>
+    </Card>
+    <Card term="误区 3" title="子目录的 CLAUDE.md 一开始就生效">
+      <p>子目录里的 CLAUDE.md 要等 Claude 读写那个目录的文件时才装进来，压缩后又会归进摘要。只放在子目录里的规矩，在它碰到那个目录之前是看不到的。</p>
+    </Card>
+    <Card term="误区 4" title="规矩写好就不用管了">
+      <p>两条规矩互相矛盾时，Claude 可能随便挑一条。要定期检查各层 CLAUDE.md，删掉过时和冲突的内容。<code>/doctor prompt-audit</code> 会帮你找出过时或互相冲突的说明。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
