@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "lint": "node scripts/lint-notes.mjs",
-    "build": "node scripts/lint-notes.mjs && astro build && node scripts/verify-blockchain.mjs && node scripts/depth.mjs",
+    "build": "node scripts/lint-notes.mjs && astro build && node scripts/verify-blockchain.mjs && node scripts/depth.mjs --strict",
     "preview": "astro preview"
   },
   "dependencies": {

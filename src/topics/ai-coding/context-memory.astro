@@ -37,6 +37,37 @@ const MEM = {
   ],
 };
 
+// 记忆从哪几层装进来：在 project/src/ 里启动，往上找到的一开始就装，子目录和带 paths 的规则用到才装
+const LOAD = {
+  h: 300,
+  b: [["tree", 2, 8, 40, 84, "目录"], ["ctx", 46, 8, 52, 84, "装进上下文的顺序"]],
+  it: [
+    { id: "t0", h: lbl("~/.claude/CLAUDE.md", "m"), x: 22, y: 26 },
+    { id: "t1", h: lbl("project/CLAUDE.md", "m"), x: 22, y: 42 },
+    { id: "t2", h: lbl("src/CLAUDE.md（在这启动）", "m"), x: 22, y: 58 },
+    { id: "t3", h: lbl("src/api/CLAUDE.md", "m"), x: 22, y: 74 },
+    { id: "k0", h: chip("用户级 CLAUDE.md"), x: 72, y: 24, hide: 1 },
+    { id: "k1", h: chip("项目 CLAUDE.md"), x: 72, y: 36, hide: 1 },
+    { id: "k2", h: chip("src/CLAUDE.md"), x: 72, y: 48, hide: 1 },
+    { id: "k3", h: chip("rules：没写 paths 的"), x: 72, y: 60, hide: 1 },
+    { id: "k4", h: chip("api/CLAUDE.md", "--doubt"), x: 72, y: 74, hide: 1 },
+    { id: "k5", h: chip("rules：paths 匹配的", "--doubt"), x: 72, y: 86, hide: 1 },
+  ],
+  s: [
+    { c: "在 project/src/ 里启动 Claude Code。它从当前目录开始，一层层往上找 CLAUDE.md，再加上你个人的那份。", lit: ["tree"] },
+    { c: "先装用户级的 ~/.claude/CLAUDE.md，它对你所有项目生效。", set: { k0: { hide: 0 } }, lit: ["ctx"] },
+    { c: "再装 project/ 和 src/ 的。几份不是后面覆盖前面，而是拼在一起，从文件系统的根往下排到当前目录：越具体的越靠后。",
+      set: { k1: { hide: 0 }, k2: { hide: 0 } }, lit: ["ctx"] },
+    { c: ".claude/rules/ 里没写 paths 的规则，也在会话开始时装进来，和项目的 CLAUDE.md 同等对待。",
+      set: { k3: { hide: 0 } }, lit: ["ctx"] },
+    { c: "src/api/ 在当前目录下面，它的 CLAUDE.md 这时还没装：Claude 还没碰过 api/ 里的文件。",
+      set: { t3: { h: lbl("src/api/CLAUDE.md<br>还没装", "w") } }, bad: ["tree"] },
+    { c: "Claude 读了 src/api/ 里的一个文件，api/CLAUDE.md 这才装进来；paths 匹配这个文件的规则也一起装。用到才装，省上下文。",
+      set: { t3: { h: lbl("src/api/CLAUDE.md", "m") }, k4: { hide: 0 }, k5: { hide: 0 } }, lit: ["ctx"] },
+    { c: "代价是：用到才装的内容进的是对话历史，压缩时会归进摘要，要等再碰到对应的文件才重新装。必须一直生效的规矩，放进项目根目录的 CLAUDE.md，或者去掉 paths。", lit: ["ctx"] },
+  ],
+};
+
 // 同一件事的两种说法：上面含糊，猜了三轮；下面说清楚，一轮做完
 const TWO = {
   h: 300,
@@ -90,7 +121,8 @@ const CMDS = `/context    # 用彩色格子显示上下文用了多少、被哪�
 /memory     # 编辑 CLAUDE.md，查看和开关自动记忆`;
 
 const SOURCES = [
-  { title: "How Claude remembers your project", url: "https://code.claude.com/docs/en/memory", by: "Claude Code Docs", note: "CLAUDE.md 的四层位置和加载顺序、@ 导入、.claude/rules/ 和带 paths 的规则、自动记忆、写法建议。" },
+  { title: "How Claude remembers your project", url: "https://code.claude.com/docs/en/memory", by: "Claude Code Docs", note: "CLAUDE.md 的四层位置和加载顺序、拼接而不是覆盖、@ 导入和外部导入的确认、.claude/rules/ 和带 paths 的规则、自动记忆的目录、写法建议。" },
+  { title: "How Claude Code uses prompt caching", url: "https://code.claude.com/docs/en/prompt-caching", by: "Claude Code Docs", note: "会话中途改 CLAUDE.md 不生效，要等 /clear、/compact 或重启。" },
   { title: "Explore the context window", url: "https://code.claude.com/docs/en/context-window", by: "Claude Code Docs", note: "会话开始前装入什么，压缩后每种内容怎么处理。" },
   { title: "How Claude Code works", url: "https://code.claude.com/docs/en/how-claude-code-works", by: "Claude Code Docs", note: "会话彼此独立；自动压缩；Compact Instructions。" },
   { title: "Commands", url: "https://code.claude.com/docs/en/commands", by: "Claude Code Docs", note: "/context、/compact、/clear、/memory 的说明。" },
@@ -123,7 +155,7 @@ const SOURCES = [
       <p>规矩多了，可以拆进项目的 <code>.claude/rules/</code>，一个主题一个文件，比如 <code>testing.md</code>、<code>api-design.md</code>。没写 <code>paths</code> 的规则和 CLAUDE.md 一样，会话一开始就装。开头写了 <code>paths</code>（比如 <code>src/api/**/*.ts</code>）的规则，只在 Claude 读写匹配的文件时才装，省上下文。只在某个任务里才用的长流程，更适合做成 skill（第 4 章）。</p>
     </Card>
     <Card term="Auto Memory" title="自动记忆：它自己记的笔记">
-      <p>Claude 根据你的纠正和偏好，自己写下笔记，存在 <code>~/.claude/projects/&lt;项目&gt;/memory/</code>：一个索引 <code>MEMORY.md</code>，每条记忆一个文件。每次会话开始时装入索引的前 200 行或 25KB。可以在 <code>/memory</code> 里查看、编辑和关闭。</p>
+      <p>Claude 根据你的纠正和偏好，自己写下笔记，存在 <code>~/.claude/projects/&lt;项目&gt;/memory/</code>：一个索引 <code>MEMORY.md</code>，每条记忆一个文件。每次会话开始时装入索引的前 200 行或 25KB。目录按 git 仓库算，同一个仓库的所有 worktree 和子目录共用一份。可以在 <code>/memory</code> 里查看、编辑和关闭。</p>
     </Card>
     <Card term="Compaction" title="压缩：快满时把旧对话换成摘要">
       <p>上下文快满时，Claude Code 会自动把之前的对话总结成一份摘要，会话不会因为满了而中断。摘要保留你的请求和关键代码，但开头说过的详细要求可能丢掉。也可以自己运行 <code>/compact</code>，后面写上要保留的重点；或者在 CLAUDE.md 里写一节 “Compact Instructions”，说明压缩时要保留什么。</p>
@@ -136,6 +168,12 @@ const SOURCES = [
     <tr><td>范围</td><td>组织、用户或项目</td><td>每个仓库一份</td></tr>
     <tr><td>装进来多少</td><td>找到的全部</td><td>索引的前 200 行或 25KB</td></tr>
   </Table>
+</Section>
+
+<Section id="load" title="记忆从哪几层装进来" short="记忆怎么装">
+  <p>上面说“当前目录和上面每一层的 CLAUDE.md 一开始就装，子目录的用到才装”。点“下一步”，用一个例子走一遍：项目里有三层 CLAUDE.md，在 <code>src/</code> 里启动。</p>
+  <Anim data={LOAD} label="记忆的加载顺序：从当前目录往上找到的 CLAUDE.md 和没写 paths 的规则一开始就装，按从根到当前目录的顺序拼在一起；子目录的 CLAUDE.md 和 paths 匹配的规则在读写对应文件时才装" />
+  <Note kind="doubt" title="会话中途改 CLAUDE.md，不会马上生效">根目录和用户级的 CLAUDE.md 只在会话开始时读一次。中途改了要等 <code>/clear</code>、<code>/compact</code> 或重启才生效（原因见第 1 章“每一轮都重发全部内容”）。子目录的 CLAUDE.md 和带 paths 的规则在装进来之前改，会生效。</Note>
 </Section>
 
 <Section id="how" title="一次会话里，上下文怎么变" short="上下文怎么变">
@@ -251,6 +289,9 @@ const SOURCES = [
     </Card>
     <Card term="误区 4" title="规矩写好就不用管了">
       <p>两条规矩互相矛盾时，Claude 可能随便挑一条。要定期检查各层 CLAUDE.md，删掉过时和冲突的内容。<code>/doctor prompt-audit</code> 会帮你找出过时或互相冲突的说明。</p>
+    </Card>
+    <Card term="误区 5" title="@ 导入只是个链接">
+      <p>写法像链接，其实被导入的文件会整个展开，和引用它的 CLAUDE.md 一起装进上下文，和直接写在 CLAUDE.md 里一样占地方。导入项目目录以外的文件时，Claude Code 会在会话开始时问你一次要不要允许。</p>
     </Card>
   </Cards>
 </Section>

@@ -67,6 +67,40 @@ const AGENT = {
   ],
 };
 
+// 每一轮都重发全部内容：三列是三次请求，开头不变的部分从缓存读
+const RESEND = {
+  h: 300,
+  b: [["r1", 2, 8, 30, 84, "第 1 轮请求"], ["r2", 35, 8, 30, 84, "第 2 轮请求"], ["r3", 68, 8, 30, 84, "第 3 轮请求"]],
+  it: [
+    { id: "a1", h: chip("系统提示 · 工具"), x: 17, y: 26, hide: 1 },
+    { id: "b1", h: chip("CLAUDE.md · 记忆"), x: 17, y: 38, hide: 1 },
+    { id: "n1", h: lbl("+ 你的第一问", "m"), x: 17, y: 52, hide: 1 },
+    { id: "a2", h: chip("系统提示 · 工具"), x: 50, y: 26, hide: 1 },
+    { id: "b2", h: chip("CLAUDE.md · 记忆"), x: 50, y: 38, hide: 1 },
+    { id: "c2", h: chip("第 1 轮全部"), x: 50, y: 50, hide: 1 },
+    { id: "n2", h: lbl("+ 新的一问", "m"), x: 50, y: 64, hide: 1 },
+    { id: "a3", h: chip("系统提示 · 工具"), x: 83, y: 26, hide: 1 },
+    { id: "b3", h: chip("CLAUDE.md · 记忆"), x: 83, y: 38, hide: 1 },
+    { id: "c3", h: chip("前两轮全部"), x: 83, y: 50, hide: 1 },
+    { id: "n3", h: lbl("+ 新的一问", "m"), x: 83, y: 64, hide: 1 },
+    { id: "note", h: lbl("开头不变：从缓存读", "g"), x: 50, y: 84, hide: 1 },
+  ],
+  s: [
+    { c: "模型在两次请求之间什么都不记得，所以每一轮都是一次全新的请求。第 1 轮发出去的是：系统提示和工具定义，CLAUDE.md、自动记忆和规则，再加上你的第一问。最少变化的内容排在最前面。",
+      set: { a1: { hide: 0 }, b1: { hide: 0 }, n1: { hide: 0 } }, lit: ["r1"] },
+    { c: "第 2 轮：第 1 轮的全部内容再发一遍，加上第 1 轮的回答和工具结果，再加上新的一问。",
+      set: { a2: { hide: 0 }, b2: { hide: 0 }, c2: { hide: 0 }, n2: { hide: 0 } }, lit: ["r2"] },
+    { c: "第 2 轮的开头和第 1 轮一字不差，所以这一段可以从缓存读：不用重算，按 API 的计价只收基础输入价的 0.1 倍左右。只有最新的一来一回要真正计算。",
+      set: { a2: { h: chip("系统提示 · 工具", "--ok") }, b2: { h: chip("CLAUDE.md · 记忆", "--ok") }, c2: { h: chip("第 1 轮全部", "--ok") }, note: { hide: 0 } }, lit: ["r2"] },
+    { c: "第 3 轮也一样：前两轮的全部内容都在开头，从缓存读。对话越长，每一轮重发的内容越多，缓存省下的也越多。",
+      set: { a3: { hide: 0, h: chip("系统提示 · 工具", "--ok") }, b3: { hide: 0, h: chip("CLAUDE.md · 记忆", "--ok") }, c3: { hide: 0, h: chip("前两轮全部", "--ok") }, n3: { hide: 0 } }, lit: ["r3"] },
+    { c: "可如果第 3 轮之前换了模型：每个模型有自己的缓存，开头就对不上了。缓存只认一字不差的开头，前面变了，后面全部重算，这一轮又慢又贵。",
+      set: { a3: { h: chip("系统提示 · 工具", "--warn") }, b3: { h: chip("CLAUDE.md · 记忆", "--warn") }, c3: { h: chip("前两轮全部", "--warn") }, note: { h: lbl("开头变了：全部重算", "w") } }, bad: ["r3"] },
+    { c: "所以选模型、选 effort 等级放在会话开头，压缩放在两件事之间的空档；换不相关的任务时用 /clear，别让旧对话在之后每一轮都被重发。",
+      set: { note: { h: lbl("换任务用 /clear", "m") } }, lit: ["r1", "r2", "r3"] },
+  ],
+};
+
 // 简化过的消息：字段名取自 Claude API 的工具调用文档，Read 是 Claude Code 读文件的工具
 const MSGS = `// 模型的回复：不是最终回答，而是一次工具调用
 { "stop_reason": "tool_use",
@@ -88,6 +122,8 @@ const SOURCES = [
   { title: "How Claude Code works", url: "https://code.claude.com/docs/en/how-claude-code-works", by: "Claude Code Docs", note: "agent 循环的三个阶段、harness、五类内置工具、插话。" },
   { title: "Tool use with Claude", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview", by: "Anthropic", note: "tool_use、tool_result、stop_reason，什么时候调用工具，客户端工具和服务端工具。" },
   { title: "Building effective agents", url: "https://www.anthropic.com/engineering/building-effective-agents", by: "Anthropic Engineering", note: "workflow 和 agent 的区别；从最简单的方法开始。" },
+  { title: "How Claude Code uses prompt caching", url: "https://code.claude.com/docs/en/prompt-caching", by: "Claude Code Docs", note: "每轮重发全部内容、按开头匹配、三层的顺序、哪些操作让缓存失效、缓存时长。" },
+  { title: "Prompt caching", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-caching", by: "Anthropic", note: "缓存读写的计价倍数、默认 5 分钟。" },
   { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents", by: "Anthropic Engineering", note: "为什么上下文要挑，而不是越多越好。" },
   { title: "本站的真实例子", note: "2026-11-08 修示意图字号用了 5 轮：第 1 轮声称完成，实测仍是 20px，原因是脚本把 max-width: 100% 读成了 100px。见“实际例子”。" },
 ];
@@ -177,6 +213,27 @@ const SOURCES = [
     { t: "不再调用就结束", d: "stop_reason 是 end_turn", kind: "ok" },
   ]} />
   <Note kind="tip" title="你随时可以插话">按 <code>Esc</code> 会立刻停下正在跑的工具，等你的下一句话。也可以不停它，直接打字回车：消息会排队，这一轮工具跑完它就会读到，并在下一步调整。</Note>
+</Section>
+
+<Section id="cost" title="每一轮都重发全部内容" short="每轮重发">
+  <p>循环里还有一件不容易注意到的事：模型在两次请求之间什么都不记得。所以你每发一条消息、每完成一轮工具调用，Claude Code 都要把整个上下文重新发一遍：系统提示、项目上下文、之前的每一条消息和工具结果，再加上新的内容。这就是为什么长对话又慢又贵，也是提示缓存存在的原因。点“下一步”看三轮请求：</p>
+  <Anim data={RESEND} label="每一轮都重发全部内容：第 2 轮包含第 1 轮的全部，开头不变的部分从缓存读；中间一变，后面全部重算" />
+  <Table cap="Claude Code 把最少变化的内容排在最前面，好让开头尽量不变（摘自 Claude Code 的提示缓存文档）。">
+    <tr><th>层</th><th>内容</th><th>什么时候变</th></tr>
+    <tr><td>系统提示</td><td>核心说明、工具定义</td><td>加载的工具定义变了</td></tr>
+    <tr><td>项目上下文</td><td>CLAUDE.md、自动记忆、没写 paths 的规则</td><td>会话开始，或 <code>/clear</code>、<code>/compact</code> 之后</td></tr>
+    <tr><td>对话</td><td>你的消息、它的回答、工具结果</td><td>每一轮</td></tr>
+  </Table>
+  <p>缓存是按“开头”匹配的，而且必须一字不差：前面任何一处变了，后面全部重算，没有按文件、按段落的缓存。按 API 的计价，从缓存读的部分只收基础输入价的 0.1 倍（Opus 5.5、Sonnet 5.5 是 0.05 倍），写入缓存要 1.25 倍（保存 5 分钟）或 2 倍（保存 1 小时）。缓存在一段时间没有请求后失效：用 API key 时主对话默认 5 分钟；用 Claude 订阅、在套餐额度内时是 1 小时。所以离开一会儿回来的第一轮会明显变慢。</p>
+  <Table>
+    <tr><th>会让下一轮重算</th><th>不影响缓存</th></tr>
+    <tr><td>换模型（每个模型有自己的缓存）</td><td>改仓库里的文件（只在末尾追加一条“文件变了”的提示）</td></tr>
+    <tr><td>多数模型上改 effort 等级；开关 fast mode</td><td>换权限模式</td></tr>
+    <tr><td>压缩对话（历史换成了摘要，对话这一层重算；系统提示和项目上下文仍可从缓存读）</td><td>调用 skill 和命令（内容追加在末尾）</td></tr>
+    <tr><td>升级 Claude Code 后的第一次会话</td><td><code>/rewind</code> 退回到之前的某一轮</td></tr>
+  </Table>
+  <Note kind="doubt" title="会话中途改 CLAUDE.md，不会马上生效">根目录和用户级的 CLAUDE.md 只在会话开始时读一次。中途改了它不影响缓存，但也不会生效，要等 <code>/clear</code>、<code>/compact</code> 或重启。用 <code>/usage</code> 能看到这次会话的缓存命中率。</Note>
+  <p>这也解释了第 2 章那条建议：换一个不相关的任务时用 <code>/clear</code>。不只是为了腾地方，而是旧对话会在之后每一轮都被重发一遍。</p>
 </Section>
 
 <Section id="example" title="实际例子：上下文里有什么、循环里传什么" short="实际例子">

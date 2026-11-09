@@ -20,10 +20,39 @@ git remote set-url origin git@github-work:账号名/仓库名.git`;
 const EMAIL = `git config user.name  "账号名"
 git config user.email "数字ID+账号名@users.noreply.github.com"`;
 
+// 这个站的发布工作流，去掉了几行不影响理解的设置
+const WORKFLOW = `on:
+  push:
+    branches: [main]          # 推送到 main 就构建
+permissions:
+  contents: read
+  pages: write                # 允许发布到 Pages
+  id-token: write             # deploy-pages 需要的权限
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run build    # 构建，再跑检查；失败就到此为止
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist          # 把构建结果打包
+  deploy:
+    needs: build              # build 成功才会跑
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/deploy-pages@v4`;
+
 const SOURCES = [
   { title: "What is GitHub Pages?", url: "https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages", by: "GitHub Docs", note: "各账户类型能否从私有仓库发布、访问控制。" },
   { title: "Configuring a publishing source for your GitHub Pages site", url: "https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site", by: "GitHub Docs", note: "Deploy from a branch、.nojekyll。" },
-  { title: "GitHub Pages limits", url: "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits", by: "GitHub Docs", note: "站点大小等限制。" },
+  { title: "GitHub Pages limits", url: "https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits", by: "GitHub Docs", note: "站点不超过 1 GB、流量软限制每月 100 GB、每小时 10 次构建（自定义的 Actions 工作流不受限）、部署超过 10 分钟超时。" },
+  { title: "actions/deploy-pages", url: "https://github.com/actions/deploy-pages", by: "GitHub", note: "用 Actions 发布 Pages 的官方 action。" },
+  { title: "本站的工作流", note: "这个站的 .github/workflows/deploy.yml：2026-11-08 从分支发布改成 Actions 发布。" },
   { title: "Using SSH over the HTTPS port", url: "https://docs.github.com/en/authentication/connecting-to-github-with-ssh/using-ssh-over-the-https-port", by: "GitHub Docs", note: "ssh.github.com 的 443 端口。" },
   { title: "Setting your commit email address", url: "https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-personal-account-on-github/managing-email-preferences/setting-your-commit-email-address", by: "GitHub Docs", note: "noreply 地址和两个隐私选项。" },
   { title: "缓存时间实测", note: "2026-11-08 curl -I https://muyao934.github.io/read/ 返回 cache-control: max-age=600。" },
@@ -63,6 +92,25 @@ const SOURCES = [
   ]} />
 </Section>
 
+<Section id="build" title="需要构建一步时：改用 GitHub Actions" short="要构建时">
+  <p>“Deploy from a branch”把分支里的文件原样发布，适合直接写好的 HTML、CSS、JS。网站如果是用 Astro、Vite 这类工具生成的，要先构建一步，得到的 <code>dist/</code> 才是网站。这时 Source 改选 “GitHub Actions”，用一个工作流文件来构建和发布。这个站 2026-11-08 就是这样从分支发布改过来的。</p>
+  <Table>
+    <tr><th></th><th>从分支发布</th><th>GitHub Actions 发布</th></tr>
+    <tr><td>发布什么</td><td>分支里的文件，原样</td><td>工作流构建出来的结果</td></tr>
+    <tr><td>自己的构建和检查</td><td>没有：只会用 Jekyll 处理一遍（放 <code>.nojekyll</code> 能跳过）</td><td>有：装依赖、构建、跑检查都写在工作流里</td></tr>
+    <tr><td>构建次数</td><td>软限制：每小时 10 次</td><td>不受这个限制</td></tr>
+    <tr><td>检查不过时</td><td>没有这一关</td><td>不发布，线上保持上一个版本</td></tr>
+  </Table>
+  <Code code={WORKFLOW} cap="这个站的 .github/workflows/deploy.yml，去掉了几行不影响理解的设置：手动触发、并发、npm 缓存、environment。" />
+  <p>关键在两个 job 的先后：<code>deploy</code> 写了 <code>needs: build</code>，build 里任何一步失败，比如 <code>npm run build</code> 里的检查没过，deploy 就不会跑。这个站的构建里有正文检查、内容结构检查和区块链页面的逐字节核对，所以过不了检查的版本上不了线。</p>
+  <Table cap="GitHub 官方文档列的限制。">
+    <tr><th>限制</th><th>数值</th></tr>
+    <tr><td>发布出去的站点大小</td><td>不超过 1 GB</td></tr>
+    <tr><td>流量</td><td>软限制：每月 100 GB</td></tr>
+    <tr><td>一次部署的时间</td><td>超过 10 分钟就超时</td></tr>
+  </Table>
+</Section>
+
 <Section id="verify" title="怎么确认发布成功">
   <p>Actions 页里那次部署是绿色对勾，再打开 <code>https://用户名.github.io/仓库名/</code>。也可以只看响应头：</p>
   <Code code={CURL} />
@@ -77,6 +125,7 @@ const SOURCES = [
     <tr><td>样式、图片全丢</td><td>链接以 <code>/</code> 开头，指向的是 <code>用户名.github.io/</code> 而不是 <code>/仓库名/</code></td><td>全部写相对路径</td></tr>
     <tr><td>以下划线开头的文件 404</td><td>Pages 默认先用 Jekyll 处理，Jekyll 会跳过 <code>_</code> 开头的文件和目录</td><td>在根目录放一个空文件 <code>.nojekyll</code></td></tr>
     <tr><td>改完推送，刷新还是旧的</td><td>Pages 返回 <code>cache-control: max-age=600</code>，浏览器最多缓存 10 分钟</td><td>等部署完成后强制刷新，或换隐身窗口</td></tr>
+    <tr><td>用 Actions 发布，推送后线上还是旧版本，Actions 页是红叉</td><td>工作流里某一步失败了，常见是构建或检查没过，deploy 没有跑</td><td>点开那次运行，看是哪一步失败，修好再推送</td></tr>
   </Table>
   <p>反过来也有：用 <code>fetch()</code> 读本地 JSON 的页面，双击打开会失败，上线后反而正常。</p>
 </Section>

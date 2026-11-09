@@ -35,6 +35,32 @@ const PV = {
   ],
 };
 
+// Stop hook：它想结束时先跑测试，不通过就拦住，失败输出送回去当原因
+const STOP = {
+  h: 300,
+  b: [["cl", 2, 8, 30, 84, "Claude"], ["hk", 35, 8, 30, 84, "Stop hook"], ["ts", 68, 8, 30, 84, "测试"]],
+  it: [
+    { id: "msg", h: chip("我改完了", "--muted", "out"), x: 17, y: 30 },
+    { id: "hl", h: lbl("跑 npm test", "m"), x: 50, y: 56, hide: 1 },
+    { id: "vd", h: lbl("退出码 2：拦住", "w"), x: 50, y: 78, hide: 1 },
+    { id: "tr", h: lbl("2 个失败", "w"), x: 83, y: 56, hide: 1 },
+  ],
+  s: [
+    { c: "Claude 改完代码，觉得做完了，想结束这一轮。", lit: ["cl"] },
+    { c: "它一结束，Claude Code 就触发 Stop hook：先跑你配置的命令，这里是 npm test。这一步由 Claude Code 执行，模型说了不算。",
+      set: { msg: { x: 50, h: chip("想结束", "--accent") }, hl: { hide: 0 } }, lit: ["hk"] },
+    { c: "测试有 2 个失败，命令以退出码 2 结束。",
+      set: { msg: { x: 83, h: chip("npm test") }, tr: { hide: 0 } }, bad: ["ts"] },
+    { c: "退出码 2 就拦住这次结束。命令打印到 stderr 的失败输出，发回给 Claude，当作“还不能结束”的原因。",
+      set: { msg: { x: 17, h: chip("测试输出 → 原因", "--warn", "out") }, vd: { hide: 0 } }, bad: ["hk"] },
+    { c: "Claude 读了失败输出，接着修，修完再想结束。", set: { msg: { h: chip("修好了", "--accent") }, tr: { hide: 1 }, vd: { hide: 1 } }, lit: ["cl"] },
+    { c: "Stop hook 又跑一次测试：全部通过，退出码 0。",
+      set: { msg: { x: 83, h: chip("npm test") }, tr: { hide: 0, h: lbl("全部通过", "g") }, vd: { hide: 0, h: lbl("退出码 0：放行", "g") } }, lit: ["ts", "hk"] },
+    { c: "这一轮真正结束。“做完”由测试结果决定，不由它自己的判断。保险：连续拦 8 次、中间没有任何工具调用，Claude Code 会放行，免得死循环。",
+      set: { msg: { x: 17, h: chip("做完", "--ok") } }, lit: ["cl"] },
+  ],
+};
+
 // 把一次大范围的搜索交给子代理：读了几十个文件，主对话只收到一份摘要。数量是示意
 const SUB = {
   h: 300,
@@ -86,6 +112,7 @@ const CMDS = `/plan 把登录改成先刷新 token 再重试     # 只让这一�
 const SOURCES = [
   { title: "Choose a permission mode", url: "https://code.claude.com/docs/en/permission-modes", by: "Claude Code Docs", note: "plan mode 能做什么、怎么进入、批准计划的几个选项、Ctrl+G。" },
   { title: "Best practices for Claude Code", url: "https://code.claude.com/docs/en/best-practices", by: "Claude Code Docs", note: "给它一个检查、要证据、确定性和非确定性的区别、Stop hook 的例子、审查只报正确性问题；子代理值得用的情况、代价和只读审查者的例子。" },
+  { title: "Hooks reference", url: "https://code.claude.com/docs/en/hooks", by: "Claude Code Docs", note: "Stop 事件、退出码 2 拦住结束、stderr 作为原因、连续拦截的上限；基于提示的 hook。" },
   { title: "Subagents", url: "https://code.claude.com/docs/en/sub-agents", by: "Claude Code Docs", note: "子代理有自己的上下文、自带的 Explore / Plan / general-purpose、.claude/agents/ 的写法、fork、默认在后台跑。" },
   { title: "Keep Claude working toward a goal", url: "https://code.claude.com/docs/en/goal", by: "Claude Code Docs", note: "/goal 怎么判断、条件怎么写、判断者不会自己跑命令。" },
   { title: "Explore the context window", url: "https://code.claude.com/docs/en/context-window", by: "Claude Code Docs", note: "plan mode 写的计划在压缩后从磁盘重读。" },
@@ -128,7 +155,7 @@ const SOURCES = [
   </Table>
 </Section>
 
-<Section id="how" title="计划、动手、检查" short="怎么运作">
+<Section id="how" title="计划、动手、检查" short="计划到检查">
   <p>点“下一步”，看一次改动从计划到通过检查的全过程。</p>
   <Anim data={PV} label="先计划再动手：plan mode 里只读、写计划，你批准后才改代码；改完跑检查，失败就修，通过后贴出证据" />
   <Flow items={[
@@ -138,6 +165,22 @@ const SOURCES = [
     { t: "检查", d: "失败就修，再查", kind: "doubt" },
     { t: "做完", d: "贴出命令和输出", kind: "ok" },
   ]} />
+</Section>
+
+<Section id="enforce" title="让检查一定会跑" short="一定会跑">
+  <p>写在提示、CLAUDE.md、skill 里的“改完跑测试”，跑不跑最终由模型决定。它通常会照做，但不保证。hook、deny 规则、托管设置则由 Claude Code 执行，不管模型怎么判断，每次都会执行。官方最佳实践把这两类列成一张表：</p>
+  <Table cap="摘自 Claude Code 官方最佳实践。大多数时候应该让 Claude 决定：它看着眼前的代码，往往比事先写好的规则判断得更准。">
+    <tr><th></th><th>Claude 决定</th><th>Claude Code 执行</th></tr>
+    <tr><td>做什么</td><td>提示、CLAUDE.md、它自己会用的 skill</td><td>hooks</td></tr>
+    <tr><td>能碰什么</td><td>auto mode 的分类器</td><td>deny 规则、严格模式的沙箱、托管设置</td></tr>
+    <tr><td>什么时候算做完</td><td>要它给证据、<code>/goal</code>、<code>/code-review</code></td><td>测试、类型检查、Stop hook、CI</td></tr>
+    <tr><td>最后谁说了算</td><td>它对自己做了什么的总结</td><td>分支保护、批准合并的人</td></tr>
+  </Table>
+  <p>要让“做完前必须过测试”每次都成立，就用 Stop hook。点“下一步”看它怎么起作用：</p>
+  <Anim data={STOP} label="Stop hook：Claude 想结束时，Claude Code 先跑测试；不通过就以退出码 2 拦住，把失败输出发回去当原因；修好、测试通过后才真正结束" />
+  <Code code={HOOK} lang="text" cap="写在 .claude/settings.json，改写自官方最佳实践里的类型检查例子。1>&2 把测试输出重定向到 stderr，这样失败原因才会发回给 Claude。" />
+  <p><code>/goal</code> 也在每轮结束后检查，但它其实是一个基于提示的 Stop hook：由一个小而快的模型看对话判断条件是否达成，给出“没达成 / 达成 / 不可能”三种结论。所以它判断的是对话里已经出现的内容，不会自己去跑命令。Stop hook 跑的是你的脚本，结果是确定的。</p>
+  <Note kind="tip" title="一条规矩该不该做成 hook">官方的说法：如果你一直给 CLAUDE.md 的某一行加强调，它还是会漏，这一行就该做成 hook。反过来，只是偏好的事做成了 hook，就删掉，让它自己判断。</Note>
 </Section>
 
 <Section id="split" title="分工：什么时候交给子代理" short="子代理分工">
@@ -181,9 +224,7 @@ const SOURCES = [
     <tr><td>构建最后一步，逐字节核对区块链页面</td><td>kms.html 有一处不是这次改的改动：没有发布，先停下来确认</td></tr>
     <tr><td>一个故意写错 10 处的测试页</td><td>检查脚本 10 处全部报出，证明检查本身是有效的</td></tr>
   </Table>
-  <p>要让一个检查每次都跑，不靠它自觉，可以做成 Stop hook。下面这段配置让它每次想结束时先跑测试，不通过就不让结束：</p>
-  <Code code={HOOK} lang="text" cap="写在 .claude/settings.json，改写自官方最佳实践里的类型检查例子。" />
-  <Note kind="info" title="Stop hook 怎么起作用">命令以退出码 2 结束，就会拦住这一次结束；命令打印到 stderr 的内容，作为“还不能结束”的原因发回给它，所以把测试输出重定向到 stderr。如果连续拦了 8 次、中间没有任何工具调用，Claude Code 会放行，免得死循环。</Note>
+  <p>构建里的这三样检查跑在 GitHub Actions 里，起的是 CI 的作用：任何一步失败就不发布，线上保持上一个版本。这是 Claude Code 之外的一层：不管是谁写的、怎么判断，过不了就上不去。</p>
   <Code code={CMDS} cap="三个命令都摘自 Claude Code 的文档。" />
   <p>分工也用在了这个站上：写区块链大事记时，每批同时开 3 到 5 个子代理，各查一个事件，主对话只收它们交回的结果，再统一跑检查。</p>
 </Section>
@@ -204,6 +245,9 @@ const SOURCES = [
     </Card>
     <Card term="误区 5" title="交给子代理，答案会更好">
       <p>官方文档说得直接：把同一件事交给子代理，答案不会因此更好，默认还是同一个模型。值得用子代理的是并行、隔离很长的输出，或者要一个没看过你思路的审查者。</p>
+    </Card>
+    <Card term="误区 6" title="规矩都做成 hook 最保险">
+      <p>hook 不管情况一律执行，而大多数规矩都有例外。官方文档的看法是：Claude 看着眼前的代码，通常比事先写好的规则更能判断这条规矩适不适用。只有必须每次都发生、或者绝不能发生的事才做成 hook，比如“不许改 src/gen/ 里生成的代码”。</p>
     </Card>
   </Cards>
 </Section>
