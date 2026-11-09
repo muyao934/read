@@ -1,5 +1,6 @@
 ---
-// AI 编程 · 第 05 章（概念类）：why → core → how → example → pitfalls → sources
+// AI 编程 · 第 3 章（概念类）：why → core → how → split → example → pitfalls → sources
+// 2026-11-09 原第 05 章（先计划再动手）加上子代理分工（原计划的第 09 章）
 import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
 import { chip, lbl } from "../../lib/anim.js";
 
@@ -34,6 +35,42 @@ const PV = {
   ],
 };
 
+// 把一次大范围的搜索交给子代理：读了几十个文件，主对话只收到一份摘要。数量是示意
+const SUB = {
+  h: 300,
+  b: [["main", 2, 8, 46, 84, "主对话的上下文"], ["sub", 52, 8, 46, 84, "子代理的上下文"]],
+  it: [
+    { id: "task", h: chip("找 login() 的调用", "--muted", "out"), x: 25, y: 30 },
+    { id: "mctx", h: lbl("主对话：+1 段", "m"), x: 25, y: 78, hide: 1 },
+    { id: "work", h: lbl("读了 40 个文件<br>搜了 12 次", "m"), x: 75, y: 56, hide: 1 },
+    { id: "sctx", h: lbl("子代理：堆满了", "w"), x: 75, y: 80, hide: 1 },
+  ],
+  s: [
+    { c: "你问：哪些地方调用了 login()。主对话自己找的话，要翻几十个文件，每个文件的内容都会留在主对话里，后面每一轮都要带着。", lit: ["main"] },
+    { c: "改成交给子代理：Claude 写一段任务说明交出去。子代理从空白的上下文开始，看不到主对话前面聊了什么。",
+      set: { task: { x: 75, h: chip("任务说明", "--accent") } }, lit: ["sub"] },
+    { c: "子代理在自己的上下文里干活：读文件、搜索。这些内容全都堆在它那边。",
+      set: { work: { hide: 0 }, sctx: { hide: 0 } }, lit: ["sub"] },
+    { c: "做完以后，它只交回一份摘要：3 处调用，各在哪个文件的哪一行。",
+      set: { task: { x: 25, h: chip("摘要：3 处调用", "--ok") }, work: { hide: 1 } }, lit: ["main"] },
+    { c: "主对话的上下文只多了这一段摘要。子代理读过的那 40 个文件，不会跟着带进后面的每一轮。",
+      set: { mctx: { hide: 0 } }, lit: ["main"] },
+    { c: "几件互不依赖的调查，可以同时开几个子代理，最后由主对话汇总。代价是每个子代理都单独算用量，而且新开的要先自己收集信息。",
+      set: { mctx: { h: lbl("可以同时开几个", "m") }, sctx: { h: lbl("每个都单独算用量", "m") } }, lit: ["main", "sub"] },
+  ],
+};
+
+// 一个只能读、不能改的审查子代理（改写自官方最佳实践）。分隔线用 repeat 生成：源码里不能有单独一行的三个减号
+const FENCE = "-".repeat(3);
+const REVIEWER = [FENCE,
+  "name: reviewer",
+  "description: 对照需求说明审查改动过的文件。实现完一个功能、提交之前用。",
+  "tools: Read, Grep, Glob",
+  FENCE,
+  "你在审查不是你写的代码。对照给你的需求说明检查改动过的文件：",
+  "每条要求是否都实现了，列出的边界情况有没有测试。",
+  "只报告影响正确性的问题，跳过风格。"].join("\n");
+
 const HOOK = `{
   "hooks": {
     "Stop": [
@@ -48,25 +85,26 @@ const CMDS = `/plan 把登录改成先刷新 token 再重试     # 只让这一�
 
 const SOURCES = [
   { title: "Choose a permission mode", url: "https://code.claude.com/docs/en/permission-modes", by: "Claude Code Docs", note: "plan mode 能做什么、怎么进入、批准计划的几个选项、Ctrl+G。" },
-  { title: "Best practices for Claude Code", url: "https://code.claude.com/docs/en/best-practices", by: "Claude Code Docs", note: "给它一个检查、要证据、确定性和非确定性的区别、Stop hook 的例子、审查只报正确性问题。" },
+  { title: "Best practices for Claude Code", url: "https://code.claude.com/docs/en/best-practices", by: "Claude Code Docs", note: "给它一个检查、要证据、确定性和非确定性的区别、Stop hook 的例子、审查只报正确性问题；子代理值得用的情况、代价和只读审查者的例子。" },
+  { title: "Subagents", url: "https://code.claude.com/docs/en/sub-agents", by: "Claude Code Docs", note: "子代理有自己的上下文、自带的 Explore / Plan / general-purpose、.claude/agents/ 的写法、fork、默认在后台跑。" },
   { title: "Keep Claude working toward a goal", url: "https://code.claude.com/docs/en/goal", by: "Claude Code Docs", note: "/goal 怎么判断、条件怎么写、判断者不会自己跑命令。" },
   { title: "Explore the context window", url: "https://code.claude.com/docs/en/context-window", by: "Claude Code Docs", note: "plan mode 写的计划在压缩后从磁盘重读。" },
-  { title: "本站的真实例子", note: "搭这个阅读库时各项检查抓到的问题，见“实际例子”。" },
+  { title: "本站的真实例子", note: "搭这个阅读库时各项检查抓到的问题，以及写区块链大事记时的子代理分工，见“实际例子”。" },
 ];
 ---
 <Section id="why" title="为什么要懂">
-  <p>第 02 章说过，agent 会一轮轮循环到做完。可“做完”由谁判断？用 Claude Code 时的返工，通常是这两种：</p>
+  <p>第 1 章说过，agent 会一轮轮循环到做完。可“做完”由谁判断？用 Claude Code 时的返工，通常是这两种：</p>
   <ul>
     <li><b>方向错了</b>：写了一大堆，才发现不是你要的。</li>
     <li><b>没真做完</b>：它说好了，其实还有问题，等你自己发现。</li>
   </ul>
-  <p>这一章讲对付这两种返工的两个办法：动手前先出计划给你看；动手后用一个能跑的检查判断做没做完。</p>
+  <p>这一章先讲对付这两种返工的两个办法：动手前先出计划给你看；动手后用一个能跑的检查判断做没做完。再讲第三件事：哪些活该分给子代理，别让很长的输出塞满主对话。</p>
 </Section>
 
 <Section id="core" title="核心概念">
   <Cards>
     <Card term="Plan Mode" title="只研究、提方案，不动手">
-      <p>它照常读文件、跑探索用的命令，写出一份计划，但不改你的源码，批准之前改动一直被拦着。进入的办法：按 <code>Shift+Tab</code>；在一条消息前加 <code>/plan</code>；或者启动时加 <code>--permission-mode plan</code>。计划存在磁盘上，压缩后会重读（第 03 章）。</p>
+      <p>它照常读文件、跑探索用的命令，写出一份计划，但不改你的源码，批准之前改动一直被拦着。进入的办法：按 <code>Shift+Tab</code>；在一条消息前加 <code>/plan</code>；或者启动时加 <code>--permission-mode plan</code>。计划存在磁盘上，压缩后会重读（第 2 章）。</p>
     </Card>
     <Card term="Approve" title="批准、改、或者接着计划">
       <p>计划写好后，它会问你怎么办：批准并用 auto mode 接着做；批准，但每处改动都先问你；或者不批准、接着计划，告诉它哪里要改。按 <code>Ctrl+G</code> 能在编辑器里直接改计划。</p>
@@ -102,7 +140,38 @@ const SOURCES = [
   ]} />
 </Section>
 
-<Section id="example" title="实际例子：这个站的计划和检查" short="实际例子">
+<Section id="split" title="分工：什么时候交给子代理" short="子代理分工">
+  <p>有些活一次会产生大量内容，但做完你只需要一个结论：大范围地搜代码、跑完整的测试、读几十个文件找一处用法。在主对话里做，这些内容会一直留在上下文里，后面每一轮都要带着。这类活可以交给子代理。</p>
+  <Cards>
+    <Card term="Subagent" title="子代理：自己的上下文，只交回摘要">
+      <p>每个子代理有自己的上下文窗口、系统提示和工具权限。它在自己那边干活，做完只把摘要交回主对话。</p>
+    </Card>
+    <Card term="Built-in" title="自带的几种">
+      <p><b>Explore</b>：只读，专门搜索和分析代码库，Claude 做大范围搜索时会自己交给它。<b>Plan</b>：plan mode 里收集信息用的只读子代理。<b>general-purpose</b>：既能查也能改，用于多步骤的复杂任务。Explore 和 Plan 启动时不带 CLAUDE.md，为了查得快、省用量。</p>
+    </Card>
+    <Card term=".claude/agents/" title="自己定义一个">
+      <p>在项目的 <code>.claude/agents/</code>（或个人的 <code>~/.claude/agents/</code>）放一个 Markdown 文件：开头写 <code>name</code> 和 <code>description</code>，可选 <code>tools</code>、<code>model</code>，正文是它的系统提示。Claude 按 <code>description</code> 判断什么时候把活交给它。</p>
+    </Card>
+    <Card term="Fresh · Fork" title="从空白开始，还是带着对话">
+      <p>普通子代理从空白的上下文开始，看不到主对话，只拿到 Claude 写给它的任务说明。fork 则带着主对话的全部内容。Claude 开的子代理默认在后台跑，主对话不用停下来等。</p>
+    </Card>
+    <Card term="Cost" title="代价">
+      <p>每个子代理都单独发请求，算进同一份用量。新开的子代理要先自己收集信息，有时反而比在主对话里做还慢。默认是同一个模型做同一件事：换来的是并行和一双没看过思路的眼睛，不是更聪明的答案。</p>
+    </Card>
+  </Cards>
+  <p>点“下一步”，看把一次大范围的搜索交给子代理以后，两边的上下文怎么变。图里的数量是示意。</p>
+  <Anim data={SUB} label="子代理分工：主对话把搜索任务交给子代理，子代理在自己的上下文里读了几十个文件，只交回一份摘要，主对话的上下文只多了一段" />
+  <Table cap="官方最佳实践列出的四种值得用子代理的情况。">
+    <tr><th>情况</th><th>为什么</th></tr>
+    <tr><td>几件互不依赖的事</td><td>同时做，整件事更快做完</td></tr>
+    <tr><td>很长的输出，比如完整的测试、大范围的搜索</td><td>不进主对话，不会在后面每一轮都带着</td></tr>
+    <tr><td>需要一个审查者</td><td>它没看过代码是怎么写出来的，不会被那套思路带偏</td></tr>
+    <tr><td>只该有更少的工具</td><td>比如只能读、不能改的审查者</td></tr>
+  </Table>
+  <Code code={REVIEWER} lang="text" cap="写在 .claude/agents/reviewer.md，改写自官方最佳实践。只给它读和搜索的工具：它改不了代码，这个限制由 Claude Code 执行，不是在提示里拜托它。" />
+</Section>
+
+<Section id="example" title="实际例子：这个站的计划、检查和分工" short="实际例子">
   <p>这个阅读库改用 Astro 之前，先列了几种做法的对比、代价和要做的事，确认以后才动手。那时改方向，只要改几段文字。</p>
   <p>动手以后靠检查。每次构建都会跑三样：正文检查（写法、组件、链接），Astro 构建（少了必备的节、组件用错就失败），区块链页面逐字节核对。本地还会按阅读设备的宽度跑一遍渲染检查。它们抓到过的真实问题：</p>
   <Table>
@@ -116,6 +185,7 @@ const SOURCES = [
   <Code code={HOOK} lang="text" cap="写在 .claude/settings.json，改写自官方最佳实践里的类型检查例子。" />
   <Note kind="info" title="Stop hook 怎么起作用">命令以退出码 2 结束，就会拦住这一次结束；命令打印到 stderr 的内容，作为“还不能结束”的原因发回给它，所以把测试输出重定向到 stderr。如果连续拦了 8 次、中间没有任何工具调用，Claude Code 会放行，免得死循环。</Note>
   <Code code={CMDS} cap="三个命令都摘自 Claude Code 的文档。" />
+  <p>分工也用在了这个站上：写区块链大事记时，每批同时开 3 到 5 个子代理，各查一个事件，主对话只收它们交回的结果，再统一跑检查。</p>
 </Section>
 
 <Section id="pitfalls" title="常见误区">
@@ -131,6 +201,9 @@ const SOURCES = [
     </Card>
     <Card term="误区 4" title="/goal 会自己去验证">
       <p>判断条件的那个模型不跑命令、不读文件，只看对话里已经有的内容。所以条件要写成它的输出能证明的事，比如“<code>npm test</code> 退出码为 0”，而不是“代码没问题”。</p>
+    </Card>
+    <Card term="误区 5" title="交给子代理，答案会更好">
+      <p>官方文档说得直接：把同一件事交给子代理，答案不会因此更好，默认还是同一个模型。值得用子代理的是并行、隔离很长的输出，或者要一个没看过你思路的审查者。</p>
     </Card>
   </Cards>
 </Section>

@@ -1,5 +1,6 @@
 ---
-// AI 编程 · 第 01 章（概念类）：why → core → how → example → pitfalls → sources
+// AI 编程 · 第 1 章（概念类）：why → core → how → agent → loop → example → pitfalls → sources
+// 2026-11-09 由原第 01 章（大模型怎么写代码）和第 02 章（Agent 是什么）合并，旧网址 agent-loop.html 跳到 #agent
 import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
 import { chip, lbl } from "../../lib/anim.js";
 
@@ -33,18 +34,62 @@ const LOOP = {
   ],
 };
 
-const CMDS = `/context    # 用彩色格子显示上下文用了多少、被哪些内容占着
-/compact    # 把到目前为止的对话总结成摘要，腾出空间；可以附一句“总结时重点保留什么”
-/clear      # 开一段空白的新对话；之前的对话可以用 /resume 找回
-/memory     # 编辑 CLAUDE.md，查看和开关自动记忆`;
+// 一次“修登录按钮”的 agent 循环：模型 ↔ Claude Code ↔ 你的电脑
+const AGENT = {
+  h: 300,
+  b: [["m", 2, 8, 28, 84, "模型"], ["h", 36, 8, 28, 84, "Claude Code"], ["pc", 70, 8, 28, 84, "你的电脑"]],
+  it: [
+    { id: "msg", h: chip("修登录按钮", "--muted", "out"), x: 50, y: 30 },
+    { id: "perm", h: lbl("检查权限：允许", "g"), x: 50, y: 58, hide: 1 },
+    { id: "act", h: lbl("读 src/login.js", "m"), x: 84, y: 58, hide: 1 },
+    { id: "round", h: lbl("第 1 轮", "m"), x: 16, y: 80, hide: 1 },
+    { id: "ctx", h: lbl("上下文：+2 段", "m"), x: 50, y: 86, hide: 1 },
+  ],
+  s: [
+    { c: "你在 Claude Code 里说：登录按钮点了没反应，修一下。Claude Code 把这句话连同系统提示、工具定义、CLAUDE.md 一起发给模型。", lit: ["h"] },
+    { c: "模型看完，判断得先看代码。可它自己打不开文件，它能做的只有输出文字。", set: { msg: { x: 16 } }, lit: ["m"] },
+    { c: "所以它输出一段 tool_use：调用“读文件”工具，参数是 src/login.js。stop_reason 是 tool_use，意思是“我在等结果”。Claude Code 收到后先查权限，读文件默认允许。",
+      set: { msg: { x: 50, h: chip("tool_use：读文件", "--accent") }, perm: { hide: 0 }, round: { hide: 0 } }, lit: ["h"] },
+    { c: "在你的电脑上真正去读文件的是 Claude Code，不是模型。",
+      set: { msg: { x: 84 }, perm: { hide: 1 }, act: { hide: 0 } }, lit: ["pc"] },
+    { c: "文件内容装进 tool_result 发回模型，接在对话后面。这一来一回是第 1 轮：上下文里多了一段调用、一段结果。",
+      set: { msg: { x: 16, h: chip("tool_result", "--ok", "out") }, act: { hide: 1 }, ctx: { hide: 0 } }, lit: ["m"] },
+    { c: "模型看到代码，找到了问题，发出第二个 tool_use：改文件。改文件会动你的代码，Claude Code 按权限模式决定直接改、先问你，还是交给 auto mode 的分类器判断。",
+      set: { msg: { x: 50, h: chip("tool_use：改文件", "--accent") }, perm: { hide: 0, h: lbl("检查权限：按模式决定", "m") }, round: { h: lbl("第 2 轮", "m") } }, lit: ["h"] },
+    { c: "允许以后，在你的电脑上改文件。改之前 Claude Code 先存一份快照，按两下 Esc 能撤回。",
+      set: { msg: { x: 84 }, perm: { hide: 1 }, act: { hide: 0, h: lbl("改 src/login.js", "m") } }, lit: ["pc"] },
+    { c: "它不会改完就说好了。第 3 轮调用“跑命令”工具跑测试，结果有 2 个失败。",
+      set: { msg: { h: chip("tool_use：跑命令", "--accent") }, act: { h: lbl("测试：2 个失败", "w") }, round: { h: lbl("第 3 轮", "m") }, ctx: { h: lbl("上下文：+6 段", "m") } }, bad: ["pc"] },
+    { c: "失败信息照样装进 tool_result 送回去。模型据此再改、再跑。修一个 bug 来回十几轮很常见，每一轮的调用和结果都留在上下文里，所以任务越长，上下文涨得越快。",
+      set: { msg: { x: 16, h: chip("tool_result", "--ok", "out") }, act: { hide: 1 }, round: { h: lbl("第 4、5 轮…", "m") }, ctx: { h: lbl("上下文：+10 段", "m") } }, lit: ["m"] },
+    { c: "测试全部通过后，模型不再调用工具，而是直接写回答，stop_reason 变成 end_turn。循环到这里结束，Claude Code 把回答显示给你。",
+      set: { msg: { x: 50, h: chip("最终回答", "--ok") }, round: { h: lbl("结束", "g") } }, lit: ["h"] },
+  ],
+};
+
+// 简化过的消息：字段名取自 Claude API 的工具调用文档，Read 是 Claude Code 读文件的工具
+const MSGS = `// 模型的回复：不是最终回答，而是一次工具调用
+{ "stop_reason": "tool_use",
+  "content": [{ "type": "tool_use", "id": "toolu_01…", "name": "Read",
+                "input": { "file_path": "src/login.js" } }] }
+
+// Claude Code 读完文件，把结果作为下一条消息发回去，用 id 对上是哪一次调用
+{ "role": "user",
+  "content": [{ "type": "tool_result", "tool_use_id": "toolu_01…",
+                "content": "export function login() { … }" }] }
+
+// 若干轮以后，模型不再调用工具
+{ "stop_reason": "end_turn", "content": [{ "type": "text", "text": "已修好：…" }] }`;
 
 const SOURCES = [
   { title: "Glossary", url: "https://platform.claude.com/docs/en/about-claude/glossary", by: "Anthropic", note: "token、上下文窗口、预训练、温度的定义；token 和字符的换算。" },
   { title: "Context windows", url: "https://platform.claude.com/docs/en/build-with-claude/context-windows", by: "Anthropic", note: "上下文窗口包含什么、context rot、1M token 和 128k 输出上限。" },
   { title: "Reduce hallucinations", url: "https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-hallucinations", by: "Anthropic", note: "编造的定义和减少编造的做法。" },
-  { title: "Commands", url: "https://code.claude.com/docs/en/commands", by: "Claude Code Docs", note: "/context、/compact、/clear、/memory 的说明。" },
+  { title: "How Claude Code works", url: "https://code.claude.com/docs/en/how-claude-code-works", by: "Claude Code Docs", note: "agent 循环的三个阶段、harness、五类内置工具、插话。" },
+  { title: "Tool use with Claude", url: "https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview", by: "Anthropic", note: "tool_use、tool_result、stop_reason，什么时候调用工具，客户端工具和服务端工具。" },
+  { title: "Building effective agents", url: "https://www.anthropic.com/engineering/building-effective-agents", by: "Anthropic Engineering", note: "workflow 和 agent 的区别；从最简单的方法开始。" },
   { title: "Effective context engineering for AI agents", url: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents", by: "Anthropic Engineering", note: "为什么上下文要挑，而不是越多越好。" },
-  { title: "本站的真实例子", note: "2026-11-08 搭建本站时，图字号的修复声称完成，实测仍是 20px：脚本把 max-width: 100% 读成了 100px。" },
+  { title: "本站的真实例子", note: "2026-11-08 修示意图字号用了 5 轮：第 1 轮声称完成，实测仍是 20px，原因是脚本把 max-width: 100% 读成了 100px。见“实际例子”。" },
 ];
 ---
 <Section id="why" title="为什么要懂">
@@ -53,9 +98,10 @@ const SOURCES = [
     <li>前面说过的要求，聊久了它不照做了。</li>
     <li>调用了一个项目里根本没有的函数，还写得很自信。</li>
     <li>说“已经修好了”，一跑还是错的。</li>
+    <li>一件事调用了十几次工具，中间还停下来问你“可以运行这条命令吗”。</li>
   </ul>
-  <p>这些都不是偶然出错，是大模型的工作方式带来的。弄懂它怎么生成代码、此刻看得到什么，就知道什么时候该补信息、什么时候该清理上下文、什么时候必须自己验证。</p>
-  <Note kind="info" title="这一章讲的是通用原理">下面讲的适用于所有大模型。后面几章讲 Claude Code 在这之上加了什么：工具、记忆、权限。</Note>
+  <p>这些都不是偶然出错。前三条来自大模型的工作方式：它怎么生成代码、此刻看得到什么。最后一条来自 Claude Code 包在模型外面的那一层：agent 循环。这一章先讲模型，再讲循环。弄懂了，就知道什么时候该补信息、什么时候该清理上下文、什么时候必须自己验证。</p>
+  <Note kind="info" title="前半章是通用原理">讲模型的那部分适用于所有大模型。后半章讲 Claude Code 在模型外面加的循环；记忆、权限、扩展在后面几章。</Note>
 </Section>
 
 <Section id="core" title="核心概念">
@@ -85,7 +131,7 @@ const SOURCES = [
   </Table>
 </Section>
 
-<Section id="how" title="一段代码是怎么写出来的" short="怎么运作">
+<Section id="how" title="一段代码是怎么写出来的" short="怎么写代码">
   <p>点“下一步”看模型怎么一段一段写出代码。后半段演示信息缺了的时候，它怎么写出一个不存在的函数。图里的概率是示意，不是实测值。</p>
   <Anim data={LOOP} label="大模型预测下一个 token：根据上下文给每个候选算概率，抽一个写出来再接回上下文；信息缺失时写出最像的函数名，造成编造" />
   <Flow items={[
@@ -96,7 +142,44 @@ const SOURCES = [
   ]} />
 </Section>
 
-<Section id="example" title="实际例子：Claude Code 的上下文里有什么" short="实际例子">
+<Section id="agent" title="从写字到动手：Agent" short="Agent">
+  <p>模型只会输出文字，可 Claude Code 能读文件、改代码、跑测试。靠的是包在模型外面的一层，和下面几个概念：</p>
+  <Cards>
+    <Card term="Tool" title="工具：模型能“调用”的能力">
+      <p>每个工具有名字、一段说明和参数格式。Claude Code 自带的工具分五类：文件操作、搜索、执行命令、上网、代码智能（看类型错误、跳到定义）。模型靠工具的说明来判断什么时候该用它。</p>
+    </Card>
+    <Card term="Tool Use · Tool Result" title="调用和结果">
+      <p>模型不直接执行任何东西。它输出一段结构化的调用 <code>tool_use</code>：用哪个工具、什么参数。外面的程序去执行，再把结果作为 <code>tool_result</code> 发回给它。</p>
+    </Card>
+    <Card term="When" title="什么时候调用工具">
+      <p>默认由模型每一轮自己判断：请求对得上某个工具说明的能力，答案又不在上下文里，就调用；常识问题、写作、闲聊直接回答。一次回复里可以同时调用好几个工具，比如一口气读三个文件。在 API 层面，工具分两种：客户端工具由调用方的程序执行，Claude Code 读写文件、跑命令就是这种；服务端工具在 Anthropic 的服务器上执行，比如 API 里的网页搜索。</p>
+    </Card>
+    <Card term="Harness" title="模型外面的那一层">
+      <p>Claude Code 就是这一层：给模型提供工具，真正去执行工具，检查权限，管理模型看得到的上下文。官方文档管它叫 agentic harness。</p>
+    </Card>
+    <Card term="Agent Loop" title="循环到做完">
+      <p>调用、执行、结果送回，一直重复到任务完成。Claude Code 的文档把它分成三个阶段：收集信息、动手、验证结果。三个阶段交替进行，每一步做什么，由模型根据上一步学到的东西决定。</p>
+    </Card>
+    <Card term="Workflow · Agent" title="两种用法">
+      <p>Anthropic 工程博客的区分：workflow 是按事先写好的代码路径调用模型和工具；agent 是由模型自己决定下一步、用哪个工具。步数没法事先确定的开放问题才适合交给 agent，能用简单办法就别用 agent。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="loop" title="一次循环是怎么转的" short="循环怎么转">
+  <p>点“下一步”，看“修登录按钮”这件事在模型、Claude Code 和你的电脑之间怎么来回。</p>
+  <Anim data={AGENT} label="agent 循环：模型输出工具调用，Claude Code 检查权限后在你的电脑上执行，把结果送回模型，重复到模型不再调用工具、给出回答" />
+  <Flow items={[
+    { t: "发请求", d: "你的话 + 系统提示 + 工具定义" },
+    { t: "模型回 tool_use", d: "要用哪个工具、什么参数", kind: "tip" },
+    { t: "查权限、执行", d: "Claude Code 在你的电脑上做", kind: "doubt" },
+    { t: "结果送回", d: "tool_result 接进上下文" },
+    { t: "不再调用就结束", d: "stop_reason 是 end_turn", kind: "ok" },
+  ]} />
+  <Note kind="tip" title="你随时可以插话">按 <code>Esc</code> 会立刻停下正在跑的工具，等你的下一句话。也可以不停它，直接打字回车：消息会排队，这一轮工具跑完它就会读到，并在下一步调整。</Note>
+</Section>
+
+<Section id="example" title="实际例子：上下文里有什么、循环里传什么" short="实际例子">
   <p>在 Claude Code 里聊一次，上下文大致由这几部分组成，越往下越会随着对话变长：</p>
   <Table>
     <tr><th>内容</th><th>什么时候进来</th></tr>
@@ -107,9 +190,17 @@ const SOURCES = [
     <tr><td>工具结果</td><td>每读一个文件、跑一条命令就加一段，往往是最占地方的部分</td></tr>
     <tr><td>它自己的回答和思考</td><td>每一轮累加</td></tr>
   </Table>
-  <p>Claude Code 提供了几个命令来看和管理上下文：</p>
-  <Code code={CMDS} cap="说明摘自 Claude Code 的命令参考。" />
-  <Note kind="tip" title="怎么用">一个任务做完、换下一个不相关的任务时，用 <code>/clear</code> 重新开始。同一个任务做了很久、上下文快满了，用 <code>/compact</code>，并告诉它总结时要保留哪些要求。长期有效的约定写进 CLAUDE.md，每次会话开始都会读到，不用每次重说。</Note>
+  <p>其中工具结果往往最占地方。循环里来回传的是结构化的消息，简化以后是这样：</p>
+  <Code code={MSGS} lang="js" cap="字段名取自 Claude API 的工具调用文档；Read 是 Claude Code 读文件的工具，file_path 是它的参数。" />
+  <p>搭这个站时有一次真实的循环：要把示意图里的字改成和正文一样大。</p>
+  <Table cap="第 2、3 轮的“仍是 20px”，就是验证阶段在起作用：没有实测，第 1 轮就会被当成已经修好。">
+    <tr><th class="n">轮</th><th>做了什么</th><th>结果</th></tr>
+    <tr><td class="n">1</td><td>改脚本，按 viewBox 宽度限制图的最宽</td><td>改好了</td></tr>
+    <tr><td class="n">2</td><td>跑构建和渲染检查</td><td>币安事件页的图字仍是 20px</td></tr>
+    <tr><td class="n">3</td><td>怀疑是选择器没选中，改选择器再跑</td><td>仍是 20px，不是这个原因</td></tr>
+    <tr><td class="n">4</td><td>读页面和脚本，找原因</td><td><code>max-width: 100%</code> 被读成了 100px，脚本以为图已经够窄</td></tr>
+    <tr><td class="n">5</td><td>只认 px 单位，再跑检查</td><td>所有图字不大于正文 16px</td></tr>
+  </Table>
 </Section>
 
 <Section id="pitfalls" title="常见误区">
@@ -121,10 +212,19 @@ const SOURCES = [
       <p>窗口大不等于记得牢。无关的内容越多，关键要求越容易被淹没。只放这一步需要的文件，做完一件事就清理。</p>
     </Card>
     <Card term="误区 3" title="它说改好了，就是改好了">
-      <p>“已经修复”也是生成出来的一段文字，不代表验证过。搭这个站时就有一次：修图字号的代码声称完成，实测还是 20px，原因是脚本把 <code>max-width: 100%</code> 读成了 100px。结论要靠测试、截图、实测数值确认。</p>
+      <p>“已经修复”也是生成出来的一段文字，不代表验证过。上面那次循环的第 1 轮就声称改好了，实测还是 20px。结论要靠测试、截图、实测数值确认。</p>
     </Card>
     <Card term="误区 4" title="同样的问题，回答应该一样">
       <p>生成时按概率抽取，本来就有随机性。官方文档写明，即使把温度设为 0，结果也不是完全确定的。重要的结论可以让它重做一次对照，两次不一致的地方最可能有问题。</p>
+    </Card>
+    <Card term="误区 5" title="是模型在执行命令">
+      <p>模型只输出“要调用什么”，执行的是 Claude Code。所以权限、快照、撤回都在 Claude Code 这一层，模型绕不过去。auto mode 拦下一条命令，也是 Claude Code 里的分类器拦的，不是模型自己“不想做”。</p>
+    </Card>
+    <Card term="误区 6" title="工具越多越聪明">
+      <p>工具定义每次请求都要带上，会占上下文；说明写得含糊，模型就容易选错工具。Claude Code 里 MCP 的工具定义默认延迟加载，用到时才读进来，就是为了省上下文。</p>
+    </Card>
+    <Card term="误区 7" title="一直失败，就让它多试几次">
+      <p>同样的错误反复出现，通常是信息不够或方向错了。再循环下去，也只是在同一个缺口上补“最像的”内容（见前半章）。这时停下来，补上它看不到的信息，或者让它换个思路。</p>
     </Card>
   </Cards>
 </Section>

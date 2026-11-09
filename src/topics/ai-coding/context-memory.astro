@@ -1,6 +1,7 @@
 ---
-// AI 编程 · 第 03 章（概念类）：why → core → how → example → pitfalls → sources
-import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+// AI 编程 · 第 2 章（概念类）：why → core → how → ask → say → check → example → pitfalls → sources
+// 2026-11-09 由原第 03 章（上下文和记忆）和第 04 章（把需求说清楚）合并，旧网址 clear-requests.html 跳到 #ask
+import { Section, Note, Cards, Card, Flow, Steps, Table, Code, Anim, Sources } from "../../components/index.js";
 import { chip, lbl } from "../../lib/anim.js";
 
 // 一次会话里上下文的变化：装入 → 越堆越多 → 压缩 → 从磁盘重读 → 下一次会话
@@ -36,6 +37,34 @@ const MEM = {
   ],
 };
 
+// 同一件事的两种说法：上面含糊，猜了三轮；下面说清楚，一轮做完
+const TWO = {
+  h: 300,
+  b: [["v", 2, 8, 96, 40, "含糊的说法"], ["c", 2, 52, 96, 40, "说清楚的说法"]],
+  it: [
+    { id: "vq", h: chip("修一下登录", "--muted", "out"), x: 18, y: 28 },
+    { id: "va", h: lbl("它猜：改了按钮样式", "w"), x: 66, y: 22, hide: 1 },
+    { id: "vr", h: lbl("第 1 轮", "m"), x: 66, y: 38, hide: 1 },
+    { id: "cq", h: lbl("超时后登录失败，看 src/auth/<br>先写测试复现，再修"), x: 26, y: 72 },
+    { id: "ca", h: lbl("写测试：复现了失败", "m"), x: 72, y: 64, hide: 1 },
+    { id: "cr", h: lbl("第 1 轮", "m"), x: 72, y: 80, hide: 1 },
+  ],
+  s: [
+    { c: "同一件事，两种说法。上面只说“修一下登录”；下面说清楚了现象、位置，以及怎样算修好。", lit: ["v", "c"] },
+    { c: "含糊的说法：它看不到你遇到的现象，只能猜。猜成了按钮样式的问题，改了一通。",
+      set: { va: { hide: 0 }, vr: { hide: 0 } }, bad: ["v"] },
+    { c: "你纠正：不是样式，是点了没反应。它再猜一次，改了表单校验，还是不对。",
+      set: { va: { h: lbl("它猜：改了表单校验", "w") }, vr: { h: lbl("第 2 轮", "m") } }, bad: ["v"] },
+    { c: "第 3 轮你把现象说全了：会话超时以后才登录失败。它这才找对地方。前两次错的尝试都还留在上下文里。",
+      set: { va: { h: lbl("这才找到 token 刷新", "g") }, vr: { h: lbl("第 3 轮，上下文里有两次失败", "m") } }, lit: ["v"] },
+    { c: "说清楚的说法：它直接去看 src/auth/ 里的 token 刷新，先写一个测试，把“超时后登录失败”复现出来。",
+      set: { ca: { hide: 0 }, cr: { hide: 0 } }, lit: ["c"] },
+    { c: "然后修代码，再跑这个测试：通过。测试就是“怎样算修好”，它能自己判断做没做完。",
+      set: { ca: { h: lbl("修好，测试通过", "g") }, cr: { h: lbl("1 轮做完", "g") } }, lit: ["c"] },
+    { c: "差别不在于说得长，而在于补上了它看不到的三样：现象、位置、怎样算做完。", lit: ["v", "c"] },
+  ],
+};
+
 const SAMPLE = `# 项目约定
 
 - 测试命令是 npm test，改完代码必须跑一遍
@@ -44,20 +73,39 @@ const SAMPLE = `# 项目约定
 
 @docs/architecture.md`;
 
+const EXAMPLES = `含糊：修一下登录
+清楚：用户反馈会话超时后登录失败。看 src/auth/ 里的 token 刷新，
+      先写一个能复现的失败测试，再修。
+
+含糊：加一个日历组件
+清楚：照 HotDogWidget.php 的写法做一个日历组件，能选月份、按年翻页。
+      不要引入新的库。`;
+
+const INTERVIEW = `我想给公开 API 加限流，但还没想清楚。
+请一直问我问题，直到你能写出需求说明，然后写进 SPEC.md。`;
+
+const CMDS = `/context    # 用彩色格子显示上下文用了多少、被哪些内容占着
+/compact    # 把到目前为止的对话总结成摘要，腾出空间；可以附一句“总结时重点保留什么”
+/clear      # 开一段空白的新对话；之前的对话可以用 /resume 找回
+/memory     # 编辑 CLAUDE.md，查看和开关自动记忆`;
+
 const SOURCES = [
-  { title: "How Claude remembers your project", url: "https://code.claude.com/docs/en/memory", by: "Claude Code Docs", note: "CLAUDE.md 的四层位置和加载顺序、@ 导入、自动记忆的位置和加载量、写法建议。" },
+  { title: "How Claude remembers your project", url: "https://code.claude.com/docs/en/memory", by: "Claude Code Docs", note: "CLAUDE.md 的四层位置和加载顺序、@ 导入、.claude/rules/ 和带 paths 的规则、自动记忆、写法建议。" },
   { title: "Explore the context window", url: "https://code.claude.com/docs/en/context-window", by: "Claude Code Docs", note: "会话开始前装入什么，压缩后每种内容怎么处理。" },
-  { title: "How Claude Code works", url: "https://code.claude.com/docs/en/how-claude-code-works", by: "Claude Code Docs", note: "会话彼此独立；上下文快满时自动压缩，早先的详细要求可能丢掉。" },
-  { title: "本站的真实例子", note: "这个站自己的 CLAUDE.md、子目录 CLAUDE.md 和自动记忆的分工，见“实际例子”。" },
+  { title: "How Claude Code works", url: "https://code.claude.com/docs/en/how-claude-code-works", by: "Claude Code Docs", note: "会话彼此独立；自动压缩；Compact Instructions。" },
+  { title: "Commands", url: "https://code.claude.com/docs/en/commands", by: "Claude Code Docs", note: "/context、/compact、/clear、/memory 的说明。" },
+  { title: "Best practices for Claude Code", url: "https://code.claude.com/docs/en/best-practices", by: "Claude Code Docs", note: "说它看不到的东西、写具体的提示、直接给文件和截图、先让它问你、要证据、纠正两次不对就 /clear。" },
+  { title: "Prompting best practices", url: "https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices", by: "Anthropic", note: "清楚直接、把提示给同事看的测试、说明原因。" },
+  { title: "本站的真实例子", note: "这个站自己的记忆分工，以及 2026-11-08 搭站时三次因为一句话有两种理解而多走一轮，见“实际例子”。" },
 ];
 ---
 <Section id="why" title="为什么要懂">
-  <p>前两章说过：模型只看得到上下文里的内容，而每个新会话的上下文都是空的。可你希望它记住的东西很多：项目怎么跑测试、哪些目录不能动、你喜欢什么写法。你也一定碰到过这种情况：</p>
+  <p>上一章说过：模型只看得到上下文里的内容，而每个新会话的上下文都是空的。要让它知道的东西分两种：</p>
   <ul>
-    <li>开了个新会话，前天交代过的规矩它全不知道。</li>
-    <li>同一个会话聊了很久，开头说好的要求，后面不照做了。</li>
+    <li><b>每次都适用的规矩</b>：项目怎么跑测试、哪些目录不能动、你喜欢什么写法。常见的麻烦是：开了个新会话，前天交代过的规矩它全不知道；同一个会话聊了很久，开头说好的要求后面不照做了。</li>
+    <li><b>这一次任务才有的信息</b>：你看到的现象、你要的范围、怎样算做完。常见的麻烦是：它做出来的和你想的不一样，纠正了几轮才对。</li>
   </ul>
-  <p>这两件事背后是同一套机制。弄懂了，就知道一句话该随口说、写进 CLAUDE.md，还是做成检查。</p>
+  <p>前半章讲 Claude Code 靠什么记住规矩、聊久了会丢什么；后半章讲怎么把这一次的信息说清楚。弄懂了，就知道一句话该随口说、写进 CLAUDE.md，还是做成检查。</p>
 </Section>
 
 <Section id="core" title="核心概念">
@@ -71,11 +119,14 @@ const SOURCES = [
     <Card term="Load Order" title="哪些一开始就装，哪些用到才装">
       <p>当前目录和它上面每一层目录里的 CLAUDE.md，会话一开始就装进来。子目录里的 CLAUDE.md 不会马上装，等 Claude 读、写或改那个子目录里的文件时才装。CLAUDE.md 里可以用 <code>@路径</code> 导入别的文件，路径相对这个 CLAUDE.md 计算，最多嵌套四层。</p>
     </Card>
+    <Card term=".claude/rules/" title="规则：按主题拆开，按文件加载">
+      <p>规矩多了，可以拆进项目的 <code>.claude/rules/</code>，一个主题一个文件，比如 <code>testing.md</code>、<code>api-design.md</code>。没写 <code>paths</code> 的规则和 CLAUDE.md 一样，会话一开始就装。开头写了 <code>paths</code>（比如 <code>src/api/**/*.ts</code>）的规则，只在 Claude 读写匹配的文件时才装，省上下文。只在某个任务里才用的长流程，更适合做成 skill（第 4 章）。</p>
+    </Card>
     <Card term="Auto Memory" title="自动记忆：它自己记的笔记">
       <p>Claude 根据你的纠正和偏好，自己写下笔记，存在 <code>~/.claude/projects/&lt;项目&gt;/memory/</code>：一个索引 <code>MEMORY.md</code>，每条记忆一个文件。每次会话开始时装入索引的前 200 行或 25KB。可以在 <code>/memory</code> 里查看、编辑和关闭。</p>
     </Card>
     <Card term="Compaction" title="压缩：快满时把旧对话换成摘要">
-      <p>上下文快满时，Claude Code 会自动把之前的对话总结成一份摘要，会话不会因为满了而中断。摘要保留你的请求和关键代码，但开头说过的详细要求可能丢掉。也可以自己运行 <code>/compact</code>，后面写上要保留的重点。</p>
+      <p>上下文快满时，Claude Code 会自动把之前的对话总结成一份摘要，会话不会因为满了而中断。摘要保留你的请求和关键代码，但开头说过的详细要求可能丢掉。也可以自己运行 <code>/compact</code>，后面写上要保留的重点；或者在 CLAUDE.md 里写一节 “Compact Instructions”，说明压缩时要保留什么。</p>
     </Card>
   </Cards>
   <Table cap="两种记忆每次会话都会装进来，但模型把它们当作上下文，不是必须执行的配置。">
@@ -87,15 +138,15 @@ const SOURCES = [
   </Table>
 </Section>
 
-<Section id="how" title="一次会话里，上下文怎么变" short="怎么运作">
+<Section id="how" title="一次会话里，上下文怎么变" short="上下文怎么变">
   <p>点“下一步”，看一次会话从开始到压缩、再到下一次会话，上下文里有什么。</p>
   <Anim data={MEM} label="一次会话的上下文：开始时装入系统提示、CLAUDE.md 和自动记忆；对话越堆越多后被压缩成摘要；CLAUDE.md 和记忆从磁盘重读，只在对话里说过的要求可能丢掉" />
   <Table cap="压缩以后各种内容怎么处理（摘自官方文档，略有简化）。“重读”的不会丢，“归进摘要”的可能丢掉细节。">
     <tr><th>内容</th><th>压缩以后</th></tr>
     <tr><td>系统提示</td><td>照常在</td></tr>
-    <tr><td>项目根目录的 CLAUDE.md、自动记忆</td><td>从磁盘重读</td></tr>
+    <tr><td>项目根目录的 CLAUDE.md、没写 paths 的规则、自动记忆</td><td>从磁盘重读</td></tr>
     <tr><td>最近读过或改过的文件</td><td>重读最多 5 个，最近改的优先</td></tr>
-    <tr><td>子目录里的 CLAUDE.md</td><td>归进摘要，再用到那个目录时重新装</td></tr>
+    <tr><td>子目录里的 CLAUDE.md、写了 paths 的规则</td><td>归进摘要，再碰到对应的文件时重新装</td></tr>
     <tr><td>你在对话里说过的话、工具结果</td><td>归进摘要</td></tr>
   </Table>
   <Flow items={[
@@ -106,7 +157,63 @@ const SOURCES = [
   ]} />
 </Section>
 
-<Section id="example" title="实际例子：这个站是怎么分工的" short="实际例子">
+<Section id="ask" title="这一次的任务，要说清楚什么" short="说清楚什么">
+  <p>长期的规矩写进记忆；这一次任务才有的信息，要你当场说。现在的模型读代码很快：目录结构、写法习惯、测试框架、已有组件怎么写，它自己读一遍就知道。它读不到的，是从来不在仓库里的东西：</p>
+  <ul>
+    <li>你看到的现象：哪一步出错，什么条件下出错。</li>
+    <li>你要的范围：做到什么程度，哪些不要动。</li>
+    <li>只在你脑子里的决定：定好的方案、部署流程、两种做法里你偏好哪种。</li>
+    <li>怎样算做完。</li>
+  </ul>
+  <p>这些不说，它只能猜。第 1 章讲过，信息缺了它会补上“最像的”内容。点“下一步”，看同一件事的两种说法：</p>
+  <Anim data={TWO} label="同一件事的两种说法：只说“修一下登录”，它猜了三轮才找对；说清楚现象、位置和怎样算修好，一轮做完" />
+  <Cards>
+    <Card term="Symptom · Goal" title="现象或目标"><p>修 bug 写现象：在哪一步、什么条件下出错、报了什么错。做新功能写目标：给谁用，做完是什么样子。</p></Card>
+    <Card term="Where" title="位置或参照"><p>知道在哪，就写文件和目录。有现成的写法可以照着做，就点名那个文件：“照 X 的写法做”。不知道在哪就不写，让它自己找。</p></Card>
+    <Card term="Constraints" title="约束和范围"><p>不能动的目录、不能加的依赖、要适配的设备。它默认按最保守的理解，只做满足要求的最小一版；想要完整版，比如空状态、出错状态、键盘操作，要明说。</p></Card>
+    <Card term="Done" title="怎样算做完"><p>最好是一个能跑出“通过 / 不通过”的东西：测试、构建、lint、和设计稿对比的截图（第 3 章细讲）。</p></Card>
+  </Cards>
+  <p>手上已经有的东西，直接给它，不要转述：输入 <code>@</code> 加路径，把文件内容带进消息；设计稿或报错画面，直接粘截图；命令输出用管道传进去，例如 <code>cat error.log | claude -p "这是怎么回事"</code>。</p>
+  <Note kind="info" title="不是每次都要说这么细">只是想看看一个文件有什么能改进，随口问一句完全可以，代价是边做边多纠正几次。要它动手改代码时，才值得多说几句。</Note>
+</Section>
+
+<Section id="say" title="怎么说">
+  <Steps items={[
+    { t: "先说现象或目标", d: "一两句话：发生了什么，想要什么。" },
+    { t: "指出位置或参照", d: "文件、目录，或者“照某个文件的写法”。" },
+    { t: "写约束和范围", d: "不能动什么、不能加什么；要完整版，就列出要做到哪些。" },
+    { t: "给一个检查", d: "“先写一个能复现的失败测试，再修”“改完跑 <code>npm test</code>，全部通过为止”。有了检查，它能自己判断做没做完。" },
+    { t: "说明原因", d: "为什么有这条要求。它能从原因推广到你没写到的情况。" },
+    { t: "还没想清楚，就让它问你", d: "让它一项项问清楚，写成需求说明，再开一个新会话照着做。" },
+  ]} />
+  <Code code={EXAMPLES} lang="text" cap="改写自 Claude Code 官方最佳实践里的两个例子。" />
+  <Code code={INTERVIEW} lang="text" cap="还没想清楚时的说法。它会用选择题问你没定下来的地方（按用户还是按密钥限流、超出限额怎么处理、哪些不做），问到能写成需求为止。" />
+  <Note kind="tip" title="说原因，比加强调有用">官方文档的例子：“不要用省略号”，不如“回答会被语音朗读，朗读引擎念不出省略号，所以不要用”，因为它能从原因推广出去。反过来，给要求加“重要”、全大写，现在的模型反而容易用过头。</Note>
+</Section>
+
+<Section id="check" title="说完之前检查；说了还是不对" short="检查和纠正">
+  <p>官方文档给了一个简单的测试：把你的话给一个不了解这件事的同事看，让他照着做。他会困惑的地方，模型也会。</p>
+  <Table>
+    <tr><th>问自己</th><th>没有的话</th></tr>
+    <tr><td>这件事它能从代码里读到吗？它会去读吗？</td><td>两个都是“会”，就不用写</td></tr>
+    <tr><td>写了现象或目标吗？</td><td>它只能猜</td></tr>
+    <tr><td>写了怎样算做完吗？</td><td>你就成了它的测试，每个错都要等你发现</td></tr>
+    <tr><td>有两种合理的做法时，说了偏好吗？</td><td>它会挑一种，未必是你要的</td></tr>
+  </Table>
+  <Note kind="doubt" title="做完以后，要它给证据">让它贴出跑了哪条命令、输出是什么，或者截图。只说一句“测试都通过了”说明不了什么，看输出也比自己重跑一遍快。</Note>
+  <p>说了还是不对时：</p>
+  <Table>
+    <tr><th>现象</th><th>原因</th><th>怎么办</th></tr>
+    <tr><td>做出来的和你想的不一样</td><td>缺了它看不到的信息</td><td>补上现象、范围或偏好，重说一次</td></tr>
+    <tr><td>同一件事纠正两次还不对</td><td>上下文里堆着两次失败的尝试，它会反复读到</td><td>用 <code>/clear</code> 开新对话，把学到的写进一条新说明，别纠正第三次</td></tr>
+    <tr><td>一开始方向就偏了</td><td>理解错了要做什么</td><td>盯着它开头的一分钟，跑偏就按 <code>Esc</code> 停下；<code>/rewind</code> 能退回之前的状态</td></tr>
+    <tr><td>只做了最小的一版</td><td>它默认按保守的理解来做</td><td>列出要做到哪些，或者加一句 “be ambitious”</td></tr>
+    <tr><td>写了“重要”“必须”还是被忽略</td><td>规矩埋在长文件里，或者强调过头</td><td>用平常的话写；不能有例外的，做成 hook 或权限规则（第 5 章）</td></tr>
+  </Table>
+  <Note kind="info" title="“一步步想”“仔细点”不是开关">这类话只是普通的提示文字，能稍微推一下，但不会让它想得更深。真正控制想多深的是 effort 设置。</Note>
+</Section>
+
+<Section id="example" title="实际例子：这个站的记忆分工和三次误会" short="实际例子">
   <p>搭这个阅读库时，几层记忆是这样分工的：</p>
   <Table>
     <tr><th>放在哪</th><th>写什么</th><th>什么时候装进来</th></tr>
@@ -117,7 +224,18 @@ const SOURCES = [
   </Table>
   <p>一份项目级 CLAUDE.md 大致长这样：短，写具体的规矩，用 <code>@</code> 导入详细的说明。</p>
   <Code code={SAMPLE} lang="text" cap="最后一行导入 docs/architecture.md，路径相对这个 CLAUDE.md。官方建议每个 CLAUDE.md 控制在 200 行以内。" />
-  <Note kind="tip" title="一句话该放哪">这次对话用一下的，直接说。以后每次都要遵守的，写进 CLAUDE.md。只对某个目录有用的，写进那个目录的 CLAUDE.md。只给自己、不想提交的，写进 CLAUDE.local.md。必须做到、不能靠它自觉的，做成 hook 或检查脚本（第 07 章讲 hooks）。</Note>
+  <Note kind="tip" title="一句话该放哪">这次对话用一下的，直接说。以后每次都要遵守的，写进 CLAUDE.md；规矩多了，按主题拆进 <code>.claude/rules/</code>。只对某个目录有用的，写进那个目录的 CLAUDE.md，或者写成带 <code>paths</code> 的规则。只给自己、不想提交的，写进 CLAUDE.local.md。必须做到、不能靠它自觉的，做成 hook 或检查脚本（第 5 章讲 hooks）。</Note>
+  <p>看和管理上下文的几个命令：</p>
+  <Code code={CMDS} cap="说明摘自 Claude Code 的命令参考。" />
+  <Note kind="tip" title="什么时候清、什么时候压">一个任务做完、换下一个不相关的任务，用 <code>/clear</code> 重新开始。同一个任务做了很久、上下文快满了，用 <code>/compact</code>，并告诉它总结时要保留哪些要求。</Note>
+  <p>再看三次误会。这个阅读库是一次次对话搭起来的，下面三次都是因为一句话有两种理解，多走了一轮：</p>
+  <Table>
+    <tr><th>原来的说法</th><th>两种理解</th><th>补上什么就清楚了</th></tr>
+    <tr><td>想用 GitHub 的阅读器读这些内容</td><td>在仓库里点开文件读，还是开成网站读</td><td>“在手机上像网页一样读”：HTML 文件在仓库里只显示源码</td></tr>
+    <tr><td>还要考虑在 GitHub 上方便阅读</td><td>在仓库页面里也要能读，还是网站好读就行</td><td>我理解成前者，提议全部改成 Markdown，被否了：要的是后者</td></tr>
+    <tr><td>这个图里的字太大了</td><td>只改这一张，还是所有示意图</td><td>“四个板块所有示意图的字都和正文一样大”</td></tr>
+  </Table>
+  <p>第二次多走了一整轮：方向猜错，写了一整套方案才被纠正。当时先问一句“是指仓库页面，还是网站？”就能省掉。所以说法可能有两种理解时，也可以让它先复述它的理解、列出假设，你确认了再动手。</p>
 </Section>
 
 <Section id="pitfalls" title="常见误区">

@@ -1,0 +1,16 @@
+---
+// 合并掉的旧章节网址：立刻跳到合并后的章节和对应的一节。用 meta refresh，不靠脚本；同时给一个链接
+const { to, title } = Astro.props;
+---
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content={`0; url=${to}`}>
+<link rel="canonical" href={to}>
+<meta name="robots" content="noindex">
+<title>{title} · 已合并 · 阅读库</title>
+</head>
+<body><p>这一章已经合并进<a href={to}>新的章节</a>，正在跳转。</p></body>
+</html>
