@@ -1,0 +1,293 @@
+---
+// AI 编程 · 第 4 章（概念类）：why → core → how → write → plugin → mcp → choose → example → pitfalls → sources
+// 2026-11-09 由原计划的第 06 章（Skills、斜杠命令和插件）和第 08 章（MCP）合并
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 一个 skill 怎么被用上：平时只有描述在上下文里，用到时全文装进来
+const SKILL = {
+  h: 300,
+  b: [["ctx", 2, 8, 58, 84, "上下文"], ["disk", 64, 8, 34, 84, "磁盘上的 skills"]],
+  it: [
+    { id: "d1", h: chip("deploy/SKILL.md", "--muted", "out"), x: 81, y: 28 },
+    { id: "d2", h: chip("review/SKILL.md", "--muted", "out"), x: 81, y: 42 },
+    { id: "d3", h: chip("release（手动）", "--muted", "out"), x: 81, y: 56 },
+    { id: "s1", h: lbl("deploy：部署到预发环境…", "m"), x: 31, y: 26, hide: 1 },
+    { id: "s2", h: lbl("review：审查当前的改动…", "m"), x: 31, y: 38, hide: 1 },
+    { id: "you", h: chip("你：把这个分支部署一下", "--accent"), x: 31, y: 56, hide: 1 },
+    { id: "body", h: chip("deploy 全文：7 步", "--ok"), x: 31, y: 74, hide: 1 },
+  ],
+  s: [
+    { c: "会话开始时，Claude Code 只把每个 skill 的名字和描述放进上下文，正文留在磁盘上。所以装了好几个 skill，平时也只占描述那一点地方。",
+      set: { s1: { hide: 0 }, s2: { hide: 0 } }, lit: ["ctx"] },
+    { c: "release 的 frontmatter 写了 disable-model-invocation: true：连描述都不放进上下文，Claude 不会自己用它，只有你输入 /release 才会加载。部署、发布这类有副作用的，适合这样设。",
+      set: { d3: { h: chip("release（手动）", "--warn", "out") } }, lit: ["disk"] },
+    { c: "你说：把这个分支部署一下。Claude 拿这句话去对 skill 的描述，deploy 的描述对得上。",
+      set: { you: { hide: 0 } }, lit: ["ctx"] },
+    { c: "于是 deploy 的 SKILL.md 全文作为一条消息进入对话，Claude 照着做。你直接输入 /deploy 也一样，还省了它判断这一步。",
+      set: { body: { hide: 0 }, d1: { h: chip("deploy/SKILL.md", "--ok", "out") } }, lit: ["ctx", "disk"] },
+    { c: "全文进来以后一直留在对话里，后面几轮不会再读一遍文件。所以 skill 里的要求要写成整个任务都适用的规矩，而不是只做一次的步骤。", lit: ["ctx"] },
+    { c: "压缩以后，用过的 skill 会重新接在摘要后面，但每个只保留开头的 5000 token，加起来最多 25000 token，用得早的可能整个丢掉。最重要的写在 SKILL.md 最前面。",
+      set: { body: { h: chip("deploy：只留开头", "--doubt") } }, lit: ["ctx"] },
+  ],
+};
+
+// 一个插件从市场到你的会话
+const PLUGIN = {
+  h: 300,
+  b: [["mk", 2, 8, 30, 84, "市场"], ["pl", 35, 8, 30, 84, "装下来的插件"], ["se", 68, 8, 30, 84, "你的会话"]],
+  it: [
+    { id: "m1", h: chip("fmt", "--muted", "out"), x: 17, y: 30 },
+    { id: "m2", h: chip("db", "--muted", "out"), x: 17, y: 44 },
+    { id: "p1", h: lbl("plugin.json", "m"), x: 50, y: 28, hide: 1 },
+    { id: "p2", h: lbl("skills/ agents/", "m"), x: 50, y: 42, hide: 1 },
+    { id: "p3", h: lbl("hooks/ .mcp.json", "m"), x: 50, y: 56, hide: 1 },
+    { id: "e1", h: chip("/fmt:check", "--accent"), x: 83, y: 30, hide: 1 },
+    { id: "e2", h: lbl("描述：每轮都在", "m"), x: 83, y: 48, hide: 1 },
+    { id: "e3", h: lbl("hooks 照常触发", "m"), x: 83, y: 62, hide: 1 },
+    { id: "e4", h: lbl("MCP 服务器在跑", "m"), x: 83, y: 76, hide: 1 },
+  ],
+  s: [
+    { c: "市场是一份清单：列出有哪些插件、各从哪里取，不是托管的应用商店。Anthropic 的官方市场在你第一次打开 Claude Code 终端会话时就加好了；别的市场用 /plugin marketplace add 加一次，之后按名字安装。", lit: ["mk"] },
+    { c: "装一个插件，取回来的是一整个目录：.claude-plugin/plugin.json 给它起名字，里面可以有 skills、子代理、hooks 和 MCP 服务器，作为一个整体装上。",
+      set: { m1: { h: chip("fmt", "--accent") }, p1: { hide: 0 }, p2: { hide: 0 }, p3: { hide: 0 } }, lit: ["pl"] },
+    { c: "插件里的 skill 带着插件名，写成 /fmt:check。几个插件里有同名的 skill，也不会互相冲突。",
+      set: { e1: { hide: 0 } }, lit: ["se"] },
+    { c: "插件一旦启用，就是每次会话的一部分，不管这次用不用：skill 和子代理的名字、描述每一轮都在上下文里，hooks 照常触发，MCP 服务器照常在跑。",
+      set: { e2: { hide: 0 }, e3: { hide: 0 }, e4: { hide: 0 } }, bad: ["se"] },
+    { c: "而且它跑的一切都以你的身份运行。所以装之前先看它包含什么；不常用的可以停用，不用卸载，停用以后这些代价就没了。",
+      set: { e1: { h: chip("/fmt:check") }, e2: { hide: 1 }, e3: { hide: 1 }, e4: { hide: 1 } }, lit: ["mk", "pl", "se"] },
+  ],
+};
+
+// 一次 MCP 调用：模型 → Claude Code → MCP 服务器 → 真正的服务，结果原路返回
+const MCP = {
+  h: 300,
+  b: [["m", 2, 8, 22, 84, "模型"], ["cc", 27, 8, 22, 84, "Claude Code"], ["sv", 52, 8, 22, 84, "MCP 服务器"], ["ex", 77, 8, 21, 84, "外部服务"]],
+  it: [
+    { id: "msg", h: chip("查上周订单", "--muted", "out"), x: 13, y: 30 },
+    { id: "nm", h: lbl("只装工具名", "m"), x: 38, y: 56, hide: 1 },
+    { id: "q", h: lbl("SQL 查询", "m"), x: 88, y: 56, hide: 1 },
+    { id: "sec", h: lbl("服务器以你的身份运行", "w"), x: 50, y: 86, hide: 1 },
+  ],
+  s: [
+    { c: "你问：上周有多少订单。数据在公司的数据库里，Claude Code 自带的读文件、跑命令都碰不到。", lit: ["m"] },
+    { c: "连了一个数据库的 MCP 服务器。会话开始时，Claude Code 只把它的工具名和说明放进上下文，每个工具完整的参数格式等真要用时才加载，所以没用到的 MCP 工具几乎不占地方。",
+      set: { nm: { hide: 0 } }, lit: ["cc"] },
+    { c: "模型判断要查数据库，输出一次工具调用（第 1 章的 tool_use）。MCP 工具的名字形如 mcp__服务器名__工具名。",
+      set: { msg: { x: 38, h: chip("tool_use", "--accent") } }, lit: ["cc"] },
+    { c: "Claude Code 照常检查权限（第 5 章），再把调用转给 MCP 服务器。",
+      set: { msg: { x: 63 }, nm: { hide: 1 } }, lit: ["sv"] },
+    { c: "MCP 服务器去连真正的服务，在这里是执行一条 SQL 查询。连接、登录都由服务器负责；需要登录的，在 /mcp 里走 OAuth。",
+      set: { msg: { x: 88, h: chip("查询") }, q: { hide: 0 } }, lit: ["ex"] },
+    { c: "结果原路返回，作为 tool_result 接进上下文，和读一个文件的结果没有区别。",
+      set: { msg: { x: 13, h: chip("结果", "--ok", "out") }, q: { hide: 1 } }, lit: ["m"] },
+    { c: "要记住：服务器以你的身份运行；会去拉外部内容的服务器，可能把别人写的指令带进上下文，这就是提示注入（第 5 章）。连之前先确认信得过它。",
+      set: { sec: { hide: 0 } }, bad: ["sv"] },
+  ],
+};
+
+// 这个阅读库的写作流程写成 skill 的样子。分隔线用 repeat 生成：源码里不能有单独一行的三个减号
+const FENCE = "-".repeat(3);
+const NOTE_SKILL = [FENCE,
+  "name: note",
+  "description: 给阅读库写一篇文章：查资料、写正文、登记、构建检查、发布。用户要讲清楚一个主题时用。",
+  "argument-hint: [主题]",
+  "disable-model-invocation: true",
+  FENCE,
+  "写一篇讲清楚 $ARGUMENTS 的文章：",
+  "",
+  "1. 先复述要讲什么、讲到多深；主题含糊就先问。",
+  "2. 事实查官方文档或一手来源，能实测的就实测。",
+  "3. 照 src/topics/ai-coding/llm-basics.astro 的写法写正文，在 src/lib/topics.js 登记。",
+  "4. npm run build 通过，再跑 tools/render_check.py。",
+  "5. 提交、推送，告诉用户线上地址。"].join("\n");
+
+const TREE = `my-plugin/
+├── .claude-plugin/plugin.json   # 名字、版本、说明
+├── skills/review/SKILL.md       # 装好后是 /my-plugin:review
+├── agents/reviewer.md           # 子代理
+├── hooks/hooks.json             # 在生命周期事件上跑的 hooks
+└── .mcp.json                    # MCP 服务器`;
+
+const MCPADD = `# 远程服务：用 HTTP（SSE 已弃用）
+claude mcp add --transport http notion https://mcp.notion.com/mcp
+
+# 项目级：写进仓库根目录的 .mcp.json，跟着提交，团队共用
+claude mcp add --transport http shared --scope project https://example.com/mcp
+
+# 本地进程：-- 后面的命令和参数原样交给服务器
+claude mcp add --env AIRTABLE_API_KEY=YOUR_KEY --transport stdio airtable -- npx -y airtable-mcp-server`;
+
+const SOURCES = [
+  { title: "Extend Claude with skills", url: "https://code.claude.com/docs/en/skills", by: "Claude Code Docs", note: "SKILL.md 的结构和 frontmatter 字段、放在哪、同名时哪个生效、什么时候装进上下文、压缩后保留多少、参数、和旧的自定义命令合并。" },
+  { title: "Plugins overview", url: "https://code.claude.com/docs/en/plugins", by: "Claude Code Docs", note: "插件包含什么、市场、安装范围、启用后的代价。" },
+  { title: "Connect Claude Code to tools via MCP", url: "https://code.claude.com/docs/en/mcp", by: "Claude Code Docs", note: "三种传输方式、claude mcp add、作用域和优先级、OAuth、提示注入的提醒。" },
+  { title: "Extend Claude Code", url: "https://code.claude.com/docs/en/features-overview", by: "Claude Code Docs", note: "各种扩展怎么选、碰到什么情况加什么、各占多少上下文、怎么组合。" },
+  { title: "Glossary", url: "https://platform.claude.com/docs/en/about-claude/glossary", by: "Anthropic", note: "MCP 是开放协议，像 AI 应用的 USB-C 接口。" },
+  { title: "本站的真实例子", note: "2026-11-08 想给这个阅读库建一个 /note skill，写入 .claude/skills/ 时被 auto mode 拦下，流程最后写进了 CLAUDE.md。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>前三章讲的都是 Claude Code 自带的能力：读写文件、跑命令、上网、子代理。用久了会碰到几种它自带的能力解决不了、或者解决得很笨的情况：</p>
+  <ul>
+    <li>同一类任务，每次开头都要敲一样的一段话。</li>
+    <li>一套多步骤的流程，第三次往对话里粘了。</li>
+    <li>要的数据在它看不到的系统里，你只能一次次从浏览器复制过来。</li>
+    <li>第二个仓库要一模一样的配置，又得从头弄一遍。</li>
+  </ul>
+  <p>这一章的三样东西分别对付这几种情况：skill 把常用的做法存起来；插件把一整套配置打包，装一次就有；MCP 把外部系统接进来。它们什么时候进上下文、占多少地方、能做什么各不一样。弄清这些，才知道该用哪一个，以及装多了会怎样。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="Skill" title="一个装着说明的文件夹">
+      <p>一个目录里放一个 <code>SKILL.md</code>：开头一段 YAML（frontmatter）告诉 Claude 什么时候用它，后面的正文是用的时候照着做的说明。目录名（或 frontmatter 里的 <code>name</code>）就是命令名：<code>deploy/SKILL.md</code> 就是 <code>/deploy</code>。你可以直接输入它，Claude 也会在你的话和它的描述对得上时自己用。</p>
+    </Card>
+    <Card term="Command" title="斜杠命令已经并进 skill">
+      <p>以前的写法是 <code>.claude/commands/deploy.md</code>，它和 <code>.claude/skills/deploy/SKILL.md</code> 一样都会生成 <code>/deploy</code>，旧文件照样能用，两边同名时 skill 生效。skill 多了几样：可以带附属文件，能控制谁能调用，Claude 能在相关时自己加载。新写的都用 skill。</p>
+    </Card>
+    <Card term="Plugin" title="插件：一整套打包">
+      <p>一个目录，把几个 skill、子代理、hooks、MCP 服务器装在一起，作为一个整体安装。大多来自市场：一份列出有哪些插件、各从哪里取的清单。</p>
+    </Card>
+    <Card term="MCP" title="接入外部工具的开放协议">
+      <p>Model Context Protocol 规定了应用怎样把工具和数据提供给模型，Anthropic 的术语表把它比作 AI 应用的 USB-C 接口。连上一个 MCP 服务器，Claude 就多了一组能调用的工具：查数据库、发 Slack 消息、操作浏览器。</p>
+    </Card>
+  </Cards>
+  <Table cap="前三行摘自官方的功能对比。插件只是打包，里面的 skill、MCP 各按自己的方式装。">
+    <tr><th></th><th>什么时候装</th><th>装进来什么</th><th>上下文的代价</th></tr>
+    <tr><td>CLAUDE.md</td><td>会话开始</td><td>全文</td><td>每一次请求都带</td></tr>
+    <tr><td>Skill</td><td>会话开始 + 用的时候</td><td>开始时只有描述，用时装全文</td><td>低：每次请求只带描述</td></tr>
+    <tr><td>MCP 服务器</td><td>会话开始</td><td>工具名；完整的参数格式用时才装</td><td>用到之前很低</td></tr>
+    <tr><td>插件</td><td>启用以后每次会话</td><td>里面的 skill、子代理、MCP 等</td><td>启用就一直有，不管用不用</td></tr>
+  </Table>
+</Section>
+
+<Section id="how" title="一个 skill 怎么被用上" short="用上 skill">
+  <p>点“下一步”，看 skill 从磁盘到对话的过程：平时只有描述在上下文里，用到时全文才装进来。</p>
+  <Anim data={SKILL} label="skill 的加载：会话开始时只放名字和描述；对上描述或输入 /名字时，SKILL.md 全文进入对话并一直留着；压缩后只保留开头一段" />
+  <Flow items={[
+    { t: "会话开始", d: "只放名字和描述" },
+    { t: "对上描述", d: "或你输入 /名字", kind: "tip" },
+    { t: "全文进对话", d: "一直留着，不再重读" },
+    { t: "压缩后", d: "每个只留开头 5000 token", kind: "doubt" },
+  ]} />
+  <Table cap="skill 放在哪、对谁生效（摘自官方的 skills 文档）。">
+    <tr><th>放在哪</th><th>路径</th><th>对谁生效</th></tr>
+    <tr><td>个人</td><td><code>~/.claude/skills/&lt;名字&gt;/SKILL.md</code></td><td>你在这台电脑上的所有项目</td></tr>
+    <tr><td>项目</td><td><code>.claude/skills/&lt;名字&gt;/SKILL.md</code></td><td>这个仓库的会话；提交以后团队都有</td></tr>
+    <tr><td>插件</td><td><code>&lt;插件&gt;/skills/&lt;名字&gt;/SKILL.md</code></td><td>启用了这个插件的地方，名字是 /插件名:名字</td></tr>
+  </Table>
+  <p>同名时，组织统一下发的优先于个人的，个人的优先于项目的。插件的 skill 带着插件名，所以和别的同名 skill 能同时存在。</p>
+</Section>
+
+<Section id="write" title="怎么写一个 skill" short="写 skill">
+  <p>上面那个加载过程，直接决定了 skill 该怎么写：描述每一轮都占上下文，正文一旦装进来也一直占着。</p>
+  <ul>
+    <li><b>描述先写最主要的用途</b>：描述和 <code>when_to_use</code> 在列表里加起来超过 1536 个字符会被截掉。Claude 靠它判断什么时候用，写得含糊或者和别的 skill 重叠，就会用错或漏用。</li>
+    <li><b>正文写成一直有效的规矩</b>：后面几轮不会重读文件，所以写“改完都要跑测试”，而不是“第三步跑测试”。</li>
+    <li><b>正文要短</b>：官方建议 <code>SKILL.md</code> 控制在 500 行以内，详细的参考资料放进同目录的别的文件，用到才读。</li>
+    <li><b>有副作用的只让你来触发</b>：部署、发布、提交这类，加 <code>disable-model-invocation: true</code>，Claude 不会自己去跑，也不占上下文。</li>
+  </ul>
+  <Table cap="常用的几个 frontmatter 字段（摘自官方的字段表）。字段名必须一字不差，写错了不会报错，只会被忽略。">
+    <tr><th>字段</th><th>作用</th></tr>
+    <tr><td><code>description</code></td><td>做什么、什么时候用。唯一建议必写的字段</td></tr>
+    <tr><td><code>disable-model-invocation</code></td><td>设成 true：只有你输入 /名字才会用，描述也不放进上下文</td></tr>
+    <tr><td><code>user-invocable</code></td><td>设成 false：只给 Claude 用的背景知识，不出现在 / 菜单里</td></tr>
+    <tr><td><code>allowed-tools</code></td><td>这一轮里不用问你就能用的工具；你发下一条消息时就失效</td></tr>
+    <tr><td><code>argument-hint</code>、<code>arguments</code></td><td>参数提示和具名参数；正文里用 <code>$ARGUMENTS</code>、<code>$0</code>、<code>$名字</code> 取参数</td></tr>
+    <tr><td><code>context: fork</code></td><td>放到一个子代理里跑，不占主对话（第 3 章）</td></tr>
+    <tr><td><code>paths</code></td><td>只在处理匹配的文件时才自动加载</td></tr>
+  </Table>
+  <Note kind="info" title="/名字 写在哪也有讲究">写在消息开头，比如 <code>/deploy staging</code>，Claude Code 直接运行这个 skill。写在句子中间，比如“好了，去 /deploy 一下”，不会直接运行，只算你允许它在这条消息里用，由它判断你是不是真要它用。</Note>
+</Section>
+
+<Section id="plugin" title="插件：装别人做好的一整套" short="插件">
+  <p>skill、子代理、hooks、MCP 服务器都能单独用，不需要插件。插件的用处是打包：想一个命令装上别人做好的一整套，或者把自己的配置给同事、装到很多项目里、发布带版本号的更新。点“下一步”看一个插件从市场到你的会话：</p>
+  <Anim data={PLUGIN} label="插件：市场列出插件，装下来的是一整个目录，带着 skills、子代理、hooks 和 MCP；启用后每次会话都在，以你的身份运行" />
+  <Code code={TREE} cap="一个插件的目录（摘自官方的插件说明）。只有 plugin.json 是给插件本身起名字的清单。" />
+  <Table>
+    <tr><th>安装范围</th><th>对谁生效</th></tr>
+    <tr><td>用户</td><td>你在这台电脑上的所有项目</td></tr>
+    <tr><td>项目</td><td>这个仓库的所有人：写进提交的 <code>.claude/settings.json</code>，每个人仍要在自己电脑上装</td></tr>
+    <tr><td>本地</td><td>只有你，只在这个仓库</td></tr>
+  </Table>
+  <Note kind="doubt" title="装之前先看代价">启用的插件每次会话都在：它的 skill 和子代理的名字、描述每一轮都占上下文，MCP 服务器一直在跑，hooks 照常触发，而且都以你的身份运行。官方市场里的插件在 <code>/plugin</code> 里能看到上下文代价的估计。不常用的用 <code>/plugin</code> 或 <code>claude plugin disable</code> 停用，不用卸载。</Note>
+</Section>
+
+<Section id="mcp" title="MCP：把外部系统接进来" short="MCP">
+  <p>Claude Code 自带的工具碰不到公司的数据库、Notion 里的文档、Slack 里的消息。MCP 服务器把这些系统包成一组工具，Claude 像调用读文件一样调用它们。点“下一步”看一次调用：</p>
+  <Anim data={MCP} label="MCP 调用：会话开始时只放工具名；模型发出工具调用，Claude Code 查权限后转给 MCP 服务器，服务器去查真正的服务，结果原路返回" />
+  <Code code={MCPADD} cap="三种接法，命令摘自官方的 MCP 文档。" />
+  <Table cap="同一个服务器在几处都配了，只用优先级最高的那一份：本地 &gt; 项目 &gt; 用户 &gt; 插件带的 &gt; claude.ai 的连接器。">
+    <tr><th>作用域</th><th>对谁生效</th><th>存在哪</th></tr>
+    <tr><td>本地（默认）</td><td>只有你，只在这个项目</td><td><code>~/.claude.json</code></td></tr>
+    <tr><td>项目</td><td>这个项目的所有人，跟着仓库提交</td><td>项目根目录的 <code>.mcp.json</code></td></tr>
+    <tr><td>用户</td><td>你的所有项目</td><td><code>~/.claude.json</code></td></tr>
+  </Table>
+  <p>需要登录的服务器，在会话里运行 <code>/mcp</code>，按浏览器里的步骤用 OAuth 登录；也可以在终端运行 <code>claude mcp login 名字</code>。<code>/mcp</code> 还能看每个服务器的连接状态。</p>
+  <Note kind="warn" title="连之前先确认信得过">官方文档的提醒：连接每个服务器之前，先确认你信得过它；会去拉外部内容的服务器，会让你暴露在提示注入的风险下（第 5 章）。</Note>
+</Section>
+
+<Section id="choose" title="碰到什么情况，加什么" short="怎么选">
+  <p>不用一开始就全配好。官方的建议是碰到具体情况再加，大多数团队大致按这个顺序：</p>
+  <Table cap="摘自官方“Extend Claude Code”。">
+    <tr><th>碰到的情况</th><th>加什么</th></tr>
+    <tr><td>同一个约定或命令，它错了两次</td><td>写进 CLAUDE.md</td></tr>
+    <tr><td>每次开始一类任务都敲同一段话</td><td>存成你来调用的 skill</td></tr>
+    <tr><td>同一套多步骤的流程，第三次往对话里粘</td><td>写成 skill</td></tr>
+    <tr><td>一直从它看不到的浏览器页面里复制数据</td><td>把那个系统接成 MCP 服务器</td></tr>
+    <tr><td>一个旁支任务把对话塞满了以后用不上的输出</td><td>交给子代理（第 3 章）</td></tr>
+    <tr><td>想让某件事每次都发生，不用你提</td><td>写一个 hook（第 5 章）</td></tr>
+    <tr><td>第二个仓库要同样的配置</td><td>打包成插件</td></tr>
+  </Table>
+  <Table cap="几样容易混的（摘自同一份文档）。">
+    <tr><th></th><th>放这边</th><th>放那边</th></tr>
+    <tr><td>CLAUDE.md 还是 skill</td><td>每次都该知道的：约定、构建命令、“不许做 X”</td><td>有时才用的参考资料，或者用 /名字 触发的流程</td></tr>
+    <tr><td>skill 还是 MCP</td><td>MCP 提供连接和工具</td><td>skill 教它怎么用好这些工具，比如你们的表结构和常用查询</td></tr>
+    <tr><td>skill 还是 hook</td><td>skill：需要它判断怎么做的流程</td><td>hook：每次都要同样执行、不需要它想的事，比如改完就跑 lint</td></tr>
+  </Table>
+</Section>
+
+<Section id="example" title="实际例子：这个站的写作流程该放哪" short="实际例子">
+  <p>这个阅读库每写一篇，都走同一套流程：查资料、写正文、登记、构建检查、发布。按上面那张表，这正是“同一套多步骤的流程”，该写成 skill。写出来大致是这样：</p>
+  <Code code={NOTE_SKILL} lang="text" cap="放在 .claude/skills/note/SKILL.md。最后一步会推送发布，有副作用，所以设成只能你来触发：输入 /note 主题 才会运行。" />
+  <p>可这个 skill 实际上没建成：2026-11-08 想写入 <code>.claude/skills/note/SKILL.md</code> 时，被 auto mode 拦了下来，流程最后写进了项目的 CLAUDE.md。两种放法的差别：</p>
+  <Table>
+    <tr><th></th><th>写进 CLAUDE.md（现在的做法）</th><th>写成 /note skill</th></tr>
+    <tr><td>什么时候进上下文</td><td>每次会话开始，每一次请求都带</td><td>平时不进，输入 /note 才装</td></tr>
+    <tr><td>谁来触发</td><td>它一直知道，你说“写一篇”它就照做</td><td>只有你输入 /note</td></tr>
+    <tr><td>适合</td><td>几乎每次会话都在做这件事</td><td>偶尔才做</td></tr>
+  </Table>
+  <p>这个仓库几乎每次会话都在写文章，放在 CLAUDE.md 代价不大。哪天这个仓库主要用来做别的事，这套流程就该挪进 skill，把上下文省下来。</p>
+  <Table cap="官方举的几种组合。">
+    <tr><th>组合</th><th>怎么配合</th></tr>
+    <tr><td>Skill + MCP</td><td>MCP 连上数据库，skill 写清楚表结构和常用的查询</td></tr>
+    <tr><td>Skill + 子代理</td><td>一个 /audit skill 同时开安全、性能、风格三个子代理去查</td></tr>
+    <tr><td>CLAUDE.md + skill</td><td>CLAUDE.md 写“遵守我们的 API 约定”，完整的 API 风格指南放在 skill 里</td></tr>
+  </Table>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="装得越多越好">
+      <p>每个能被 Claude 调用的 skill、子代理，名字和描述每一轮都在上下文里，不管这次用不用。装多了不只占地方，描述互相重叠，它更容易用错。用 <code>/context</code> 看谁占了多少，不常用的插件停用。</p>
+    </Card>
+    <Card term="误区 2" title="写了 skill，它就会在该用的时候用">
+      <p>它是拿你的话去对描述来挑的。描述含糊或者几个 skill 的描述差不多，它就会挑错或者没想到用。要用哪个就直接输入 <code>/名字</code>。</p>
+    </Card>
+    <Card term="误区 3" title="改了 SKILL.md，正在用的马上就变">
+      <p>skill 被用上时，全文作为一条消息进入对话，之后不再重读文件。中途改了，对话里还是旧的那份；要用新的，就再调用一次，内容变了它会重新装一份。</p>
+    </Card>
+    <Card term="误区 4" title="allowed-tools 是一直有效的授权">
+      <p>它只在调用这个 skill 的那一轮里生效，你发下一条消息就失效。skill 的说明会一直留在对话里，但授权不会。</p>
+    </Card>
+    <Card term="误区 5" title="官方市场里的插件、MCP 服务器就没有风险">
+      <p>插件跑的一切以你的身份运行；MCP 服务器会拉外部内容时，可能把别人写的指令带进上下文。官方文档对两者都要求先确认信得过再装、再连。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
