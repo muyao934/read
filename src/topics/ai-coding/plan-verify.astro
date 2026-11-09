@@ -1,0 +1,140 @@
+---
+// AI 编程 · 第 05 章（概念类）：why → core → how → example → pitfalls → sources
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 计划 → 你批准 → 动手 → 检查 → 失败再修 → 通过并给证据
+const PV = {
+  h: 300,
+  b: [["p", 2, 8, 30, 84, "计划"], ["d", 35, 8, 30, 84, "动手"], ["v", 68, 8, 30, 84, "检查"]],
+  it: [
+    { id: "msg", h: chip("改登录流程", "--muted", "out"), x: 17, y: 30 },
+    { id: "pl", h: lbl("读文件、跑只读命令<br>不改源码", "m"), x: 17, y: 56, hide: 1 },
+    { id: "you", h: lbl("你：改一处再批准", "g"), x: 17, y: 80, hide: 1 },
+    { id: "dl", h: lbl("改 3 个文件", "m"), x: 50, y: 56, hide: 1 },
+    { id: "vl", h: lbl("测试：1 个失败", "w"), x: 83, y: 56, hide: 1 },
+    { id: "ev", h: lbl("贴出命令和输出", "m"), x: 83, y: 80, hide: 1 },
+  ],
+  s: [
+    { c: "要改的东西牵涉好几处：登录流程。先按 Shift+Tab 进入 plan mode，或者在这条消息前面加 /plan。", lit: ["p"] },
+    { c: "plan mode 里，它照常读文件、跑探索用的命令，但不改你的源码。它把要改什么、怎么改、怎么验证写成一份计划。",
+      set: { msg: { h: chip("一份计划", "--accent") }, pl: { hide: 0 } }, lit: ["p"] },
+    { c: "计划摆在你面前，这是改方向最便宜的时候：一行代码还没写。可以直接批准，可以说哪里要改，也可以按 Ctrl+G 在编辑器里直接改计划。",
+      set: { you: { hide: 0 } }, lit: ["p"] },
+    { c: "批准以后退出 plan mode，按你选的方式开始改：自动接受改动，或者每处改动都先问你。",
+      set: { msg: { x: 50, h: chip("照计划改", "--accent") }, pl: { hide: 1 }, you: { hide: 1 }, dl: { hide: 0 } }, lit: ["d"] },
+    { c: "改完不算完。它跑你给的检查：测试、构建、lint，或者和设计稿对比截图。这次有 1 个测试失败。",
+      set: { msg: { x: 83, h: chip("跑检查") }, vl: { hide: 0 } }, bad: ["v"] },
+    { c: "失败的输出直接告诉它还差什么。它回去修，不需要你盯着。",
+      set: { msg: { x: 50, h: chip("修", "--accent") }, dl: { h: lbl("修 1 处", "m") } }, lit: ["d"] },
+    { c: "再跑一次：全部通过。",
+      set: { msg: { x: 83, h: chip("跑检查") }, vl: { h: lbl("全部通过", "g") } }, lit: ["v"] },
+    { c: "最后告诉你做完了，并贴出证据：跑了哪条命令、输出是什么。没有能跑的检查，它只能凭“看起来做完了”收工，你就成了它的测试。",
+      set: { msg: { h: chip("做完 + 证据", "--ok") }, ev: { hide: 0 } }, lit: ["v"] },
+  ],
+};
+
+const HOOK = `{
+  "hooks": {
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "npm test 1>&2 || exit 2" }] }
+    ]
+  }
+}`;
+
+const CMDS = `/plan 把登录改成先刷新 token 再重试     # 只让这一条消息进 plan mode
+/goal test/auth 的测试全部通过，lint 无报错，不改其他测试文件   # 每轮结束后由另一个模型判断是否达成
+/code-review                             # 用一个没看过这段对话的子代理审查改动`;
+
+const SOURCES = [
+  { title: "Choose a permission mode", url: "https://code.claude.com/docs/en/permission-modes", by: "Claude Code Docs", note: "plan mode 能做什么、怎么进入、批准计划的几个选项、Ctrl+G。" },
+  { title: "Best practices for Claude Code", url: "https://code.claude.com/docs/en/best-practices", by: "Claude Code Docs", note: "给它一个检查、要证据、确定性和非确定性的区别、Stop hook 的例子、审查只报正确性问题。" },
+  { title: "Keep Claude working toward a goal", url: "https://code.claude.com/docs/en/goal", by: "Claude Code Docs", note: "/goal 怎么判断、条件怎么写、判断者不会自己跑命令。" },
+  { title: "Explore the context window", url: "https://code.claude.com/docs/en/context-window", by: "Claude Code Docs", note: "plan mode 写的计划在压缩后从磁盘重读。" },
+  { title: "本站的真实例子", note: "搭这个阅读库时各项检查抓到的问题，见“实际例子”。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>第 02 章说过，agent 会一轮轮循环到做完。可“做完”由谁判断？用 Claude Code 时的返工，通常是这两种：</p>
+  <ul>
+    <li><b>方向错了</b>：写了一大堆，才发现不是你要的。</li>
+    <li><b>没真做完</b>：它说好了，其实还有问题，等你自己发现。</li>
+  </ul>
+  <p>这一章讲对付这两种返工的两个办法：动手前先出计划给你看；动手后用一个能跑的检查判断做没做完。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="Plan Mode" title="只研究、提方案，不动手">
+      <p>它照常读文件、跑探索用的命令，写出一份计划，但不改你的源码，批准之前改动一直被拦着。进入的办法：按 <code>Shift+Tab</code>；在一条消息前加 <code>/plan</code>；或者启动时加 <code>--permission-mode plan</code>。计划存在磁盘上，压缩后会重读（第 03 章）。</p>
+    </Card>
+    <Card term="Approve" title="批准、改、或者接着计划">
+      <p>计划写好后，它会问你怎么办：批准并用 auto mode 接着做；批准，但每处改动都先问你；或者不批准、接着计划，告诉它哪里要改。按 <code>Ctrl+G</code> 能在编辑器里直接改计划。</p>
+    </Card>
+    <Card term="Check" title="能跑出“通过 / 不通过”的东西">
+      <p>测试、构建的退出码、lint、和期望结果对比的脚本、和设计稿并排的截图。官方文档的说法：没有检查，它只能凭“看起来做完了”收工；有了检查，它能自己改、自己查、自己修，直到通过。</p>
+    </Card>
+    <Card term="Deterministic" title="它决定的，和一定会执行的">
+      <p>写在提示和 CLAUDE.md 里的“改完跑测试”，跑不跑最终由模型决定。Stop hook、CI 由 Claude Code 或外部系统执行，模型怎么判断都会跑。</p>
+    </Card>
+    <Card term="Fresh Reviewer" title="让没参与的来审">
+      <p><code>/code-review</code> 用一个没看过这段对话的子代理审查改动，不会被写代码时的思路带偏。<code>/verify</code> 让它构建、运行应用，看实际效果，能发现测试和类型检查漏掉的问题。</p>
+    </Card>
+  </Cards>
+  <Table cap="从松到紧：越往下，越不依赖模型自觉。">
+    <tr><th>检查写在哪</th><th>谁判断做完</th><th>适合</th></tr>
+    <tr><td>提示里：“改完跑 auth 的测试，直到通过”</td><td>它自己</td><td>任何任务，不用设置</td></tr>
+    <tr><td><code>/goal</code> 条件</td><td>每轮结束后，另一个模型看对话判断</td><td>没人盯着的长任务</td></tr>
+    <tr><td>Stop hook</td><td>你的脚本：退出码是 2，就不让它结束</td><td>必须过的检查，比如类型检查</td></tr>
+    <tr><td>CI</td><td>外部系统</td><td>合并、发布前的最后一关</td></tr>
+  </Table>
+</Section>
+
+<Section id="how" title="计划、动手、检查" short="怎么运作">
+  <p>点“下一步”，看一次改动从计划到通过检查的全过程。</p>
+  <Anim data={PV} label="先计划再动手：plan mode 里只读、写计划，你批准后才改代码；改完跑检查，失败就修，通过后贴出证据" />
+  <Flow items={[
+    { t: "计划", d: "只读，不改源码" },
+    { t: "你批准", d: "改方向最便宜的时候", kind: "tip" },
+    { t: "动手", d: "照计划改" },
+    { t: "检查", d: "失败就修，再查", kind: "doubt" },
+    { t: "做完", d: "贴出命令和输出", kind: "ok" },
+  ]} />
+</Section>
+
+<Section id="example" title="实际例子：这个站的计划和检查" short="实际例子">
+  <p>这个阅读库改用 Astro 之前，先列了几种做法的对比、代价和要做的事，确认以后才动手。那时改方向，只要改几段文字。</p>
+  <p>动手以后靠检查。每次构建都会跑三样：正文检查（写法、组件、链接），Astro 构建（少了必备的节、组件用错就失败），区块链页面逐字节核对。本地还会按阅读设备的宽度跑一遍渲染检查。它们抓到过的真实问题：</p>
+  <Table>
+    <tr><th>检查</th><th>抓到了什么</th></tr>
+    <tr><td>渲染检查，按 iPad 竖屏 834px 宽测</td><td>流程块换行后，箭头伸出正文栏 21px</td></tr>
+    <tr><td>渲染检查，量示意图的字号</td><td>声称修好的图字，实测仍是 20px</td></tr>
+    <tr><td>构建最后一步，逐字节核对区块链页面</td><td>kms.html 有一处不是这次改的改动：没有发布，先停下来确认</td></tr>
+    <tr><td>一个故意写错 10 处的测试页</td><td>检查脚本 10 处全部报出，证明检查本身是有效的</td></tr>
+  </Table>
+  <p>要让一个检查每次都跑，不靠它自觉，可以做成 Stop hook。下面这段配置让它每次想结束时先跑测试，不通过就不让结束：</p>
+  <Code code={HOOK} lang="text" cap="写在 .claude/settings.json，改写自官方最佳实践里的类型检查例子。" />
+  <Note kind="info" title="Stop hook 怎么起作用">命令以退出码 2 结束，就会拦住这一次结束；命令打印到 stderr 的内容，作为“还不能结束”的原因发回给它，所以把测试输出重定向到 stderr。如果连续拦了 8 次、中间没有任何工具调用，Claude Code 会放行，免得死循环。</Note>
+  <Code code={CMDS} cap="三个命令都摘自 Claude Code 的文档。" />
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="plan mode 什么都不执行">
+      <p>它照样读文件、跑探索用的 shell 命令，只是不改你的源码。auto mode 可用时，这些命令由分类器审查，而不是逐条问你。</p>
+    </Card>
+    <Card term="误区 2" title="每件事都该先计划">
+      <p>小改动直接做就好。计划的价值在方向可能错、改错代价大的时候：牵涉好几个文件，有几种方案要选，或者你自己也还没想清楚。</p>
+    </Card>
+    <Card term="误区 3" title="审查提出的问题都要改">
+      <p>官方文档提醒：让一个审查者去找问题，它总能找出点什么。全改了，最后会多出不必要的抽象和测不到的测试。让它只报影响正确性的问题，跳过风格。</p>
+    </Card>
+    <Card term="误区 4" title="/goal 会自己去验证">
+      <p>判断条件的那个模型不跑命令、不读文件，只看对话里已经有的内容。所以条件要写成它的输出能证明的事，比如“<code>npm test</code> 退出码为 0”，而不是“代码没问题”。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
