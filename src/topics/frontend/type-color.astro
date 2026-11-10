@@ -1,0 +1,371 @@
+---
+// 前端与设计 · 第 2 章（概念类）：why → core → how → size → mix → digits → contrast → theme → example → pitfalls → sources
+// 2026-11-10 在本机 Chrome 157（headless）里实测：CSS.getPlatformFontsForNode 看每段字用了哪个字体，canvas 量数字的墨迹，
+// 测试页量行高和宽度，按 WCAG 2 公式算这个站的配色，HTML 分两段发看主题闪不闪，截图数像素看 font-display
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 一行字怎么挑字体：按 font-family 的顺序，一个字一个字地找“谁有这个字”
+const FALLBACK = {
+  h: 300,
+  b: [["tx", 2, 8, 30, 84, "这一行字"], ["st", 35, 8, 30, 84, "按顺序找"], ["rs", 68, 8, 30, 84, "实际用上"]],
+  it: [
+    { id: "msg", h: chip("2026 年的 API", "--muted", "out"), x: 17, y: 30 },
+    { id: "src", h: lbl("“引号”，句号。", "m"), x: 17, y: 58 },
+    { id: "stk", h: lbl("1 Serif Digits<br>2 Georgia<br>3 Songti SC", "m"), x: 50, y: 62 },
+    { id: "r1", h: lbl("2026 → Times", "g"), x: 83, y: 30, hide: 1 },
+    { id: "r2", h: lbl("API → Georgia", "g"), x: 83, y: 45, hide: 1 },
+    { id: "r3", h: lbl("汉字 → 宋体", "g"), x: 83, y: 60, hide: 1 },
+    { id: "r4", h: lbl("“” → Georgia", "w"), x: 83, y: 75, hide: 1 },
+    { id: "r5", h: lbl("，。 → 宋体", "g"), x: 83, y: 88, hide: 1 },
+  ],
+  s: [
+    { c: "这个站的正文字体是一串：\"Anthropic Serif\", \"Serif Digits\", Georgia, \"Songti SC\" ……（第一个本机没装，跳过）。浏览器不是给整段挑一个字体，而是一个字一个字地找：从左往右，第一个“有这个字”的字体就用它。", lit: ["tx", "st"] },
+    { c: "“2026”：Serif Digits 是这个站自己定义的，用 unicode-range 只认 0–9，实际指向本机的 Times New Roman。数字到这里就找到了。实测这 4 个字用的是 TimesNewRomanPSMT。",
+      set: { msg: { x: 50, y: 30, h: chip("2026", "--accent") }, r1: { hide: 0 } }, lit: ["st", "rs"] },
+    { c: "“API”：Serif Digits 不管字母，往下找到 Georgia。实测 Georgia。",
+      set: { msg: { h: chip("API", "--accent") }, r2: { hide: 0 } }, lit: ["st", "rs"] },
+    { c: "“年”这些汉字：Serif Digits、Georgia 都没有，一直找到第三个 Songti SC（宋体）。实测 STSongti-SC-Regular。",
+      set: { msg: { h: chip("汉字", "--accent") }, r3: { hide: 0 } }, lit: ["st", "rs"] },
+    { c: "意外的是弯引号“”：Georgia 里有这两个字符，所以它们用的是 Georgia 的西文引号，不是宋体的。实测页面写了 lang=\"zh-CN\" 也一样：挑字体先看谁有这个字，语言管不到这里。",
+      set: { msg: { h: chip("“ ”", "--warn") }, r4: { hide: 0 } }, bad: ["rs"] },
+    { c: "全角的逗号、句号 Georgia 没有，落到宋体。所以同一行里实测用了三个字体：Times、Georgia、宋体。西文字体排在前面，是为了让字母和数字用西文字体；中文字体排在后面，接住剩下的。",
+      set: { msg: { h: chip("，。", "--accent") }, r5: { hide: 0 } }, lit: ["rs"] },
+  ],
+};
+
+// 行高：一行 28px 怎么分；不带单位的行高继承的是倍数，带 em 的继承的是算好的像素
+const LH = {
+  h: 300,
+  b: [["one", 2, 8, 30, 84, "一行"], ["un", 35, 8, 30, 84, "父元素 1.75"], ["em", 68, 8, 30, 84, "父元素 1.75em"]],
+  it: [
+    { id: "o1", h: chip("16px · 1.75", "--muted", "out"), x: 17, y: 30 },
+    { id: "o2", h: lbl("行高 28<br>上下各留 6", "m"), x: 17, y: 62, hide: 1 },
+    { id: "u1", h: chip("h1 32px", "--muted", "out"), x: 50, y: 30, hide: 1 },
+    { id: "u2", h: lbl("行高 56<br>两行 112", "g"), x: 50, y: 62, hide: 1 },
+    { id: "e1", h: chip("h1 32px", "--muted", "out"), x: 83, y: 30, hide: 1 },
+    { id: "e2", h: lbl("行高 28<br>两行 56：叠住", "w"), x: 83, y: 62, hide: 1 },
+  ],
+  s: [
+    { c: "这个站的正文是 16px，行高 1.75：一行占 28px。", lit: ["one"] },
+    { c: "28 比字号多出 12。CSS 把多出来的（叫 leading）对半分，上下各加 6，字落在一行的正中间。所以行高越大，行与行之间越松，字本身不变大。",
+      set: { o2: { hide: 0 } }, lit: ["one"] },
+    { c: "不带单位的 1.75，子元素继承的是“1.75 倍”这个数。h1 是 32px，自己再乘一遍：行高 56。实测一个折成两行的 h1，高 112。",
+      set: { u1: { hide: 0 }, u2: { hide: 0 } }, lit: ["un"] },
+    { c: "换成 1.75em：在父元素那里就算成了 28px，子元素继承的是 28px 这个结果。32px 的字挤在 28px 的行里，实测两行只有 56 高，上下两行的字叠在一起。所以行高写不带单位的数。",
+      set: { e1: { hide: 0 }, e2: { hide: 0 } }, bad: ["em"] },
+    { c: "line-height: normal 又不一样：行高取自字体文件里的上伸、下伸和行距。实测 16px 时宋体一行 22px，Georgia 一行 19px：字体不同，行高就不同，混排时行距忽大忽小。所以正文总写一个具体的数。",
+      set: { o1: { h: chip("normal", "--doubt") }, o2: { h: lbl("宋体 22<br>Georgia 19", "w") } }, bad: ["one"] },
+    { c: "写了具体的数，也有撑开的时候：sup 默认往上挪（vertical-align: super），它的行框跟着上移，把整行撑高。实测两行的段落多了 3.3px。区块链各页的脚注引用写了 line-height: 0，就是为了这个。",
+      set: { o1: { h: chip("sup", "--doubt") }, o2: { h: lbl("56 → 59.3", "w") } }, bad: ["one"] },
+  ],
+};
+
+// 对比度怎么算：拿这个站最接近门槛的一对（浅色主题 --ok 字在 --paper 底上）走一遍 WCAG 2 的公式
+const CONTRAST = {
+  h: 300,
+  b: [["fg", 2, 8, 30, 84, "字 #2b7a4b"], ["cal", 35, 8, 30, 84, "相对亮度"], ["res", 68, 8, 30, 84, "对比度"]],
+  it: [
+    { id: "f1", h: lbl("43 · 122 · 75", "m"), x: 17, y: 30 },
+    { id: "f2", h: lbl("÷255，去伽马<br>.024 .195 .070", "m"), x: 17, y: 60, hide: 1 },
+    { id: "w", h: lbl("R×.2126<br>G×.7152<br>B×.0722", "m"), x: 50, y: 34, hide: 1 },
+    { id: "lf", h: lbl("字 L = 0.149", "m"), x: 50, y: 66, hide: 1 },
+    { id: "lb", h: lbl("底 L = 0.930", "m"), x: 50, y: 82, hide: 1 },
+    { id: "r1", h: lbl("(0.930+0.05)<br>÷ (0.149+0.05)", "m"), x: 83, y: 38, hide: 1 },
+    { id: "r2", h: lbl("4.91 : 1", "g"), x: 83, y: 70, hide: 1 },
+  ],
+  s: [
+    { c: "这个站浅色主题里，“成功”的绿字 --ok 写在页面底色 --paper 上。它是所有文字配色里对比度最低的一对，拿它走一遍 WCAG 2 的公式。", lit: ["fg"] },
+    { c: "每个通道先除以 255，再去掉伽马：屏幕上的数值和实际发出的光不成正比，要换回“光的强度”（小于 0.04045 的除以 12.92，否则 ((c+0.055)/1.055)^2.4）。",
+      set: { f2: { hide: 0 } }, lit: ["fg"] },
+    { c: "三个通道按人眼的敏感度加权：绿光最亮，占七成多，红两成，蓝不到一成。所以同样“满”的蓝色看起来比黄色暗得多（下面有实测）。",
+      set: { w: { hide: 0 } }, lit: ["cal"] },
+    { c: "得到相对亮度 L，0 是黑、1 是白。字是 0.149，几乎全靠绿通道（0.139）；底色 #f6f7f9 是 0.930。",
+      set: { lf: { hide: 0 }, lb: { hide: 0 } }, lit: ["cal"] },
+    { c: "对比度 =（亮的 L + 0.05）÷（暗的 L + 0.05）。加 0.05 是给环境光留的余量，也让纯黑不至于除以 0。范围从 1（同色）到 21（黑白）。",
+      set: { r1: { hide: 0 } }, lit: ["res"] },
+    { c: "结果 4.91：过了正文要求的 4.5，只多 0.41。大字（24px，或 18.7px 加粗）只要 3。这个站的六种纸色对页面底色只有 3.28 到 3.97：够图形用的 3，不够文字用的 4.5，所以样式表里写着它们只用于图形和色块。",
+      set: { r2: { hide: 0 } }, lit: ["res"] },
+  ],
+};
+
+// 深浅色主题：head 里的小脚本先写上 data-theme，变量跟着换，color-scheme 让原生控件也变；脚本放末尾就会先闪浅色
+const THEME = {
+  h: 300,
+  b: [["js", 2, 8, 30, 84, "head 里的脚本"], ["css", 35, 8, 30, 84, "样式表"], ["scr", 68, 8, 30, 84, "屏幕"]],
+  it: [
+    { id: "msg", h: chip("上次选了深色", "--muted", "out"), x: 17, y: 30 },
+    { id: "j1", h: lbl("7 ms：写上<br>data-theme", "g"), x: 17, y: 62, hide: 1 },
+    { id: "c1", h: lbl("[data-theme=dark]<br>变量换成深色", "m"), x: 50, y: 50, hide: 1 },
+    { id: "c2", h: lbl("color-scheme:<br>dark", "m"), x: 50, y: 78, hide: 1 },
+    { id: "s1", h: lbl("深色底<br>17,22,29", "g"), x: 83, y: 50, hide: 1 },
+    { id: "s2", h: lbl("输入框 59,59,59", "g"), x: 83, y: 78, hide: 1 },
+  ],
+  s: [
+    { c: "用户上次在这个站选了深色，存在 localStorage 里；系统设置是浅色。页面要在第一次显示之前就用上深色。", lit: ["js"] },
+    { c: "head 最前面那段内联脚本读出保存的值，写到 html 上：data-theme=\"dark\"。它排在样式表前面，不用等任何东西。实测在 7 毫秒执行，那时页面还一个字都没显示。",
+      set: { j1: { hide: 0 } }, lit: ["js"] },
+    { c: "样式表里 :root 定义浅色的变量，:root[data-theme=\"dark\"] 把同样的变量换成深色。所有颜色都写成 var(--ink) 这样，换一组变量，整页就跟着换。",
+      set: { msg: { x: 50, h: chip("换变量", "--accent") }, c1: { hide: 0 } }, lit: ["css"] },
+    { c: "同一条规则里还写了 color-scheme: dark：告诉浏览器“这一页是深色的”，它自己画的输入框、按钮、滚动条也换成深色。实测不写这一句，深色页面上的输入框还是白底 255,255,255；写了是 59,59,59。",
+      set: { c2: { hide: 0 }, s2: { hide: 0 } }, lit: ["css", "scr"] },
+    { c: "第一次显示就是深色。实测 HTML 先发一半、停 600 毫秒再发后一半，停顿中截图，左上角的像素是 17,22,29：深色。",
+      set: { msg: { x: 83, h: chip("深色", "--ok", "out") }, s1: { hide: 0 } }, lit: ["scr"] },
+    { c: "同样的脚本挪到正文末尾：停顿中截图是 246,247,249，浅色；603 毫秒脚本才执行，才变成深色。用户先看到一闪的浅色页面。放在 head 的代价是挡一下解析，它只读一个值、写一个属性，第 1 章的跟踪里只用了 0.4 毫秒。",
+      set: { j1: { h: lbl("放末尾：<br>603 ms 才写", "w") }, s1: { h: lbl("先闪浅色<br>246,247,249", "w") } }, bad: ["js", "scr"] },
+  ],
+};
+
+const DIGITCSS = `/* base.css：只把 0–9 换成本机的 Times New Roman；字母、中文还是 Georgia、宋体 */
+@font-face {
+  font-family: "Serif Digits";
+  src: local("Times New Roman"), local("TimesNewRomanPSMT");
+  unicode-range: U+0030-0039;
+}
+--serif: "Anthropic Serif", "Serif Digits", Georgia, "Songti SC", …, serif;`;
+
+const THEMECSS = `/* head 最前面的一段内联脚本，排在样式表之前 */
+try { var t = localStorage.getItem("chronicle-theme");
+      if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+
+/* 样式表：默认浅色；选了深色；没选（跟随系统）而系统是深色 */
+:root { color-scheme: light; --paper: #f6f7f9; --ink: #141b26; … }
+:root[data-theme="dark"] { color-scheme: dark; --paper: #11161d; --ink: #e6e9ee; … }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; --paper: #11161d; --ink: #e6e9ee; … }
+}`;
+
+const SOURCES = [
+  { title: "CSS Fonts Level 4", url: "https://www.w3.org/TR/css-fonts-4/", by: "W3C", note: "按字挑字体（字体匹配和回退）、unicode-range、font-display 的阻塞期和替换期、font-variant-numeric。" },
+  { title: "CSS 2.2：line-height", url: "https://www.w3.org/TR/CSS22/visudet.html", by: "W3C", note: "leading = line-height − 字高，上下各加一半；数值的计算值“和指定的一样”，长度和百分比算成绝对值；normal 建议 1.0 到 1.2。" },
+  { title: "CSS Text Level 4", url: "https://www.w3.org/TR/css-text-4/", by: "W3C", note: "text-autospace 在汉字和字母、数字之间加 1/8 个汉字宽（0.125ic）；text-spacing-trim 的 normal、space-all、trim-start。" },
+  { title: "中文排版需求（clreq）", url: "https://www.w3.org/TR/clreq/", by: "W3C", note: "行首行尾禁则：点号、结束引号和括号不出现在行首；开始引号和括号不出现在行尾。" },
+  { title: "WCAG 2.2", url: "https://www.w3.org/TR/WCAG22/", by: "W3C", note: "相对亮度的公式（2021 年 5 月起门槛是 0.04045，以前是 0.03928，对结果没有实际影响）；对比度 (L1 + 0.05) / (L2 + 0.05)；大字是 18pt 或 14pt 加粗，CJK 用等效的大小。" },
+  { title: "Understanding SC 1.4.11: Non-text Contrast", url: "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html", by: "W3C WAI", note: "理解内容所需的图形和控件边界要 3:1；装饰性的不要求。" },
+  { title: "CSS Color Adjustment Level 1：color-scheme", url: "https://www.w3.org/TR/css-color-adjust-1/", by: "W3C", note: "按使用的配色方案画表单控件、滚动条等浏览器提供的颜色；写在根元素上还影响画布底色。" },
+  { title: "A perceptual color space for image processing（Oklab）", url: "https://bottosson.github.io/posts/oklab/", by: "Björn Ottosson，2020", note: "Oklab 的 L 是感知亮度；HSV 渐变里黄、品红、青看起来比红、蓝亮得多。" },
+  { title: "MDN browser-compat-data", url: "https://github.com/mdn/browser-compat-data", by: "MDN", note: "text-autospace：Chrome 140、Firefox 145、Safari 18.4；text-spacing-trim：Chrome 123，Firefox、Safari 不支持；color-scheme：Chrome 81、Firefox 96、Safari 13。" },
+  { title: "MDN：font-display", url: "https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display", by: "MDN", note: "block、swap、fallback、optional 各自的阻塞期和替换期。" },
+  { title: "本站实测", note: "2026-11-10 在本机 Chrome 157（headless）里：每段字用了哪个字体、数字的墨迹、行高和宽度、这个站配色的对比度、主题脚本的位置、color-scheme、font-display；本机字体文件的大小；Google Fonts 给 Noto Sans SC 的 CSS 里有 101 个 unicode-range 分片。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>这个站的字体和颜色，样式表里差不多每一处都写着理由：</p>
+  <ul>
+    <li>“Georgia 只有旧式数字（3、4、5、7、9 下沉，6、8 上伸），SHA256、金额、日期高低不齐”，所以只把 0–9 换成了 Times New Roman。</li>
+    <li>每页 head 最前面有一段读主题的脚本，注释是“绘制前套上主题，避免闪一下”。</li>
+    <li>六种纸色“只用在图形和色块上，不用于文字”。</li>
+    <li>区块链各页的脚注引用（上标的 [1]）写了 <code>line-height: 0</code>。</li>
+  </ul>
+  <p>还有一件样式表里没写、实测才发现的事：正文里的中文弯引号“”，用的不是宋体，是 Georgia。这一章讲这些背后的机制：浏览器怎么一个字一个字地挑字体，行高怎么分、怎么继承，中英文混排时空格、标点、换行由谁管，对比度是怎么算出来的，深浅色主题怎么做才不闪。数字都在本机 Chrome 157 里实测；你在 iPhone、iPad 上用的 Safari 有几处不一样，会单独注明。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="font-family" title="字体栈：一个字一个字地找">
+      <p>写一串字体名，浏览器对每一个字，从左往右找第一个有这个字的字体。所以同一行里可能用了好几个字体，这个站的正文实测一行用三个。</p>
+    </Card>
+    <Card term="unicode-range" title="只认一部分字的字体">
+      <p>@font-face 可以声明“这个字体只管这些字”。这个站的 Serif Digits 只管 0–9，指向 Times New Roman；字母、中文跳过它，接着往下找。</p>
+    </Card>
+    <Card term="px · em · rem" title="字号的单位">
+      <p>px 是固定的；em 相对于当前元素的字号，套几层就乘几次；rem 相对于根元素，不会越套越大。<code>clamp(30px, 4.6vw, 46px)</code> 让字号随屏幕宽度变，又不超出上下限。</p>
+    </Card>
+    <Card term="line-height" title="行高">
+      <p>一行的高度。比字号多出来的部分对半分，加在字的上下。写不带单位的倍数（1.75），子元素按自己的字号重新算；带单位的会把算好的像素传下去。</p>
+    </Card>
+    <Card term="CJK Mixing" title="中西文混排">
+      <p>三件事：中文和字母、数字之间要不要留空、留多少；相邻的全角标点要不要挤掉一半；哪些标点不能放在行首、行尾。浏览器各管一部分，支持得不一样。</p>
+    </Card>
+    <Card term="Figures" title="旧式数字和齐线数字">
+      <p>旧式数字像小写字母一样有高有低，放在正文里自然；齐线数字一样高，适合表格、日期、哈希。等宽数字（tabular）每个一样宽，一列数字才能上下对齐。</p>
+    </Card>
+    <Card term="Contrast Ratio" title="对比度">
+      <p>WCAG 2 按两种颜色的相对亮度算，1 到 21。正文至少 4.5，大字至少 3；理解内容需要的图形、控件边框至少 3。</p>
+    </Card>
+    <Card term="color-scheme" title="告诉浏览器这一页是深色的">
+      <p>换了自己的颜色变量还不够：输入框、按钮、滚动条是浏览器画的。写上 <code>color-scheme: dark</code>，它们才跟着变深。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="how" title="一行字怎么挑字体" short="怎么挑字体">
+  <p>点“下一步”，看这个站正文里的一行字，每个字最后用了哪个字体。结果都是在 Chrome 里用 <code>CSS.getPlatformFontsForNode</code> 读出来的：</p>
+  <Anim data={FALLBACK} label="字体回退：按 font-family 的顺序对每一个字找第一个有它的字体；数字落到只管 0–9 的 Serif Digits（Times New Roman），字母落到 Georgia，汉字和全角标点落到宋体，弯引号因为 Georgia 有而用了 Georgia" />
+  <Flow items={[
+    { t: "Serif Digits", d: "只管 0–9 → Times New Roman" },
+    { t: "Georgia", d: "字母、弯引号、破折号" },
+    { t: "Songti SC", d: "汉字、全角标点", kind: "tip" },
+    { t: "系统兜底", d: "前面都没有的字", kind: "ok" },
+  ]} />
+  <p>这个站只用系统里已有的字体，不让浏览器下载字体文件，原因在中文字体的大小：本机的 PingFang.ttc 有 74 MB，Songti.ttc 有 64 MB，而 Georgia 只有 371 KB。网页要用中文网络字体，就得切开：Google Fonts 给 Noto Sans SC 的 CSS 里有 101 个 <code>unicode-range</code> 分片，浏览器只下载这一页用到的字所在的那几片；同样的西文字体 Noto Serif 只有 8 片。</p>
+  <h3>网络字体还没到的时候</h3>
+  <p>用了网络字体，就要决定它没到时显示什么，这由 <code>font-display</code> 决定。本机起一个服务器，让字体文件晚 3 秒才到，在 400 毫秒时截图，数屏幕上的深色像素：</p>
+  <Table cap="本机 Chrome 157 实测。备用字体是 monospace；字体文件到了以后是 Georgia，所以像素数不同。">
+    <tr><th>font-display</th><th class="n">400 ms 时的深色像素</th><th class="n">FCP</th><th class="n">3.6 秒时</th><th>说明</th></tr>
+    <tr><td><code>block</code></td><td class="n">0</td><td class="n">44</td><td class="n">2514</td><td>阻塞期里先藏起来等字体：这次字体 3 秒才到，到之前一个字都看不到</td></tr>
+    <tr><td><code>swap</code></td><td class="n">2947</td><td class="n">28</td><td class="n">2514</td><td>先用备用字体，到了再换</td></tr>
+    <tr><td><code>fallback</code></td><td class="n">2947</td><td class="n">32</td><td class="n">2947</td><td>只等一小会儿，换的时限也短；这次来得太晚，没换</td></tr>
+    <tr><td><code>optional</code></td><td class="n">2947</td><td class="n">32</td><td class="n">2947</td><td>不换；字体下好了留给下次用</td></tr>
+  </Table>
+  <p>第一行有个陷阱：<code>block</code> 时屏幕上一个字都没有，FCP（第一次显示内容）却在 44 毫秒就记下了。字在排版、在绘制，只是透明。所以“FCP 很快”不代表用户看到了字，得截图才知道。</p>
+</Section>
+
+<Section id="size" title="字号和行高" short="字号和行高">
+  <p>这个站的正文 16px、行高 1.75。点“下一步”，看行高怎么分，以及为什么要写不带单位的倍数：</p>
+  <Anim data={LH} label="行高：16px 行高 1.75 时一行 28px，多出的 12 上下各加 6；不带单位的倍数让 32px 的 h1 行高变成 56，带 em 的会把 28px 传下去，两行叠在一起；line-height: normal 随字体变；sup 会把行撑高" />
+  <Table cap="这一页各类文字实测的字号和行高（1512 宽）。">
+    <tr><th>文字</th><th class="n">字号</th><th class="n">行高</th><th>写法</th></tr>
+    <tr><td>标题 h1</td><td class="n">46</td><td class="n">56.12</td><td><code>clamp(30px, 4.6vw, 46px)</code>，行高 1.22</td></tr>
+    <tr><td>节标题 h2</td><td class="n">26</td><td class="n">35.1</td><td>行高 1.35</td></tr>
+    <tr><td>导语</td><td class="n">18</td><td class="n">32.4</td><td>行高 1.8</td></tr>
+    <tr><td>正文</td><td class="n">16</td><td class="n">28</td><td>行高 1.75</td></tr>
+    <tr><td>卡片正文</td><td class="n">15</td><td class="n">26.25</td><td>继承 1.75，按 15px 重算</td></tr>
+    <tr><td>行内代码</td><td class="n">14.08</td><td class="n">24.64</td><td><code>.88em</code>，继承 1.75</td></tr>
+    <tr><td>代码块</td><td class="n">13</td><td class="n">21.45</td><td>行高 1.65</td></tr>
+  </Table>
+  <p>卡片正文和行内代码这两行就是“继承倍数”在起作用：它们没有自己写行高，拿到的是 1.75 这个数，再按自己的字号算。标题越大，行高倍数越小（1.22），因为大字的行间距按比例算出来太松。h1 的字号随屏幕变：实测 430 宽时 30px，834 宽时 38.4px，1032 宽起封顶 46px。</p>
+</Section>
+
+<Section id="mix" title="中西文混排：空格、标点、换行" short="中西文混排">
+  <h3>中文和字母、数字之间的空</h3>
+  <p>CSS 有一个专门的属性 <code>text-autospace</code>，在汉字和字母、数字之间自动加 1/8 个汉字宽。这个站的做法是写文章时手打一个空格。宋体 16px，实测宽度：</p>
+  <Table cap="本机 Chrome 157 实测，单位 px。“中文English中文”有两处中西文交界。">
+    <tr><th>写法</th><th class="n">宽度</th><th>说明</th></tr>
+    <tr><td>不打空格，默认</td><td class="n">113.6</td><td>Chrome 157 的默认值是 <code>no-autospace</code>，什么都不加</td></tr>
+    <tr><td>不打空格，<code>text-autospace: normal</code></td><td class="n">117.6</td><td>每处加 2px（16 × 1/8）</td></tr>
+    <tr><td>手打空格</td><td class="n">121.6</td><td>每处一个空格，约 4px</td></tr>
+    <tr><td>手打空格，再加 <code>text-autospace: normal</code></td><td class="n">121.6</td><td>已有空格的地方不再加，不会叠成两份</td></tr>
+  </Table>
+  <p>规范里 <code>text-autospace</code> 的初始值是 normal（加），可实测 Chrome 157 算出来的默认值是 no-autospace。按 MDN 的兼容性数据，Safari 18.4 起支持这个属性，iPhone 上的默认表现可能和 Mac 上的 Chrome 不同。手打空格在哪个浏览器里都一样，而且以后打开 autospace 也不会叠加，所以这个站一直这么写。</p>
+  <h3>相邻的全角标点</h3>
+  <p>全角标点本身占一个字宽，字形只在一半，两个挨着（“」）”）中间就空出一大块。<code>text-spacing-trim</code> 管要不要把这一半挤掉。苹方 16px 实测：</p>
+  <Table cap="本机 Chrome 157 实测，单位 px。">
+    <tr><th>文字和写法</th><th class="n">宽度</th><th>说明</th></tr>
+    <tr><td>（「你好」）默认</td><td class="n">80</td><td>相邻的标点挤掉了一半</td></tr>
+    <tr><td>同上，<code>text-spacing-trim: space-all</code></td><td class="n">96</td><td>每个标点都占满一个字宽：6 个字 × 16</td></tr>
+    <tr><td>同上，换成宋体</td><td class="n">96</td><td>宋体上默认也不挤：挤不挤还要看字体支不支持</td></tr>
+    <tr><td>「你好」，世界。默认</td><td class="n">120</td><td>“」，”挤掉了半个字宽</td></tr>
+    <tr><td>同上，加 <code>font-feature-settings: "palt" 1</code></td><td class="n">128</td><td>打开字体自带的标点压缩，反而宽了：自动挤压不见了</td></tr>
+  </Table>
+  <p>按 MDN 的数据，<code>text-spacing-trim</code> 只有 Chrome（123 起）支持，Safari、Firefox 都不支持：同一段苹方，在 Mac 的 Chrome 里标点更紧，在 iPhone 的 Safari 里每个标点都占满一格。最后一行说明，手动打开 <code>palt</code> 会和浏览器自己的挤压打架；这个站的 body 写了 <code>"palt" 0</code>，是明确不开它。</p>
+  <h3>行首行尾禁则</h3>
+  <p>W3C 的《中文排版需求》：逗号、句号这类点号，以及结束的引号、括号，不出现在行首；开始的引号、括号不出现在行尾。浏览器默认会照做。在 5 个字宽的盒子里实测“一二三四五，六七八九十。”：</p>
+  <Table cap="本机 Chrome 157，苹方 16px，盒子 80px。">
+    <tr><th>写法</th><th>实际折行</th></tr>
+    <tr><td>默认</td><td>一二三四 / 五，六七八 / 九十。（“五”被带到下一行，陪着逗号）</td></tr>
+    <tr><td><code>line-break: anywhere</code></td><td>一二三四五 / ，六七八九 / 十。（逗号出现在行首）</td></tr>
+  </Table>
+</Section>
+
+<Section id="digits" title="数字：为什么只换 0–9" short="数字">
+  <p>开头那条注释，实测是真的。用 canvas 量 64px 时每个数字的墨迹，“上 / 下”是墨迹在基线以上和以下的高度：</p>
+  <Table cap="本机 Chrome 157 实测，单位 px。">
+    <tr><th>数字</th><th>Georgia 上 / 下</th><th class="n">Georgia 宽</th><th>Times New Roman 上 / 下</th><th class="n">Times 宽</th></tr>
+    <tr><td>0、1、2</td><td>35 / 0–1</td><td class="n">27.5–39.3</td><td>43 / 0–1</td><td class="n">32</td></tr>
+    <tr><td>3、4、5、7、9</td><td>34–35 / <b>11–12</b></td><td class="n">32.2–36.2</td><td>42–43 / 0–1</td><td class="n">32</td></tr>
+    <tr><td>6、8</td><td><b>45–46</b> / 1</td><td class="n">36.2–38.2</td><td>43 / 1</td><td class="n">32</td></tr>
+  </Table>
+  <p>Georgia 的 3、4、5、7、9 往基线下面伸 11px，6、8 比别的高出 10px，宽度也各不相同：这是旧式数字，而且是比例宽度。Times New Roman 的十个数字一样高、一样宽（32px），是齐线的等宽数字。哈希、金额、日期放在一列里，后者才对得齐。</p>
+  <p>按理说 <code>font-variant-numeric: lining-nums</code> 能把旧式数字换成齐线的。可实测给 Georgia 加上它，截图和不加的一模一样：本机的 Georgia 没有提供这个变体，CSS 也就无从切换。所以这个站换了个办法：</p>
+  <Code code={DIGITCSS} lang="text" cap="unicode-range 只认 0–9：数字落到 Times New Roman，别的字跳过它。用的是本机字体，不下载任何文件。" />
+  <p>表格的数字列另外写了 <code>font-variant-numeric: tabular-nums</code>。对 Times New Roman 来说它本来就等宽，这一句不起作用；它防的是以后字体栈换了、数字落到一个比例宽度的字体上。</p>
+</Section>
+
+<Section id="contrast" title="对比度：怎么算出来的" short="对比度">
+  <p>点“下一步”，拿这个站最接近门槛的一对颜色，走一遍 WCAG 2 的公式：</p>
+  <Anim data={CONTRAST} label="对比度：每个通道除以 255 再去掉伽马，按 0.2126、0.7152、0.0722 加权得到相对亮度；对比度是亮的加 0.05 除以暗的加 0.05；--ok 在 --paper 上是 4.91，刚过 4.5" />
+  <Table cap="这个站的配色，按同样的公式算（用浏览器解析出的实际颜色）。">
+    <tr><th>前景 / 背景</th><th class="n">浅色</th><th class="n">深色</th><th>要求</th></tr>
+    <tr><td>正文 --ink / 页面 --paper</td><td class="n">16.13</td><td class="n">14.92</td><td>文字 4.5</td></tr>
+    <tr><td>次要文字 --ink-2 / 面板 --sheet</td><td class="n">9.40</td><td class="n">8.83</td><td>文字 4.5</td></tr>
+    <tr><td>弱化文字 --ink-3 / 页面</td><td class="n">5.51</td><td class="n">6.37</td><td>文字 4.5</td></tr>
+    <tr><td>链接 --trace / 页面</td><td class="n">6.04</td><td class="n">6.97</td><td>文字 4.5</td></tr>
+    <tr><td>风险 --loss / 页面</td><td class="n">6.08</td><td class="n">6.00</td><td>文字 4.5</td></tr>
+    <tr><td>存疑 --doubt / 页面</td><td class="n">5.02</td><td class="n">8.35</td><td>文字 4.5</td></tr>
+    <tr><td>成功 --ok / 页面</td><td class="n">4.91</td><td class="n">8.03</td><td>文字 4.5</td></tr>
+    <tr><td>动画里实心小标签：--paper 字 / --loss-mark 底</td><td class="n">4.96</td><td class="n">4.87</td><td>文字 4.5</td></tr>
+    <tr><td>六种纸色 --e1…--e6 / 页面</td><td class="n">3.28–3.97</td><td class="n">7.58–10.66</td><td>图形 3</td></tr>
+    <tr><td>分隔线 --rule / 面板</td><td class="n">1.42</td><td class="n">1.35</td><td>装饰，不要求</td></tr>
+  </Table>
+  <p>最后一行低得多，但不算问题：WCAG 只要求“理解内容需要的”图形和控件边界到 3:1，装饰性的分隔线不在其中。动画里的方框、色条都另有文字说明，不靠颜色本身传意思。</p>
+  <h3>HSL 的“亮度”不是人眼的亮度</h3>
+  <p>调色时常用 HSL，可它的 L 只是数学上的中点。几种 HSL 亮度都是 50% 的纯色：</p>
+  <Table cap="按 WCAG 公式和 Oklab 公式计算。">
+    <tr><th>颜色</th><th class="n">相对亮度</th><th class="n">和白底的对比度</th><th class="n">Oklab 的 L</th></tr>
+    <tr><td>黄 <code>hsl(60 100% 50%)</code></td><td class="n">0.93</td><td class="n">1.07</td><td class="n">0.97</td></tr>
+    <tr><td>绿 <code>hsl(120 100% 50%)</code></td><td class="n">0.72</td><td class="n">1.37</td><td class="n">0.87</td></tr>
+    <tr><td>红 <code>hsl(0 100% 50%)</code></td><td class="n">0.21</td><td class="n">4.00</td><td class="n">0.63</td></tr>
+    <tr><td>蓝 <code>hsl(240 100% 50%)</code></td><td class="n">0.07</td><td class="n">8.59</td><td class="n">0.45</td></tr>
+  </Table>
+  <p>同是“50%”，黄色放在白底上几乎看不见，蓝色却够做正文。Oklab 的 L 是按人眼感觉设计的亮度，用它来看这个站的四种语义色：浅色主题里红、蓝、琥珀、绿是 0.48 到 0.53，深色主题里是 0.69 到 0.76，各自挤在很窄的一段里。四种颜色一样“重”，不会有一种特别跳出来。CSS 里可以直接用 <code>oklch()</code> 写颜色：固定 L、只转色相，得到的就是一组亮度一致的颜色。</p>
+</Section>
+
+<Section id="theme" title="深浅色主题：怎么换、怎么不闪" short="深浅色主题">
+  <p>这个站有三种状态：跟随系统、浅色、深色。点“下一步”，看用户选了深色、系统却是浅色时，页面怎么在第一次显示时就是深色：</p>
+  <Anim data={THEME} label="深色主题：head 里的内联脚本在第一次显示前写上 data-theme；样式表按属性换一组颜色变量，color-scheme: dark 让原生控件也变深；脚本放到正文末尾会先闪浅色" />
+  <Code code={THEMECSS} lang="text" cap="摘自这个站的 Base.astro 和 base.css。深色的变量写了两遍：一遍给“选了深色”，一遍给“没选、系统是深色”。" />
+  <p>第三条规则的选择器是 <code>:root:not([data-theme="light"])</code>：系统是深色时，除非用户明确选了浅色，都用深色。所以三种状态只需要一个属性：没有它是跟随系统，light、dark 是用户自己选的。</p>
+  <Table cap="页面底色是深色时，原生控件的底色（本机 Chrome 157 实测，RGB）。">
+    <tr><th>color-scheme</th><th>系统浅色</th><th>系统深色</th></tr>
+    <tr><td>不写</td><td>输入框 255,255,255；按钮 239,239,239</td><td>同左：深色页面上一块白</td></tr>
+    <tr><td><code>dark</code></td><td>输入框 59,59,59；按钮 107,107,107</td><td>同左</td></tr>
+    <tr><td><code>light dark</code></td><td>白</td><td>深</td></tr>
+  </Table>
+  <p><code>light dark</code> 是“两种都支持，跟用户的系统设置走”。这个站有自己的切换按钮，所以不用它，而是在每一组变量里分别写死 light 或 dark：用户选了深色、系统是浅色时，控件也是深色的。阅读库首页的搜索框另外用变量写了底色和字色（实测深色时底 23,29,38），color-scheme 管的是变量没写到的地方：规范列举的有滚动条、表单控件的默认颜色（比如复选框、下拉选择框）、拼写检查的下划线。</p>
+</Section>
+
+<Section id="example" title="实际例子：这一页的字和颜色" short="实际例子">
+  <p>拿网络与服务器第 4 章那一页，在 1512 宽下读出每类文字实际用的字体（浅色主题），以及它和所在底色的对比度：</p>
+  <Table cap="本机 Chrome 157 实测。字体后面的数字是这一段里用这个字体的字数。">
+    <tr><th>文字</th><th>实际用到的字体</th><th class="n">浅色对比度</th><th class="n">深色对比度</th></tr>
+    <tr><td>标题“管一台 Linux 服务器”</td><td>宋体 ×6，Georgia ×7</td><td class="n">16.13</td><td class="n">14.92</td></tr>
+    <tr><td>正文第一段</td><td>宋体 ×83，Georgia ×38</td><td class="n">16.13</td><td class="n">14.92</td></tr>
+    <tr><td>导语（--ink-2）</td><td>宋体 ×117，Georgia ×13</td><td class="n">8.77</td><td class="n">9.47</td></tr>
+    <tr><td>卡片正文</td><td>宋体 ×84，Georgia ×13，Menlo ×4，Times ×1</td><td class="n">9.40</td><td class="n">8.83</td></tr>
+    <tr><td>代码块</td><td>Menlo ×419，苹方 ×17</td><td class="n">14.32</td><td class="n">12.81</td></tr>
+    <tr><td>表格的数字列</td><td>Times ×2，Georgia ×1，宋体 ×1</td><td class="n">16.13</td><td class="n">14.92</td></tr>
+    <tr><td>动画里的空心小标签（11.5px）</td><td>Menlo ×5，苹方 ×1</td><td class="n">5.90</td><td class="n">5.94</td></tr>
+  </Table>
+  <Table cap="这些数字说明了什么。">
+    <tr><th>看到的</th><th>说明什么</th></tr>
+    <tr><td>标题、正文都是宋体加 Georgia</td><td>字体栈在起作用：中文落到宋体，“Linux”落到 Georgia</td></tr>
+    <tr><td>代码块里有 17 个字用了苹方</td><td>等宽字体栈里没写中文字体，代码注释里的中文由系统兜底，落到了苹方：代码块里的中文是黑体，正文是宋体</td></tr>
+    <tr><td>卡片正文里冒出 1 个 Times</td><td>那个数字落到了 Serif Digits；4 个 Menlo 是卡片里的行内代码</td></tr>
+    <tr><td>导语在深色下对比度更高（8.77 → 9.47）</td><td>深色主题的次要文字调得更亮：两套颜色是分别调的，不是把浅色反过来</td></tr>
+    <tr><td>动画小标签对比度 5.9，可字只有 11.5px</td><td>过了 4.5 的门槛，但它是全站最小的字。对比度只看颜色，不看字号和笔画粗细</td></tr>
+  </Table>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title='写了 lang="zh-CN"，中文标点就用中文字体'>
+      <p>挑字体先看哪个字体里有这个字。Georgia 有弯引号，“”就用了 Georgia，实测加不加 lang 都一样。想让引号用中文字形，得让中文字体排在前面，或者单独给引号指定字体；代价是字母、数字也可能落到中文字体里。</p>
+    </Card>
+    <Card term="误区 2" title="行高带上单位更精确">
+      <p>带 em、px 的行高在父元素那里就算成了像素，子元素换了字号也不重算：实测 32px 的标题挤在 28px 的行里，上下两行叠在一起。写不带单位的倍数。</p>
+    </Card>
+    <Card term="误区 3" title="line-height: normal 就够了">
+      <p>normal 取自字体文件，不同字体不一样：16px 时宋体 22、Georgia 19。中西文混排时行距会忽大忽小。正文写一个具体的倍数。</p>
+    </Card>
+    <Card term="误区 4" title="中英文之间的空格，浏览器会自动加">
+      <p>实测 Chrome 157 默认不加（no-autospace），打开了也只加 1/8 个字宽；Safari 18.4 起才支持这个属性。要在哪里都一样，就手打空格；手打的地方，打开 autospace 也不会再加。</p>
+    </Card>
+    <Card term="误区 5" title="font-variant-numeric 能把任何字体的数字变成齐线">
+      <p>它只能调出字体里本来就有的变体。本机的 Georgia 加了 lining-nums，截图一个像素都没变。没有这个变体时，只能换字体，或者像这个站一样用 unicode-range 只换数字。</p>
+    </Card>
+    <Card term="误区 6" title="HSL 亮度一样，看起来就一样亮">
+      <p>同是 50%，黄色对白底只有 1.07，蓝色有 8.59。HSL 的 L 不是人眼的亮度。要一组颜色一样“重”，用 oklch 的 L，或者直接算对比度。</p>
+    </Card>
+    <Card term="误区 7" title="深色模式就是把颜色变量换一套">
+      <p>还要 <code>color-scheme</code>，不然输入框、滚动条还是浅色：实测深色页面上的输入框是白底。主题脚本还得放在 head 里：放在正文末尾，实测先闪约 600 毫秒浅色。</p>
+    </Card>
+    <Card term="误区 8" title="FCP 很快，用户就看到字了">
+      <p><code>font-display: block</code> 时，实测 FCP 在 44 毫秒，400 毫秒的截图里却一个字都没有：字在绘制，只是透明的。正文的网络字体用 swap 或 optional，要知道用户看到了什么，就截图看。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
