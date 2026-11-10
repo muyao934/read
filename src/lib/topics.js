@@ -60,7 +60,11 @@ export const TOPICS = [
     desc: "打开一个网页经过了什么，DNS、SSH、代理、Linux 服务器、部署和安全",
     lede: "从打开一个网页经过了什么讲起，到 DNS、SSH、代理、Linux 服务器、部署上线和服务器安全。",
     chapters: [
-      { slug: "web-request", title: "打开一个网页经过了什么", desc: "DNS 把域名变成 IP，IP 和端口找到服务，NAT 和防火墙决定连不连得上，再依次经过 TCP、TLS、HTTP" },
+      { slug: "web-request", title: "打开一个网页经过了什么", date: "2026-11-10", type: "concept",
+        desc: "DNS 把域名变成 IP，IP 和端口找到服务，NAT 和防火墙决定连不连得上，再依次经过 TCP、TLS、HTTP；每一步花几个来回，以及本站的实测数据。",
+        lede: "在地址栏敲一个网址、回车，一秒左右页面就出来了。这一章跟着这一次请求走一遍：DNS 怎么把域名变成 IP，包怎么找到那台机器上的那个服务，NAT 和防火墙为什么让外面连不进来，TCP、TLS、HTTP 各花几个来回，以及为什么第二次打开更快。",
+        tldr: "打开一个新网站，先查 DNS 把域名变成 IP（解析器一层层问根、顶级域、权威服务器，答案按 TTL 缓存），再 TCP 握手、TLS 握手、发 HTTP 请求，各一个来回，所以离服务器越远越慢，带宽省不掉这几个来回。之后的请求复用同一条连接，省掉握手。家里的电脑在 NAT 后面，能连出去，外面默认连不进来；一个服务谁连得上，还要看它监听在哪个地址。",
+        tags: ["DNS", "TCP", "HTTP"] },
       { slug: "https", title: "HTTPS 和证书", desc: "握手、会话密钥、信任链，以及小锁没保证的事", link: "notes/2026-11-08-https.html" },
       { slug: "ssh-proxy", title: "SSH 和代理", desc: "密钥、config、端口转发、一台电脑用多个账号；正向和反向代理，开了代理后为什么会解析出奇怪的 IP" },
       { slug: "linux-server", title: "管一台 Linux 服务器", desc: "用户、权限、进程、systemd、日志；用 Nginx 部署网站、证书自动续期；密钥登录、防火墙、及时更新" },

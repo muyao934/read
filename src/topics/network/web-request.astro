@@ -1,0 +1,263 @@
+---
+// 网络与服务器 · 第 1 章（概念类）：why → core → how → dns → addr → http → example → pitfalls → sources
+// 由原计划的“网页请求”“DNS”“IP、端口、NAT 和防火墙”三章合并（2026-11-09 用户：每章内容太少，合并）
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 一次请求从头到尾：DNS → TCP → TLS → HTTP，数着来回
+const JOURNEY = {
+  h: 300,
+  b: [["br", 2, 8, 30, 84, "浏览器"], ["dns", 35, 8, 30, 84, "DNS 解析器"], ["sv", 68, 8, 30, 84, "服务器"]],
+  it: [
+    { id: "msg", h: chip("输入网址", "--muted", "out"), x: 17, y: 30 },
+    { id: "ip", h: lbl("185.199.108.153<br>端口 443", "m"), x: 17, y: 56, hide: 1 },
+    { id: "sv1", h: lbl("200 + HTML", "m"), x: 83, y: 56, hide: 1 },
+    { id: "rtt", h: lbl("已用 1 个来回", "m"), x: 50, y: 84, hide: 1 },
+  ],
+  s: [
+    { c: "你在地址栏输入 muyao934.github.io/read/。网络上的包是按 IP 地址送的，不认域名，所以浏览器先得知道这台服务器的 IP。", lit: ["br"] },
+    { c: "先问 DNS：“muyao934.github.io 的 IP 是什么？”浏览器和系统的缓存里有就直接用；没有，就要去问解析器（下一节细讲）。",
+      set: { msg: { x: 50, h: chip("域名 → IP？", "--accent") } }, lit: ["dns"] },
+    { c: "拿到一个 IP，比如 GitHub Pages 的 185.199.108.153。HTTPS 默认走 443 端口，所以要连的是这个 IP 的 443。",
+      set: { msg: { x: 17, h: chip("拿到 IP") }, ip: { hide: 0 } }, lit: ["br"] },
+    { c: "TCP 三次握手：浏览器发 SYN，服务器回 SYN-ACK，浏览器再回 ACK。花一个来回，连接建立。",
+      set: { msg: { x: 83, h: chip("SYN", "--accent") }, rtt: { hide: 0 } }, lit: ["sv"] },
+    { c: "TLS 握手（HTTPS 那篇讲过）：TLS 1.3 再花一个来回，商量好会话密钥、验过证书。",
+      set: { msg: { x: 17, h: chip("TLS 握手", "--accent") }, rtt: { h: lbl("已用 2 个来回", "m") } }, lit: ["br", "sv"] },
+    { c: "HTTP 请求：GET /read/。服务器回 200 和网页的 HTML。又是一个来回，第一个字节这才回来。",
+      set: { msg: { x: 83, h: chip("GET /read/") }, sv1: { hide: 0 }, rtt: { h: lbl("已用 3 个来回", "m") } }, lit: ["sv"] },
+    { c: "浏览器读 HTML，发现还要 CSS 和脚本，接着请求。用的是同一条连接：不用再查 DNS、再握手；HTTP/2 还能在这条连接上同时传好几个。",
+      set: { msg: { x: 17, h: chip("HTML", "--ok", "out") } }, lit: ["br"] },
+    { c: "所以打开一个新网站，第一个字节回来之前，至少要查一次 DNS，再加 3 个来回。一个来回 100 毫秒的话，就是 300 毫秒起步：离服务器远，比带宽小更拖慢打开网页。", lit: ["br", "dns", "sv"] },
+  ],
+};
+
+// DNS 一层层问下去：本机缓存 → 递归解析器 → 根 → .io → github.io 的权威服务器
+const DNS = {
+  h: 300,
+  b: [["me", 2, 8, 22, 84, "你的电脑"], ["rr", 27, 8, 22, 84, "递归解析器"], ["au", 52, 8, 46, 84, "权威服务器（一层层问）"]],
+  it: [
+    { id: "msg", h: chip("IP 是？", "--muted", "out"), x: 13, y: 30 },
+    { id: "c0", h: lbl("缓存：没有", "m"), x: 13, y: 60, hide: 1 },
+    { id: "a1", h: lbl("根：去问 .io", "m"), x: 75, y: 34, hide: 1 },
+    { id: "a2", h: lbl(".io：去问 github.io", "m"), x: 75, y: 50, hide: 1 },
+    { id: "a3", h: lbl("github.io：A 记录 + TTL", "g"), x: 75, y: 66, hide: 1 },
+    { id: "cc", h: lbl("记住，到 TTL", "m"), x: 38, y: 60, hide: 1 },
+  ],
+  s: [
+    { c: "浏览器和系统先看自己的缓存。这个域名没查过，或者缓存过期了。", set: { c0: { hide: 0 } }, lit: ["me"] },
+    { c: "交给递归解析器：通常是路由器或运营商给的，也可以是 1.1.1.1、8.8.8.8 这类公共解析器。你的电脑只问它一次，剩下的由它去跑。",
+      set: { msg: { x: 38 } }, lit: ["rr"] },
+    { c: "解析器先问根服务器。根不知道答案，但知道 .io 归谁管：“去问 .io 的服务器。”",
+      set: { msg: { x: 75, y: 84, h: chip("问根") }, a1: { hide: 0 } }, lit: ["au"] },
+    { c: "再问 .io 的服务器：“github.io 归谁管？”它给出 github.io 的权威服务器。",
+      set: { msg: { h: chip("问 .io") }, a2: { hide: 0 } }, lit: ["au"] },
+    { c: "最后问 github.io 的权威服务器，它给出答案：A 记录（IPv4 地址），带一个 TTL，表示这个答案可以缓存多少秒。",
+      set: { msg: { h: chip("问 github.io") }, a3: { hide: 0 } }, lit: ["au"] },
+    { c: "解析器把答案交回你的电脑，同时按 TTL 记住它。TTL 内再有人问同一个域名，直接从缓存答，不用再一层层问。你的电脑和浏览器也各缓存一份。",
+      set: { msg: { x: 13, y: 30, h: chip("IP + TTL", "--ok", "out") }, cc: { hide: 0 } }, lit: ["rr", "me"] },
+    { c: "这也是改 DNS 记录以后，有人看到新的、有人看到旧的原因：各处缓存的旧答案要等 TTL 过了才失效。要改记录，先把 TTL 调小，等旧 TTL 过了再改。", lit: ["me", "rr", "au"] },
+  ],
+};
+
+// 家里的电脑怎么连出去、外面为什么连不进来：NAT 改写地址，记在映射表里
+const NAT = {
+  h: 300,
+  b: [["pc", 2, 8, 26, 84, "你的电脑"], ["rt", 31, 8, 36, 84, "路由器（NAT）"], ["sv", 70, 8, 28, 84, "服务器"]],
+  it: [
+    { id: "a1", h: lbl("192.168.1.23", "m"), x: 15, y: 24 },
+    { id: "a2", h: lbl("公网 203.0.113.7", "m"), x: 49, y: 24 },
+    { id: "a3", h: lbl("185.199.108.153", "m"), x: 84, y: 24 },
+    { id: "pk", h: chip("包", "--muted", "out"), x: 15, y: 46 },
+    { id: "tb", h: lbl("记一笔：40001 ↔<br>192.168.1.23:52001", "m"), x: 49, y: 70, hide: 1 },
+    { id: "drop", h: lbl("表里没有：丢掉", "w"), x: 49, y: 70, hide: 1 },
+  ],
+  s: [
+    { c: "家里的电脑拿到的是私有地址，比如 192.168.1.23。10.x、172.16–31.x、192.168.x 这几段只在局域网里用，互联网上不会把包送给它们。",
+      lit: ["pc"] },
+    { c: "电脑发出一个包：从 192.168.1.23 的 52001 端口，发往 185.199.108.153 的 443 端口。",
+      set: { pk: { h: chip("→ :443", "--accent") } }, lit: ["pc"] },
+    { c: "路由器把来源改成自己的公网地址和一个新端口：203.0.113.7 的 40001，并在映射表里记一笔“40001 对应 192.168.1.23 的 52001”。这就是 NAT。",
+      set: { pk: { x: 49 }, tb: { hide: 0 } }, lit: ["rt"] },
+    { c: "服务器只看得到 203.0.113.7:40001，就把回复发到这里。",
+      set: { pk: { x: 84 } }, lit: ["sv"] },
+    { c: "回复到了路由器，查映射表，知道该交给 192.168.1.23 的 52001，原路送回电脑。",
+      set: { pk: { x: 15, h: chip("回复", "--ok", "out") } }, lit: ["pc", "rt"] },
+    { c: "反过来，外面有人主动往 203.0.113.7 发包：映射表里没有对应的记录，路由器不知道该给谁，只能丢掉。所以家里的电脑默认从外面连不进来。",
+      set: { pk: { x: 84, h: chip("主动连入", "--warn") }, tb: { hide: 1 }, drop: { hide: 0 } }, bad: ["rt"] },
+    { c: "要让外面连进来，就在路由器上设端口转发。但如果运营商自己又做了一层 NAT（运营商级 NAT，常用 100.64.0.0/10 这段地址），在自家路由器上设也没用。",
+      set: { pk: { x: 49, h: chip("端口转发？", "--doubt") } }, lit: ["rt"] },
+  ],
+};
+
+// 2026-11-10 在一台开着代理的 Mac 上实测本站首页
+const TIMING = `curl -so /dev/null -w 'dns %{time_namelookup}  tcp %{time_connect}  tls %{time_appconnect}  首字节 %{time_starttransfer}  总 %{time_total}  http %{http_version}' https://muyao934.github.io/read/
+dns 0.004  tcp 0.004  tls 0.826  首字节 1.421  总 1.442  http 2
+dns 0.004  tcp 0.004  tls 0.896  首字节 1.311  总 1.335  http 2
+dns 0.007  tcp 0.008  tls 0.791  首字节 1.206  总 1.231  http 2`;
+
+const REUSE = `curl -so /dev/null -so /dev/null -w 'num_connects %{num_connects}  总 %{time_total}' \\
+     https://muyao934.github.io/read/ https://muyao934.github.io/read/notes/2026-11-08-https.html
+num_connects 1  总 1.273     # 第一个网址：新建了 1 条连接
+num_connects 0  总 0.802     # 第二个网址：复用，没有新建连接`;
+
+const HEADERS = `curl -sI https://muyao934.github.io/read/
+HTTP/2 200
+server: GitHub.com
+via: 1.1 varnish
+age: 6
+x-cache: HIT
+
+dig +noall +answer muyao934.github.io
+muyao934.github.io.  1  IN  A  198.18.1.207`;
+
+const SOURCES = [
+  { title: "RFC 1034: Domain Names – Concepts and Facilities", url: "https://www.rfc-editor.org/rfc/rfc1034", by: "IETF，1987", note: "DNS 的分层、解析器、缓存和 TTL。" },
+  { title: "RFC 9293: Transmission Control Protocol (TCP)", url: "https://www.rfc-editor.org/rfc/rfc9293", by: "IETF，2022", note: "三次握手、可靠有序的传输。" },
+  { title: "RFC 9113: HTTP/2", url: "https://www.rfc-editor.org/rfc/rfc9113", by: "IETF，2022", note: "一条连接上多路复用。" },
+  { title: "RFC 9114: HTTP/3", url: "https://www.rfc-editor.org/rfc/rfc9114", by: "IETF，2022", note: "跑在 QUIC 上；用 Alt-Svc 告诉客户端。" },
+  { title: "RFC 9000: QUIC", url: "https://www.rfc-editor.org/rfc/rfc9000", by: "IETF，2021", note: "基于 UDP，连接和加密握手合在一起，丢包只影响所在的流。" },
+  { title: "RFC 1918: Address Allocation for Private Internets", url: "https://www.rfc-editor.org/rfc/rfc1918", by: "IETF，1996", note: "10/8、172.16/12、192.168/16 三段私有地址。" },
+  { title: "RFC 6598: IANA-Reserved IPv4 Prefix for Shared Address Space", url: "https://www.rfc-editor.org/rfc/rfc6598", by: "IETF，2012", note: "运营商级 NAT 用的 100.64.0.0/10。" },
+  { title: "RFC 5737 和 RFC 6890：文档示例地址和特殊用途地址", url: "https://www.rfc-editor.org/rfc/rfc6890", by: "IETF", note: "203.0.113.0/24 留给文档举例；198.18.0.0/15 留给网络性能测试。" },
+  { title: "Managing a custom domain for your GitHub Pages site", url: "https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site", by: "GitHub Docs", note: "GitHub Pages 的 4 个 IPv4 和 4 个 IPv6 地址。" },
+  { title: "本站实测", note: "2026-11-10 在一台开着代理的 Mac 上用 curl -w、curl -I、dig 测 muyao934.github.io，见“实际例子”。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>在地址栏敲一个网址、回车，一秒左右页面就出来了。中间发生的事，平时看不见，出问题时才要用到：</p>
+  <ul>
+    <li>网页打不开：是域名解析不出来、服务器连不上、证书有问题，还是服务器报错？</li>
+    <li>改了域名的 DNS 记录，有人已经看到新的，有人还是旧的。</li>
+    <li>电脑上跑的开发服务器，同一个 Wi-Fi 下的手机打不开。</li>
+    <li>放在国外的网站总是慢，换个更快的宽带也没用。</li>
+  </ul>
+  <p>这一章跟着一次请求走一遍：DNS 把域名变成 IP，IP 和端口找到那台机器上的那个服务，NAT 和防火墙决定连不连得上，再依次经过 TCP、TLS、HTTP。每一步花多少时间、在哪会出错，最后用本站的实测数据对一遍。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="IP" title="IP 地址：包送到哪台机器">
+      <p>网络上的包按 IP 地址送。IPv4 是 32 位，写成 185.199.108.153，一共只有约 43 亿个，不够分；IPv6 是 128 位，写成 2606:50c0:8000::153。10.x、172.16–31.x、192.168.x 三段是私有地址，只在局域网里用。</p>
+    </Card>
+    <Card term="Port" title="端口：那台机器上的哪个服务">
+      <p>一台机器上跑着很多服务，用 0–65535 的端口号区分：HTTPS 是 443，HTTP 是 80，SSH 是 22。你这边发起连接时，系统随手挑一个临时端口。一条连接由“你的 IP、你的端口、对方 IP、对方端口”四样一起确定。</p>
+    </Card>
+    <Card term="DNS" title="DNS：把域名变成 IP">
+      <p>一套分层的分布式“电话簿”。没有一台服务器记着所有域名：根知道 .io 归谁管，.io 知道 github.io 归谁管，github.io 的权威服务器才给出最终答案。查到的答案带一个 TTL，各处按它缓存。</p>
+    </Card>
+    <Card term="TCP · UDP" title="两种传输方式">
+      <p>TCP 先三次握手建立连接，保证数据可靠、按顺序到达，丢了会重传，网页、SSH 用它。UDP 不握手、不保证送到，轻、快，DNS 查询和 HTTP/3 用它。</p>
+    </Card>
+    <Card term="TLS · HTTP" title="加密，然后说要什么">
+      <p>TLS 在 TCP 之上加密、验证对方身份（HTTPS 那篇）。HTTP 是真正的请求和响应：<code>GET /read/</code>，回 <code>200</code> 和网页内容。</p>
+    </Card>
+    <Card term="RTT" title="来回时间">
+      <p>一个包发出去、回复回来的时间，主要由距离决定：光在光纤里跑，跨太平洋一个来回就要上百毫秒，带宽再大也省不掉。握手要几个来回，打开一个新网站就至少要几个 RTT。</p>
+    </Card>
+  </Cards>
+  <Table cap="每一层解决一个问题，都拿打开本站举例。">
+    <tr><th>层</th><th>解决什么</th><th>打开 muyao934.github.io/read/ 时</th></tr>
+    <tr><td>DNS</td><td>域名对应哪个 IP</td><td>得到 GitHub Pages 的一个地址</td></tr>
+    <tr><td>IP</td><td>包送到哪台机器</td><td>送往那个地址</td></tr>
+    <tr><td>端口</td><td>机器上的哪个服务</td><td>443：HTTPS</td></tr>
+    <tr><td>TCP</td><td>可靠、按顺序地传</td><td>三次握手建立连接</td></tr>
+    <tr><td>TLS</td><td>加密、确认对方是谁</td><td>验证 <code>*.github.io</code> 的证书</td></tr>
+    <tr><td>HTTP</td><td>要什么、回什么</td><td><code>GET /read/</code>，回 200 和 HTML</td></tr>
+  </Table>
+</Section>
+
+<Section id="how" title="一次请求从头到尾" short="一次请求">
+  <p>点“下一步”，跟着一次请求走一遍，数一数第一个字节回来之前花了几个来回。</p>
+  <Anim data={JOURNEY} label="一次网页请求：先查 DNS 得到 IP，再 TCP 握手、TLS 握手、发 HTTP 请求，各一个来回；之后的资源复用同一条连接" />
+  <Flow items={[
+    { t: "DNS", d: "域名 → IP（有缓存就不用问）" },
+    { t: "TCP", d: "三次握手，1 个来回" },
+    { t: "TLS", d: "TLS 1.3，1 个来回", kind: "tip" },
+    { t: "HTTP", d: "请求和响应，1 个来回" },
+    { t: "复用", d: "同一条连接接着用", kind: "ok" },
+  ]} />
+</Section>
+
+<Section id="dns" title="DNS：一层层问下去" short="DNS">
+  <p>你的电脑并不会自己去一层层问，它只问一次“递归解析器”，剩下的由解析器去跑。点“下一步”：</p>
+  <Anim data={DNS} label="DNS 解析：本机缓存没有，交给递归解析器；解析器依次问根、.io、github.io 的权威服务器，拿到答案后按 TTL 缓存" />
+  <Table cap="常见的几种记录。">
+    <tr><th>记录</th><th>写的是什么</th><th>例子</th></tr>
+    <tr><td>A</td><td>IPv4 地址</td><td>GitHub Pages：185.199.108.153 等 4 个</td></tr>
+    <tr><td>AAAA</td><td>IPv6 地址</td><td>2606:50c0:8000::153 等 4 个</td></tr>
+    <tr><td>CNAME</td><td>“去查另一个名字”</td><td>GitHub 建议把 <code>www.example.com</code> 用 CNAME 指到 <code>用户名.github.io</code></td></tr>
+    <tr><td>NS</td><td>这个域名归哪几台服务器回答</td><td>github.io 的权威服务器</td></tr>
+    <tr><td>MX</td><td>这个域名的邮件交给谁</td><td>邮件服务器的域名</td></tr>
+    <tr><td>TXT</td><td>一段文字</td><td>证明域名归你所有时，服务商要你加的验证文字</td></tr>
+  </Table>
+  <Note kind="doubt" title="DNS 查询默认是明文">传统的 DNS 查询走 UDP 53 端口，不加密：路上的人看得到你查了哪个域名。HTTPS 加密的是网页内容，管不到这一步（HTTPS 那篇“常见误区”讲过）。DNS over HTTPS（DoH）、DNS over TLS（DoT）把查询也加密，现在的浏览器和系统大多支持。</Note>
+</Section>
+
+<Section id="addr" title="IP、端口、NAT 和防火墙" short="NAT 和防火墙">
+  <p>知道了 IP，包还要过两道关：NAT 和防火墙。点“下一步”，看家里的电脑怎么连出去，外面为什么连不进来：</p>
+  <Anim data={NAT} label="NAT：电脑用私有地址发包，路由器改成自己的公网地址和端口并记进映射表，回复按表转回；外面主动连入时表里没有记录，包被丢掉" />
+  <p>动画里的 203.0.113.7 是 RFC 5737 留给文档举例的地址。防火墙和 NAT 是两回事：防火墙按规则（来源、目标、端口、方向）决定放不放行，是专门做这件事的；NAT 挡住外面主动连入，只是它改地址时顺带的效果。</p>
+  <Table cap="一个服务监听在哪个地址，决定了谁连得上它。">
+    <tr><th>监听在</th><th>谁连得上</th></tr>
+    <tr><td><code>127.0.0.1</code>（localhost）</td><td>只有这台机器自己</td></tr>
+    <tr><td>局域网地址，比如 <code>192.168.1.23</code></td><td>同一个局域网里的设备，还要过这台机器的防火墙</td></tr>
+    <tr><td><code>0.0.0.0</code></td><td>所有网卡上都监听，能到达这台机器的都连得上</td></tr>
+  </Table>
+  <Note kind="tip" title="手机为什么打不开电脑上的开发服务器">很多开发工具默认只监听 localhost，比如这个站用的 <code>npm run dev</code>（Astro）。同一个 Wi-Fi 下的手机访问电脑的局域网 IP，自然连不上。Astro 要加 <code>--host</code> 才会监听局域网地址，之后手机用“电脑的局域网 IP:端口”打开；系统防火墙拦着的话，还要允许它接受连入。</Note>
+</Section>
+
+<Section id="http" title="HTTP 的几个版本，以及为什么第二次更快" short="HTTP 版本">
+  <Table cap="三个版本最大的差别，是一条连接怎么复用、丢包时谁要等。">
+    <tr><th></th><th>HTTP/1.1</th><th>HTTP/2</th><th>HTTP/3</th></tr>
+    <tr><td>跑在什么上</td><td>TCP</td><td>TCP</td><td>QUIC（基于 UDP）</td></tr>
+    <tr><td>同时要好几个文件</td><td>一条连接一次一个，浏览器只能多开几条连接</td><td>一条连接上同时传多个</td><td>同 HTTP/2</td></tr>
+    <tr><td>新连接要几个来回才能开始传</td><td>TCP 1 个 + TLS 1.3 1 个</td><td>同 HTTP/1.1</td><td>QUIC 把连接和加密的握手合在一起，1 个</td></tr>
+    <tr><td>丢了一个包</td><td>这条连接上的都要等</td><td>TCP 要按顺序交付，同一连接上所有请求都要等</td><td>只有丢包的那一个请求要等</td></tr>
+  </Table>
+  <p>“第二次更快”的主要原因是连接复用：HTTP/1.1 起连接默认保持着不关，后面的请求接着用，省掉 TCP 和 TLS 握手的那两个来回。下面的实测里，复用的那次请求明显更快。服务器想让浏览器下次改用 HTTP/3，会在响应头里加一个 <code>alt-svc</code>。实测本站的响应头里没有它，所以用的是 HTTP/2。</p>
+</Section>
+
+<Section id="example" title="实际例子：实测打开本站" short="实际例子">
+  <p>2026-11-10 在一台开着代理的 Mac 上测本站首页。先用 curl 的 <code>-w</code> 让它打出每一段的耗时，连测 3 次：</p>
+  <Code code={TIMING} cap="每个时间都是从开始算起的累计值（秒），不是这一段单独花的时间。" />
+  <Code code={REUSE} cap="一条 curl 命令里给两个网址，它会复用第一条连接。" />
+  <Code code={HEADERS} cap="响应头和本机 DNS 的结果。" />
+  <Table cap="这些数字说明了什么。">
+    <tr><th>看到的</th><th>说明什么</th></tr>
+    <tr><td>dns、tcp 都只有几毫秒</td><td>不是网络特别快：这台电脑开着代理，DNS 和 TCP 只是连到本机的代理软件，真正跨网络的来回被推到了下一段</td></tr>
+    <tr><td>tls 到 0.8 秒左右</td><td>TLS 握手要和真正的服务器来回，经过代理，大部分网络延迟都落在这一段</td></tr>
+    <tr><td>首字节 1.2–1.4 秒，http 2</td><td>再一个来回，第一个字节才回来；协商出来的是 HTTP/2</td></tr>
+    <tr><td>第二个网址 num_connects 0，总时间从 1.27 降到 0.80</td><td>复用了第一条连接，省掉了握手</td></tr>
+    <tr><td><code>via: 1.1 varnish</code>、<code>x-cache: HIT</code>、<code>age: 6</code></td><td>这页是 CDN 的缓存节点直接给的，6 秒前缓存下来，没有回 GitHub 的源站</td></tr>
+    <tr><td>DNS 答 198.18.1.207，TTL 只有 1 秒</td><td>不是 GitHub 的真实地址。198.18.0.0/15 是留给网络性能测试的地址段，代理软件借它当“假地址”，把连接引到自己那里（第 3 章讲代理）</td></tr>
+  </Table>
+  <Note kind="tip" title="网页打不开时，按这个顺序查">域名解析得出来吗？TCP 连得上吗？TLS 握手成功吗？HTTP 返回的状态码是什么？<code>curl -v</code> 会把这几步依次打出来，卡在哪一步，问题就在哪一层。</Note>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="ping 得通，网页就该打得开">
+      <p>ping 用的是 ICMP，网页用的是 TCP（HTTP/3 是 UDP）的 443 端口，防火墙可以分开处理它们。ping 得通而网页打不开，或者 ping 不通而网页正常，都很常见。查网页问题，要看 443 连不连得上。</p>
+    </Card>
+    <Card term="误区 2" title="改了 DNS 马上生效">
+      <p>各处缓存着旧答案，要等 TTL 过了才去重新问；“这个域名不存在”的答案也会被缓存。所以有人看到新的、有人看到旧的。要改记录，提前把 TTL 调小。</p>
+    </Card>
+    <Card term="误区 3" title="一个 IP 就是一台机器、一个网站">
+      <p>GitHub 让所有 Pages 的自定义域名都指向同样那几个地址，后面是成批的服务器和 CDN 节点，服务着成千上万个网站。同一个地址怎么分得清你要哪个网站？TLS 握手时的 SNI 和 HTTP 请求里的 Host，都写着你要访问的域名。</p>
+    </Card>
+    <Card term="误区 4" title="有 NAT，就等于有防火墙">
+      <p>NAT 挡住外面主动连入，只是它改地址时顺带的效果，规则也不归你管。IPv6 下每台设备往往都有公网地址，不再经过 NAT，挡不挡就全看防火墙了。</p>
+    </Card>
+    <Card term="误区 5" title="电脑上跑着服务，局域网里的手机就能打开">
+      <p>要看它监听在哪个地址：只监听 127.0.0.1，就只有这台电脑自己连得上。开发服务器常常默认这样，要换成监听局域网地址，还要过系统防火墙这一关。</p>
+    </Card>
+    <Card term="误区 6" title="curl 显示 DNS 只要几毫秒，说明网络很快">
+      <p>开着代理时，DNS 和 TCP 那两段可能只是连到了本机的代理，真正的网络延迟落在 TLS 那一段（见上面的实测）。量出来的数字要先想清楚，它量的是哪一段、连的是谁。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
