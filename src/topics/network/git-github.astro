@@ -1,0 +1,272 @@
+---
+// 网络与服务器 · 第 5 章（概念类）：why → core → how → stage → branch → rewrite → actions → example → pitfalls → sources
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 一次提交背后：add 把内容存成 blob、登记进暂存区；commit 存一棵树和一个提交，分支往前挪
+const COMMIT = {
+  h: 300,
+  b: [["wt", 2, 8, 30, 84, "工作区"], ["ix", 35, 8, 30, 84, "暂存区"], ["db", 68, 8, 30, 84, "对象库 .git/objects"]],
+  it: [
+    { id: "f", h: chip("改了 a.txt", "--muted", "out"), x: 17, y: 30 },
+    { id: "bl", h: lbl("blob 3b18e5…", "m"), x: 83, y: 30, hide: 1 },
+    { id: "ie", h: lbl("a.txt → 3b18e5…", "m"), x: 50, y: 46, hide: 1 },
+    { id: "tr", h: lbl("tree 9f2c…", "m"), x: 83, y: 46, hide: 1 },
+    { id: "cm", h: lbl("commit 7a1d…<br>父：上一个提交", "m"), x: 83, y: 64, hide: 1 },
+    { id: "br", h: chip("main → 7a1d…", "--accent"), x: 50, y: 82, hide: 1 },
+  ],
+  s: [
+    { c: "你改了 a.txt。此刻它只在工作区里，git 还没记任何东西。", lit: ["wt"] },
+    { c: "git add a.txt：git 把文件内容加一个头（“blob 长度”）算 SHA-1，用这个哈希当名字，把内容存进对象库。这就是一个 blob。",
+      set: { f: { h: chip("git add") }, bl: { hide: 0 } }, lit: ["db"] },
+    { c: "同时在暂存区里登记：“a.txt 现在是这个 blob。”暂存区记的是下一次提交的样子，不是改动的列表。",
+      set: { ie: { hide: 0 } }, lit: ["ix"] },
+    { c: "git commit：按暂存区的样子存一棵树（tree）：哪个名字对应哪个 blob、哪个子目录。没改的文件，树里照样指向原来的 blob，不会再存一份。",
+      set: { f: { h: chip("git commit", "--accent") }, tr: { hide: 0 } }, lit: ["db"] },
+    { c: "再存一个提交对象：指向这棵树，记下父提交、作者、时间和说明。它也用自己内容的哈希命名，所以改了任何一样，就是另一个提交。",
+      set: { cm: { hide: 0 } }, lit: ["db"] },
+    { c: "最后，main 这个分支往前挪，指向新的提交。分支就是一个记着提交哈希的小文件，挪一下只是改写这个文件。",
+      set: { br: { hide: 0 } }, lit: ["ix", "db"] },
+  ],
+};
+
+// 同一段分叉，两种合法：merge 留下分叉和一个合并提交；rebase 把 X、Y 重新做一遍，接在 C 后面
+const BRANCH = {
+  h: 300,
+  b: [["mg", 2, 8, 96, 40, "git merge feature"], ["rb", 2, 52, 96, 40, "git rebase main（在 feature 上）"]],
+  it: [
+    { id: "ma", h: chip("A · B · C"), x: 18, y: 22 },
+    { id: "mx", h: chip("X · Y", "--accent", "out"), x: 18, y: 38 },
+    { id: "mm", h: chip("M（两个父提交）", "--ok"), x: 66, y: 30, hide: 1 },
+    { id: "ra", h: chip("A · B · C"), x: 18, y: 66 },
+    { id: "rx", h: chip("X · Y", "--accent", "out"), x: 18, y: 82 },
+    { id: "rr", h: chip("C → X′ → Y′", "--ok"), x: 66, y: 74, hide: 1 },
+  ],
+  s: [
+    { c: "两份一样的仓库：main 上有 A、B、C；feature 从 B 分出去，有 X、Y。两条线分叉了。", lit: ["mg", "rb"] },
+    { c: "上面用 merge：新做一个提交 M，它有两个父提交：C 和 Y。原来的提交一个不动，历史里保留着“曾经分叉过”。",
+      set: { mm: { hide: 0 } }, lit: ["mg"] },
+    { c: "下面用 rebase：git 找到分叉点 B，把 X、Y 的改动按顺序在 C 后面重新做一遍，得到 X′、Y′。历史变成一条直线。",
+      set: { rr: { hide: 0 } }, lit: ["rb"] },
+    { c: "可 X′、Y′ 是新的提交：父提交变了，哈希就跟着变。实测 rebase 前 Y 是 8fc6df9，rebase 后是 ff08924。原来的 X、Y 被丢下了。",
+      set: { rx: { h: chip("X · Y（被丢下）", "--muted", "out") } }, bad: ["rb"] },
+    { c: "所以 Pro Git 的那条规则：已经推出去、别人可能在上面接着做的提交，不要 rebase。别人手里还是旧的 X、Y，两边对不上。只在自己本地、还没推的提交上用。", lit: ["mg", "rb"] },
+  ],
+};
+
+// 推送以后：Actions 在一台新虚拟机上构建，成功了才在另一台上发布（耗时取自本仓库最近一次运行）
+const CI = {
+  h: 300,
+  b: [["me", 2, 8, 22, 84, "你"], ["gh", 27, 8, 22, 84, "GitHub"], ["vm", 52, 8, 22, 84, "build（新 VM）"], ["pg", 77, 8, 21, 84, "deploy"]],
+  it: [
+    { id: "msg", h: chip("git push", "--muted", "out"), x: 13, y: 30 },
+    { id: "ev", h: lbl("push 到 main<br>触发 Deploy", "m"), x: 38, y: 60, hide: 1 },
+    { id: "st", h: lbl("装依赖、构建<br>跑检查：17 秒", "m"), x: 63, y: 60, hide: 1 },
+    { id: "ok", h: lbl("上线：8 秒", "g"), x: 88, y: 60, hide: 1 },
+  ],
+  s: [
+    { c: "你 git push 到 main。到这一步，提交才离开你的电脑。", lit: ["me"] },
+    { c: "GitHub 收到推送。.github/workflows/deploy.yml 写着“push 到 main 时运行”，于是触发这个工作流。",
+      set: { msg: { x: 38, h: chip("push 事件") }, ev: { hide: 0 } }, lit: ["gh"] },
+    { c: "build 这个 job 在一台新开的虚拟机（ubuntu-latest）上跑：取代码、装 Node、npm ci、npm run build（正文检查、构建、核对区块链页面、内容结构）。本仓库最近一次一共 17 秒，最久的是装 Node 那 6 秒。",
+      set: { msg: { x: 63, h: chip("build", "--accent") }, st: { hide: 0 } }, lit: ["vm"] },
+    { c: "构建出来的 dist/ 打包成 artifact 上传。下一个 job 在另一台虚拟机上，看不到这台机器上的文件，只能靠 artifact 拿到它。",
+      set: { msg: { x: 88, h: chip("artifact") } }, lit: ["vm"] },
+    { c: "deploy 写了 needs: build：build 成功才跑。它把 artifact 发布到 Pages，最近一次 8 秒。build 里任何一步失败，deploy 不会跑，线上保持上一个版本。",
+      set: { ok: { hide: 0 } }, lit: ["pg"] },
+    { c: "从推送到整个工作流跑完，本仓库最近 6 次在 33 到 102 秒之间。之后浏览器可能还缓存着旧页面，最多 10 分钟（GitHub Pages 那篇）。",
+      set: { msg: { x: 13, h: chip("线上更新", "--ok", "out") } }, lit: ["me", "pg"] },
+  ],
+};
+
+const STATUS = `git status --short        # 第一列：暂存区；第二列：工作区
+M  a                      # 改了，已经 add：会进下一次提交
+ M b                      # 改了，还没 add：不会进提交
+?? c                      # 新文件，git 还不管它`;
+
+const GRAPHS = `git merge feature 之后              git rebase main 之后（在 feature 上）
+*   Merge branch 'feature'          * Y
+|\\                                  * X
+| * Y                               * C
+| * X                               * B
+* | C                               * A
+|/
+* B
+* A`;
+
+const REFLOG = `git reset --hard HEAD~1         # 丢掉了合并提交
+git log  →  C B A
+git reflog
+HEAD@{0} reset: moving to HEAD~1
+HEAD@{1} merge feature: Merge made by the 'ort' strategy.
+HEAD@{2} commit: C
+git reset --hard 'HEAD@{1}'     # 回到合并之后
+git log  →  Merge branch 'feature' …`;
+
+const REPO = `cat .git/HEAD
+ref: refs/heads/main                       # HEAD 指向 main 这个分支
+wc -c < .git/refs/heads/main
+41                                         # 分支 = 40 位哈希 + 换行
+git cat-file -p HEAD                       # 提交对象（作者邮箱用 … 代替）
+tree 4ff6bfd96814af9441d5e069811f9ad2e538452f
+parent d9efb8ec1a214a12f7c361646209bbe3f40caadf
+author muyao934 <…> 1794286329 +0800
+网络与服务器第 3 章：SSH 和代理
+git cat-file -p 'HEAD^{tree}' | head -3    # 它指向的树
+040000 tree 688785a5…    .github
+100644 blob b62daa0a…    .gitignore
+100644 blob db49bb14…    .nvmrc`;
+
+const HASH = `cat .nvmrc                                  # 8 个字节：22.22.2 和一个换行
+22.22.2
+git ls-files -s .nvmrc                      # git 记的 blob
+100644 db49bb14d78e76cc5ebbf481960bced880636a24 0  .nvmrc
+(printf 'blob 8\\0'; cat .nvmrc) | shasum    # 自己算：SHA-1("blob 8\\0" + 内容)
+db49bb14d78e76cc5ebbf481960bced880636a24`;
+
+const SOURCES = [
+  { title: "Pro Git：Branches in a Nutshell", url: "https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell", by: "Scott Chacon、Ben Straub", note: "提交对象里有什么；分支是指向提交的、可以移动的轻量指针；HEAD。" },
+  { title: "Pro Git：Rebasing", url: "https://git-scm.com/book/en/v2/Git-Branching-Rebasing", by: "Scott Chacon、Ben Straub", note: "rebase 重放提交、产生新提交；“不要 rebase 已经在你仓库之外、别人可能接着做的提交”。" },
+  { title: "Pro Git：Git Objects", url: "https://git-scm.com/book/en/v2/Git-Internals-Git-Objects", by: "Scott Chacon、Ben Straub", note: "blob、tree、commit 三种对象，按内容的 SHA-1 命名。" },
+  { title: "git-push", url: "https://git-scm.com/docs/git-push", by: "Git 文档", note: "--force 会让远程丢失提交；--force-with-lease 只在远程还是你预期的那个提交时才覆盖。" },
+  { title: "git-reflog", url: "https://git-scm.com/docs/git-reflog", by: "Git 文档", note: "reflog 记录本地分支和其他引用的每次移动；默认 90 天，从当前分支到不了的 30 天。" },
+  { title: "git-status", url: "https://git-scm.com/docs/git-status", by: "Git 文档", note: "--short 的两列：暂存区和工作区。" },
+  { title: "Understanding GitHub Actions", url: "https://docs.github.com/en/actions/get-started/understand-github-actions", by: "GitHub Docs", note: "工作流、事件、job、step、runner、action；job 默认并行，每次运行在一台新的虚拟机上。" },
+  { title: "本站实测", note: "2026-11-10 在这个仓库和 /tmp 下的临时仓库里实测：对象和分支文件、merge 和 rebase、reflog 找回提交、blob 哈希，以及 GitHub Actions 最近几次运行的耗时。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>这个阅读库的每一次更新，都走同一条路：<code>git add</code>、<code>git commit</code>、<code>git push</code>，GitHub Actions 接手构建，最后发布到 Pages。路上出过几件事：</p>
+  <ul>
+    <li>一次提交用了 <code>git add -A</code>，把不是这次做的改动也带上了线（AI 编程第 5 章讲过）。</li>
+    <li>第一条提交带着真实邮箱，要改掉就得改写已经推出去的历史、强制推送。</li>
+    <li>区块链页面的逐字节核对，用的其实就是 git 给文件算哈希的办法。</li>
+  </ul>
+  <p>这一章讲 git 底下的那套模型：提交、对象、分支、暂存区到底是什么。懂了这个，merge 和 rebase 的区别、改写历史的风险、reflog 为什么能救回“删掉”的提交，都能从模型里推出来。最后讲推送以后 Actions 怎么接手。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="Commit" title="提交：一份完整的快照">
+      <p>每个提交指向一棵树，树记着那一刻所有文件的样子，另外记着父提交、作者、时间和说明。Pro Git 的说法：提交存的是快照的指针，不是改动的差异。没改的文件，新树里直接指向原来的内容，不会重复存。</p>
+    </Card>
+    <Card term="Object" title="对象：用内容的哈希命名">
+      <p>对象库里有三种对象：blob（文件内容）、tree（目录）、commit（提交）。每个对象的名字是它内容的 SHA-1，这个仓库实测的对象格式就是 sha1。内容一样，名字就一样；改一个字节，就是另一个对象。</p>
+    </Card>
+    <Card term="Branch" title="分支：一个记着哈希的小文件">
+      <p>Pro Git 的原话：分支只是一个指向某个提交的、可以移动的轻量指针。这个仓库的 <code>.git/refs/heads/main</code> 就 41 个字节：40 位哈希加一个换行。开分支、切分支都不复制代码。</p>
+    </Card>
+    <Card term="HEAD" title="你现在在哪">
+      <p>HEAD 指向你当前所在的分支。这个仓库的 <code>.git/HEAD</code> 里写着 <code>ref: refs/heads/main</code>。提交时，HEAD 指着的那个分支往前挪。</p>
+    </Card>
+    <Card term="Index" title="暂存区：下一次提交的样子">
+      <p>在工作区和仓库之间。<code>git add</code> 把文件当前的内容放进来，<code>git commit</code> 按暂存区存成提交。没 add 的改动，不会进这次提交。</p>
+    </Card>
+    <Card term="Remote" title="远程：origin">
+      <p>远程仓库的别名，这个仓库的 origin 指向 GitHub 上的 muyao934/read。<code>git push</code> 把提交送过去，<code>git fetch</code> 把那边的取回来；<code>origin/main</code> 记着上次取回时那边的 main 在哪。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="how" title="一次提交背后发生了什么" short="一次提交">
+  <p>点“下一步”，看 <code>git add</code> 和 <code>git commit</code> 在对象库里存了什么。图里的哈希是示意。</p>
+  <Anim data={COMMIT} label="一次提交：git add 把内容存成 blob 并登记进暂存区；git commit 存一棵树和一个提交对象，分支指向新提交" />
+  <Flow items={[
+    { t: "改文件", d: "只在工作区" },
+    { t: "git add", d: "存 blob，登记进暂存区", kind: "tip" },
+    { t: "git commit", d: "存 tree 和 commit", kind: "tip" },
+    { t: "分支前移", d: "改写那个 41 字节的文件", kind: "ok" },
+  ]} />
+</Section>
+
+<Section id="stage" title="暂存区：决定这次提交带上什么" short="暂存区">
+  <p>提交带上什么，由暂存区决定，不由“你改了什么”决定。<code>git status --short</code> 用两列把这一点分开写：</p>
+  <Code code={STATUS} cap="在临时仓库里实测。" />
+  <p>出事的那一次：AI 编程第 5 章提交前，<code>git status</code> 里明明列着两个不是这次改的区块链文件，用了 <code>git add -A</code>，它们就和新章节一起被提交、推送、上线了。<code>-A</code> 的意思是“工作区里所有的改动，包括新增和删除，全部放进暂存区”。几种更稳的做法：</p>
+  <ul>
+    <li><code>git add 路径</code>：只放这次改的文件。</li>
+    <li><code>git add -p</code>：一块一块地看改动，挑着放。</li>
+    <li><code>git restore --staged 文件</code>：放错了，撤出暂存区，工作区的改动还在。</li>
+    <li><code>git diff --cached</code>：提交前看一眼，这次到底要提交什么。</li>
+  </ul>
+</Section>
+
+<Section id="branch" title="分支：merge 和 rebase" short="合并分支">
+  <p>两条分支分叉以后，要合到一起有两种办法。点“下一步”：</p>
+  <Anim data={BRANCH} label="merge 和 rebase：merge 新做一个有两个父提交的合并提交，保留分叉；rebase 把分支上的提交在 main 最新的提交后面重新做一遍，哈希变了，历史成一条直线" />
+  <Code code={GRAPHS} lang="text" cap="在临时仓库里实测：同一段分叉，git log --graph 的两种结果。" />
+  <Table>
+    <tr><th></th><th>merge</th><th>rebase</th></tr>
+    <tr><td>历史的样子</td><td>保留分叉，多一个合并提交</td><td>一条直线</td></tr>
+    <tr><td>原来的提交</td><td>一个不动</td><td>被新提交替换，哈希都变了</td></tr>
+    <tr><td>适合</td><td>已经推出去的分支、多人共用的分支</td><td>只在自己本地、还没推的提交</td></tr>
+  </Table>
+  <p>Pro Git 把两种看法都摆了出来：一种认为历史是“实际发生过什么”的记录，不该改；另一种认为历史是“项目是怎么做出来的”的故事，推出去之前整理干净更好读。它给的折中是：推之前可以 rebase 整理自己本地的提交，推出去的就别再 rebase。</p>
+</Section>
+
+<Section id="rewrite" title="改写历史，以及找回“删掉”的提交" short="改写和找回">
+  <p><code>git commit --amend</code>、rebase、<code>git reset</code> 都会改写历史。只在本地改，没什么风险；危险在推出去以后，别人可能已经在旧的提交上接着做了。</p>
+  <ul>
+    <li><b>不得不覆盖远程时，用 <code>--force-with-lease</code>，不用 <code>--force</code></b>：git 手册写明，<code>--force</code> 可能让远程丢掉提交；<code>--force-with-lease</code> 只在远程那个分支还是你预期的那个提交时才覆盖。期间有人推了新提交，就拒绝，不会把别人的工作冲掉。</li>
+    <li><b>本地“删掉”的提交，多半找得回来</b>：reflog 记着本地每个分支和 HEAD 的每一次移动。</li>
+  </ul>
+  <Code code={REFLOG} cap="在临时仓库里实测：reset --hard 丢掉了合并提交，从 reflog 里找到它，再 reset 回去。" />
+  <Note kind="doubt" title="reflog 能救的和救不了的">reflog 的记录默认保留 90 天，从当前分支到不了的那些保留 30 天，而且只在你自己这台电脑上。提交过的，在这段时间里都找得回来；从来没 add、没 commit 过的改动，<code>reset --hard</code> 以后就真没了。</Note>
+  <p>这个站的第一条提交带着真实邮箱。要改掉，就得 amend 再强制推送，覆盖远程的历史；而 auto mode 默认就拦“amend 不是这次会话做的提交”“amend 已经推出去的提交”和 force push（AI 编程第 5 章）。所以那条提交一直留着，后面的提交改用了 noreply 邮箱。</p>
+</Section>
+
+<Section id="actions" title="推送以后：GitHub Actions" short="Actions">
+  <p>点“下一步”，看这个仓库推送以后，工作流怎么构建、发布。耗时取自 GitHub 接口返回的最近几次运行。</p>
+  <Anim data={CI} label="GitHub Actions：push 触发工作流，build 在新虚拟机上装依赖、构建、跑检查并上传 artifact，deploy 在 build 成功后发布到 Pages" />
+  <Table cap="几个词的意思（摘自 GitHub 文档）。">
+    <tr><th>词</th><th>意思</th><th>这个仓库</th></tr>
+    <tr><td>workflow</td><td>一个能跑一个或多个 job 的自动化流程</td><td><code>.github/workflows/deploy.yml</code></td></tr>
+    <tr><td>event</td><td>触发它的事</td><td>push 到 main</td></tr>
+    <tr><td>job</td><td>在同一台 runner 上执行的一组 step；默认互不依赖、并行跑</td><td>build、deploy（deploy 写了 needs: build）</td></tr>
+    <tr><td>step</td><td>一条 shell 命令或一个 action，按顺序执行</td><td>checkout、setup-node、npm ci、npm run build…</td></tr>
+    <tr><td>runner</td><td>跑工作流的服务器；每次运行都是一台新开的虚拟机</td><td>ubuntu-latest</td></tr>
+    <tr><td>action</td><td>可复用的一段操作</td><td><code>actions/checkout@v4</code>、<code>actions/deploy-pages@v4</code></td></tr>
+  </Table>
+</Section>
+
+<Section id="example" title="实际例子：这个仓库的 .git 里有什么" short="实际例子">
+  <p>2026-11-10 在这个仓库里实测。先看 HEAD、分支和最新的提交：</p>
+  <Code code={REPO} cap="一个提交就是几行文字：指向一棵树、指向父提交、作者和时间、说明。" />
+  <p>再验证“对象用内容的哈希命名”：自己给 <code>.nvmrc</code> 算一个，和 git 记的比：</p>
+  <Code code={HASH} cap="一字不差。这个站构建时逐字节核对区块链页面（scripts/verify-blockchain.mjs），用的就是同一个算法：给 dist 里的每个文件这样算一遍，和 git 里记的 blob 哈希比。" />
+  <Table cap="其他实测数字。">
+    <tr><th>看到的</th><th>说明什么</th></tr>
+    <tr><td>20 个提交，398 个对象，还没打包（in-pack: 0）</td><td>每次提交只新增改过的那几个对象；对象多了以后 git 会把它们打包压缩</td></tr>
+    <tr><td><code>main 8b97e2a [origin/main]</code></td><td>本地 main 和上次取回的远程 main 在同一个提交上，没有没推的提交</td></tr>
+    <tr><td>build 17 秒，其中 npm ci 2 秒、npm run build 2 秒、装 Node 6 秒</td><td>构建这个站本身很快，时间主要花在准备环境上</td></tr>
+    <tr><td>deploy 8 秒，跑在另一台 runner 上</td><td>两个 job 不共用机器，所以要靠 artifact 传 dist/</td></tr>
+    <tr><td>最近 6 次工作流从开始到跑完：33 到 102 秒</td><td>多数在 40 秒内，比两个 job 加起来的 25 秒长：多出来的时间花在 job 之外，比如等第二台 runner</td></tr>
+  </Table>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="commit 了，就发布了">
+      <p>提交只在你自己的电脑上。<code>git push</code> 之前，GitHub、Actions、别人都不知道它的存在；电脑坏了，没推的提交也就没了。</p>
+    </Card>
+    <Card term="误区 2" title="把文件删掉再提交，历史里就没了">
+      <p>旧的提交还指着那个 blob，谁拉到这个仓库都能翻出来。密钥一旦提交过，就当已经泄露，马上作废换新的；改写历史也收不回别人已经拉走的副本。</p>
+    </Card>
+    <Card term="误区 3" title="reset --hard 以后就回不来了">
+      <p>提交过的内容在 reflog 里还留着，默认保留 90 天，从当前分支到不了的 30 天。真正找不回来的是从没 add、没 commit 过的改动。</p>
+    </Card>
+    <Card term="误区 4" title="开一个分支，要复制一份代码">
+      <p>分支只是一个 41 字节的指针。切换分支时，git 只把工作区换成那个提交的快照，没改过的文件连动都不动。所以开分支几乎没有代价，可以放心多开。</p>
+    </Card>
+    <Card term="误区 5" title="push 被拒了，加 --force 就好">
+      <p>被拒多半是因为远程有你本地没有的提交，比如别人刚推的。先 <code>git fetch</code> 看清楚，再决定 merge 还是 rebase。确实要覆盖时用 <code>--force-with-lease</code>，期间有人推过就会被拒，不会冲掉别人的工作。</p>
+    </Card>
+    <Card term="误区 6" title="同一个工作流里的 job 共用一台机器">
+      <p>每个 job 都在一台新的虚拟机上跑，上一个 job 留下的文件，下一个看不到。所以这个仓库的 build 要把 dist/ 打包上传，deploy 才拿得到。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>

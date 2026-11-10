@@ -72,7 +72,11 @@ export const TOPICS = [
         tldr: "SSH 登录时，服务器先出示主机密钥，你的电脑和 known_hosts 核对，防冒充；然后你用私钥签名、服务器用公钥验，私钥不出你的电脑。用哪把钥匙由 ~/.ssh/config 决定：别名加 IdentityFile 和 IdentitiesOnly yes，一台电脑才能干净地用两个账号。端口转发让你不开放端口也能用远处的服务。代理软件的 TUN 模式用虚拟网卡和假地址（198.18.x.x）接管所有程序的连接，命令行没设代理也照样走；但加密仍在两头之间，主机密钥照样对得上。",
         tags: ["SSH", "代理", "TUN"] },
       { slug: "linux-server", title: "管一台 Linux 服务器", desc: "用户、权限、进程、systemd、日志；用 Nginx 部署网站、证书自动续期；密钥登录、防火墙、及时更新" },
-      { slug: "git-github", title: "Git 和 GitHub", desc: "分支、rebase、Actions" },
+      { slug: "git-github", title: "Git 和 GitHub", date: "2026-11-10", type: "concept",
+        desc: "提交是快照，对象按内容的哈希命名，分支是 41 字节的指针；暂存区决定提交带上什么；merge 和 rebase 的区别、改写历史的风险、reflog 找回提交；推送以后 GitHub Actions 怎么构建和发布。",
+        lede: "这个阅读库的每一次更新都走同一条路：git add、commit、push，GitHub Actions 构建，发布到 Pages。这一章讲 git 底下的模型：提交、对象、分支、暂存区到底是什么，再从模型推出 merge 和 rebase 的区别、改写历史的风险，以及推送以后 Actions 做了什么。",
+        tldr: "提交存的是一份快照：指向一棵树、记着父提交，所有对象都按内容的 SHA-1 命名，改一个字节就是新对象。分支只是一个记着提交哈希的 41 字节文件，HEAD 指向当前分支。提交带上什么由暂存区决定，git add -A 会把所有改动都放进去。merge 保留分叉；rebase 重做提交、哈希全变，所以推出去的别 rebase，要覆盖远程用 --force-with-lease。reset 丢掉的提交 reflog 里还有。推送以后，Actions 的每个 job 跑在新的虚拟机上，build 成功才 deploy。",
+        tags: ["Git", "GitHub", "Actions"] },
       { slug: "github-pages", title: "用 GitHub Pages 发布网页", desc: "免费发布静态网页，上线 404 的常见原因", link: "notes/2026-11-08-github-pages.html" },
     ] },
 ];
