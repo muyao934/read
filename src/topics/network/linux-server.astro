@@ -1,0 +1,531 @@
+---
+// 网络与服务器 · 第 4 章（概念类）：why → core → how → perm → systemd → nginx → cert → harden → example → pitfalls → sources
+// 由原计划的“Linux 服务器基础”“部署一个网站”“服务器安全”三章合并（2026-11-09 用户：每章内容太少，合并）
+// 2026-11-10 用户：不在真机上实测，用别的方式验证。权限和 Nginx 在本机 Docker 的 Ubuntu 24.04、nginx:stable 里实测，
+// sshd 的读取顺序用 macOS 自带的 sshd 实测；systemd 的重启、防火墙、证书申请照官方文档写，正文里注明
+import { Section, Note, Cards, Card, Flow, Steps, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 一次访问经过服务器上的哪几层：防火墙 → Nginx → 只听本机的应用；systemd 和 certbot 在后台
+const STACK = {
+  h: 300,
+  b: [["vi", 2, 8, 22, 84, "访问者"], ["fw", 27, 8, 22, 84, "防火墙"], ["ng", 52, 8, 22, 84, "Nginx"], ["ap", 77, 8, 21, 84, "应用"]],
+  it: [
+    { id: "msg", h: chip("连 :443", "--muted", "out"), x: 13, y: 30 },
+    { id: "f1", h: lbl("只放行<br>22 80 443", "m"), x: 38, y: 56, hide: 1 },
+    { id: "n1", h: lbl("解密 HTTPS<br>转给应用", "m"), x: 63, y: 56, hide: 1 },
+    { id: "n2", h: lbl("certbot<br>续期证书", "m"), x: 63, y: 80, hide: 1 },
+    { id: "a1", h: lbl("只听<br>127.0.0.1", "m"), x: 88, y: 56, hide: 1 },
+    { id: "a2", h: lbl("systemd 管", "m"), x: 88, y: 80, hide: 1 },
+  ],
+  s: [
+    { c: "访问者的浏览器查到你的服务器的 IP，连它的 443 端口（第 1 章讲过这一路）。", lit: ["vi"] },
+    { c: "先到防火墙。默认拒绝一切连入，只放行三个端口：22（SSH）、80（HTTP）、443（HTTPS）。有人直接连 3000、5432 这些端口，包在这里就被丢掉。",
+      set: { msg: { x: 38, h: chip(":443 放行", "--accent") }, f1: { hide: 0 } }, lit: ["fw"] },
+    { c: "Nginx 监听 80 和 443。它用证书完成 TLS 握手、解密请求；静态文件直接从磁盘读了返回，动态的请求转给后面的应用。",
+      set: { msg: { x: 63, h: chip("GET /", "--accent") }, n1: { hide: 0 } }, lit: ["ng"] },
+    { c: "证书由 certbot 在后台申请和续期：定时检查，快到期就向 Let's Encrypt 换新的，再让 Nginx 重新加载。这一步没人看着，所以要提前演练一次。",
+      set: { n2: { hide: 0 } }, lit: ["ng"] },
+    { c: "应用只监听 127.0.0.1:3000：只有这台机器自己连得上，外面只能经 Nginx 进来。它由 systemd 启动，以一个没有特权的用户运行，崩了自动重启，开机自动起来，输出进日志。",
+      set: { msg: { x: 88, h: chip("→ :3000") }, a1: { hide: 0 }, a2: { hide: 0 } }, lit: ["ap"] },
+    { c: "响应原路返回：应用交给 Nginx，Nginx 加密后发回浏览器。应用自己不碰证书，也不直接面对互联网。",
+      set: { msg: { x: 13, h: chip("200 + 页面", "--ok", "out") } }, lit: ["vi", "ng"] },
+    { c: "每一层都替别的层兜底：应用不小心监听成了 0.0.0.0，防火墙还挡着 3000；防火墙规则写漏了，应用本来就只听本机。只有一种情况两层同时失效：Docker 发布的端口不经过 ufw（见“加固”一节）。",
+      set: { msg: { x: 38, h: chip(":3000 丢弃", "--warn", "out") } }, bad: ["fw"] },
+  ],
+};
+
+// 内核怎么判断“这个进程能不能读这个文件”：路径上每层目录要有 x，文件只看第一组对上的权限
+const PERM = {
+  h: 300,
+  b: [["pr", 2, 8, 30, 84, "进程"], ["dir", 35, 8, 30, 84, "路径上的目录"], ["fl", 68, 8, 30, 84, "config.yml"]],
+  it: [
+    { id: "msg", h: chip("读 config.yml", "--muted", "out"), x: 17, y: 30 },
+    { id: "who", h: lbl("用户 app<br>组 app", "m"), x: 17, y: 62 },
+    { id: "d1", h: lbl("/ 和 /etc：r-x", "m"), x: 50, y: 50, hide: 1 },
+    { id: "d2", h: lbl("/etc/app：<br>组 app 有 r-x", "m"), x: 50, y: 72, hide: 1 },
+    { id: "mode", h: lbl("-rw-r-----<br>root app", "m"), x: 83, y: 48, hide: 1 },
+    { id: "q1", h: lbl("是主人吗？否", "m"), x: 83, y: 68, hide: 1 },
+    { id: "q2", h: lbl("在 app 组？是", "m"), x: 83, y: 84, hide: 1 },
+  ],
+  s: [
+    { c: "服务以用户 app 运行，要读 /etc/app/config.yml，里面有数据库密码。内核要回答：这个进程能不能读这个文件？", lit: ["pr"] },
+    { c: "先走路径。内核从 / 开始一层层往下找，每一层目录都要对这个进程有 x（搜索）权限；少一层，直接拒绝（EACCES），文件本身的权限根本不看。/ 和 /etc 对所有人都是 r-x。",
+      set: { msg: { x: 50, h: chip("一层层找", "--accent") }, d1: { hide: 0 } }, lit: ["dir"] },
+    { c: "/etc/app 是 drwxr-x--- root app：其他人什么都没有，只有 app 组能进。实测 www-data 读这个文件被拒绝，卡在的就是这一层；把这一层的 x 去掉，连 app 自己也读不了。",
+      set: { d2: { hide: 0 } }, lit: ["dir"] },
+    { c: "到了文件：-rw-r----- root app。三组权限依次给主人、所属组、其他人。内核先问：进程的用户是不是主人？主人是 root，不是。",
+      set: { msg: { x: 83, h: chip("看权限", "--accent") }, mode: { hide: 0 }, q1: { hide: 0 } }, lit: ["fl"] },
+    { c: "再问：进程在不在文件所属的组里？app 在 app 组，于是用第二组 r--：能读，不能写。实测 app 读出了内容，往里写就是 Permission denied。",
+      set: { msg: { x: 17, h: chip("能读，不能写", "--ok", "out") }, q2: { hide: 0 } }, lit: ["fl", "pr"] },
+    { c: "要紧的是“只用第一组对上的”：对上了主人，就只看主人那三位，不再往下看。实测把文件改成 ----r--rwx、主人改成 app：app 自己读被拒绝，反倒是其他人 www-data 读到了。",
+      set: { mode: { h: lbl("----r--rwx<br>app app", "w") }, q1: { h: lbl("是主人吗？是", "w") }, q2: { hide: 1 }, msg: { x: 83, h: chip("app：拒绝", "--warn") } }, bad: ["fl"] },
+    { c: "root 不走这套检查：实测 chmod 000 的文件，root 照样读出来。所以服务不要以 root 运行：它一旦被攻破，权限位挡不住它读写任何文件。",
+      set: { mode: { h: lbl("----------<br>root 照读", "w") }, q1: { hide: 1 }, msg: { x: 17, h: chip("root：不查", "--doubt", "out") } }, bad: ["pr"] },
+  ],
+};
+
+// systemd 管一个服务：写 unit → daemon-reload → enable --now → 崩溃 → 按 Restart= 重启 → 查日志
+const UNIT = {
+  h: 300,
+  b: [["un", 2, 8, 30, 84, "unit 文件"], ["sd", 35, 8, 30, 84, "systemd"], ["pc", 68, 8, 30, 84, "进程和日志"]],
+  it: [
+    { id: "msg", h: chip("app.service", "--muted", "out"), x: 17, y: 30 },
+    { id: "cfg", h: lbl("User=app<br>Restart=<br>on-failure", "m"), x: 17, y: 64 },
+    { id: "lk", h: lbl("开机自启：<br>建了链接", "m"), x: 50, y: 56, hide: 1 },
+    { id: "rs", h: lbl("等 RestartSec<br>再拉起", "m"), x: 50, y: 80, hide: 1 },
+    { id: "st", h: lbl("active<br>PID 812", "g"), x: 83, y: 50, hide: 1 },
+    { id: "lg", h: lbl("输出进 journal", "m"), x: 83, y: 76, hide: 1 },
+  ],
+  s: [
+    { c: "先写一个 unit 文件 /etc/systemd/system/app.service：用哪个用户跑、启动什么命令、崩了怎么办、开机时归哪个阶段（下面有完整的文件）。", lit: ["un"] },
+    { c: "systemctl daemon-reload：让 systemd 重新读 unit 文件。改了文件不 reload，它还按内存里的旧版本办事。",
+      set: { msg: { x: 50, h: chip("daemon-reload", "--accent") } }, lit: ["sd"] },
+    { c: "systemctl enable --now app：enable 按 [Install] 里的 WantedBy=multi-user.target，在 multi-user.target.wants/ 下建一个指向它的链接，开机进入这个阶段时就启动它。手册写明 enable 本身不启动服务，加 --now 才顺便启动。",
+      set: { msg: { h: chip("enable --now", "--accent") }, lk: { hide: 0 } }, lit: ["sd"] },
+    { c: "systemd 以用户 app 启动进程，记下它的 PID。进程往标准输出、标准错误写的东西，都由 journald 收进日志，不用自己管日志文件。",
+      set: { msg: { x: 83, h: chip("启动") }, st: { hide: 0 }, lg: { hide: 0 } }, lit: ["pc"] },
+    { c: "程序崩了，退出码 3。Restart=on-failure 在这几种情况下重启：退出码不是 0；被信号杀死（SIGHUP、SIGINT、SIGTERM、SIGPIPE 四个算正常停止，除外）；操作超时；看门狗触发。这次是第一种。",
+      set: { st: { h: lbl("failed<br>退出码 3", "w") } }, bad: ["pc"] },
+    { c: "systemd 等 RestartSec（默认 100 毫秒）后重新启动，换了一个 PID。但不是无限重启：默认 10 秒内启动超过 5 次，就不再启动、标成失败。修好以后先 systemctl reset-failed 清掉计数。",
+      set: { msg: { x: 50, h: chip("重启", "--accent") }, rs: { hide: 0 }, st: { h: lbl("active<br>PID 845", "g") } }, lit: ["sd", "pc"] },
+    { c: "查原因：journalctl -u app 列出这个服务的日志，崩溃前打印的那几行错误就在里面。停服务用 systemctl stop：先发 TERM 让程序收尾，过了 TimeoutStopSec（默认 90 秒）还没退出，再发 KILL。",
+      set: { msg: { x: 83, h: chip("查日志", "--ok", "out") } }, lit: ["pc"] },
+  ],
+};
+
+// 申请证书（HTTP-01）：CA 给一个 token，到你域名的 80 端口取回来，对上了才签发；续期是定时再走一遍
+const ACME = {
+  h: 300,
+  b: [["cb", 2, 8, 30, 84, "certbot"], ["ng", 35, 8, 30, 84, "Nginx :80"], ["ca", 68, 8, 30, 84, "Let's Encrypt"]],
+  it: [
+    { id: "msg", h: chip("要证书", "--muted", "out"), x: 17, y: 30 },
+    { id: "tk", h: lbl("给你一个 token<br>放到指定路径", "m"), x: 83, y: 56, hide: 1 },
+    { id: "wk", h: lbl("/.well-known/<br>acme-challenge/", "m"), x: 50, y: 56, hide: 1 },
+    { id: "ok", h: lbl("证书：90 天", "g"), x: 17, y: 58, hide: 1 },
+    { id: "tm", h: lbl("定时 renew<br>剩 1/3 才续", "m"), x: 17, y: 80, hide: 1 },
+  ],
+  s: [
+    { c: "sudo certbot --nginx -d 你的域名：certbot 向 Let's Encrypt 申请证书。CA 要先确认这个域名归你管，这里用 HTTP-01 验证。", lit: ["cb"] },
+    { c: "Let's Encrypt 给出一个 token：把一段特定的内容放到 http://你的域名/.well-known/acme-challenge/token 这个地址上。",
+      set: { msg: { x: 83, h: chip("下单", "--accent") }, tk: { hide: 0 } }, lit: ["ca"] },
+    { c: "certbot 临时改 Nginx 的配置，让这个地址返回那段内容，然后告诉 CA：放好了。",
+      set: { msg: { x: 50, h: chip("放好了") }, wk: { hide: 0 } }, lit: ["ng"] },
+    { c: "Let's Encrypt 从自己的服务器出发，查你域名的 DNS，连那个 IP 的 80 端口取这个文件。只用 80 端口；跟随跳转最多 10 次，且只跳到 80 或 443。防火墙挡着 80、DNS 还没指过来，都在这一步失败。",
+      set: { msg: { x: 50, h: chip("GET :80", "--accent") } }, lit: ["ng", "ca"] },
+    { c: "内容对上，CA 签发证书。certbot 把它存在 /etc/letsencrypt/live/你的域名/ 下，改好 Nginx 的 HTTPS 配置并重新加载。证书有效 90 天。",
+      set: { msg: { x: 17, h: chip("签发", "--ok", "out") }, ok: { hide: 0 } }, lit: ["cb"] },
+    { c: "安装 certbot 时会带一个定时任务（systemd timer 或 cron）跑 certbot renew。它每次都检查，但证书剩下的有效期不到三分之一才真去续：90 天的证书，大约第 60 天。",
+      set: { tm: { hide: 0 } }, lit: ["cb"] },
+    { c: "续期要重新验证域名，所以那一刻 80 端口、DNS、Nginx 配置都得还是好的。Let's Encrypt 从 2025 年 6 月 4 日起不再发到期提醒邮件，续期悄悄失败了也没人通知你：装好以后马上用 certbot renew --dry-run 演练一次。",
+      set: { tm: { h: lbl("dry-run 演练", "w") } }, bad: ["cb", "ng"] },
+  ],
+};
+
+// 2026-11-10 在本机 Docker 的 ubuntu:24.04 容器里以 root 实测；用户名和正文一致
+const PERMTEST = `namei -l /etc/app/config.yml          # 一次列出路径上每一层
+drwxr-xr-x root root /
+drwxr-xr-x root root etc
+drwxr-x--- root app  app
+-rw-r----- root app  config.yml
+app 读       → db_password=x
+app 写       → Permission denied
+www-data 读  → Permission denied       # 卡在 /etc/app 这一层
+chmod 640 /etc/app（目录去掉 x）后 app 读 → Permission denied
+chown app、chmod 047：----r--rwx app app
+app 读       → Permission denied       # 对上了主人，只看主人那组 ---
+www-data 读  → db_password=x           # 落到其他人那组 rwx
+chmod 000 后 root 读 → db_password=x`;
+
+// 2026-11-10 在 macOS 上实测：目录的 r 和 x 各管什么
+const DIRTEST = `chmod 600 d; ls d        # 有 r 没有 x
+ls: fts_read: Permission denied
+f                         # 名字列得出来，再往下看就被拒
+cat d/f
+cat: d/f: Permission denied
+chmod 300 d; ls d        # 有 x 没有 r
+ls: d: Permission denied  # 列不出有什么
+cat d/f
+hi                        # 知道名字，就能用`;
+
+// unit 文件：systemd 只认行首的 # 注释，所以注释都单独占一行
+const UNITFILE = `# /etc/systemd/system/app.service
+[Unit]
+Description=My app
+
+[Service]
+# 用专门的用户跑，不用 root
+User=app
+WorkingDirectory=/opt/app
+ExecStart=/opt/app/bin/server --listen 127.0.0.1:3000
+# 退出码非 0、被信号杀死等情况重启；等 2 秒再拉起
+Restart=on-failure
+RestartSec=2
+# 密钥放在单独的文件里：由 systemd（root）读取，文件可以是 600 root:root
+EnvironmentFile=/etc/app/secrets.env
+
+[Install]
+WantedBy=multi-user.target`;
+
+const SYSTEMCTL = `sudo systemctl daemon-reload          # 改了 unit 文件以后
+sudo systemctl enable --now app       # 开机自启，并且现在就启动
+systemctl status app                  # 状态、PID、最近几行日志
+sudo systemctl restart app            # 停了再启动
+sudo systemctl reload nginx           # 让 Nginx 重读配置，不断开连接
+systemctl list-timers                 # 定时任务，certbot 的续期可能在这里
+journalctl -u app -e                  # 这个服务的日志，跳到最后
+journalctl -u app -f                  # 跟着看新写进来的
+journalctl -u app -b                  # 只看这次开机以来的
+journalctl -u app -p err --since today   # 今天的、错误级别以上的`;
+
+const NGINXCONF = `server {
+    listen 80;
+    server_name read.example.com;
+    root /var/www;                          # /read/x.html → /var/www/read/x.html
+
+    location = / { return 301 /read/; }
+    location /read/ { try_files $uri $uri/ =404; }
+
+    # 动态的部分转给只听本机的应用
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}`;
+
+// 2026-11-10 在本机 Docker 的 nginx:stable（1.30.6）里实测；“应用”是同一个 Nginx 里只听 127.0.0.1:3000 的一段配置，把收到的头原样回出来
+const PROXYTEST = `curl -H 'Host: read.example.com' http://127.0.0.1:18080/api/x     # 不写 proxy_set_header
+app 收到 Host=127.0.0.1:3000 XFF=
+curl -H 'Host: read.example.com' http://127.0.0.1:18080/api2/x    # 写了上面那两行
+app 收到 Host=read.example.com XFF=172.17.0.1`;
+
+const RELOADTEST = `# 1. 指令名拼错：servr_name
+nginx -t
+nginx: [emerg] unknown directive "servr_name" in /etc/nginx/conf.d/default.conf:3
+nginx: configuration file /etc/nginx/nginx.conf test failed      # 退出码 1
+nginx -s reload                                                   # 照样报错，什么都没换
+worker 进程号：28 29 30 … 41（和改之前一样）    curl /read/ → 200
+
+# 2. 少一个分号：server_name read.example.com（后面紧跟 root /var/www;）
+nginx -t
+nginx: [warn] server name "/var/www" has suspicious symbols in /etc/nginx/conf.d/default.conf:4
+nginx: configuration file /etc/nginx/nginx.conf test is successful   # 退出码 0
+nginx -s reload
+worker 进程号：96 97 98 … 109（全换了新的）     curl /read/ → 404`;
+
+const CERTBOT = `sudo certbot --nginx -d read.example.com    # 申请证书，并改好 Nginx 的 HTTPS 配置
+sudo certbot renew --dry-run                # 演练续期：对测试环境走一遍，不动真证书
+sudo certbot certificates                   # 有哪些证书、哪天到期
+systemctl list-timers | grep certbot        # 续期的定时任务在不在（也可能在 /etc/cron.d/ 里）`;
+
+const SSHDCONF = `# /etc/ssh/sshd_config.d/10-hardening.conf
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no`;
+
+// 2026-11-10 用 macOS 自带的 OpenSSH 9.4 实测：临时目录里的配置，不碰系统的 sshd
+const SSHDTEST = `# 同一个目录里，两个文件写了相反的值
+10-hardening.conf   PasswordAuthentication no
+50-other.conf       PasswordAuthentication yes
+sshd -T | grep passwordauthentication       # -T：打印最终生效的设置
+passwordauthentication no                   # 10- 排在前面，先读到的生效
+# 把 10-hardening.conf 改名成 60-hardening.conf
+passwordauthentication yes                  # 50- 先读到，no 不生效了
+# 选项名拼错：PasswordAuthentcation no
+sshd -t
+Bad configuration option: PasswordAuthentcation
+terminating, 1 bad configuration options    # 退出码 255`;
+
+const UFW = `sudo ufw allow 22/tcp      # 先放行 SSH，再打开防火墙
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable            # 在 SSH 里执行时会先问你确认
+sudo ufw status verbose    # 看默认策略和放行了哪些端口`;
+
+const DOCKERPORT = `docker run -p 3000:3000 app             # 发布到所有地址：外面连得上，ufw 挡不住
+docker run -p 127.0.0.1:3000:3000 app   # 只有这台机器自己连得上，再由 Nginx 转出去`;
+
+// 照官方文档写的上线顺序，没有在真机上跑过；每一步验证完再走下一步
+const DEPLOY = `# 0. 用服务商给的 root 和密钥登录
+ssh root@203.0.113.10
+
+# 1. 建自己的账号，能 sudo，能用同一把公钥登录
+adduser deploy                          # 会问一个密码：之后 sudo 要用
+usermod -aG sudo deploy
+install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+install -m 600 -o deploy -g deploy /root/.ssh/authorized_keys /home/deploy/.ssh/
+# 另开一个窗口：ssh deploy@203.0.113.10，sudo -v 能过，再往下
+
+# 2. 只许钥匙登录（这个窗口别关）
+printf 'PasswordAuthentication no\\nKbdInteractiveAuthentication no\\nPermitRootLogin no\\n' \\
+  | sudo tee /etc/ssh/sshd_config.d/10-hardening.conf
+sudo sshd -T | grep -E '^(passwordauthentication|kbdinteractiveauthentication|permitrootlogin) '
+sudo sshd -t && sudo systemctl reload ssh
+# 再开一个窗口：钥匙能登录；ssh -o PubkeyAuthentication=no deploy@203.0.113.10 应该被拒
+
+# 3. 防火墙：先放行，再打开
+sudo ufw allow 22/tcp && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
+sudo ufw enable
+
+# 4. Nginx 和网站文件
+sudo apt update && sudo apt install -y nginx
+sudo install -d -o deploy -g deploy /var/www/read
+# 在自己电脑上：npm run build，再把 dist/ 传上去
+rsync -av --delete dist/ deploy@203.0.113.10:/var/www/read/
+# 回到服务器：写 /etc/nginx/sites-available/read（内容见“用 Nginx 上线”一节），再启用
+sudo ln -s /etc/nginx/sites-available/read /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+curl -sI -H 'Host: read.example.com' http://127.0.0.1/read/ | head -1
+
+# 5. 证书（先把域名的 A 记录指到 203.0.113.10）
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d read.example.com
+sudo certbot renew --dry-run`;
+
+const SOURCES = [
+  { title: "path_resolution(7)", url: "https://man7.org/linux/man-pages/man7/path_resolution.7.html", by: "Linux man-pages", note: "路径上每一层目录都要有搜索（x）权限，否则 EACCES；按主人、组、其他人只用一组；有特权的进程跳过检查。" },
+  { title: "systemd.service(5)", url: "https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html", by: "systemd 手册", note: "Restart= 默认 no；on-failure 在哪几种情况下重启，四个算正常停止的信号；RestartSec 默认 100 毫秒；Type=simple、exec、notify。" },
+  { title: "systemd.unit(5) 和 systemctl(1)", url: "https://www.freedesktop.org/software/systemd/man/latest/systemd.unit.html", by: "systemd 手册", note: "WantedBy= 让 enable 在 .wants/ 下建链接；enable 不启动服务，加 --now 才启动；StartLimitIntervalSec、StartLimitBurst 和 reset-failed。" },
+  { title: "systemd.kill(5) 和 systemd-system.conf(5)", url: "https://www.freedesktop.org/software/systemd/man/latest/systemd.kill.html", by: "systemd 手册", note: "停止时先发 SIGTERM，过了 TimeoutStopSec 发 SIGKILL；默认 90 秒，默认 10 秒内最多启动 5 次。" },
+  { title: "journalctl(1) 和 journald.conf(5)", url: "https://www.freedesktop.org/software/systemd/man/latest/journalctl.html", by: "systemd 手册", note: "-u、-f、-b、-p、-e、--since；Storage= 的几种取值和默认值。" },
+  { title: "sshd_config(5) 和 sshd(8)", url: "https://man.openbsd.org/sshd_config", by: "OpenBSD 手册", note: "每项用第一个读到的值；Include 按名字顺序读；PasswordAuthentication、KbdInteractiveAuthentication 默认 yes，PermitRootLogin 默认 prohibit-password；UsePAM 时两种都要关；StrictModes；-t、-T；SIGHUP 重读配置。" },
+  { title: "Ubuntu 的 OpenSSH 补丁 debian-config.patch（noble）", url: "https://git.launchpad.net/ubuntu/+source/openssh/plain/debian/patches/debian-config.patch?h=ubuntu/noble", by: "Ubuntu", note: "把 Include /etc/ssh/sshd_config.d/*.conf 放在主配置最前面；KbdInteractiveAuthentication no、UsePAM yes。" },
+  { title: "cloud-init：Set Passwords 模块", url: "https://docs.cloud-init.io/en/latest/reference/modules.html", by: "cloud-init 文档", note: "ssh_pwauth 决定 sshd 接不接受密码登录；默认不改。" },
+  { title: "ufw(8)", url: "https://manpages.ubuntu.com/manpages/noble/en/man8/ufw.8.html", by: "Ubuntu 手册", note: "默认拒绝连入、允许连出；enable 可能断开已有的连接（比如 ssh），在 ssh 里 enable 会先问你。" },
+  { title: "Docker：Packet filtering and firewalls", url: "https://docs.docker.com/engine/network/packet-filtering-firewalls/", by: "Docker Docs", note: "Docker 和 ufw 不兼容：发布端口的流量在 nat 表里被转走，到不了 ufw 用的 INPUT 链。" },
+  { title: "Docker：Port publishing and mapping", url: "https://docs.docker.com/engine/network/port-publishing/", by: "Docker Docs", note: "默认发布到所有地址，“发布端口默认是不安全的”；-p 127.0.0.1:8080:80 只有本机连得上。" },
+  { title: "nginx：Beginner's Guide 和 Command-line parameters", url: "https://nginx.org/en/docs/beginners_guide.html", by: "nginx.org", note: "reload 时主进程检查新配置，成功就换新的 worker、旧的处理完请求再退出，失败就回滚；-t 只检查语法、试着打开配置里的文件。" },
+  { title: "nginx：ngx_http_proxy_module", url: "https://nginx.org/en/docs/http/ngx_http_proxy_module.html", by: "nginx.org", note: "默认把 Host 改成 $proxy_host；$proxy_add_x_forwarded_for 的含义。" },
+  { title: "Let's Encrypt：Challenge Types", url: "https://letsencrypt.org/docs/challenge-types/", by: "Let's Encrypt", note: "HTTP-01 只用 80 端口、/.well-known/acme-challenge/、跳转规则、不能签通配符；DNS-01 能签通配符，API 凭证放在服务器上的风险。" },
+  { title: "Let's Encrypt：Ending Support for Expiration Notification Emails", url: "https://letsencrypt.org/2025/01/22/ending-expiration-emails/", by: "Let's Encrypt，2025", note: "2025 年 6 月 4 日起不再发到期提醒邮件。" },
+  { title: "Let's Encrypt：Decreasing Certificate Lifetimes to 45 Days", url: "https://letsencrypt.org/2025/12/02/from-90-to-45/", by: "Let's Encrypt，2025", note: "2027-02-10 默认改成 64 天，2028-02-16 改成 45 天；写死 60 天续期不再够用，建议用 ARI。" },
+  { title: "Certbot User Guide", url: "https://eff-certbot.readthedocs.io/en/stable/using.html", by: "EFF", note: "定时跑 certbot renew；剩下不到三分之一的有效期才续（4.0.0 之前固定 30 天）；--dry-run。" },
+  { title: "Ubuntu Server：Automatic updates", url: "https://ubuntu.com/server/docs/how-to/software/automatic-updates/", by: "Canonical", note: "unattended-upgrades 默认安装、自动装安全更新、每天一次；Automatic-Reboot 默认 false；配置和日志的位置。" },
+  { title: "本站实测", note: "2026-11-10：权限在本机 Docker 的 ubuntu:24.04 里、Nginx 在 nginx:stable 1.30.6 里实测，sshd 的读取顺序和 -t 用 macOS 自带的 OpenSSH 9.4 实测，信号和目录权限在 macOS 上实测；测完删掉了镜像和容器。systemd 的重启和停止、防火墙、证书申请需要真机或真域名，照上面的文档写。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>这个站放在 GitHub Pages 上，服务器由 GitHub 管。可只要你想跑一个带后端的服务、一个一直在线的机器人，或者只是想自己说了算，就得租一台 Linux 服务器（VPS）。拿到 root 的那一刻起，以前别人替你管的事都归你了：</p>
+  <ul>
+    <li>程序半夜崩了，没人把它拉起来；机器重启以后，服务也没自己起来。</li>
+    <li>改了一行 Nginx 配置，<code>nginx -t</code> 说没问题，reload 以后整个站 404（下面有实测）。</li>
+    <li>证书三个月前自动续期失败了，没人通知，直到访问者看到浏览器的红色警告。</li>
+    <li>22 端口一上线就有人来试密码；为了挡他们改防火墙，结果先把自己挡在了外面。</li>
+  </ul>
+  <p>这一章按一次访问经过的顺序讲：权限决定一个进程能碰什么，systemd 让服务一直在、出了事有日志，Nginx 和证书让网站用 HTTPS 上线，SSH、防火墙和更新把门守住。最后把这个阅读库搬上一台服务器的完整命令走一遍。</p>
+  <Note kind="doubt" title="这一章怎么验证的">没有用真的服务器。权限和 Nginx 的行为，在本机 Docker 里的 Ubuntu 24.04 和官方 nginx 镜像里实测；sshd 的配置读取顺序，用 macOS 自带的 OpenSSH 实测；进程信号、目录权限在 macOS 上实测。systemd 的自动重启、防火墙真正拦包、向 Let's Encrypt 申请证书，需要真机或真域名，这几处照官方手册写，正文里会注明。</Note>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="User · root" title="用户和 root">
+      <p>每个进程都以某个用户的身份运行，能碰什么由这个身份决定。root（用户号 0）不受文件权限限制。日常用普通用户，要管理时用 <code>sudo</code> 临时以 root 执行一条命令；每个服务用一个专门的、没有特权的用户。</p>
+    </Card>
+    <Card term="Permission" title="权限：三组 rwx">
+      <p><code>-rw-r-----</code> 后九位分三组：主人、所属组、其他人，每组是读、写、执行。对目录来说，r 是能列出里面有什么，x 是能进去、能用里面的东西。内核只用三组里第一组对上的那一组。</p>
+    </Card>
+    <Card term="Process · Signal" title="进程和信号">
+      <p>每个运行的程序是一个进程，有自己的 PID。停一个进程靠发信号：TERM 是“请你收尾后退出”，程序可以接住它，存好数据再走；KILL 由内核直接结束，程序没机会做任何事。</p>
+    </Card>
+    <Card term="systemd" title="管服务的那个进程">
+      <p>现在主流发行版的 1 号进程。每个服务写成一个 unit 文件，systemd 按它启动进程、盯着它，崩了按规则重启，开机按依赖顺序拉起来。<code>systemctl</code> 是对它下命令的工具。</p>
+    </Card>
+    <Card term="journal" title="日志">
+      <p>systemd 的 journald 收集每个服务写到标准输出和标准错误的内容，按服务、时间、级别都能查：<code>journalctl -u 服务名</code>。Nginx 这类程序另外把访问日志、错误日志写在 <code>/var/log/nginx/</code>。</p>
+    </Card>
+    <Card term="Reverse Proxy" title="Nginx：站在应用前面">
+      <p>反向代理（第 3 章讲过它和正向代理的区别）。Nginx 监听 80 和 443，处理 HTTPS、直接发静态文件，把动态请求转给只监听本机的应用。应用不用管证书，也不直接面对互联网。</p>
+    </Card>
+    <Card term="ACME" title="自动申请证书">
+      <p>Let's Encrypt 用 ACME 协议免费签发证书。certbot 是最常用的客户端：证明域名归你管、拿到证书、改好 Nginx 配置，并且定时续期。证书本身是什么、浏览器怎么验，HTTPS 那篇讲过。</p>
+    </Card>
+    <Card term="Firewall" title="防火墙">
+      <p>按规则决定放不放行一个包（第 1 章讲过它和 NAT 的区别）。Ubuntu 上常用 ufw，它是内核防火墙规则的一个简化前端：默认拒绝一切连入，再一条条放行需要的端口。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="how" title="一次访问经过服务器上的哪几层" short="一次访问">
+  <p>点“下一步”，跟着一次访问穿过服务器：每一层只放过它该放过的东西。</p>
+  <Anim data={STACK} label="一次访问：防火墙只放行 22、80、443；Nginx 解密 HTTPS 并转给应用，certbot 在后台续期证书；应用只监听 127.0.0.1，由 systemd 管；每一层替别的层兜底" />
+  <Flow items={[
+    { t: "防火墙", d: "只放行 22、80、443" },
+    { t: "Nginx", d: "HTTPS、静态文件、转发", kind: "tip" },
+    { t: "应用", d: "只听 127.0.0.1，非 root 用户", kind: "tip" },
+    { t: "systemd", d: "崩了重启，输出进日志", kind: "ok" },
+  ]} />
+</Section>
+
+<Section id="perm" title="用户和权限：一个进程能碰什么" short="用户和权限">
+  <p>服务该用哪个用户跑、配置文件该设成什么权限，取决于内核怎么判断。点“下一步”，看一次读文件的检查，每一步都在 Ubuntu 24.04 容器里实测过：</p>
+  <Anim data={PERM} label="权限检查：路径上每一层目录都要有 x；到了文件，按主人、所属组、其他人的顺序只用第一组对上的权限；root 跳过这套检查" />
+  <Code code={PERMTEST} cap="在本机 Docker 的 ubuntu:24.04 容器里以 root 实测。namei -l 一条命令列出路径上每一层的权限，“Permission denied”时先用它看卡在哪一层。" />
+  <p>目录的 r 和 x 管的是两件事，很容易混：</p>
+  <Code code={DIRTEST} cap="在 macOS 上实测（Linux 上 ls 的报错写法不同，结论一样）。" />
+  <Table cap="常见的几种权限。">
+    <tr><th>数字</th><th>样子</th><th>用在</th></tr>
+    <tr><td><code>600</code></td><td><code>-rw-------</code></td><td>私钥、<code>authorized_keys</code>、只给主人看的密钥文件</td></tr>
+    <tr><td><code>640</code></td><td><code>-rw-r-----</code></td><td>root 拥有、给某个服务组读的配置，比如上面的 config.yml</td></tr>
+    <tr><td><code>644</code></td><td><code>-rw-r--r--</code></td><td>谁都能读的文件，比如网页</td></tr>
+    <tr><td><code>700</code></td><td><code>drwx------</code></td><td>只有主人能进的目录，比如 <code>~/.ssh</code></td></tr>
+    <tr><td><code>750</code></td><td><code>drwxr-x---</code></td><td>主人和一个组能进，比如上面的 /etc/app</td></tr>
+    <tr><td><code>755</code></td><td><code>drwxr-xr-x</code></td><td>谁都能进、能读的目录，比如网站的根目录</td></tr>
+  </Table>
+  <p>按 path_resolution(7) 的说法，root 靠的是 CAP_DAC_OVERRIDE 这项能力：它跳过所有读写检查，只有执行例外，要三组里至少一组有 x。另一个常见的坑：<code>usermod -aG 组 用户</code> 加了组，已经登录的会话和已经在跑的进程还是旧的组，进程的组是启动时定下的。重新登录、重启服务以后才生效。</p>
+</Section>
+
+<Section id="systemd" title="systemd：让服务一直在" short="systemd">
+  <p><code>nohup ./server &amp;</code> 也能让程序在后台跑，可它崩了没人管，机器重启后不会自己起来，输出要自己重定向到文件。systemd 把这几件事都接了过去。点“下一步”，看一个服务从写好 unit 文件到崩溃重启：</p>
+  <Anim data={UNIT} label="systemd 管一个服务：写 unit 文件，daemon-reload，enable --now 建开机链接并启动；进程崩溃后按 Restart= 等 RestartSec 重启，受启动次数限制；日志用 journalctl 查，stop 先发 TERM 超时再发 KILL" />
+  <Code code={UNITFILE} lang="text" cap="一个典型的 unit 文件。手册只说以 # 或 ; 开头的行是注释，所以注释单独占一行，不写在值的后面。" />
+  <Table cap="Restart= 的几种常用取值（摘自 systemd.service 手册）。">
+    <tr><th>取值</th><th>什么时候重启</th></tr>
+    <tr><td><code>no</code>（默认）</td><td>从不。不写这一行，崩了就停在那</td></tr>
+    <tr><td><code>on-failure</code></td><td>退出码非 0、被信号杀死（HUP、INT、TERM、PIPE 除外）、操作超时、看门狗触发。手册推荐长期运行的服务用它</td></tr>
+    <tr><td><code>always</code></td><td>不管怎么退出都重启；用 <code>systemctl stop</code> 停的除外</td></tr>
+  </Table>
+  <Table cap="几个默认值（systemd-system.conf 手册）。">
+    <tr><th>设置</th><th>默认</th><th>意思</th></tr>
+    <tr><td><code>RestartSec</code></td><td>100 毫秒</td><td>崩了以后等多久再启动</td></tr>
+    <tr><td><code>StartLimitIntervalSec</code> / <code>StartLimitBurst</code></td><td>10 秒 / 5 次</td><td>这段时间里启动超过这么多次，就不再启动</td></tr>
+    <tr><td><code>TimeoutStopSec</code></td><td>90 秒</td><td>stop 发了 TERM 以后，等多久再发 KILL</td></tr>
+  </Table>
+  <p>前两行合在一起有个坑：程序一启动就崩（比如配置文件写错），按默认的 100 毫秒，不到一秒就启动满 5 次，systemd 不再管它，状态停在 failed。修好以后要先 <code>systemctl reset-failed app</code>，再启动。</p>
+  <Code code={SYSTEMCTL} cap="最常用的几条。" />
+  <p>停服务用 <code>systemctl stop</code>，不用 <code>kill -9</code>，区别在信号。在 macOS 上实测：一个接住 TERM 的脚本，收到 TERM 后打印“收尾后退出”，退出码 0；收到 KILL，什么都没打印，退出码 137（128 + 9 号信号）。</p>
+  <Note kind="doubt" title="这一节哪些没有实测">unit 文件的写法、各项默认值、enable 建的链接，都照 systemd 手册写。在容器里跑 systemd 要开特权模式，这次没开，所以“崩了自动重启”“stop 超时后发 KILL”的过程没有亲眼看过。上了真机，可以写一个故意崩溃的小服务，用 <code>journalctl -u</code> 看它被拉起几次。</Note>
+</Section>
+
+<Section id="nginx" title="用 Nginx 上线：静态文件和反向代理" short="Nginx 上线">
+  <p>一个 server 块可以同时做两件事：静态文件直接从磁盘发，动态的请求转给只听本机的应用。这个站要搬上服务器，网址是 <code>/read/…</code>，文件放在 <code>/var/www/read/</code>：</p>
+  <Code code={NGINXCONF} cap="root 加上请求的路径，就是磁盘上的文件：/read/x.html 找 /var/www/read/x.html。try_files 依次试文件、目录（目录找 index.html），都没有就 404。" />
+  <Table cap="在本机 Docker 的 nginx:stable（1.30.6）里，挂上这个站构建出的 dist/ 实测。">
+    <tr><th>请求</th><th>结果</th></tr>
+    <tr><td><code>/</code></td><td>301，跳到 <code>/read/</code></td></tr>
+    <tr><td><code>/read/</code></td><td>200，目录里的 index.html</td></tr>
+    <tr><td><code>/read/topics/network/web-request.html</code></td><td>200</td></tr>
+    <tr><td><code>/read/nope.html</code></td><td>404</td></tr>
+  </Table>
+  <p>转发时有个默认值常让人意外：Nginx 不把访问者请求里的 Host 传给应用，而是换成 <code>proxy_pass</code> 里写的地址。实测：</p>
+  <Code code={PROXYTEST} cap="同一个请求，应用收到的头不一样。172.17.0.1 是 Docker 网桥上本机的地址，也就是这次的“访问者”。" />
+  <p>应用要按域名生成跳转、拼完整的网址，就要加 <code>proxy_set_header Host $host</code>。要访问者的 IP，加 X-Forwarded-For：Nginx 把它看到的对方地址追加到这个头的末尾。访问者自己也能在请求里带一个假的 X-Forwarded-For，所以应用只能信最后那一段，也就是你自己的 Nginx 加上的。</p>
+  <h3>改配置：reload，以及 nginx -t 查不出什么</h3>
+  <p>改了配置不用重启。按 Nginx 文档，reload 时主进程先检查新配置：没问题就起新的 worker，让旧的 worker 不再接新连接、处理完手上的请求再退出；有错就回滚，继续用旧配置。实测两种改坏的方式，看 worker 的进程号有没有换：</p>
+  <Code code={RELOADTEST} cap="在本机 Docker 的 nginx:stable 里实测。" />
+  <p>第二种更危险。少了分号，下一行的 <code>root /var/www</code> 被当成了 server_name 的参数：语法完全合法，这个 server 块只是没了 root，退到了编译时的默认目录。<code>nginx -t</code> 只给了一条看不出关系的警告，退出码 0。文档写得很清楚：<code>-t</code> 只检查语法、试着打开配置里提到的文件，不知道你本来想要什么。所以每次是三步：<code>nginx -t</code>、reload、用 curl 访问几个关键的网址。</p>
+  <p>配置放在哪：Ubuntu 上 apt 装的 Nginx，站点配置写在 <code>/etc/nginx/sites-available/</code>，在 <code>sites-enabled/</code> 里建链接才启用；官方 Docker 镜像读的是 <code>/etc/nginx/conf.d/</code>。日志一般在 <code>/var/log/nginx/</code>，官方镜像里这两个文件是指向标准输出、标准错误的链接（实测），要用 <code>docker logs</code> 看。</p>
+</Section>
+
+<Section id="cert" title="证书：申请和自动续期" short="证书">
+  <p>证书是什么、浏览器怎么验，HTTPS 那篇讲过。这里讲在自己的服务器上怎么拿到它，以及怎么让它自己续期。点“下一步”：</p>
+  <Anim data={ACME} label="HTTP-01 申请证书：certbot 下单，Let's Encrypt 给一个 token，certbot 让 Nginx 在 80 端口的 /.well-known/acme-challenge/ 返回它，CA 取到后签发 90 天的证书；定时 renew，剩不到三分之一才续，续期要重新验证" />
+  <Code code={CERTBOT} cap="四条最常用的命令。" />
+  <Table cap="两种常用的验证方式（摘自 Let's Encrypt 文档）。">
+    <tr><th></th><th>HTTP-01</th><th>DNS-01</th></tr>
+    <tr><td>怎么证明</td><td>在 80 端口的指定路径放一个文件</td><td>在 DNS 里加一条 <code>_acme-challenge</code> 的 TXT 记录</td></tr>
+    <tr><td>80 端口</td><td>必须从公网连得上</td><td>不需要，内网的机器也能申请</td></tr>
+    <tr><td>通配符证书（<code>*.example.com</code>）</td><td>不行</td><td>可以</td></tr>
+    <tr><td>代价</td><td>几台服务器时，每台都要放得出这个文件</td><td>DNS 服务商的 API 凭证要放在服务器上，服务器被攻破，别人就能改你的 DNS</td></tr>
+  </Table>
+  <Table cap="Let's Encrypt 公布的证书有效期变化，以及按“剩三分之一”大约哪天续。">
+    <tr><th>从哪天起（默认配置）</th><th>有效期</th><th>大约第几天续</th></tr>
+    <tr><td>现在</td><td class="n">90 天</td><td class="n">60</td></tr>
+    <tr><td>2027-02-10</td><td class="n">64 天</td><td class="n">43</td></tr>
+    <tr><td>2028-02-16</td><td class="n">45 天</td><td class="n">30</td></tr>
+  </Table>
+  <p>按比例算的 certbot 不受影响。会出事的是自己写死“每 60 天续一次”的脚本：45 天的证书等不到第 60 天就过期了。公告建议用 ARI（由 CA 告诉客户端什么时候该续）；不支持的客户端，在有效期过去三分之二左右时续。</p>
+  <Note kind="doubt" title="这一节没有实测">申请证书要一个真域名，而且 Let's Encrypt 要能从公网连到这台机器的 80 端口，本机测不了。流程、端口和跳转规则摘自 Let's Encrypt 和 Certbot 的文档。</Note>
+</Section>
+
+<Section id="harden" title="加固：钥匙登录、防火墙、自动更新" short="加固">
+  <p>一台新服务器连上互联网，很快就会有程序来扫 22 端口、试常见的用户名和密码。要做的是三件事：只许钥匙登录，只开需要的端口，安全更新自动装上。前两件做错了会把自己锁在外面，所以顺序比命令本身更要紧。</p>
+  <h3>只许钥匙登录</h3>
+  <p>按手册，OpenSSH 默认 <code>PasswordAuthentication yes</code>；root 默认是 <code>prohibit-password</code>，不能用密码，但能用钥匙。只关 PasswordAuthentication 还不够：KbdInteractiveAuthentication 默认也是 yes，开着 UsePAM 时，PAM 的“键盘交互”认证通常就是在问密码，手册也说两者作用相当。Ubuntu 的主配置已经把后者改成了 no，别的发行版不一定，写上不吃亏。两个都关，再关掉 root 登录：</p>
+  <Code code={SSHDCONF} lang="text" cap="写成 sshd_config.d 下单独的一个文件，不动主配置。" />
+  <Steps items={[
+    { t: "先确认钥匙能登录、能 sudo", d: "关了密码，钥匙就是唯一的入口。用新账号和钥匙登录一次，<code>sudo -v</code> 能过，再往下。" },
+    { t: "这个窗口别关", d: "sshd 给每个连接单独派生一个进程，重新加载配置不影响已经连着的会话。这个窗口就是改坏了以后的退路。" },
+    { t: "检查，再 reload", d: "<code>sudo sshd -t</code> 检查配置（实测拼错一个选项名，它报错，退出码 255）；<code>sudo sshd -T</code> 打印最终生效的值；都对了再 <code>sudo systemctl reload ssh</code>。" },
+    { t: "开新窗口验证", d: "钥匙照样能登录；<code>ssh -o PubkeyAuthentication=no 用户@服务器</code> 应该被拒，报 <code>Permission denied (publickey)</code>。两样都对了，才关旧窗口。" },
+  ]} />
+  <p>还有一个读取顺序的坑。手册写明：sshd 每一项用第一个读到的值，Include 的文件按名字排序读。Ubuntu 给 OpenSSH 打的补丁，把 <code>Include /etc/ssh/sshd_config.d/*.conf</code> 放在主配置的最前面，所以 sshd_config.d 里的文件比主配置先读。只要那里有一个排在前面的文件写了 <code>PasswordAuthentication yes</code>，你在后面写的 no 就不生效。云镜像的初始化工具 cloud-init 就有一个开关（<code>ssh_pwauth</code>）专门改这一项。用 macOS 自带的 sshd 在临时目录里实测：</p>
+  <Code code={SSHDTEST} cap="没有碰系统的 sshd：-f 指定一份临时配置，只做 -T、-t 检查。" />
+  <p>所以改完不要只看文件，用 <code>sshd -T</code> 看最终生效的值，就像第 3 章用 <code>ssh -G</code> 看客户端最终的设置。</p>
+  <h3>防火墙：先放行，再打开</h3>
+  <Code code={UFW} cap="ufw enable 以后默认拒绝一切连入、允许连出。" />
+  <p>顺序反了，<code>ufw enable</code> 的那一刻 22 端口就关了。手册也提醒：enable 要重新加载规则，可能断开已有的连接，比如 ssh；在 ssh 里执行时它会先问你确认，那是最后一次反悔的机会。云服务商控制台里的“安全组”是另一层防火墙，两层都要放行。</p>
+  <Note kind="warn" title="Docker 发布的端口，ufw 挡不住">Docker 文档写明 Docker 和 ufw 不兼容：发往容器端口的流量在 nat 表里就被转走了，到不了 ufw 用的 INPUT 链。也就是说 ufw 没放行 3000，<code>docker run -p 3000:3000</code> 照样从外面连得上，这正是开头那个动画里两层同时失效的情况。不想公开的端口只发布到本机，再由 Nginx 转出去。</Note>
+  <Code code={DOCKERPORT} cap="文档的说法：不写地址时发布到所有地址（0.0.0.0 和 [::]）。" />
+  <h3>自动装安全更新</h3>
+  <Table cap="Ubuntu 的 unattended-upgrades（摘自 Ubuntu Server 文档）。">
+    <tr><th>项</th><th>默认</th></tr>
+    <tr><td>装没装、开没开</td><td>默认安装，装好系统就自动装安全更新，不用人确认</td></tr>
+    <tr><td>多久一次</td><td>每天一次</td></tr>
+    <tr><td>装完要不要重启</td><td>不自动重启（<code>Automatic-Reboot</code> 默认 false）</td></tr>
+    <tr><td>配置和日志</td><td><code>/etc/apt/apt.conf.d/50unattended-upgrades</code>、<code>20auto-upgrades</code>；日志在 <code>/var/log/unattended-upgrades/</code></td></tr>
+  </Table>
+  <p>“不自动重启”的意思是：内核这类要重启才生效的更新，装了也还没用上。要么自己挑时间重启，要么打开 Automatic-Reboot 并设一个半夜的时间。打开之前先确认每个服务都 enable 了：重启以后，只有 enable 过的才会自己起来。</p>
+</Section>
+
+<Section id="example" title="实际例子：把这个阅读库搬上一台服务器" short="实际例子">
+  <p>假设要把这个站从 GitHub Pages 搬到一台新开的 Ubuntu 24.04 服务器上，用自己的域名。下面是从拿到 root 到 HTTPS 上线的完整顺序，每一步验证过再走下一步。地址 203.0.113.10 和域名 read.example.com 都是留给举例用的。这份顺序照官方文档写，没有在真机上跑过；其中 Nginx 配置、sshd 的检查方法、权限的结论，是上面几节实测过的。</p>
+  <Code code={DEPLOY} cap="命令里的 \ 是续行。" />
+  <p>几处不显眼的地方：</p>
+  <ul>
+    <li><b>.ssh 是 700、authorized_keys 是 600</b>：sshd 的 StrictModes 默认 yes，登录前检查家目录和这些文件的权限和主人，别人能写就拒绝钥匙登录。</li>
+    <li><b>先看 sshd -T 再 reload</b>：确认三项真的是 no，没被 sshd_config.d 里排在前面的文件盖掉。</li>
+    <li><b>网页文件不用改权限</b>：rsync -a 保留本机的权限，实测本机的 dist/ 是目录 755、文件 644。Nginx 的 worker 以 www-data 运行，落在“其他人”那一组，r 和 x 都有，读得到。目录归 deploy，所以传文件不用 sudo。</li>
+    <li><b>静态站不用自己写 unit 文件</b>：Nginx 本身就是一个 systemd 服务，用 <code>systemctl is-enabled nginx</code> 确认它开机会起来，不是 enabled 就 <code>sudo systemctl enable nginx</code>。以后加一个后端，照 systemd 一节写 app.service，在 Nginx 里加一段 <code>location /api/</code>。</li>
+    <li><b>先改 DNS，再申请证书</b>：Let's Encrypt 要从公网按域名连到这台机器的 80 端口，域名还指着 GitHub Pages 时，验证会失败。</li>
+  </ul>
+  <Table cap="上线以后逐项自查。">
+    <tr><th>要确认的</th><th>怎么查</th><th>依据</th></tr>
+    <tr><td>密码登录真的关了</td><td><code>ssh -o PubkeyAuthentication=no</code> 被拒；<code>sshd -T</code> 里三项都是 no</td><td>加固一节，sshd 实测</td></tr>
+    <tr><td>只开了三个端口</td><td><code>sudo ufw status verbose</code>；在另一台机器上连 3000 之类的端口应该连不上</td><td>ufw 手册</td></tr>
+    <tr><td>没有容器绕过防火墙</td><td><code>docker ps</code> 的端口一栏，不该出现 <code>0.0.0.0:</code> 开头、又不想公开的端口</td><td>Docker 文档</td></tr>
+    <tr><td>网站对</td><td><code>nginx -t</code> 之后，用 curl 访问首页和几个深一点的网址</td><td>Nginx 一节，实测</td></tr>
+    <tr><td>证书会续期</td><td><code>sudo certbot renew --dry-run</code> 成功；<code>certbot certificates</code> 看到期日</td><td>Certbot 文档</td></tr>
+    <tr><td>重启以后服务会起来</td><td><code>systemctl is-enabled nginx</code>；真重启一次，再查一遍</td><td>systemd 手册</td></tr>
+  </Table>
+  <Table cap="和现在的 GitHub Pages 比。">
+    <tr><th></th><th>GitHub Pages</th><th>自己的服务器</th></tr>
+    <tr><td>能跑什么</td><td>只有静态文件</td><td>什么都能跑：后端、数据库、定时任务</td></tr>
+    <tr><td>证书、更新、防火墙</td><td>GitHub 管</td><td>都归你，这一章的每一节</td></tr>
+    <tr><td>发布</td><td>推送到 main，Actions 构建发布（第 5 章）</td><td>rsync 上传，或者让 Actions 用 SSH 部署</td></tr>
+    <tr><td>出了问题</td><td>等 GitHub 修</td><td>自己看 <code>journalctl</code>、Nginx 日志</td></tr>
+  </Table>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="Permission denied，chmod 777 就好">
+      <p>777 让这台机器上任何用户、任何被攻破的服务都能改这个文件。而且对 SSH 有反作用：家目录或 <code>~/.ssh</code> 别人能写，StrictModes 会拒绝钥匙登录。先用 <code>namei -l 路径</code> 看卡在哪一层，只给缺的那个用户或组补上缺的那一位。</p>
+    </Card>
+    <Card term="误区 2" title="先 ufw enable，再去放行 SSH">
+      <p>enable 以后默认拒绝一切连入，22 端口当场就关了，已有的连接也可能断。永远先 <code>ufw allow 22/tcp</code>，再 enable；云服务商的安全组也要放行。真被锁在外面，只能用服务商网页上的控制台登录。</p>
+    </Card>
+    <Card term="误区 3" title="改完 sshd 配置，reload 了就可以关窗口">
+      <p>配置写错、钥匙没放对，新的连接就进不来，而已经连着的那个会话不受 reload 影响，是唯一的退路。<code>sshd -t</code> 检查、reload、开新窗口验证能登录，三步都过了再关旧窗口。</p>
+    </Card>
+    <Card term="误区 4" title="PasswordAuthentication no，就只能用钥匙了">
+      <p>KbdInteractiveAuthentication 默认也是 yes，开着 PAM 时一样会问密码；sshd_config.d 里排在前面的文件写了 yes，你的 no 也不生效。实测“先读到的生效”。以 <code>sshd -T</code> 打出来的值为准，不以你写的文件为准。</p>
+    </Card>
+    <Card term="误区 5" title="nginx -t 通过，配置就没问题">
+      <p>它只检查语法、试着打开文件。实测少一个分号，root 被吞进了 server_name，只有一条警告，退出码 0，reload 以后全站 404。reload 以后用 curl 访问几个关键的网址。</p>
+    </Card>
+    <Card term="误区 6" title="kill -9 最干脆">
+      <p>KILL 由内核直接结束进程，写到一半的文件、没关的连接都没机会处理；实测退出码 137，收尾的代码一行没跑。由 systemd 管的服务用 <code>systemctl stop</code>：先 TERM，等 90 秒才 KILL。而且被信号杀死不算正常停止，配了 <code>Restart=on-failure</code> 的服务会马上被拉起来。</p>
+    </Card>
+    <Card term="误区 7" title="装了 certbot，证书就永远不会过期">
+      <p>续期那一刻，80 端口、DNS、Nginx 配置有一样不对就失败，而 Let's Encrypt 已经不发到期提醒邮件了。装好以后跑一次 <code>certbot renew --dry-run</code>，平时用 <code>certbot certificates</code> 或外部监控看到期日。</p>
+    </Card>
+    <Card term="误区 8" title="开了 ufw，没放行的端口外面就连不上">
+      <p>Docker 发布的端口不经过 ufw：流量在 nat 表就被转走了。<code>-p 3000:3000</code> 照样对外开放。不想公开的容器端口发布到 127.0.0.1，交给 Nginx 转发。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
