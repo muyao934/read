@@ -1,0 +1,387 @@
+---
+// 前端与设计 · 第 1 章（概念类）：why → core → how → block → box → flex → grid → reflow → example → pitfalls → sources
+// 2026-11-10 在本机 Chrome 157（headless）里实测：本机起服务器、故意延迟资源，用 DevTools 协议读时间、尺寸和跟踪
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 从字节到像素：本页在本机加载一次的跟踪，各阶段的实测耗时
+const PIPE = {
+  h: 300,
+  b: [["ps", 2, 8, 22, 84, "解析"], ["st", 27, 8, 22, 84, "样式"], ["ly", 52, 8, 22, 84, "布局"], ["pt", 77, 8, 21, 84, "绘制、合成"]],
+  it: [
+    { id: "msg", h: chip("66 KB HTML", "--muted", "out"), x: 13, y: 30 },
+    { id: "p1", h: lbl("DOM：<br>816 个元素", "m"), x: 13, y: 58, hide: 1 },
+    { id: "p2", h: lbl("1.9 ms", "g"), x: 13, y: 80, hide: 1 },
+    { id: "s1", h: lbl("301 条规则<br>× 每个元素", "m"), x: 38, y: 58, hide: 1 },
+    { id: "s2", h: lbl("4.3 ms", "m"), x: 38, y: 80, hide: 1 },
+    { id: "l1", h: lbl("1389 个<br>布局对象", "m"), x: 63, y: 58, hide: 1 },
+    { id: "l2", h: lbl("26.4 ms", "w"), x: 63, y: 80, hide: 1 },
+    { id: "t1", h: lbl("PrePaint<br>33.6 ms", "w"), x: 88, y: 58, hide: 1 },
+    { id: "t2", h: lbl("Paint 1.1 ms", "m"), x: 88, y: 80, hide: 1 },
+  ],
+  s: [
+    { c: "浏览器收到这一页的 HTML，66 KB。下面每一步的数字，都是在本机 Chrome 里给这一页录的一次跟踪。", lit: ["ps"] },
+    { c: "解析：把 HTML 一边读一边变成 DOM，一棵节点树，这页有 816 个元素。读到 <link rel=stylesheet> 就去下载样式表，解析不停。整页解析只用了 1.9 毫秒。",
+      set: { p1: { hide: 0 }, p2: { hide: 0 } }, lit: ["ps"] },
+    { c: "样式：样式表解析成规则（这页 301 条），每个元素和规则一一匹配，算出每个属性最终的值；同时建布局树：display: none 的不进来，::before、::after 进来。4.3 毫秒。",
+      set: { msg: { x: 38, h: chip("DOM + 规则", "--accent") }, s1: { hide: 0 }, s2: { hide: 0 } }, lit: ["st"] },
+    { c: "布局：算出每个盒子多宽、多高、在哪。布局对象 1389 个，比元素多：每段文字、每个伪元素都有自己的盒子。这一步 26.4 毫秒，第二贵。",
+      set: { msg: { x: 63, h: chip("算位置大小", "--accent") }, l1: { hide: 0 }, l2: { hide: 0 } }, lit: ["ly"] },
+    { c: "PrePaint 算出变换、裁剪、滚动、透明度这几棵“属性树”，33.6 毫秒，最贵的一步。Paint 只是写出一张绘制指令清单（先画这个矩形，再写这行字），不画像素，所以只要 1.1 毫秒。",
+      set: { msg: { x: 88, h: chip("指令清单", "--accent") }, t1: { hide: 0 }, t2: { hide: 0 } }, lit: ["pt"] },
+    { c: "清单交给合成线程：分层、光栅化成像素（多半在 GPU 上），拼成一帧显示出来。本机这一页，从开始导航到第一次显示内容是 104 毫秒。",
+      set: { msg: { x: 88, h: chip("显示", "--ok", "out") } }, lit: ["pt"] },
+    { c: "要记住的是比例：解析 66 KB 的 HTML 才 2 毫秒，布局和 PrePaint 加起来 60 毫秒。长页面慢，慢在盒子多、关系复杂，不在 HTML 大。之后再改样式，浏览器只重做受影响的那几步（见“改了样式以后”一节）。",
+      lit: ["ly", "pt"] },
+  ],
+};
+
+// 什么挡住第一次显示：样式表挡显示、普通脚本挡解析；预加载扫描器照样往下找；defer、async
+const BLOCK = {
+  h: 300,
+  b: [["pa", 2, 8, 30, 84, "解析器"], ["nw", 35, 8, 30, 84, "网络"], ["sc", 68, 8, 30, 84, "屏幕"]],
+  it: [
+    { id: "msg", h: chip("link 样式表", "--muted", "out"), x: 17, y: 30 },
+    { id: "css", h: lbl("下载 CSS<br>（晚 1 秒）", "m"), x: 50, y: 58, hide: 1 },
+    { id: "js", h: lbl("预加载扫描器：<br>后面的 JS 也下", "m"), x: 50, y: 82, hide: 1 },
+    { id: "blank", h: lbl("白屏", "w"), x: 83, y: 58, hide: 1 },
+    { id: "dom", h: lbl("DOM 照建", "g"), x: 17, y: 62, hide: 1 },
+  ],
+  s: [
+    { c: "解析器读到 head 里的 <link rel=stylesheet>：交给网络去下载，自己接着往下读。实测时，这个样式表故意晚 1 秒才返回。",
+      set: { css: { hide: 0 } }, lit: ["pa", "nw"] },
+    { c: "解析没停，DOM 照常建好。可屏幕上什么都不显示：head 里的样式表会挡住第一次显示。不挡的话，你会先看到一闪而过的没有样式的页面。实测第一次显示内容（FCP）推迟到 1024 毫秒。",
+      set: { dom: { hide: 0 }, blank: { hide: 0 } }, bad: ["sc"] },
+    { c: "读到一个普通的 script 标签（没有 defer、async）：解析器必须停下。脚本可能用 document.write 往这里插内容，也可能读样式，所以要等它下载、执行完才能接着读。",
+      set: { msg: { h: chip("script", "--warn") }, dom: { hide: 1 } }, bad: ["pa"] },
+    { c: "而且它还要等前面的样式表：样式表没到，脚本不执行。实测样式表后面跟一段内联脚本，脚本在 1008 毫秒才跑，“解析完成”（DOMContentLoaded）从 5 毫秒推迟到 1007 毫秒。",
+      set: { msg: { h: chip("等样式表", "--warn") } }, bad: ["pa"] },
+    { c: "解析器停着，预加载扫描器还在往后看源码，找到后面的脚本、图片就先去下载。实测两个各晚 1 秒的同步脚本，几乎同时开始、同时到达：一共 1 秒，不是 2 秒。",
+      set: { js: { hide: 0 } }, lit: ["nw"] },
+    { c: "defer 的脚本边解析边下载，解析完才按顺序执行：不挡显示（FCP 24 毫秒），但 DOMContentLoaded 要等它。async 下载完就执行，谁也不等：FCP 20 毫秒，DOMContentLoaded 5 毫秒。type=module 默认就和 defer 一样。",
+      set: { msg: { h: chip("defer / async", "--accent") }, blank: { h: lbl("照常显示", "g") }, dom: { hide: 0 } }, lit: ["pa", "sc"] },
+  ],
+};
+
+// Flex 怎么分空间：先定基准尺寸，再分剩下的（或分摊溢出的），最后被最小尺寸卡住。数字都是实测
+const FLEX = {
+  h: 300,
+  b: [["g", 2, 6, 96, 27, "放大：分剩下的空间"], ["k", 2, 37, 96, 27, "缩小：按基准尺寸分摊"], ["m", 2, 68, 96, 27, "最小尺寸卡住"]],
+  it: [
+    { id: "g1", h: chip("flex: 1，600 宽", "--muted", "out"), x: 30, y: 22 },
+    { id: "g2", h: lbl("300 · 300", "g"), x: 74, y: 22, hide: 1 },
+    { id: "k1", h: chip("基准 400 和 200", "--muted", "out"), x: 30, y: 53 },
+    { id: "k2", h: lbl("200 · 100", "g"), x: 74, y: 53, hide: 1 },
+    { id: "m1", h: chip("flex: 1 + 长网址", "--muted", "out"), x: 30, y: 84 },
+    { id: "m2", h: lbl("389.8 · 16", "w"), x: 74, y: 84, hide: 1 },
+  ],
+  s: [
+    { c: "flex: 1 是 flex: 1 1 0 的简写：放大系数 1、缩小系数 1、基准尺寸 0。两项的基准都是 0，600 宽的剩余空间全部按 1 : 1 分：各 300。实测 300、300。",
+      set: { g1: { h: chip("flex: 1，600 宽", "--accent") }, g2: { hide: 0 } }, lit: ["g"] },
+    { c: "换成 flex: auto（1 1 auto），基准就是内容的宽度：实测两段文字 16 和 272。剩下 312 平分，各加 156，得到 172 和 428。所以 flex: auto 不是平分，是“内容宽的多拿”。",
+      set: { g1: { h: chip("flex: auto", "--accent") }, g2: { h: lbl("172 · 428", "g") } }, lit: ["g"] },
+    { c: "缩小反过来：基准 400 和 200 的两项挤进 300 宽，溢出 300。规范规定按“缩小系数 × 基准尺寸”分摊，400 那项摊 2 份、200 那项摊 1 份：各减 200 和 100。实测 200、100。",
+      set: { k1: { h: chip("基准 400 和 200", "--accent") }, k2: { hide: 0 } }, lit: ["k"] },
+    { c: "可是缩小有底线。flex 项目的 min-width 默认是 auto：不小于内容里最长的、断不开的那一段。一个长网址断不开，这一项最窄 389.8，另一项只剩 16，整行溢出 300 宽的容器 106。",
+      set: { m1: { h: chip("flex: 1 + 长网址", "--warn") }, m2: { hide: 0 } }, bad: ["m"] },
+    { c: "给项目加 min-width: 0，底线没了：实测回到 150、150（网址在自己的格子里溢出）。或者让网址能断：overflow-wrap: anywhere 也是 150、150。break-word 不行，实测还是 389.8：规范写明它断开的地方不算进最小尺寸。",
+      set: { m1: { h: chip("min-width: 0", "--ok") }, m2: { h: lbl("150 · 150", "g") } }, lit: ["m"] },
+    { c: "Grid 一模一样：1fr 其实是 minmax(auto, 1fr)，带着同样的自动最小值，实测 1fr 1fr 也是 389.8 和 16。写成 minmax(0, 1fr) 才平分。这个站的卡片、目录栏旁的正文，都是这样写的。",
+      set: { m1: { h: chip("grid 1fr 1fr", "--warn") }, m2: { h: lbl("389.8 · 16", "w") } }, bad: ["m"] },
+  ],
+};
+
+// 改了样式以后，下一帧哪几步要重做：2000 行的列表改一行，跟踪里各阶段出现与否
+const STAGE = {
+  h: 300,
+  b: [["st", 2, 8, 22, 84, "样式"], ["ly", 27, 8, 22, 84, "布局"], ["pt", 52, 8, 22, 84, "绘制"], ["cp", 77, 8, 21, 84, "合成"]],
+  it: [
+    { id: "msg", h: chip("什么都不改", "--muted", "out"), x: 50, y: 26 },
+    { id: "a", h: lbl("跑", "m"), x: 13, y: 62, hide: 1 },
+    { id: "b", h: lbl("跑", "m"), x: 38, y: 62, hide: 1 },
+    { id: "c", h: lbl("跑", "m"), x: 63, y: 62, hide: 1 },
+    { id: "d", h: lbl("跑", "g"), x: 88, y: 62, hide: 1 },
+    { id: "n", h: lbl("脏 5 / 4004", "m"), x: 38, y: 82, hide: 1 },
+  ],
+  s: [
+    { c: "一个 2000 行的列表，改其中一行，录下一帧的跟踪。先什么都不改：样式、布局、绘制都不跑。浏览器不会无缘无故重排。",
+      set: { d: { hide: 0, h: lbl("照常", "m") } }, lit: ["cp"] },
+    { c: "改 width：样式、布局、绘制、合成全跑。但布局只碰了 5 个对象（这一行、它的文字和上面几层），总共 4004 个：重排是增量的，不是整页重算。",
+      set: { msg: { h: chip("改 width", "--warn") }, a: { hide: 0 }, b: { hide: 0 }, c: { hide: 0 }, d: { hide: 0, h: lbl("跑", "g") }, n: { hide: 0 } }, bad: ["ly"] },
+    { c: "改 color：样式、绘制跑，布局不跑。颜色不影响大小和位置，只要重新写绘制清单。",
+      set: { msg: { h: chip("改 color", "--accent") }, b: { hide: 1 }, n: { hide: 1 } }, lit: ["st", "pt", "cp"] },
+    { c: "第一次给它设 transform（从没有到有）：意外的是布局、绘制也跑了。从没有变成有，要新建层叠上下文和属性树节点，这一次躲不掉。opacity 第一次设也一样。",
+      set: { msg: { h: chip("第一次设 transform", "--doubt") }, b: { hide: 0 } }, bad: ["ly", "pt"] },
+    { c: "已经有 transform，再改它的值：布局、绘制都不跑，只有样式和合成。动画每一帧都只走这条路，所以 transform、opacity 动画便宜。实测 opacity 从 0.99 改到别的值、加了 will-change 的 transform，结果相同。",
+      set: { msg: { h: chip("再改 transform", "--ok") }, b: { hide: 1 }, c: { hide: 1 } }, lit: ["st", "cp"] },
+  ],
+};
+
+// 2026-11-10 本机 Chrome 157：给本机 dist/ 的这一页录的跟踪（新开的页面），主线程上的事件；时间从开始导航算起（毫秒）
+const TRACE = `      11.9  ParseHTML 第 0–456 行             1.9 ms   整页 HTML 只解析了这一次
+      12.2  执行 head 里的主题脚本（第 8 行）  0.4 ms
+      15.3  执行正文里的内联脚本（第 446 行）  0.4 ms
+      15.7  UpdateLayoutTree（样式）           4.3 ms
+      20.0  Layout，脏 1389 / 1389            26.4 ms   第一次布局：全部都要算
+      47.9  PrePaint                          33.6 ms
+      81.9  Paint                              1.1 ms
+      85.0  domInteractive：解析完成
+      85.0  执行 module 脚本（动画引擎）      0.8 ms
+      85.9  DOMContentLoaded
+      86.9  Layout，脏 203 / 1574              1.6 ms   动画引擎建好了按钮和画面，只算新增的
+     104.2  第一次显示内容（FCP）`;
+
+const BOXCSS = `/* 这个站的 base.css 第一条布局规则：所有元素都按边框盒算宽 */
+*, *::before, *::after { box-sizing: border-box; }`;
+
+const GRIDCSS = `/* 文章页：目录栏 180px，正文占剩下的；窄屏变一栏 */
+.case-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 32px; }
+@media (max-width: 960px) { .case-body { grid-template-columns: 1fr; } }
+/* 知识卡片、时间线：都用 minmax(0, 1fr)，不让一段长代码把栏撑破 */
+.bgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.timeline li { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 32px; }`;
+
+const FLOWCSS = `/* base.css（区块链站，原样）：每项基准 150px，放不下就换行 */
+.flow { display: flex; flex-wrap: wrap; gap: 10px 30px; }
+.flow > li { flex: 1 1 150px; }
+.flow > li:not(:last-child)::after { right: -22px; /* 箭头画在这一项右边 */ }
+
+/* lib.css（阅读库）：不换行，等宽，可以比内容窄 */
+.flow { flex-wrap: nowrap; }
+.flow > li { flex: 1 1 0; min-width: 0; }`;
+
+const THRASH = `// 交替：写一个、读一个。每次读 offsetHeight，浏览器都得当场把布局算完
+els.forEach((e, i) => { e.style.width = w(i); sum += e.offsetHeight; });
+//   实测 500 个元素：Layout 500 次，30 ms
+
+// 先全写，再全读：改动攒到一起，只算一次
+els.forEach((e, i) => { e.style.width = w(i); });
+els.forEach((e) => { sum += e.offsetHeight; });
+//   实测：Layout 1 次，1 ms`;
+
+const SOURCES = [
+  { title: "HTML Standard：The script element", url: "https://html.spec.whatwg.org/multipage/scripting.html", by: "WHATWG", note: "普通脚本下载、执行都挡住解析；defer 解析完才执行；async 下载完就执行；module 默认像 defer，defer 对它没有作用。" },
+  { title: "HTML Standard：Interactions of styling and scripting", url: "https://html.spec.whatwg.org/multipage/semantics.html", by: "WHATWG", note: "“有挡住脚本的样式表”的定义：解析器插入的样式表、media 对得上，在下载时会挡住后面的脚本。" },
+  { title: "CSS 2.2：Collapsing margins", url: "https://www.w3.org/TR/CSS22/box.html", by: "W3C", note: "相邻的竖直外边距合并，取最大的；父元素和第一个子元素的上外边距之间没有边框、内边距就合并；新块格式化上下文不和子元素合并。" },
+  { title: "CSS Box Sizing Level 3", url: "https://www.w3.org/TR/css-sizing-3/", by: "W3C", note: "box-sizing 初始值 content-box；border-box 时宽高包含内边距和边框。" },
+  { title: "CSS Flexible Box Layout Level 1", url: "https://www.w3.org/TR/css-flexbox-1/", by: "W3C", note: "flex: 正数 等于 flex: 正数 1 0；flex: auto 等于 1 1 auto；缩小按“缩小系数 × 基准尺寸”；自动最小尺寸是内容决定的最小尺寸；相邻项目的外边距不合并。" },
+  { title: "CSS Grid Layout Level 1", url: "https://www.w3.org/TR/css-grid-1/", by: "W3C", note: "fr 单独写时等于 minmax(auto, fr)；auto-fit 和 auto-fill 一样，只是放完以后把空的重复轨道折叠掉。" },
+  { title: "CSS Text Level 3：overflow-wrap", url: "https://www.w3.org/TR/css-text-3/", by: "W3C", note: "anywhere 产生的断点算进最小尺寸，break-word 的不算。" },
+  { title: "RenderingNG architecture", url: "https://developer.chrome.com/docs/chromium/renderingng-architecture", by: "Chrome for Developers", note: "渲染流水线的各个阶段：样式、布局、PrePaint、绘制、提交、分层、光栅化……；主线程和合成线程各做什么。" },
+  { title: "Don't fight the browser preload scanner", url: "https://web.dev/articles/preload-scanner", by: "web.dev", note: "预加载扫描器只看 HTML 源码；用 JS 插入的资源、CSS 里引用的资源它看不到。" },
+  { title: "Stick to compositor-only properties and manage layer count", url: "https://web.dev/articles/stick-to-compositor-only-properties-and-manage-layer-count", by: "web.dev", note: "只有 transform 和 opacity 能只在合成线程上动画；will-change 提升成单独的层；每一层都占内存。" },
+  { title: "Avoid large, complex layouts and layout thrashing", url: "https://web.dev/articles/avoid-large-complex-layouts-and-layout-thrashing", by: "web.dev", note: "强制同步布局和布局抖动。" },
+  { title: "The future of loading CSS", url: "https://jakearchibald.com/2016/link-in-body/", by: "Jake Archibald，2016", note: "body 里的样式表：挡住解析，让它前面的内容先显示。" },
+  { title: "本站实测", note: "2026-11-10 在本机 Chrome 157（headless）里，用 DevTools 协议驱动：本机起服务器、故意延迟资源，读导航和绘制时间；在测试页上读元素尺寸；录跟踪看各阶段；以及这个站的线上页面和本机构建。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>搭这个站时，有几件事当时只是照着改了，没讲为什么：</p>
+  <ul>
+    <li>流程块的箭头在 iPad 上伸出了正文栏：实测区块链页面在 834、956、1032 宽时都伸出 22px，1376 以上又没事。</li>
+    <li>这一章测量时，我在页面最后加了一小段测量脚本，结果“解析完成”的时间从 5 毫秒变成了 1012 毫秒：是测量脚本自己被挡住了。</li>
+    <li>每页 head 的最前面有一小段读主题的脚本，排在样式表前面，注释写着“绘制前套上主题，避免闪一下”。</li>
+    <li>卡片网格写的是 <code>minmax(0, 1fr)</code>，不是更短的 <code>1fr</code>。</li>
+  </ul>
+  <p>这些都是浏览器怎么画页面的直接后果。这一章从收到 HTML 讲到第一次显示：中间经过哪几步、什么会挡住显示；盒模型、Flex、Grid 怎么算出每个盒子的尺寸；以及改了样式以后，哪几步要重做。数字都是在本机 Chrome 157 里实测的，需要时用本机服务器故意把资源延迟 1 秒。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="DOM" title="HTML 解析成的树">
+      <p>浏览器把 HTML 解析成一棵节点树。JS 读写的是这棵树，不是 HTML 原文。网络与服务器第 4 章那一页有 816 个元素，这一章的例子都用它。</p>
+    </Card>
+    <Card term="CSSOM · Computed Style" title="每个元素最终的样式">
+      <p>样式表解析成规则，再和每个元素匹配，算出每个属性最终的值，就是开发者工具 Computed 面板里看到的。那一页有 301 条规则。</p>
+    </Card>
+    <Card term="Render-blocking" title="挡住显示">
+      <p>head 里的样式表没到，浏览器就不显示页面，免得先闪一下没有样式的版本。所以样式表慢，用户看到的就是白屏。</p>
+    </Card>
+    <Card term="Parser-blocking" title="挡住解析">
+      <p>读到普通的 script 标签，解析器要停下，等它下载、执行完；它还得等前面的样式表。defer、async、type=module 的脚本下载时不停解析。</p>
+    </Card>
+    <Card term="Layout" title="布局：算位置和大小">
+      <p>算出每个盒子多宽、多高、在哪，得到一棵片段树。尺寸来自盒模型，位置取决于所在的格式化上下文。布局对象比元素多：每段文字、每个伪元素都有自己的盒子。</p>
+    </Card>
+    <Card term="Paint · Composite" title="绘制和合成">
+      <p>Paint 只写出一张绘制指令清单。真正把它变成像素、拼成一帧，是合成线程和 GPU 的事。只改 transform、opacity 时，可以只在合成这一步完成。</p>
+    </Card>
+    <Card term="Box Model" title="盒模型">
+      <p>每个盒子从里到外四层：内容、内边距（padding）、边框（border）、外边距（margin）。<code>box-sizing</code> 决定 <code>width</code> 指的是哪一层。</p>
+    </Card>
+    <Card term="Formatting Context" title="格式化上下文">
+      <p>决定盒子怎么排。普通的块从上往下排，竖直的外边距会合并；flex、grid、<code>display: flow-root</code> 各自建立新的上下文，有自己的排法，外边距也不会漏到外面。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="how" title="从字节到像素" short="字节到像素">
+  <p>点“下一步”，看这个站的一页在本机加载一次，每一步做了什么、花了多久（数字取自一次跟踪，见“实际例子”）：</p>
+  <Anim data={PIPE} label="渲染流水线：解析 HTML 得到 DOM，样式匹配算出计算值并建布局树，布局算出每个盒子的位置大小，PrePaint 算属性树，Paint 写绘制指令清单，合成线程光栅化并显示；实测解析最便宜，布局和 PrePaint 最贵" />
+  <Flow items={[
+    { t: "解析", d: "HTML → DOM，1.9 ms" },
+    { t: "样式", d: "规则 × 元素，4.3 ms" },
+    { t: "布局", d: "位置和大小，26.4 ms", kind: "tip" },
+    { t: "绘制", d: "PrePaint 33.6 ms，Paint 1.1 ms", kind: "tip" },
+    { t: "合成", d: "光栅化，显示", kind: "ok" },
+  ]} />
+</Section>
+
+<Section id="block" title="什么挡住了第一次显示" short="什么挡住显示">
+  <p>本机起一个服务器，故意让样式表或脚本晚 1 秒返回，看它们分别挡住什么。点“下一步”：</p>
+  <Anim data={BLOCK} label="阻塞：head 里的样式表不挡解析但挡住第一次显示；普通脚本挡住解析，还要等前面的样式表；解析器停着时预加载扫描器照样下载后面的资源；defer 和 async 不挡显示" />
+  <Table cap="本机 Chrome 157 实测，每种 3 次取中位数，单位毫秒。FCP 是第一次显示内容，DCL 是 DOMContentLoaded（解析完成、defer 脚本执行完）。">
+    <tr><th>页面里有什么（晚 1 秒的那个）</th><th class="n">FCP</th><th class="n">DCL</th><th>说明</th></tr>
+    <tr><td>什么都没有</td><td class="n">28</td><td class="n">7</td><td>对照</td></tr>
+    <tr><td>head 里一个样式表</td><td class="n">1024</td><td class="n">5</td><td>挡显示，不挡解析</td></tr>
+    <tr><td>样式表，后面跟一段内联脚本</td><td class="n">1020</td><td class="n">1007</td><td>脚本等样式表，解析也就跟着等</td></tr>
+    <tr><td>head 里一个普通脚本</td><td class="n">1024</td><td class="n">1007</td><td>挡解析；它后面的内容还没解析，自然也没法显示</td></tr>
+    <tr><td>正文中间一个普通脚本</td><td class="n">28</td><td class="n">1008</td><td>它前面的内容先显示了；脚本执行时，后面的元素还不存在</td></tr>
+    <tr><td><code>defer</code> 脚本</td><td class="n">24</td><td class="n">1007</td><td>不挡显示；解析完才执行，DCL 等它</td></tr>
+    <tr><td><code>async</code> 脚本</td><td class="n">20</td><td class="n">5</td><td>谁也不挡，下载完就执行</td></tr>
+    <tr><td>正文中间一个样式表</td><td class="n">32</td><td class="n">1007</td><td>挡住解析，但它前面的内容先显示（Chrome 的做法）</td></tr>
+    <tr><td><code>media=print</code> 的样式表</td><td class="n">28</td><td class="n">5</td><td>和当前屏幕不匹配，照样下载，但谁也不挡</td></tr>
+    <tr><td>head 里连着两个普通脚本</td><td class="n">1020</td><td class="n">1007</td><td>两个都在 3 毫秒开始下载：预加载扫描器提前找到了第二个</td></tr>
+  </Table>
+  <Note kind="doubt" title="测量差点被自己挡住">第一版把测量代码写成页面最后的一段内联脚本，结果“head 里一个样式表”那一行的 DCL 是 1012：明明样式表不挡解析。原因就在表里第三行：测量脚本本身就是“样式表后面的脚本”，得等样式表到了才能执行。改成在页面外、load 之后用 DevTools 协议去读，DCL 回到 5。往页面里加的任何测量代码，都可能改变被测的东西。</Note>
+  <p>回头看这个站每一页的 head：先是那段读主题的内联脚本，再是唯一的样式表。脚本排在样式表前面，执行时还没有样式表要等；它在第一次显示之前就把保存的主题写到 html 上，所以深色主题的人不会先看到一闪的浅色。样式表照常挡住显示，这是故意的。动画引擎是 <code>type=module</code>，解析完才执行，也不挡。</p>
+</Section>
+
+<Section id="box" title="盒模型：width 到底指哪一层" short="盒模型">
+  <p>规范里 <code>box-sizing</code> 的初始值是 <code>content-box</code>：<code>width</code> 只指内容那一层，内边距和边框加在外面。在 300px 宽的容器里实测：</p>
+  <Table cap="本机 Chrome 157 实测，单位 px。">
+    <tr><th>写法</th><th class="n">实际宽度</th><th>为什么</th></tr>
+    <tr><td><code>width: 200px; padding: 20px; border: 5px</code></td><td class="n">250</td><td>200 + 20 × 2 + 5 × 2</td></tr>
+    <tr><td>同上，加 <code>box-sizing: border-box</code></td><td class="n">200</td><td>宽度包含内边距和边框，内容缩成 150</td></tr>
+    <tr><td><code>width: 100%; padding: 0 20px</code></td><td class="n">340</td><td>100% 是容器的 300，再加两边 20，溢出</td></tr>
+    <tr><td>同上，加 <code>box-sizing: border-box</code></td><td class="n">300</td><td>正好填满</td></tr>
+  </Table>
+  <Code code={BOXCSS} lang="text" cap="所以几乎每个站的样式表开头都有这一句，这个站也是。" />
+  <h3>外边距合并</h3>
+  <p>普通的块从上往下排时，相邻的竖直外边距不相加，取大的那个（CSS 2.2 的规则）。水平方向从不合并。</p>
+  <Table cap="实测，单位 px。">
+    <tr><th>情况</th><th class="n">间距</th><th>说明</th></tr>
+    <tr><td>两个兄弟块，下边距 20、上边距 30</td><td class="n">30</td><td>合并，取大的</td></tr>
+    <tr><td>同样两个块放进 <code>flex-direction: column</code></td><td class="n">50</td><td>flex 项目的外边距不合并（Flexbox 规范）</td></tr>
+    <tr><td>子元素 <code>margin-top: 40px</code>，父元素没有边框和内边距</td><td class="n">40</td><td>外边距漏到父元素外面：父元素整个往下挪 40，子元素贴着父元素的顶</td></tr>
+    <tr><td>同上，父元素加 <code>display: flow-root</code></td><td class="n">40</td><td>这回 40 留在父元素里面：父元素不动，子元素离父元素的顶 40</td></tr>
+  </Table>
+  <p>第三行是最常见的困惑：给卡片里第一个元素加上边距，想让内容往下挪，结果整张卡片往下挪了，卡片的背景色上面也没有多出空白。父元素建立新的块格式化上下文就不会这样，<code>display: flow-root</code> 是专门干这件事的；加内边距、边框，或者父元素本身是 flex、grid，也都可以。</p>
+</Section>
+
+<Section id="flex" title="Flex：怎么分剩下的空间" short="Flex">
+  <p>Flex 先给每一项定一个基准尺寸，再把剩下的空间按放大系数分出去，或者把溢出的部分按缩小系数分摊，最后被每一项的最小尺寸卡住。点“下一步”，数字都是实测：</p>
+  <Anim data={FLEX} label="Flex 分配空间：flex: 1 基准为 0，平分；flex: auto 以内容宽为基准，只分剩下的；缩小按缩小系数乘基准尺寸分摊；min-width 默认 auto，长网址断不开时撑破容器，min-width: 0 或 overflow-wrap: anywhere 才能平分；grid 的 1fr 同理" />
+  <Table cap="常用的几种简写（Flexbox 规范）。">
+    <tr><th>写法</th><th>等于</th><th>效果</th></tr>
+    <tr><td><code>flex: 1</code></td><td><code>1 1 0</code></td><td>从 0 开始分，内容不影响分到多少（除非被最小尺寸卡住）</td></tr>
+    <tr><td><code>flex: auto</code></td><td><code>1 1 auto</code></td><td>从内容宽度开始，只分剩下的</td></tr>
+    <tr><td><code>flex: none</code></td><td><code>0 0 auto</code></td><td>就是内容那么宽，不放大也不缩小</td></tr>
+  </Table>
+  <h3>流程块的箭头为什么伸出去</h3>
+  <p>开头那件事。区块链站的 base.css 和阅读库的 lib.css，流程块的写法不一样：</p>
+  <Code code={FLOWCSS} lang="text" cap="箭头是每一项的 ::after，画在这一项右边 22px 的地方，正好落在两项之间 30px 的间隙里。" />
+  <Table cap="本机实测一个 5 项的流程块：箭头伸出正文栏右边多少（负数是没伸出）。">
+    <tr><th>屏幕宽</th><th class="n">流程块宽</th><th>区块链页（base.css）</th><th>阅读库（lib.css）</th></tr>
+    <tr><td class="n">834</td><td class="n">734</td><td>4 + 1 两行；伸出 22px</td><td>一行，每项 123px；没伸出</td></tr>
+    <tr><td class="n">956</td><td class="n">841</td><td>4 + 1 两行；伸出 22px</td><td>一行，每项 144px；没伸出</td></tr>
+    <tr><td class="n">1032</td><td class="n">696</td><td>4 + 1 两行；伸出 22px</td><td>一行，每项 115px；没伸出</td></tr>
+    <tr><td class="n">1376</td><td class="n">999</td><td>一行；没伸出</td><td>一行；没伸出</td></tr>
+    <tr><td class="n">430</td><td class="n">—</td><td>竖排，箭头朝下</td><td>竖排，箭头朝下</td></tr>
+  </Table>
+  <p>原因是两样东西凑到了一起。一是换行：5 项各 150px 加 4 个 30px 的间隙要 870px，这三种宽度下流程块只有 696 到 841px，放得下 4 项（690px），第 5 项就换到下一行。二是箭头只认“是不是最后一个子元素”，不认“是不是这一行的最后一个”：第一行的第 4 项不是最后一个子元素，照样画了箭头，可它右边已经是正文栏的边了。阅读库改成不换行、从 0 开始等分，5 项永远在一行，箭头永远落在间隙里。代价是中等宽度下每项很窄，字要多折几行。1032 宽时流程块反而比 956 窄：屏幕超过 960px，文章页的左边多出一栏 180px 的目录，加上 32px 的间隙，正文少了 212px（下一节的 Grid）。</p>
+</Section>
+
+<Section id="grid" title="Grid：先画格子，再放内容" short="Grid">
+  <p>Flex 从内容出发，一维地排；Grid 先定好行和列（轨道），再把内容放进格子。它也有和 Flex 一样的“最小尺寸”问题：</p>
+  <Table cap="本机实测，单位 px。">
+    <tr><th>写法</th><th>容器</th><th>每列实际宽度</th><th>说明</th></tr>
+    <tr><td><code>1fr 1fr</code>，一格里有长网址</td><td class="n">300</td><td>389.8、16</td><td>1fr 等于 <code>minmax(auto, 1fr)</code>，被内容撑开，溢出 106</td></tr>
+    <tr><td><code>minmax(0, 1fr) minmax(0, 1fr)</code></td><td class="n">300</td><td>150、150</td><td>最小值改成 0，真的平分</td></tr>
+    <tr><td><code>repeat(auto-fill, minmax(200px, 1fr))</code>，3 项</td><td class="n">1000</td><td>200、200、200</td><td>能放 5 列就建 5 列，空的两列照样占地方</td></tr>
+    <tr><td><code>repeat(auto-fit, minmax(200px, 1fr))</code>，3 项</td><td class="n">1000</td><td>333.3 × 3</td><td>放完以后把空列折叠掉，3 项分掉全部宽度</td></tr>
+  </Table>
+  <Code code={GRIDCSS} lang="text" cap="这个站里的 Grid（摘自 base.css 和 components.css）。凡是可能放进长代码、长网址的格子，都写 minmax(0, 1fr)。" />
+  <Table cap="什么时候用哪个。">
+    <tr><th></th><th>Flex</th><th>Grid</th></tr>
+    <tr><td>方向</td><td>一维：一行或一列</td><td>二维：行和列一起定</td></tr>
+    <tr><td>尺寸从哪来</td><td>从内容出发，再分剩下的</td><td>先定轨道，内容放进去</td></tr>
+    <tr><td>适合</td><td>一排按钮、流程块、导航条</td><td>整页的栏、卡片网格、要上下对齐的表单</td></tr>
+  </Table>
+</Section>
+
+<Section id="reflow" title="改了样式以后：哪几步要重做" short="改了样式以后">
+  <p>页面显示出来以后，JS 改一个样式，浏览器不会从头再来，只重做受影响的那几步。一个 2000 行的列表，改其中一行，用跟踪看下一帧里哪些阶段跑了。点“下一步”：</p>
+  <Anim data={STAGE} label="改样式以后重做哪几步：什么都不改都不跑；改 width 样式、布局、绘制、合成都跑，但布局只碰 5 个对象；改 color 不跑布局；第一次设 transform 布局和绘制也跑；已有 transform 再改值只跑样式和合成" />
+  <Table cap="本机 Chrome 157 的跟踪，每种改动单独开一个新页面测。“跑”是下一帧里出现了这个阶段的事件。">
+    <tr><th>改了什么</th><th>样式</th><th>布局</th><th>绘制</th></tr>
+    <tr><td>什么都不改</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td><code>width</code></td><td>跑</td><td>跑，脏 5 / 4004 个对象</td><td>跑</td></tr>
+    <tr><td><code>color</code></td><td>跑</td><td>—</td><td>跑</td></tr>
+    <tr><td><code>transform</code>，从没有到有</td><td>跑</td><td>跑</td><td>跑</td></tr>
+    <tr><td><code>opacity</code>，从 1 到 0.5</td><td>跑</td><td>跑</td><td>跑</td></tr>
+    <tr><td><code>transform</code>，已经有了再改值</td><td>跑</td><td>—</td><td>—</td></tr>
+    <tr><td><code>opacity</code>，从 0.99 改到 0.5</td><td>跑</td><td>—</td><td>—</td></tr>
+    <tr><td><code>transform</code>，加了 <code>will-change: transform</code></td><td>跑</td><td>—</td><td>—</td></tr>
+  </Table>
+  <p>web.dev 的说法是：今天只有 transform 和 opacity 能只在合成线程上动画。实测补上了一个条件：它们从“没有”变成“有”的那一次，还是要布局和绘制，因为要新建层叠上下文。所以要做动画的元素，先给它一个初值（<code>transform: translateX(0)</code>），或者提前写 <code>will-change</code>。别给所有元素都加：每多一层都占内存，层太多反而更慢。动画的细节在第 4 章。</p>
+  <h3>强制同步布局</h3>
+  <p>改了样式，浏览器并不马上重排，而是攒到下一帧一起算。但只要你在中间读 <code>offsetHeight</code>、<code>getBoundingClientRect()</code> 这类布局的值，它就得当场把布局算完，好给你一个准确的数。写一个、读一个地交替，每次都要算一遍：</p>
+  <Code code={THRASH} lang="js" cap="本机实测，500 个元素。交替的写法慢了约 30 倍，元素越多差得越多。" />
+</Section>
+
+<Section id="example" title="实际例子：这一页是怎么画出来的" short="实际例子">
+  <p>拿网络与服务器第 4 章那一页（66 KB 的 HTML、一个 25 KB 的样式表、816 个元素）来看。先在本机给它录一次跟踪：新开一个页面，没有网络延迟，只看浏览器自己的活：</p>
+  <Code code={TRACE} lang="text" cap="本机 Chrome 157 的跟踪，只列了主线程上的主要事件。" />
+  <p>再看真实的网络。从这台电脑打开线上的这一页，连测 3 次：</p>
+  <Table cap="单位毫秒，从开始导航算起。第一次要新建连接；后两次复用连接（“—”是那一次没记下样式表的时间）。">
+    <tr><th></th><th class="n">连接</th><th class="n">HTML 首字节</th><th class="n">样式表到达</th><th class="n">解析完成</th><th class="n">第一次显示</th></tr>
+    <tr><td>线上，第一次</td><td class="n">608</td><td class="n">1207</td><td class="n">2939</td><td class="n">3017</td><td class="n">3184</td></tr>
+    <tr><td>线上，第二次</td><td class="n">0</td><td class="n">238</td><td class="n">—</td><td class="n">551</td><td class="n">564</td></tr>
+    <tr><td>线上，第三次</td><td class="n">0</td><td class="n">201</td><td class="n">—</td><td class="n">490</td><td class="n">512</td></tr>
+    <tr><td>本机 dist</td><td class="n">0</td><td class="n">5</td><td class="n">10</td><td class="n">72</td><td class="n">100</td></tr>
+  </Table>
+  <Table cap="这些数字说明了什么。">
+    <tr><th>看到的</th><th>说明什么</th></tr>
+    <tr><td>解析 66 KB 只要 1.9 ms，布局加 PrePaint 要 60 ms</td><td>这一页的成本在盒子多（1389 个布局对象），不在 HTML 大</td></tr>
+    <tr><td>第二次布局只碰了 203 / 1574 个对象</td><td>动画引擎建好按钮和画面后，布局只算新增的，是增量的</td></tr>
+    <tr><td>第一次打开，样式表 2939 ms 才到，第一次显示紧跟着在 3184 ms</td><td>首屏卡在样式表上：它挡住显示。传输只有 6.1 KB（压缩前 24.8 KB），慢在新连接和网络，不在大小</td></tr>
+    <tr><td>本机没有网络，第一次显示仍要约 100 ms</td><td>这是浏览器自己的活：样式、布局、PrePaint</td></tr>
+    <tr><td>解析完成（3017）比 HTML 下完（1308）晚了 1.7 秒</td><td>正文末尾那两段内联脚本在等样式表，见下面的对照</td></tr>
+  </Table>
+  <p>最后一行要验证一下。本机把样式表故意延迟 1 秒，对比原样的页面和去掉那两段内联脚本的页面：解析完成从 1075 ms 变成 8 ms，第一次显示从 1096 ms 变成 1092 ms，几乎没变。那两段脚本确实在等样式表，可第一次显示本来就要等样式表，所以它们没拖慢用户看到的东西，不用改。要让第一次打开更快，该动的是样式表本身，常见做法是把首屏要用的 CSS 直接写进 HTML，代价是每一页都变大，也没法跨页缓存。</p>
+  <Note kind="doubt" title="跟踪里有一处没弄清">第一次布局和 PrePaint 发生在解析完成之前，夹在正文末尾那段内联脚本之后；Chrome 为什么挑这个时机做一次完整的渲染更新，我没有找到文档说明。它不影响上面的结论：第一次显示要等样式表，也在第二次布局之后。</Note>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="脚本放在 head 里没关系">
+      <p>普通的 script 标签挡住解析，它后面的内容既没解析，也就没法显示。实测 head 里一个晚 1 秒的脚本，第一次显示推迟到 1024 ms。外部脚本加 <code>defer</code> 或用 <code>type=module</code>；内联脚本要短，并且想清楚它前面有没有样式表要等。</p>
+    </Card>
+    <Card term="误区 2" title="样式表放到页面底部，显示得更快">
+      <p>Chrome 里正文中间的样式表会挡住解析，只让它前面的内容先显示；后面的内容等它到了才出来，样式一套上去页面还会跳一下。首屏要用的样式就放 head，让它挡住显示，这本来就是想要的。</p>
+    </Card>
+    <Card term="误区 3" title="width: 100% 加 padding 不会溢出">
+      <p>默认的 <code>content-box</code> 下，100% 只是内容那一层，内边距加在外面：实测 300 的容器里变成 340。全局写一句 <code>box-sizing: border-box</code>。</p>
+    </Card>
+    <Card term="误区 4" title="上下两个外边距会相加">
+      <p>普通流里相邻的竖直外边距合并，取大的：20 和 30 是 30。子元素的上边距还会漏到父元素外面。换成 flex、grid 里就不合并了（实测 50）。</p>
+    </Card>
+    <Card term="误区 5" title="flex: 1 就是平分">
+      <p>它从 0 开始分，可每一项不会比内容的最小尺寸更窄。一个长网址就能把它撑成 389.8 和 16。加 <code>min-width: 0</code>，或者让长内容能断开；grid 写 <code>minmax(0, 1fr)</code>。</p>
+    </Card>
+    <Card term="误区 6" title="overflow-wrap: break-word 能防止撑破">
+      <p>它能让长单词在显示时折行，但规范写明它断开的地方不算进最小尺寸，所以在 flex、grid 里照样撑破（实测 389.8）。<code>overflow-wrap: anywhere</code> 才会把最小尺寸也降下来。这个站正文用的是 break-word，行内代码和来源列表用的是 anywhere。</p>
+    </Card>
+    <Card term="误区 7" title="transform 动画永远不触发布局">
+      <p>从没有 transform 变成有的那一次，实测布局、绘制都跑了。之后再改它的值才只走合成。先给初值或写 <code>will-change</code>。</p>
+    </Card>
+    <Card term="误区 8" title="DOMContentLoaded 了，用户就看到页面了">
+      <p>两件事没有先后关系：head 里的慢样式表，DCL 5 ms、第一次显示 1024 ms；正文中间的慢脚本反过来，第一次显示 28 ms、DCL 1008 ms。关心用户看到什么，看 FCP。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>

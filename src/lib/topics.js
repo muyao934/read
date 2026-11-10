@@ -50,7 +50,11 @@ export const TOPICS = [
     desc: "浏览器怎么画出页面，排版、颜色、布局、响应式、动画和组件化",
     lede: "从浏览器怎么画出页面讲起，到排版、颜色、布局、响应式、动画和组件化。这个站本身就是例子。",
     chapters: [
-      { slug: "rendering-layout", title: "页面怎么画出来：渲染和布局", desc: "HTML、CSS、JS 从下载到显示经过了什么；盒模型、Flex、Grid" },
+      { slug: "rendering-layout", title: "页面怎么画出来：渲染和布局", date: "2026-11-10", type: "concept",
+        desc: "从收到 HTML 到第一次显示经过哪几步，什么挡住显示、什么挡住解析；盒模型和外边距合并；Flex 怎么分空间、Grid 的 1fr 为什么会被撑破；改了样式以后哪几步要重做。数字都在本机 Chrome 里实测。",
+        lede: "这个站的流程块箭头在 iPad 上伸出了正文栏，卡片网格要写 minmax(0, 1fr)，head 最前面有一段读主题的小脚本。这些都是浏览器怎么画页面的直接后果。这一章从收到 HTML 讲到第一次显示，再讲盒模型、Flex、Grid 怎么算尺寸，以及改了样式以后哪几步要重做。",
+        tldr: "浏览器把 HTML 解析成 DOM，算出每个元素的样式，布局算出位置大小，绘制写出指令清单，合成线程变成像素。实测这一页解析只要 2 ms，布局和 PrePaint 要 60 ms。head 里的样式表挡住显示，普通脚本挡住解析还要等前面的样式表；defer、async、module 不挡。box-sizing 默认只算内容；竖直外边距合并取大的。flex: 1 和 grid 的 1fr 都带着“不比内容最小尺寸窄”的底线，长网址能撑破，要写 min-width: 0 或 minmax(0, 1fr)。改 width 要重排但只碰受影响的几个对象；已有的 transform、opacity 改值只走合成。",
+        tags: ["渲染", "CSS 布局", "Flex"] },
       { slug: "type-color", title: "排版和颜色", desc: "字体、字号、行高、中英文混排、齐线数字；对比度、语义色、深浅色主题" },
       { slug: "responsive-a11y", title: "适配每台设备、每个人", desc: "断点和视口，同一页在 iPhone、iPad、Mac 上怎么排；语义标签、键盘操作、读屏软件" },
       { slug: "graphics-motion", title: "图和动画", desc: "SVG 的 viewBox 和缩放、让图跟着主题变色；transition、transform，以及怎么不卡" },
