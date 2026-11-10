@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>KMS 签名原理｜区块链基础知识</title>
-<meta name="description" content="运营地址的私钥放在 AWS KMS 里：KMS 签什么、不签什么；DER、低位 s、v；以太坊和 Qtum 的交易怎么签；权限怎么配">
+<title>KMS 签名：原理与落地｜区块链基础知识</title>
+<meta name="description" content="运营地址的私钥放在 AWS KMS 里：KMS 签什么、不签什么；DER、低位 s、v；以太坊和 Qtum 的交易怎么签；签名前核对什么、账本怎么保证只签一次、权限怎么锁住、钥匙怎么换">
 <link rel="stylesheet" href="../../shared/base.css">
 <link rel="stylesheet" href="../assets/bs.css">
 <script src="../../shared/base.js"></script>
@@ -20,8 +20,8 @@
 <main class="wrap">
   <header class="case-head">
     <p class="crumbs"><a href="../index.html">区块链基础知识</a>　/　第 12 章</p>
-    <h1>KMS 签名原理</h1>
-    <p class="lede">托管桥的运营地址要全天候自动铸币、放款，它的私钥放在 AWS KMS 的 HSM 里。这一章讲 KMS 替签名服务做了什么、没做什么；签名服务怎么把 KMS 给的签名变成以太坊和 Qtum 都认的交易；权限该怎么配。看不懂的词，先看“先看懂几个概念”。</p>
+    <h1>KMS 签名：原理与落地</h1>
+    <p class="lede">托管桥的运营地址要全天候自动铸币、放款，它的私钥放在 AWS KMS 的 HSM 里。前半章讲原理：KMS 替签名服务做了什么、没做什么，签名服务怎么把 KMS 给的签名变成以太坊和 Qtum 都认的交易。后半章讲落地：签名前要核对什么，账本怎么保证同一笔只签一次，权限怎么锁到“只有签名程序能签、签名程序只能经两人批准才能改”，钥匙怎么换、出事怎么办。看不懂的词，先看“先看懂”一节。</p>
   </header>
 
   <div class="case-body">
@@ -30,7 +30,8 @@
 <section id="what">
   <h2 class="eyebrow">一句话</h2>
   <p class="sub">KMS 签名 = 私钥锁在 AWS 的 HSM 里，签名服务把 32 字节摘要交给它，拿回 DER 签名，再自己转成链要的格式</p>
-  <p class="lead">本章以一座 ETH ↔ Qtum 托管桥为例：桥在两条链上各有一个运营地址，私钥放在 AWS KMS 里。标<span class="ok-tag">已核实</span>的结论查过 AWS 官方文档或源码，来源在文末；标<span class="unv">待验证</span>的要在测试网实测。</p>
+  <p class="lead">本章以一座 ETH ↔ Qtum 托管桥为例：桥在两条链上各有一个运营地址，私钥放在 AWS KMS 里。标<span class="ok-tag">已核实</span>的结论查过官方文档、规范或源码，来源在文末；标<span class="unv">待验证</span>的要在 AWS 测试账号、测试网或 regtest 上实测；写“本地实测”的，是在本机用 Node.js 实际跑出来的；标<span class="ok-tag">已实测</span>的，是在一个 AWS 测试账号上真的调过 KMS（见<a href="#lab">动手</a>）；写“原型阶段的本地记录”的，是写这套方案时在本机跑过的原型测试，这次没有重跑。</p>
+  <p><b>这座桥做什么</b>：用户在以太坊上把 USDC 存进网关合约 EthGateway，桥在 Qtum 上给他铸出等量的 USDC.e；反过来，用户在 Qtum 上把 USDC.e 交给网关合约 MintGateway 销毁，桥在以太坊上从 EthGateway 付给他 USDC。“铸币”“放款”这两步，要有一个地址发交易去调网关，这就是<b>运营地址</b>，每条链一个：以太坊的只能调放款和取消提现，Qtum 的只能调铸币和取消存入，每一笔都受链上上限约束。合约函数名在本章是示意。</p>
   <div class="tbl"><table class="mw-760">
     <thead><tr><th>基础事实</th><th>内容</th></tr></thead>
     <tbody>
@@ -40,7 +41,8 @@
       <tr><td>KMS 的签名不能直接用</td><td>要补三件事：从 DER 里拆出 r、s；把 s 规范成低位；以太坊另外算出 v</td></tr>
       <tr><td>以太坊</td><td>一笔交易签一次。摘要 = keccak256(未签名交易)，签名放成 (yParity, r, s)</td></tr>
       <tr><td>Qtum</td><td>UTXO 模型，<b>每个输入单独算摘要、单独签</b>。摘要 = 双 SHA256(按规则改写过的交易)，签名编成 DER 加一个字节 0x01，和公钥一起放进输入的 scriptSig</td></tr>
-      <tr><td>安全靠什么</td><td>KMS 只保证私钥拿不走。谁能让 KMS 签、签什么，靠签名服务的核对和链上额度来限制</td></tr>
+      <tr><td>签名服务还要做的</td><td>自己解析交易、自己读源链核对；在账本里先占位再调 KMS，保证重试拿到的是同一笔；返回前自己验一遍签名</td></tr>
+      <tr><td>安全靠三层</td><td>① KMS 保证私钥拿不走；② 签名服务保证只签该签的交易；③ 链上额度和合约按转账 ID 去重，签名服务被攻破时损失有上限，同一笔也不会执行两次</td></tr>
     </tbody>
   </table></div>
   <div class="vs">
@@ -59,9 +61,22 @@
         <li><b>“私钥在 HSM 里就安全”只对一半</b>。收回权限之前，能调用这把钥匙的人想签什么就签什么</li>
         <li><b>KMS 返回的签名，两条链都不能直接用</b>。格式要转，s 要规范，以太坊还要自己算 v</li>
         <li><b>ECDSA_SHA_256 不会再算一次 SHA256</b>。用 DIGEST 模式时 KMS 直接签签名服务给的 32 字节，所以以太坊的 keccak256 摘要也能交给它签</li>
+        <li><b>只让一个角色有 <code>kms:Sign</code> 还不够</b>。账号管理员可以改签名程序的代码，或者新建一个程序借用同一个角色，照样想签什么签什么。所以“谁能改、谁能发布签名程序”也要锁住（见<a href="#iam">权限</a>）</li>
+        <li><b>同一个摘要签两次，签名不一样</b>。所以账本不能按“签好的交易哈希”去重，要按请求号、nonce 或输入去重（见<a href="#ledger">账本</a>）</li>
       </ul>
     </div>
   </div>
+  <p><b>落地要做的东西，按顺序</b>（后半章逐项展开）：</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>要做的</th><th>内容</th><th>见</th></tr></thead>
+    <tbody>
+      <tr><td>两个签名服务</td><td>每条链一个，各在一个独立的 AWS 账号里：一把 KMS 钥匙（<code>ECC_SECG_P256K1</code>）、一个签名 Lambda、一个 DynamoDB 账本、一份随代码发布的配置（预期地址、网关地址、上限、审核员名单）。以太坊那边另有一个 Qtum 节点和一个事件索引任务</td><td><a href="#overview">总览</a>的全貌图</td></tr>
+      <tr><td>执行器里和签名有关的部分</td><td>组交易、管 nonce 和 UTXO、加价重发、崩溃后恢复</td><td><a href="#eth">以太坊</a>、<a href="#qtum">Qtum</a>、<a href="#ledger">账本</a></td></tr>
+      <tr><td>账号和权限</td><td>SCP、钥匙策略、跨账号调用、发布流程，保证“只有签名 Lambda 能签，签名 Lambda 只能经两人批准的发布改动”</td><td><a href="#iam">权限</a></td></tr>
+      <tr><td>做的顺序</td><td>本地用一把本地私钥跑通签名转换和核对 → 注册 AWS 测试账号，在 CloudShell 里用 KMS 签一次 → 测试账号上跑通 KMS、账本、权限 → Sepolia 和 Qtum 测试网端到端 → 主网，先小额</td><td><a href="#lab">动手</a>、<a href="#project">上线前</a></td></tr>
+    </tbody>
+  </table></div>
+  <p>几条规则贯穿全章：签名服务不信执行器给的任何数据，只信自己解析出的交易和自己读到的链；先在账本里占位，再调 KMS；返回前自己验一遍签名；不确定就拒签或让执行器稍后重试，不放行；防重复付款靠合约按转账 ID 去重，账本是第二层。</p>
 </section>
 
 <section id="overview">
@@ -95,19 +110,83 @@
     <path class="ln d" d="M630,316 L688,316" marker-end="url(#kah)"/><text class="sm" x="659" y="308" text-anchor="middle">核对</text>
   </svg>
   </div></div>
-  <p>私钥一直在 HSM 里。签名服务把摘要交给 KMS，拿回 DER 签名，转成链要的格式；链上节点用公钥验证。<b>签什么由签名服务决定</b>，所以签名服务对交易的核对，是整套方案的关键。</p>
+  <p>私钥一直在 HSM 里。签名服务把摘要交给 KMS，拿回 DER 签名，转成链要的格式；链上节点用公钥验证。<b>签什么由签名服务决定</b>，所以图里没画出来的两件事才是整套方案的关键：算摘要之前，签名服务要自己核对这笔交易该不该签（见<a href="#check">签名前的核对</a>）；调 KMS 之前，要先在账本里占位，保证同一笔只交出一笔签好的交易（见<a href="#ledger">账本</a>）。</p>
+  <h3>全貌：每个组件放在哪个账号</h3>
+  <p>上面的图只画了“一次签名”。落到 AWS 上，组件分在几个账号里：执行器所在的业务账号没有任何钥匙，每个签名账号只放一条链的一把钥匙。</p>
+  <figure class="diagram">
+    <div class="scroll">
+    <svg viewBox="0 0 850 430" role="img" aria-labelledby="kms-arch-t kms-arch-d">
+      <title id="kms-arch-t">托管桥签名部分的账号布局</title>
+      <desc id="kms-arch-d">业务账号里的执行器扮演签名账号里的调用角色，再调用签名 Lambda。以太坊签名账号里有调用角色、签名 Lambda、KMS 钥匙、账本、Qtum 节点和事件索引任务；Qtum 签名账号里有调用角色、签名 Lambda、KMS 钥匙和账本。签名 Lambda 和事件索引任务读两家以太坊 RPC。两个签名账号的 API 调用都记进日志账号的组织级 CloudTrail。看门狗在单独的账号里。</desc>
+      <defs><marker id="kms-arch-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,1 L10,5 L0,9 z" class="d-head"/></marker></defs>
+      <rect class="d-box soft" x="10" y="10" width="170" height="150" rx="8"/><text class="d-t s" x="22" y="30">业务账号</text>
+      <rect class="d-box" x="30" y="50" width="130" height="50" rx="6"/><text class="d-t b" x="95" y="72" text-anchor="middle">执行器</text><text class="d-t s" x="95" y="90" text-anchor="middle">组交易、广播</text>
+      <text class="d-t s" x="95" y="122" text-anchor="middle">扮演调用角色</text><text class="d-t s" x="95" y="140" text-anchor="middle">再调签名 Lambda</text>
+      <rect class="d-box soft" x="10" y="230" width="150" height="130" rx="8"/><text class="d-t s" x="22" y="250">看门狗账号</text>
+      <rect class="d-box" x="25" y="265" width="120" height="50" rx="6"/><text class="d-t b" x="85" y="287" text-anchor="middle">看门狗</text><text class="d-t s" x="85" y="305" text-anchor="middle">对账，异常就暂停</text>
+      <text class="d-t s" x="85" y="337" text-anchor="middle">只读两个账本</text><text class="d-t s" x="85" y="353" text-anchor="middle">签名服务读它的结果</text>
+      <rect class="d-box soft" x="200" y="10" width="440" height="200" rx="8"/><text class="d-t s" x="212" y="30">以太坊签名账号</text>
+      <rect class="d-box" x="220" y="45" width="110" height="50" rx="6"/><text class="d-t" x="275" y="67" text-anchor="middle">调用角色</text><text class="d-t s" x="275" y="85" text-anchor="middle">只能调 live</text>
+      <rect class="d-box def" x="360" y="45" width="120" height="50" rx="6"/><text class="d-t b" x="420" y="67" text-anchor="middle">签名 Lambda</text><text class="d-t s" x="420" y="85" text-anchor="middle">核对·记账·签</text>
+      <rect class="d-box" x="510" y="45" width="110" height="50" rx="6"/><text class="d-t" x="565" y="67" text-anchor="middle">KMS 钥匙</text><text class="d-t s" x="565" y="85" text-anchor="middle">secp256k1</text>
+      <rect class="d-box" x="220" y="135" width="110" height="50" rx="6"/><text class="d-t" x="275" y="157" text-anchor="middle">Qtum 节点</text><text class="d-t s" x="275" y="175" text-anchor="middle">核对提现事件</text>
+      <rect class="d-box" x="360" y="135" width="120" height="50" rx="6"/><text class="d-t" x="420" y="157" text-anchor="middle">账本</text><text class="d-t s" x="420" y="175" text-anchor="middle">DynamoDB</text>
+      <rect class="d-box" x="510" y="135" width="110" height="50" rx="6"/><text class="d-t" x="565" y="157" text-anchor="middle">事件索引</text><text class="d-t s" x="565" y="175" text-anchor="middle">每分钟一次</text>
+      <rect class="d-box soft" x="200" y="230" width="440" height="190" rx="8"/><text class="d-t s" x="212" y="250">Qtum 签名账号</text>
+      <rect class="d-box" x="220" y="265" width="110" height="50" rx="6"/><text class="d-t" x="275" y="287" text-anchor="middle">调用角色</text><text class="d-t s" x="275" y="305" text-anchor="middle">只能调 live</text>
+      <rect class="d-box def" x="360" y="265" width="120" height="50" rx="6"/><text class="d-t b" x="420" y="287" text-anchor="middle">签名 Lambda</text><text class="d-t s" x="420" y="305" text-anchor="middle">核对·记账·签</text>
+      <rect class="d-box" x="510" y="265" width="110" height="50" rx="6"/><text class="d-t" x="565" y="287" text-anchor="middle">KMS 钥匙</text><text class="d-t s" x="565" y="305" text-anchor="middle">secp256k1</text>
+      <rect class="d-box" x="360" y="355" width="120" height="50" rx="6"/><text class="d-t" x="420" y="377" text-anchor="middle">账本</text><text class="d-t s" x="420" y="395" text-anchor="middle">DynamoDB</text>
+      <rect class="d-box" x="680" y="60" width="130" height="50" rx="6"/><text class="d-t" x="745" y="82" text-anchor="middle">以太坊 RPC</text><text class="d-t s" x="745" y="100" text-anchor="middle">两家服务商</text>
+      <rect class="d-box soft" x="675" y="250" width="140" height="60" rx="6"/><text class="d-t b" x="745" y="274" text-anchor="middle">日志账号</text><text class="d-t s" x="745" y="294" text-anchor="middle">组织级 CloudTrail</text>
+      <path class="d-line" d="M160,70 L218,70" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M160,90 L170,90 L170,290 L218,290" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M330,70 L358,70" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M480,70 L508,70" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M420,95 L420,133" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M380,95 L302,133" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M510,160 L482,160" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M450,45 L450,38 L760,38 L760,58" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M620,165 L730,165 L730,112" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M330,290 L358,290" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M480,290 L508,290" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M420,315 L420,353" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line" d="M470,315 L470,335 L830,335 L830,85 L812,85" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line dash" d="M640,195 L745,195 L745,248" marker-end="url(#kms-arch-ah)"/>
+      <path class="d-line dash" d="M640,280 L673,280" marker-end="url(#kms-arch-ah)"/>
+      <text class="d-t s" x="755" y="228">API 日志</text>
+    </svg>
+    </div>
+    <figcaption>实线是调用，虚线是日志。图里没画的两条：看门狗只读两个账本，签名服务读看门狗最新的对账结果。蓝框是唯一能调 KMS 签名的程序。</figcaption>
+  </figure>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>组件</th><th>在哪</th><th>做什么</th></tr></thead>
+    <tbody>
+      <tr><td>执行器</td><td>业务账号</td><td>组未签名交易，请签名服务签，广播，跟踪回执。自己不持有任何钥匙</td></tr>
+      <tr><td>调用角色</td><td>签名账号</td><td>业务账号的执行器扮演它，它只能调签名 Lambda 的 <code>live</code> 别名</td></tr>
+      <tr><td>签名 Lambda</td><td>签名账号</td><td>核对、记账、调 KMS、转换签名、自检</td></tr>
+      <tr><td>KMS 钥匙</td><td>签名账号</td><td>运营钥匙。只有签名 Lambda 的执行角色能调 <code>Sign</code></td></tr>
+      <tr><td>账本</td><td>签名账号</td><td>每次签名的记录、nonce 和输入的绑定、自动放行的累计</td></tr>
+      <tr><td>Qtum 节点</td><td>以太坊签名账号</td><td>以太坊签名服务用它核对 Qtum 上的提现事件，不用业务那边的节点</td></tr>
+      <tr><td>事件索引任务</td><td>以太坊签名账号</td><td>定时按转账 ID 记下两条链网关的事件，给放款前的对账预检用（见<a href="#check">核对</a>）</td></tr>
+      <tr><td>以太坊 RPC</td><td>外部</td><td>两家服务商，结果一致才算数</td></tr>
+      <tr><td>看门狗</td><td>看门狗账号</td><td>发布对账结果；只读两个账本，核对每次签名都对应链上交易</td></tr>
+      <tr><td>CloudTrail</td><td>日志账号</td><td>记录两个签名账号的所有 API 调用，成员账号删不掉</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Qtum 签名服务不需要 Qtum 节点：它核对的是以太坊上的存入；交易输入的金额从执行器送来的前序交易里取，按哈希核对（见<a href="#check">核对</a>）。</p>
 </section>
 
 <section id="basics">
   <h2 class="eyebrow">先看懂</h2>
-  <p class="lead">后面几节用到的基础知识都在这里，分成两组：密码学和 KMS、两条链的交易。地址编码、AWS 权限、系统角色放在用到它们的那一节开头。已经熟悉的可以直接跳到 <a href="#kms">KMS 提供什么</a>。</p>
+  <p class="lead">后面几节用到的基础知识都在这里，分成三组：密码学和 KMS、两条链的交易、AWS 和工程。地址编码、系统角色放在用到它们的那一节开头。已经熟悉的可以直接跳到 <a href="#kms">KMS 提供什么</a>。</p>
   <div class="tbl"><table class="mw-640">
     <thead><tr><th>看不懂这一节</th><th>先看</th></tr></thead>
     <tbody>
-      <tr><td><a href="#kms">KMS 提供什么</a>、<a href="#flow">签名流程</a>、<a href="#format">签名格式</a></td><td><a href="#g-crypto">密码学和 KMS</a></td></tr>
-      <tr><td><a href="#eth">以太坊</a>、<a href="#qtum">Qtum</a>、<a href="#compare">对照</a>、<a href="#verify">还要验证的</a></td><td><a href="#g-tx">两条链的交易</a></td></tr>
+      <tr><td><a href="#kms">KMS 提供什么</a>、<a href="#lab">动手</a>、<a href="#flow">签名流程</a>、<a href="#format">签名格式</a></td><td><a href="#g-crypto">密码学和 KMS</a></td></tr>
+      <tr><td><a href="#eth">以太坊</a>、<a href="#qtum">Qtum</a>、<a href="#compare">对照</a>、<a href="#check">签名前的核对</a></td><td><a href="#g-tx">两条链的交易</a></td></tr>
+      <tr><td><a href="#ledger">账本</a>、<a href="#iam">权限</a>、<a href="#ops">运维</a></td><td><a href="#g-aws">AWS 和工程</a></td></tr>
       <tr><td><a href="#addr">地址</a></td><td>那一节开头的四个词（压缩公钥、hash160、Base58Check、EIP-55）</td></tr>
-      <tr><td><a href="#iam">权限</a></td><td>那一节开头的词表（账号、IAM 角色、策略、ARN、钥匙策略、SCP）</td></tr>
       <tr><td><a href="#flow">签名流程</a>里的角色</td><td>那一节开头的角色表</td></tr>
     </tbody>
   </table></div>
@@ -169,7 +248,7 @@
         </table></div>
         <p class="note">表里的“÷”都是在对 n 取余的意义下算的。</p>
         <p><b>后面用到的两个结论，都来自这张表</b>：把 s 换成 n − s，u₁、u₂ 都变成相反数，P 变成它上下翻转的那个点，横坐标不变，所以照样验证通过，这就是<a href="#c-lows">低位 s</a> 问题。只知道 r，横坐标等于 r 的点有两个（一上一下），所以从签名反推公钥时有两个候选，以太坊用 v 指明是哪一个（见<a href="#eth">以太坊</a>）。</p>
-        <p><b>常见误解</b>：“ECDSA 就是 secp256k1”，不是：ECDSA 是算法，secp256k1 是它用的那条曲线，同一个算法换一条曲线，就是另一套互不相通的钥匙。“同一条消息签两次，签名一样”，通常不一样：每次的 k 不同，签名也就不同，但两个签名都能验证通过。用 Node 对同一条消息签两次就能看到，两次结果不同。</p>
+        <p><b>常见误解</b>：“ECDSA 就是 secp256k1”，不是：ECDSA 是算法，secp256k1 是它用的那条曲线，同一个算法换一条曲线，就是另一套互不相通的钥匙。“同一条消息签两次，签名一样”，通常不一样：每次的 k 不同，签名也就不同，但两个签名都能验证通过。用 Node 对同一条消息签两次就能看到，两次结果不同（本地实测）；让 KMS 对同一个摘要签两次，结果也不同<span class="ok-tag">已实测</span>。有一种做法（RFC 6979）用私钥和摘要算出 k，同样的输入签名就固定，但 KMS 的文档没有承诺它用哪种。所以设计不能依赖“签名固定”：同一笔交易重签一次，交易哈希就可能变，账本要按 nonce 或输入去重（见<a href="#ledger">账本</a>）。</p>
         <p><b>k 必须保密，而且每次都不同</b>：用同一个 k 签过两条不同的消息，别人就能直接算出私钥。2010 年索尼 PS3 的签名私钥就是这样泄露的。HSM 在内部生成 k，外面碰不到，这也是签名交给 HSM、不自己写代码实现的原因之一。</p>
         <p class="note">合约怎么从签名算出签名者地址（<code>ecrecover</code>）：<a class="chap-link" href="bridges.html#sig">第 03 章：一份签名是怎么被验证的</a></p>
       </div>
@@ -263,6 +342,7 @@
             <tr><td>主网、测试网、regtest</td><td>主网上的币有真实价值；测试网（Sepolia、Qtum Testnet）的币免费领、没有价值；regtest 是在自己电脑上起的私有链，什么时候出块自己说了算</td></tr>
           </tbody>
         </table></div>
+        <p><b>最终确定</b>：确认数只是“越来越难推翻”，以太坊另有一个硬标准。权益证明下每 12 秒一个 slot，32 个 slot 一个 epoch；区块要跨过两个 epoch（按 2 × 32 × 12 秒算约 12.8 分钟，ethereum.org 写“约 15 分钟”）才被<b>最终确定</b>（finalized），之后不会再被重组。RPC 可以直接用 <code>finalized</code> 这个标签查到最新的最终确定区块<span class="ok-tag">已核实</span>。Qtum 没有最终确定，只能看确认数；主网目标出块间隔 32 秒<span class="ok-tag">已核实</span>。签名服务核对源链时，以太坊以 finalized 为准，Qtum 以配置的确认数为准（见<a href="#check">签名前的核对</a>）。</p>
         <p><b>两类规则</b>：<b>共识规则</b>所有节点都必须遵守，违反了，交易或区块就是无效的，永远上不了链，以太坊的低位 s 属于这类。<b>转发策略</b>（也叫标准策略）是节点自己的默认规则，不符合的交易，节点不收进内存池、也不转发，但不算违反共识，Qtum 的低位 s 属于这类。对签名服务来说效果一样：不符合就发不出去。</p>
         <p><b>EIP、BIP</b>：分别是以太坊和比特币的改进提案，是规范文件的编号。本章提到的 EIP-1559、EIP-2、EIP-55、BIP66 都是。Qtum 沿用了比特币的很多 BIP。</p>
         <p class="note">深入：<a class="chap-link" href="basics.html#bits">入门：为什么桥要“等几个块”</a> · <a class="chap-link" href="bitcoin.html#forks">第 08 章：分叉和重组</a></p>
@@ -273,6 +353,8 @@
         <p><b>两种账户</b>：普通地址由私钥控制，能发交易；合约地址由代码控制，自己不能发起交易，只能被调用。合约代码在 EVM（以太坊虚拟机）里执行，用 Solidity 语言写。Qtum 内置了兼容 EVM 的虚拟机（见下面<a href="#c-qcall">Qtum 怎么调用合约</a>）。</p>
         <p><b>nonce</b>：每个地址发出的交易按 0、1、2…编号，每笔必须用下一个号。作用有两个：同一笔交易不能被重复执行；用同一个 nonce 再发一笔手续费更高的交易，可以替换掉还没上链的那一笔（加价重发）。</p>
         <p><b>gas</b>：执行交易要消耗计算量，用 gas 计。gasLimit 是这笔交易最多能用多少 gas，按实际用掉的收费；超过上限，交易失败，已经用掉的 gas 照样收费。<b>手续费</b>（EIP-1559）：每个区块有一个随拥堵自动涨落的基础费，这部分被销毁；另外给出块者一笔小费。交易里写两个上限：<code>maxPriorityFeePerGas</code>（每单位 gas 最多给多少小费）和 <code>maxFeePerGas</code>（每单位 gas 总共最多付多少）。实际每单位 gas 付“基础费 ＋ 小费”，不超过总上限。<b>单位</b>：1 ETH ＝ 10¹⁸ wei；gas 价格常用 gwei，1 gwei ＝ 10⁹ wei。</p>
+        <p><b>交易池和加价替换</b>：一个地址的交易按 nonce 顺序上链。nonce 7 那笔手续费太低卡住了，8、9、10 全部堵在后面。解决办法是用同一个 nonce 7 签一笔手续费更高的交易，替换池里那笔。节点不是“高一点就换”：go-ethereum 默认要求新交易的两个上限（<code>maxFeePerGas</code> 和小费 <code>maxPriorityFeePerGas</code>）<b>都</b>严格高于旧交易，而且都不低于旧值的 110%<span class="ok-tag">已核实</span>。只涨一项会被拒。</p>
+        <p><b>常见误解：“卡住了就给自己转 0 ETH，把 nonce 顶掉”</b>。普通钱包可以这么做，托管桥不行：签名服务只签网关的两个函数，不签任何别的交易，这是有意的限制，否则“顶 nonce”就成了一个能签任意交易的口子。卡住了只能用同一笔调用加价重发（见<a href="#eth">以太坊</a>的动画）。</p>
         <p><b>和托管桥的关系</b>：运营地址要预先存一些 ETH 付手续费。nonce 必须连续，所以同一时刻只能有一个执行器给运营地址分配 nonce，否则会撞号。</p>
         <p class="note">深入：<a class="chap-link" href="evm.html#account">第 09 章：两种账户</a> · <a class="chap-link" href="ethereum.html#fees">第 05 章：EIP-1559</a></p>
       </div>
@@ -310,9 +392,10 @@
             <tr><td>找零</td><td>钞票只能整张花。要付 3、手上是一张 5，就得再给自己开一个 2 的输出</td></tr>
             <tr><td>手续费</td><td>交易里没有手续费字段：手续费 ＝ 输入总额 − 输出总额，归出块者</td></tr>
             <tr><td>单位</td><td>1 QTUM ＝ 10⁸ 个最小单位，沿用比特币的叫法，叫“聪”（sat）</td></tr>
+            <tr><td>费率</td><td>手续费按交易的字节数算，单位是“聪每字节”。Qtum 节点默认的最低转发费率是 400 聪每字节；替换一笔交易时，新交易每字节至少再多付 10 聪<span class="ok-tag">已核实</span></td></tr>
           </tbody>
         </table></div>
-        <p><b>常见误解</b>：“忘了写找零，多的钱会退回来”，不会，差额全部算手续费，被出块者拿走。“UTXO 链也有 nonce”，没有：一个输出只能被花一次，这就防住了重复花费，两笔交易花同一个输出，只有一笔能上链。加价重发就是靠这一点（见 <a href="#qtum">Qtum</a>）。</p>
+        <p><b>常见误解</b>：“忘了写找零，多的钱会退回来”，不会，差额全部算手续费，被出块者拿走。“UTXO 链也有 nonce”，没有：一个输出只能被花一次，这就防住了重复花费，两笔交易花同一个输出，只有一笔能上链。加价重发就是靠这一点（见 <a href="#qtum">Qtum</a>）。“交易里写着每个输入多少钱”，没有：输入只写“交易 ID ＋ 第几个输出”，金额记在被引用的那笔交易里。签名服务要拿到这些前序交易，才知道每个输入多少钱（见<a href="#check">签名前的核对</a>的动画）。</p>
         <p><b>字节顺序的坑</b>：区块浏览器上显示的交易 ID，和交易内部引用它时存的字节顺序正好相反；金额、输出序号等字段在交易内部是小端（低位在前）。组交易时要按内部的顺序写。</p>
         <p><b>和托管桥的关系</b>：运营地址的 QTUM 是一堆 UTXO。执行器要记住哪些 UTXO 可用、哪些已经被还没上链的交易占用，不能让两笔交易抢同一个 UTXO。</p>
         <p class="note">深入：<a class="chap-link" href="qtum.html#utxo">第 01 章：UTXO 和账户模型（含动画）</a></p>
@@ -343,17 +426,97 @@
         <div class="tbl"><table>
           <thead><tr><th>部分</th><th>意思</th></tr></thead>
           <tbody>
-            <tr><td class="mono">OP_4</td><td>虚拟机版本；开源库 qtum-ethers-wrapper 固定写 4</td></tr>
-            <tr><td class="mono">gasLimit</td><td>最多用多少 gas</td></tr>
-            <tr><td class="mono">gasPrice</td><td>每单位 gas 付多少，单位是聪（sat）</td></tr>
+            <tr><td class="mono">OP_4</td><td>虚拟机版本。节点要求版本字段里的 rootVM 是 1、其余为 0，<code>OP_4</code> 就是这个值；开源库 qtum-ethers-wrapper 也固定写 4</td></tr>
+            <tr><td class="mono">gasLimit</td><td>最多用多少 gas。按脚本整数写：小端、最短、最多 8 字节、不能是负数。例如 250000 写成 3 字节 <span class="mono">90d003</span></td></tr>
+            <tr><td class="mono">gasPrice</td><td>每单位 gas 付多少，单位是聪（sat）。例如 40 写成 1 字节 <span class="mono">28</span></td></tr>
             <tr><td>调用数据</td><td>和以太坊一样的 ABI 编码</td></tr>
             <tr><td>合约地址</td><td>20 字节</td></tr>
             <tr><td class="mono">OP_CALL</td><td>表示“调用已有合约”；部署新合约用 <code>OP_CREATE</code>，不带合约地址</td></tr>
           </tbody>
         </table></div>
-        <p><b>gas 从哪里付</b>：gasLimit × gasPrice 这笔钱算在交易手续费里预付（手续费 ＝ 输入总额 − 输出总额）。用不完的怎么退回<span class="unv">待验证</span>。</p>
-        <p><b>调用者是谁</b>：Qtum 交易里没有“发送方”字段。合约看到的 msg.sender，通常认为是第一个输入所花 UTXO 的地址，用的是那个 20 字节的 hash160。所以运营地址发交易时，所有输入都用运营地址的 UTXO<span class="unv">待验证</span>。</p>
+        <p><b>几个下限</b>（链上实际值由治理合约 DGP 决定，下面是默认值）：最低 gasPrice 40 聪；进内存池的 gasLimit 至少 22000；所有合约输出的 gasLimit × gasPrice 加起来不能超过手续费，否则节点报 <code>bad-txns-fee-notenough</code><span class="ok-tag">已核实</span>。</p>
+        <p><b>调用者是谁</b>：Qtum 交易里没有“发送方”字段。没有用 <code>OP_SENDER</code> 时，合约看到的 msg.sender 是<b>第一个输入所花那个输出的地址</b>（20 字节 hash160）；那个输出必须是 P2PKH 或 P2PK，否则节点报 <code>bad-txns-invalid-sender-script</code>，不收进内存池<span class="ok-tag">已核实</span>。</p>
+        <p><b>gas 怎么预付、怎么退</b>：gasLimit × gasPrice 算在手续费里预付（手续费 ＝ 输入总额 − 输出总额）。执行成功时，用剩的 (gasLimit − 实际用量) × gasPrice 作为一个付给“第一个输入的地址”的输出，加进出块的那笔交易（权益证明区块是 coinstake）里；执行出异常的（主动 REVERT 除外），gas 全部扣光、不退。出块交易的输出要等成熟才能花：主网第 845000 块以后是 2000 个区块，按 32 秒一块约 17.8 小时（按目标间隔算，不是实测）；提前花报 <code>bad-txns-premature-spend-of-coinbase</code><span class="ok-tag">已核实</span>。</p>
+        <p><b>和托管桥的关系</b>：所有输入都用运营地址的 UTXO，调用者和退回的 gas 就都落在运营地址。gasLimit 定得越贴近实际用量，被锁 17.8 小时的钱越少；算可用余额时，还没成熟的退款不能算进去。</p>
         <p class="note">深入：<a class="chap-link" href="qtum.html#aal">第 01 章：AAL，把 UTXO 交易翻译给 EVM</a></p>
+      </div>
+      <div class="bit wide" id="c-712">
+        <div class="bh"><span class="term">EIP-712</span><h4>审核员签名：EIP-712</h4></div>
+        <p><b>一句话</b>：EIP-712 是以太坊的“结构化数据签名”标准。钱包按字段把要签的内容显示出来（转账 ID、收款人、金额……），而不是一串看不懂的十六进制。签的是 keccak256(0x19 ‖ 0x01 ‖ domainSeparator ‖ hashStruct(消息))<span class="ok-tag">已核实</span>。</p>
+        <p><b>domain</b>：写明这个签名属于哪个应用、哪个版本、哪条链（name、version、chainId）。同样的内容拿到别的应用或别的链上，摘要就变了，签名作废。</p>
+        <p><b>一个容易踩的坑</b>：MetaMask 要求 domain 里写了 chainId 的，必须等于钱包当前连接的链，否则直接报错、不让签<span class="ok-tag">已核实</span>。审核员审 Qtum 铸币时不想来回切网络，做法是 domain 的 chainId 固定写以太坊主网 1，真正的目标链写进消息里的一个字段，例如 <code>targetChainId</code>。Qtum 在 EVM 里的链 ID：主网 81，测试网 8889，regtest 8890；测试网和 regtest 在 Shanghai 升级高度之前也返回 81<span class="ok-tag">已核实</span>。</p>
+        <p><b>怎么验证</b>：从签名和摘要恢复出签名者地址，和审核员名单比。消息里任何一个字段不同，摘要就不同，恢复出的是一个无关的地址，所以不用逐字段比，地址对不上就拒（见<a href="#check">签名前的核对</a>）。</p>
+        <p><b>常见误解：“硬件钱包一定会逐字段显示”</b>。不一定：有的钱包和固件组合只显示 domain 和消息的两个哈希，审核员看不到金额和收款人，等于盲签。以 Ledger 为例：以太坊应用从 1.10.0 起支持完整的 EIP-712，在设备上算哈希、逐字段显示；老的 v0 模式只收 domain 和消息两个哈希，屏幕上只能看哈希<span class="ok-tag">已核实</span>。钱包软件走哪种模式、要不要开盲签，各家不一样，所以上线前要用实际的硬件钱包加钱包软件签一次，看屏幕上是不是逐字段显示<span class="unv">待验证</span>。</p>
+      </div>
+    </div>
+  </div>
+  <div class="bgroup">
+    <h3 id="g-aws">AWS 和工程 <small>ORG · SCP · IAM · LAMBDA · DYNAMODB · CLOUDTRAIL</small></h3>
+    <p class="note">后半章（<a href="#check">核对</a>、<a href="#ledger">账本</a>、<a href="#iam">权限</a>、<a href="#ops">运维</a>）用到的 AWS 服务和工程概念。和 AWS 有关的说法按官方文档核实，来源在文末。</p>
+    <div class="bgrid">
+      <div class="bit wide" id="c-org">
+        <div class="bh"><span class="term">Organizations · SCP</span><h4>账号、组织、SCP</h4></div>
+        <p><b>一句话</b>：账号是 AWS 里资源和权限的边界，不同账号默认互相看不到。AWS Organizations 把多个账号归进一个组织，由管理账号统一管理；SCP（服务控制策略）是组织给成员账号设的权限上限。</p>
+        <p><b>SCP 只能拒绝，不能授予</b>：它划定“这个账号里最多能做什么”。IAM 策略允许、SCP 拒绝的操作，照样做不了。作用范围：成员账号里的所有用户和角色，<b>包括成员账号的 root</b>；不作用于管理账号；不作用于服务关联角色（AWS 服务自己用的角色）<span class="ok-tag">已核实</span>。条件里可以用 <code>aws:PrincipalArn</code> 区分调用者，一条 SCP 就能写成“除了某个角色，谁都不许做”。</p>
+        <p><b>组织级 CloudTrail</b>：在管理账号里建，成员账号看得到，但改不了、删不掉<span class="ok-tag">已核实</span>。签名账号的管理员想掩盖自己做过的事，删不掉这份日志。</p>
+        <p><b>常见误解：“账号管理员什么都能做”</b>。被 SCP 拒绝的操作，成员账号的管理员和 root 都做不了。反过来，管理账号不受 SCP 约束，谁控制管理账号，谁就能改 SCP。所以管理账号不跑任何业务，root 绑硬件 MFA，日常不用（见<a href="#iam">权限</a>）。</p>
+      </div>
+      <div class="bit wide" id="c-iampol">
+        <div class="bh"><span class="term">IAM · Key Policy · Grant</span><h4>IAM：角色、策略、钥匙策略、grant</h4></div>
+        <div class="tbl"><table>
+          <thead><tr><th>词</th><th>意思</th></tr></thead>
+          <tbody>
+            <tr><td>IAM 角色</td><td>一种身份，程序“扮演”它来调用 AWS，用临时凭证，没有长期密码</td></tr>
+            <tr><td>策略</td><td>一段 JSON 规则：允许或拒绝哪些操作（Action）、对哪些资源（Resource）、在什么条件下（Condition）</td></tr>
+            <tr><td>ARN</td><td>AWS 资源的唯一名字，例如 <code>arn:aws:kms:区域:账号:key/钥匙ID</code></td></tr>
+            <tr><td>信任策略</td><td>挂在角色上，写明谁可以扮演这个角色</td></tr>
+            <tr><td>AssumeRole</td><td>一个身份临时扮演另一个角色，常用于跨账号调用</td></tr>
+            <tr><td>钥匙策略</td><td>挂在 KMS 钥匙本身上的策略，每把钥匙有且只有一份</td></tr>
+            <tr><td>grant</td><td>KMS 的另一种授权方式：不改钥匙策略，也能把某些操作授权给别的身份</td></tr>
+          </tbody>
+        </table></div>
+        <p><b>判定规则</b>：默认拒绝；只要有一条明确的拒绝，任何允许都无效；SCP、IAM 策略、钥匙策略都允许才行。</p>
+        <p><b>KMS 特别之处 ①：钥匙策略说了算</b><span class="ok-tag">已核实</span>。AWS 默认的钥匙策略里有一条“允许本账号 root 使用 <code>kms:*</code>”，它的作用是让 IAM 策略能给这把钥匙授权。钥匙策略里没有这一条，IAM 策略写的允许对这把钥匙无效（IAM 的拒绝仍然有效）。</p>
+        <p><b>② 防锁死检查</b><span class="ok-tag">已核实</span>。<code>CreateKey</code>、<code>PutKeyPolicy</code> 会检查新策略是否还允许调用者以后再改策略，不允许就报错，除非显式设 <code>BypassPolicyLockoutSafetyCheck</code>（默认不设）。能管这把钥匙的唯一身份被删掉，就只能找 AWS Support。</p>
+        <p><b>③ grant 能绕开钥匙策略</b><span class="ok-tag">已核实</span>。有 <code>kms:CreateGrant</code> 的人可以把 <code>Sign</code> 授给别人，<b>自己都不需要有 <code>Sign</code> 权限</b>。grant 不改钥匙策略，只看钥匙策略发现不了；生效有几秒到约 5 分钟的延迟。条件键 <code>kms:GrantOperations</code> 能限制授出哪些操作，最省事的是在 SCP 里直接禁止 <code>CreateGrant</code>。</p>
+        <p><b>条件键</b>：<code>kms:SigningAlgorithm</code>、<code>kms:MessageType</code> 限定签名方式，只作用于 <code>Sign</code> 和 <code>Verify</code>；<code>aws:sourceVpce</code> 限定请求必须经过某个 VPC 端点，凭证被偷到 VPC 外面也签不了<span class="ok-tag">已核实</span>。</p>
+      </div>
+      <div class="bit wide" id="c-lambda">
+        <div class="bh"><span class="term">Lambda · VPC</span><h4>Lambda 和网络</h4></div>
+        <p><b>一句话</b>：Lambda 是 AWS 的托管运行环境：有请求来就运行一段代码，不用自己管服务器。本章的签名服务跑在 Lambda 上。</p>
+        <div class="tbl"><table>
+          <thead><tr><th>项</th><th>内容</th></tr></thead>
+          <tbody>
+            <tr><td>超时</td><td>默认 3 秒，最长 900 秒<span class="ok-tag">已核实</span>。签名服务要读两家 RPC、再调 KMS，默认值不够，必须改</td></tr>
+            <tr><td>预留并发</td><td>既是上限也是下限：同时最多跑这么多个实例，也保证至少有这么多可用，不另收费<span class="ok-tag">已核实</span>。设得小，被滥用时签名的速度也被限住</td></tr>
+            <tr><td>版本和别名</td><td>发布出的版本代码不能再改；别名指向某个版本，调用方只调别名。回滚就是把别名指回上一个版本</td></tr>
+            <tr><td>VPC</td><td>放进 VPC 才能访问私有子网里的节点。放进 VPC 的 Lambda 没有公网地址，放在公有子网里也上不了网，要经过 NAT 网关<span class="ok-tag">已核实</span></td></tr>
+            <tr><td>VPC 端点</td><td>不经过公网访问 AWS 服务。接口型（KMS、Secrets Manager 等）按小时和流量收费；网关型（S3、DynamoDB）不收费<span class="ok-tag">已核实</span></td></tr>
+          </tbody>
+        </table></div>
+        <p><b>常见误解：“Lambda 只会执行一次”</b>。同步调用出错时 Lambda 自己不重试，由调用方决定；而调用方用的 AWS SDK 默认就会重试超时、限流、5xx 这类瞬时错误<span class="ok-tag">已核实</span>。Lambda 的文档还提醒，出错的那一次，函数代码可能已经跑完、跑了一半或根本没跑。所以同一个签名请求可能到达两次，签名服务必须幂等（见<a href="#c-idem">幂等</a>、<a href="#ledger">账本</a>）。重试几次看 SDK 的设置：AWS 的 SDK 参考文档写的是 standard 模式最多 3 次（1 次 ＋ 2 次重试，DynamoDB 客户端 4 次），但这一页描述的是 2026 年的新重试行为，要设 <code>AWS_NEW_RETRIES_2026=true</code> 才启用；不设时用旧行为，默认值不同，页面没有列出。具体次数以所用 SDK 版本的文档为准，结论都一样：请求会重复到达。</p>
+      </div>
+      <div class="bit wide" id="c-ddb">
+        <div class="bh"><span class="term">DynamoDB</span><h4>DynamoDB：条件写入和事务</h4></div>
+        <p><b>一句话</b>：DynamoDB 是 AWS 的托管键值数据库，签名服务的账本放在这里。“只签一次”靠它的两样东西。</p>
+        <p><b>条件写入</b>：写入时附带条件，例如“这条记录还不存在”“版本号还是 3”，条件不成立整次写入失败。两个并发请求抢同一条记录，只有一个能写成功，另一个收到失败，重新读取后再决定。</p>
+        <p><b>事务</b> <code>TransactWriteItems</code>：一次最多 100 个操作、总共不超过 4 MB，要么全成功，要么全失败；同一个事务里不能对同一条记录做两个操作。可以带 <code>ClientRequestToken</code>：第一次请求完成后 10 分钟内，用同一个 token 重复提交不会再执行；token 相同、参数不同报 <code>IdempotentParameterMismatchException</code><span class="ok-tag">已核实</span>。</p>
+        <p><b>限制和保护</b>：单条记录最大 400 KB（属性名也算）；时间点恢复（PITR）能恢复到最近 1–35 天内的任意时刻，默认保留 35 天，恢复出来总是一张新表；新表默认<b>不开</b> PITR，删除保护也默认关闭，都要手动打开；表可以挂资源策略，授权别的账号读<span class="ok-tag">已核实</span>。</p>
+        <p><b>常见误解：“<code>ContinuousBackupsStatus</code> 是 ENABLED，就是开了时间点恢复”</b>。不是。这个字段总显示 ENABLED，要看 <code>PointInTimeRecoveryStatus</code>，没开时是 DISABLED<span class="ok-tag">已核实</span>。</p>
+      </div>
+      <div class="bit wide" id="c-trail">
+        <div class="bh"><span class="term">CloudTrail · EventBridge · CDK</span><h4>CloudTrail、EventBridge、Secrets Manager、CDK</h4></div>
+        <p><b>CloudTrail</b> 记录每一次 AWS API 调用。一条 <code>Sign</code> 记录里，请求参数只有 <code>keyId</code>、<code>signingAlgorithm</code>、<code>messageType</code>，返回内容为空；它是只读的管理事件（<code>readOnly: true</code>）<span class="ok-tag">已核实</span>。<b>被签的摘要不在日志里</b>：文档没有专门这样写，但官方示例里没有，加密操作的返回内容按通则也不记。所以“签了什么”只能靠签名服务自己的账本，CloudTrail 用来核对次数和时间。</p>
+        <p><b>trail 可以整体排除 KMS 事件</b>（只能全排，不能挑），排除期间的事件事后补不回来<span class="ok-tag">已核实</span>。记签名账号的 trail 不能这样设。</p>
+        <p><b>EventBridge</b> 按规则匹配事件、触发动作（例如告警）。要收到 CloudTrail 事件，账号里必须有开着的 trail。坑在这里：只读的管理事件（例如 <code>Sign</code>）只有规则状态设成 <code>ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS</code> 才匹配得到，默认的 <code>ENABLED</code> 永远不会触发<span class="ok-tag">已核实</span>。“有别的身份在调 Sign”这条告警，状态写错了就是摆设。</p>
+        <p><b>Secrets Manager</b> 存 RPC 凭证这类机密，程序运行时读取，不写进代码和配置。<b>CDK</b> 用 TypeScript 代码描述 AWS 资源，部署时生成 CloudFormation 模板，由 CloudFormation 去建；每个账号先做一次“引导”（bootstrap），建出部署要用的几个角色。</p>
+        <p><b>常见误解：“CDK 建 KMS 钥匙不写 policy 最省事”</b>。不写时，CDK 生成的默认钥匙策略给本账号 root <code>kms:*</code>，等于允许 IAM 策略给这把钥匙授权，正是上面 ① 要避免的。写了 <code>policy</code> 就不再加默认语句，每一条都要自己写<span class="ok-tag">已核实 CDK 源码</span>。还有一个从源码推出来的坑：自己写的策略里没有 root 那条时，<code>key.grantSign(角色)</code> 只把权限写进角色的 IAM 策略、不动钥匙策略，而 KMS 不认这份 IAM 授权，运行时 <code>Sign</code> 报 AccessDenied。所以钥匙权限全部在钥匙策略里显式写，不用 <code>grant*</code> 方法，部署前用 <code>cdk synth</code> 看一眼生成的策略<span class="unv">待验证</span>。</p>
+      </div>
+      <div class="bit wide" id="c-idem">
+        <div class="bh"><span class="term">Idempotency</span><h4>幂等、重试、乐观锁</h4></div>
+        <p><b>幂等</b>：同一个请求做一次和做多次，结果一样。网络超时、SDK 重试、执行器重启，都会让同一个请求到达不止一次。做法是每个请求带一个唯一的请求号（<code>requestId</code>），重试时不变；服务端先按它查，处理过就把上次的结果原样返回。</p>
+        <p><b>乐观锁</b>：不加锁，每条记录带版本号，写入时附带条件“版本号还是我读到的那个”。两个请求同时改，先写的成功，后写的失败，重新读了再改。冲突少的场景比加锁简单，也不会因为持锁的程序崩了而卡住。</p>
+        <p><b>常见误解：“签名服务做到幂等，就不会重复付款”</b>。托管桥里防重复付款的第一道是合约：网关按转账 ID 去重，同一个 ID 执行过就不能再执行，取消过就不能执行。签名服务的幂等是第二层，保证额度只算一次、nonce 不乱、重试拿到同一笔交易（见<a href="#ledger">账本</a>）。</p>
       </div>
     </div>
   </div>
@@ -368,22 +531,145 @@
     <tbody>
       <tr><td>密钥规格</td><td><code>ECC_SECG_P256K1</code>（就是 secp256k1），用途 <code>SIGN_VERIFY</code></td><td><span class="ok-tag">已核实</span></td></tr>
       <tr><td>取公钥</td><td><code>GetPublicKey</code>，返回 DER 编码的 X.509 SubjectPublicKeyInfo（SPKI）</td><td><span class="ok-tag">已核实</span></td></tr>
-      <tr><td>签名</td><td><code>Sign</code>，参数 <code>MessageType=DIGEST</code>、SigningAlgorithm=ECDSA_SHA_256、<code>Message</code>=32 字节摘要</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>签名</td><td><code>Sign</code>，参数 <code>MessageType=DIGEST</code>、SigningAlgorithm=ECDSA_SHA_256、<code>Message</code>=32 字节摘要</td><td><span class="ok-tag">已核实</span><span class="ok-tag">已实测</span></td></tr>
       <tr><td>返回的签名</td><td>DER 编码的 <code>SEQUENCE { r INTEGER, s INTEGER }</code>（RFC 3279）</td><td><span class="ok-tag">已核实</span></td></tr>
       <tr><td>不返回的</td><td>恢复用的 v；也没有承诺 s 一定是低位</td><td><span class="ok-tag">已核实</span> 文档里没有这两项；AWS 官方以太坊示例自己补了</td></tr>
       <tr><td>权限</td><td>调用方要有这把钥匙的 <code>kms:Sign</code>、<code>kms:GetPublicKey</code>（见<a href="#iam">权限</a>）</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>轮换</td><td>非对称钥匙不支持自动轮换，也不支持按需轮换，只能手动：另建一把新钥匙。对区块链来说，换钥匙就是换地址（见<a href="#ops">运维</a>）</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>禁用</td><td><code>DisableKey</code> 随即生效（有短暂的最终一致性延迟），可以再 <code>EnableKey</code>。禁用后调 <code>Sign</code> 报 <code>DisabledException</code></td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>删除</td><td><code>ScheduleKeyDeletion</code> 先等 7–30 天（默认 30），等待期内可以 <code>CancelKeyDeletion</code>；实际可能比约定晚最多 24 小时。等待期内调 <code>Sign</code> 报 <code>DisabledException</code> 或 <code>KMSInvalidStateException</code>，文档没说什么时候是哪一种。到期删除后不能恢复</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>导出</td><td>私钥不能导出，所以也没有“备份私钥”这回事</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>多区域</td><td>非对称签名钥匙可以建成多区域钥匙：另一个区域有一份相同的副本，地址相同。已有的单区域钥匙不能改成多区域，只能新建（也就是换地址）</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>限额</td><td>ECC 钥匙的 <code>Sign</code>、<code>Verify</code> 等共用每账号每区域每秒 1000 次，可以申请提高；<code>GetPublicKey</code> 另算，每秒 2000 次。同一页的一个旧示例还写着 300，以表格为准</td><td><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>费用（us-east-1）</td><td>每把钥匙每月 1 美元，按小时折算；已安排删除的不收（取消删除的话按从没安排过计费）。ECC 签名每 1 万次 0.15 美元，每月 2 万次的免费额度不包括非对称请求。禁用的钥匙收不收月费，价格页没有明说</td><td><span class="ok-tag">已核实</span></td></tr>
     </tbody>
   </table></div>
   <div class="vs">
     <div class="c-warn">
       <h3 class="t-warn">“ECDSA_SHA_256 会不会再算一次 SHA256？”</h3>
-      <p>不会。<code>MessageType=DIGEST</code> 时 KMS 跳过哈希，直接签你给的 32 字节。算法名里的 SHA_256 只决定摘要必须是 32 字节。所以以太坊的 keccak256 摘要（也是 32 字节）可以直接交给它签。AWS 官方以太坊示例就是这样做的。</p>
+      <p>不会。<code>MessageType=DIGEST</code> 时 KMS 跳过哈希，直接签你给的 32 字节。算法名里的 SHA_256 只决定摘要必须是 32 字节。所以以太坊的 keccak256 摘要（也是 32 字节）可以直接交给它签。AWS 官方以太坊示例就是这样做的。在测试账号上让 KMS 签一个 32 字节摘要，再用 openssl 按同一个摘要验证，通过：KMS 签的就是给它的 32 字节<span class="ok-tag">已实测</span>。</p>
     </div>
     <div class="c-warn">
       <h3 class="t-warn">“KMS 帮你签交易？”</h3>
       <p>不是。KMS 只签 32 字节，它不知道这 32 字节是哪笔交易的摘要，也不会检查交易发给谁、多少钱。能不能签，由签名服务判断。</p>
     </div>
+    <div class="c-warn">
+      <h3 class="t-warn">“钥匙不用了，删掉最干净？”</h3>
+      <p>区块链钥匙删了的后果比一般的加密钥匙重：钥匙一删，这个地址就再也签不出交易，余额和以后误打进来的钱都永远拿不回来。所以运营钥匙退役时只禁用、不删除，每把每月 1 美元留着；要防误删，就在 SCP 里禁止 <code>ScheduleKeyDeletion</code>（见<a href="#iam">权限</a>）。应急时也用禁用：随即生效，查清楚了还能恢复。</p>
+    </div>
   </div>
+  <h3>代码里怎么调 KMS</h3>
+  <p>签名逻辑只依赖一个很小的接口：取公钥（返回和 <code>GetPublicKey</code> 一样的 DER 格式 SPKI），对 32 字节摘要签名（返回 DER 签名，不保证 s 是低位）。生产环境用 KMS 实现，开发和测试用一把本地私钥实现，两边输出格式一样，上层的核对、转换代码一行不改。KMS 那一份要注意：</p>
+  <ul>
+    <li><b>钥匙写完整的 ARN，不写别名</b>：别名能被改指到另一把钥匙。</li>
+    <li><b>取公钥时顺便核对规格</b>：<code>GetPublicKey</code> 的返回里有 <code>KeySpec</code> 和 <code>KeyUsage</code><span class="ok-tag">已核实</span>，不是 <code>ECC_SECG_P256K1</code>、<code>SIGN_VERIFY</code> 就当钥匙不对处理。公钥取一次缓存起来。</li>
+    <li><b>签名的参数固定</b>：<code>MessageType</code> 写 <code>DIGEST</code>、<code>SigningAlgorithm</code> 写 <code>ECDSA_SHA_256</code>；摘要不是 32 字节就不调。</li>
+    <li><b>报错分两类</b>：<code>DisabledException</code>、<code>KMSInvalidStateException</code>（钥匙被禁用或待删除）按严重处理、拒签；限流和内部错误让执行器稍后重试。</li>
+    <li>KMS 客户端放在模块顶层，冷启动时建一次，后面的调用复用。</li>
+    <li>本地那一份故意用随机 k、不规范 s 签名，和 KMS 的输出一样“不友好”，测试才测得到高位 s 和短 r、s 的情况（见<a href="#format">签名格式</a>的统计）。</li>
+  </ul>
+</section>
+
+<section id="lab">
+  <h2 class="eyebrow">动手</h2>
+  <p class="sub">注册一个 AWS 测试账号，在 CloudShell 里让 KMS 签一次，自己验证</p>
+  <p class="lead">前面说 KMS 只签 32 字节、不再哈希、签名每次不同、返回标准 DER，这些都能自己看到。下面的步骤 2026-11-09 实际走过一遍，结果标<span class="ok-tag">已实测</span>；注册流程按 AWS 官方文档核对过。个人测试账号只用来学习，正式的运营钥匙要放进组织里的签名账号（见<a href="#iam">权限</a>）。为公司做的话，注册前先说清两件事：费用谁出；测完这个账号并进公司的组织，还是关掉。</p>
+  <h3>注册前准备</h3>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>要准备的</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>邮箱</td><td>root 用户的登录名，也用来找回账号，必须能收信。业务用的账号，AWS 建议用公司的群组邮箱，员工换岗、离职后公司还能找回<span class="ok-tag">已核实</span></td></tr>
+      <tr><td>手机号</td><td>验证身份用，要能接电话、收短信。所有 MFA 设备都丢了时，AWS 先发验证邮件，再打这个号码，让你在电话键盘上输入网页上显示的 6 位数字，所以号码要一直能用；业务账号用公司号码<span class="ok-tag">已核实</span></td></tr>
+      <tr><td>付款方式</td><td>必须有可用的付款方式（通常是信用卡），否则注册进行不下去</td></tr>
+      <tr><td>账号名</td><td>能认出来就行，例如 <code>kms-test</code></td></tr>
+    </tbody>
+  </table></div>
+  <h3>注册步骤</h3>
+  <ol>
+    <li>打开 <code>https://signin.aws.amazon.com/signup?request_type=register</code>，这是全球区（<code>aws</code> 分区）的注册入口。不要去 AWS 中国区（amazonaws.cn）注册：那边是另一个分区，公司注册要中国营业执照，账号和全球区互不相通<span class="ok-tag">已核实</span>。</li>
+    <li>填 root 邮箱和账号名，点 <b>Verify email address</b>，输入邮件里的验证码。</li>
+    <li>设 root 密码：8–128 个字符，至少包含三类字符，不能和账号名或邮箱相同。</li>
+    <li>选账号计划：Free 或 Paid（区别见下表）。</li>
+    <li>填联系信息，接受 AWS 客户协议；再填付款方式。</li>
+    <li>验证身份：填手机号，输入短信里的验证码。</li>
+    <li>Support 计划选 <b>Basic</b>（免费，所有账号都有）。</li>
+    <li>点 <b>Complete sign up</b>。激活通常几分钟，有时最长 24 小时，激活后会收到邮件，也看一下垃圾箱<span class="ok-tag">已核实</span>。</li>
+  </ol>
+  <p class="note">按钮名字可能随控制台改版略有不同，意思一样。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th></th><th>Free plan</th><th>Paid plan</th></tr></thead>
+    <tbody>
+      <tr><td>送的额度</td><td>注册后 100 美元；新用户做完指定任务最多再送 100 美元</td><td>同左</td></tr>
+      <tr><td>什么时候结束</td><td>满 6 个月或额度用完，先到为准；账号随即关闭，AWS 保留内容 90 天，期间升级成 Paid 能保住账号，剩余额度继续抵扣</td><td>不会因额度用完而关闭，超出部分按量计费</td></tr>
+      <tr><td>服务限制</td><td>可能耗光额度的服务和功能不开放（例如 Savings Plans、预留实例、部分 Marketplace 商品）</td><td>没有这类限制</td></tr>
+      <tr><td>会不会扣钱</td><td>不会</td><td>会，按量</td></tr>
+      <tr><td>自动升级成 Paid</td><td>加入 AWS Organizations、建 Control Tower 等会自动升级</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p>以上 Free / Paid 的规则<span class="ok-tag">已核实</span>。实测 Free plan 能建 <code>ECC_SECG_P256K1</code> 钥匙、能调 <code>Sign</code><span class="ok-tag">已实测</span>；100 美元额度能不能抵扣 KMS 费用没有核实。用 Free plan 要注意：控制台右上角点账号名，能看到剩余额度、剩余天数和到期日，到期前还要用就提前升级；测试期间先别开 AWS Organizations 和 IAM Identity Center，加入组织会自动升级成 Paid。</p>
+  <h3>注册时常见的几个疑问</h3>
+  <ul>
+    <li><b>用中国大陆手机号注册，账号会不会变成中国区</b>：不会。账号属于哪个分区，看在哪个网站注册，不看手机号。AWS 有三个互相隔离的分区：全球商业区（<code>aws</code>）、中国区（<code>aws-cn</code>，只有北京和宁夏）、美国政府区（<code>aws-us-gov</code>），每个分区有自己独立的 IAM，账号只能用本分区的区域<span class="ok-tag">已核实</span>。区域列表里能看到 us-east-1、ap-southeast-1 这些，就是全球区的账号。</li>
+    <li><b>还有一种“新版”注册方式</b>：入口是 <code>request_type=builderId</code>，用邮箱或 Google、GitHub 等账号登录。那种账号没有 root 用户，IAM 用户只能用于程序访问、不能登录控制台，区域按联系地址的国家自动分配、自己改不了（中国地址分到悉尼 ap-southeast-2），也不能用需要手动开启的区域<span class="ok-tag">已核实</span>。本节用的是上面第 1 步那种完整的注册方式。</li>
+    <li><b>区域列表全是锁，右上角写着 “Global”</b>：在 IAM 这类全局服务的页面上就是这样，IAM 不分区域，本来就不用选。打开 KMS 这类区域服务后，右上角变成具体区域，可以正常选（实测如此；锁在文档里的确切含义没找到，这里是推断）。</li>
+    <li><b>有的区域选不了</b>：2019 年 3 月 20 日以后上线的区域（例如香港 ap-east-1）默认关闭，要先手动开启；之前上线的（例如东京、新加坡）默认可用<span class="ok-tag">已核实</span>。</li>
+  </ul>
+  <h3>激活后马上做的</h3>
+  <ol>
+    <li><b>root 开 MFA</b>：root 登录 → 右上角账号名 → <b>Security credentials</b> → <b>Assign MFA device</b> → 选 <b>Authenticator app</b>，用手机上的验证器 App 扫码，连续输入两次验证码。现在所有类型的账号都要求 root 配 MFA，从第一次登录控制台起 14 天内必须注册；最多能登记 8 个设备，建议多登记一个备用<span class="ok-tag">已核实</span>。</li>
+    <li><b>确认 root 没有访问密钥</b>：同一页的 <b>Access keys</b> 一栏应该是空的。不要给 root 建访问密钥；root 以后只用来管账单和账号设置。</li>
+    <li><b>建日常用的身份</b>：个人测试账号里，简单的做法是建一个 IAM 用户，勾选允许登录控制台、设密码，权限直接挂 <code>AdministratorAccess</code>，再给它也开 MFA。登录地址是 <code>https://账号ID.signin.aws.amazon.com/console/</code>，收藏起来。AWS 的最佳实践更推荐用角色的临时凭证；多个账号时用 IAM Identity Center，但它要先开 Organizations，Free plan 会因此自动升级<span class="ok-tag">已核实</span>。正式的签名账号不能这样配，权限按<a href="#iam">权限</a>一节设计。</li>
+    <li>退出 root，以后都用这个身份登录。确认方法：右上角显示的是这个用户名，展开面板里有一行 <b>IAM user</b>；用 root 登录时没有这一行。</li>
+  </ol>
+  <h3>第一次让 KMS 签名</h3>
+  <p>用日常身份登录，打开 <b>Key Management Service</b>，在右上角选一个区域（例如新加坡 ap-southeast-1）。钥匙建在哪个区域，就只能在那个区域用。点顶部工具栏上终端样子的图标（<code>&gt;_</code>）打开 <b>CloudShell</b>：它在当前区域启动，自带 AWS CLI v2，直接用控制台的登录身份，本机不用放访问密钥<span class="ok-tag">已核实</span>。然后分段运行：</p>
+<pre class="json"># ① 建一把 secp256k1 签名钥匙，记下打印出来的 KeyId
+KEY=$(aws kms create-key --key-spec ECC_SECG_P256K1 --key-usage SIGN_VERIFY \
+  --description "kms test key" --query KeyMetadata.KeyId --output text)
+echo $KEY
+
+# ② 取公钥（返回的是 Base64，解码成 DER），看曲线
+aws kms get-public-key --key-id $KEY --query PublicKey --output text | base64 -d &gt; pub.der
+openssl pkey -pubin -inform DER -in pub.der -noout -text | tail -1
+
+# ③ 对同一个 32 字节摘要签两次（DIGEST：KMS 不再哈希）
+printf 'abc' | openssl dgst -sha256 -binary &gt; digest.bin
+for i in 1 2; do
+  aws kms sign --key-id $KEY --message fileb://digest.bin --message-type DIGEST \
+    --signing-algorithm ECDSA_SHA_256 --query Signature --output text | base64 -d &gt; sig$i.der
+done
+cmp -s sig1.der sig2.der &amp;&amp; echo "两次签名相同" || echo "两次签名不同"
+
+# ④ 不经过 KMS，用 openssl 和公钥自己验证
+openssl pkeyutl -verify -pubin -inkey pub.der -keyform DER -in digest.bin -sigfile sig1.der
+
+# ⑤ 看签名里的 r 和 s
+openssl asn1parse -inform DER -in sig1.der</pre>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>步骤</th><th>输出</th><th>说明什么</th></tr></thead>
+    <tbody>
+      <tr><td>①</td><td>打印出 KeyId</td><td>Free plan 能建 <code>ECC_SECG_P256K1</code> 钥匙<span class="ok-tag">已实测</span></td></tr>
+      <tr><td>②</td><td><code>ASN1 OID: secp256k1</code></td><td>曲线对了。规格选错（例如 <code>ECC_NIST_P256</code>）这一行会是别的曲线，地址就是一个钱永远花不出来的地址<span class="ok-tag">已实测</span></td></tr>
+      <tr><td>③</td><td><code>两次签名不同</code></td><td>同一个摘要每次签出来不同，两个都有效（见 <a href="#c-ecdsa">ECDSA</a>）。KMS 的文档没说这一点，这里实测确认；设计本来就不依赖“签名固定”<span class="ok-tag">已实测</span></td></tr>
+      <tr><td>④</td><td><code>Signature Verified Successfully</code></td><td>KMS 返回的是标准 DER 签名，签的正是给它的 32 字节，没有再哈希一次。<a href="#format">签名格式</a>一节的转换都建立在这一点上<span class="ok-tag">已实测</span></td></tr>
+      <tr><td>⑤</td><td>两行 <code>INTEGER</code></td><td>就是 r 和 s（见 <a href="#c-der">DER</a>）。s 那一行开头的十六进制大于 7f 就是高位 s，签名服务要换成 n − s。openssl 显示的是去掉补位 00 之后的值</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>CloudShell 的变量重开就丢</b>，执行 <code>KEY=你的KeyId</code> 补回来。<code>$HOME</code> 里的文件会留着：每个区域 1 GB，免费，某个区域 120 天没用过就删；<code>$HOME</code> 以外的文件会话结束就没了。20–30 分钟没有键盘鼠标操作，会话会断<span class="ok-tag">已核实</span>。</li>
+    <li><b>openssl</b>：CloudShell 文档的预装软件表里没有列它，实际打开就能用<span class="ok-tag">已实测</span>。上面 ②–⑤ 的 openssl 命令，本机用一把本地 secp256k1 钥匙也跑过一遍，输出相同（本地实测）。</li>
+    <li><b>这样建的钥匙用的是默认钥匙策略</b>：只有一条“允许本账号 root 使用 <code>kms:*</code>”，于是由 IAM 策略决定谁能用。测试可以，运营钥匙不行（见<a href="#iam">权限</a>）。</li>
+    <li><b>DIGEST 模式下 Message 的长度必须等于算法的哈希长度</b>，ECDSA_SHA_256 就是 32 字节；把没哈希过的消息当 DIGEST 交上去，文档明确警告会损害安全性<span class="ok-tag">已核实</span>。</li>
+  </ul>
+  <h3>费用和清理</h3>
+  <p>钥匙每月 1 美元，按小时折算；签名每 1 万次 0.15 美元，免费额度不包括非对称请求。上面这次实验的费用是几美分。CloudShell 本身不另收费。钥匙先留着，下一步签测试网交易还要用；全部测完再删：<code>aws kms schedule-key-deletion --key-id $KEY --pending-window-in-days 7</code>，等待期内可以取消、不收费<span class="ok-tag">已核实</span>。<code>pub.der</code>、<code>sig*.der</code> 都是公开信息，不用特别处理。</p>
+  <h3>下一步</h3>
+  <ol>
+    <li><b>算地址</b>：从这把钥匙的公钥算出以太坊地址和 Qtum 测试网地址（见<a href="#addr">地址</a>），最好用两个不同的库各算一遍。</li>
+    <li><b>领测试币</b>：往以太坊地址领一点 Sepolia 测试 ETH。有的水龙头要求登录，或者要求地址在主网上有余额。</li>
+    <li><b>签一笔 Sepolia 交易</b>：用 KMS 版本的签名接口，按<a href="#eth">以太坊</a>一节的四步签名、广播，确认发送方是这个地址。推荐在 CloudShell 里跑，本机不放访问密钥；要在本机跑，就给日常身份临时建一个访问密钥，用完删掉。</li>
+    <li><b>Qtum</b>：同一把钥匙算出的 Qtum 地址在 regtest 或测试网上收币，按 <a href="#qtum">Qtum</a> 一节签一笔合约调用。节点认不认、合约看到的调用者对不对，是这套方案里最大的技术风险，越早试越好。</li>
+  </ol>
 </section>
 
 <section id="flow">
@@ -398,14 +684,33 @@
       <tr><td>交易执行器</td><td>后端里组交易、广播、跟踪交易的模块；以太坊管 nonce，Qtum 管 UTXO</td></tr>
       <tr><td>签名服务</td><td>独立账号里的程序，核对后调用 KMS 签名；自己记一本账，同一笔不签两次</td></tr>
       <tr><td>任务</td><td>执行器要做的一件事：给某笔转账铸币、放款或取消</td></tr>
-      <tr><td>源链事件</td><td>用户在源链上存入或提现时，合约留下的记录（例如 <code>Deposited</code>）。签名服务要核对它确实存在</td></tr>
-      <tr><td>审核员签名</td><td>大额转账由审核员用硬件钱包签名批准，签名服务核对</td></tr>
-      <tr><td>额度</td><td>签名服务和链上合约各自的上限，超过就拒签或交易失败</td></tr>
+      <tr><td>转账 ID</td><td>每笔存入或提现的全局编号（bytes32）。目标网关按它去重：同一个 ID 只能执行一次或取消一次，两者互斥</td></tr>
+      <tr><td>源链事件</td><td>用户在源链上存入或提现时，合约留下的记录（例如 <code>Deposited</code>）。签名服务要自己去源链读、核对它确实存在</td></tr>
+      <tr><td>审核员签名</td><td>超过自动上限的转账，由审核员用硬件钱包签 EIP-712 消息批准（<a href="#c-712">EIP-712</a>），签名服务核对</td></tr>
+      <tr><td>额度</td><td>签名服务和链上合约各自的上限，超过就拒签或交易失败。签名服务的上限低于链上</td></tr>
+      <tr><td>看门狗</td><td>独立账号里的监控程序：按链上记录对账，发现异常就暂停网关；签名服务读它的最新结果</td></tr>
       <tr><td>多签</td><td>冷钱包 Safe、Qtum 管理多签：换运营地址、补额度、暂停后恢复都要它</td></tr>
     </tbody>
   </table></div>
   <div class="anim" data-anim="flow"></div>
-  <p>Qtum 一笔交易有几个输入，中间“算摘要 → KMS 签名 → 转格式”就要做几遍（见 <a href="#qtum">Qtum</a>）。执行器没有调用 KMS 的权限：执行器被攻破，只能向签名服务提交请求，过不了核对就拿不到签名。签名服务被攻破则能直接签，这时靠链上额度和看门狗框住损失（<a href="gateway.html#flows">第 11 章：运营密钥泄露</a>）。</p>
+  <p>动画里的第 2–4 步和第 8–9 步在后半章展开：核对什么、按什么顺序见<a href="#check">签名前的核对</a>；为什么先占位再调 KMS、中途崩了怎么办见<a href="#ledger">账本</a>。Qtum 一笔交易有几个输入，中间“算摘要 → KMS 签名 → 转格式”就要做几遍（见 <a href="#qtum">Qtum</a>）。执行器没有调用 KMS 的权限：执行器被攻破，只能向签名服务提交请求，过不了核对就拿不到签名。签名服务被攻破则能直接签，这时靠链上额度和看门狗框住损失（<a href="gateway.html#flows">第 11 章：运营密钥泄露</a>）。</p>
+  <h3>签名服务的接口</h3>
+  <p>执行器只调签名服务的一个签名接口和一个只读查询。请求里的东西，签名服务只当线索，内容全部自己核对（见<a href="#check">核对</a>）。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>字段</th><th>意思</th></tr></thead>
+    <tbody>
+      <tr><td>requestId</td><td>执行器给每次请求生成，<b>重试时不变</b>。账本靠它去重</td></tr>
+      <tr><td>操作</td><td>以太坊签名服务：放款、取消提现；Qtum 签名服务：铸币、取消存入</td></tr>
+      <tr><td>转账 ID</td><td>bytes32</td></tr>
+      <tr><td>源链交易哈希</td><td>用户存入或提现的那笔交易。只用来定位，内容签名服务自己读链核对</td></tr>
+      <tr><td>未签名交易</td><td>十六进制</td></tr>
+      <tr><td>前序交易</td><td>只有 Qtum：每个输入所花的那笔交易，顺序和输入一致</td></tr>
+      <tr><td>审核员签名</td><td>每个只带签名和过期时间，不带消息内容</td></tr>
+      <tr><td>返回</td><td>三种：已签名（签好的交易、交易哈希、第几次签）；拒绝（原因代码，不会自己好，转人工、暂停自动放行）；稍后重试（原因代码，条件还不满足，用同一个 requestId 再来）</td></tr>
+      <tr><td>只读查询</td><td>按转账 ID 和操作，返回这笔转账在账本里的所有签名记录，含签好的交易。执行器崩溃后用它找回签过但没广播的交易（见<a href="#ledger">账本</a>）</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>超时</b>：签名 Lambda 的超时设成例如 30 秒，执行器调用它的超时再长一点（例如 40 秒），免得 Lambda 还在跑、执行器已经重发。SDK 会自动重试，同一个请求可能到达两次，靠账本按 requestId 去重。执行器收到超时或网络错误时，用<b>同一个 requestId 和同一笔未签名交易</b>重试，不要换新的。</p>
 </section>
 
 <section id="addr">
@@ -450,6 +755,24 @@
     <p><b>同一把钥匙在两条链上的地址不一样</b>：一个是 keccak 算的，一个是 hash160 算的，不能互相换算。这和“按设计每条链各用一把钥匙”是两回事：就算用同一把，地址也对不上。</p>
     <p><b>Qtum 必须用压缩公钥</b>。用非压缩公钥算出的 hash160 是另一个地址，钱就打不到运营地址上。签名时放进 scriptSig 的公钥也必须是同一个压缩公钥。</p>
   </div>
+  <p><b>算错一次，钱就到了没人能花的地址</b>，所以落地时地址要过两道关：</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>关</th><th>做法</th><th>防的是什么</th></tr></thead>
+    <tbody>
+      <tr><td>两人各自算</td><td>从同一份 <code>GetPublicKey</code> 结果出发，一个人用自己的代码算，另一个人用不同的库独立算（例如以太坊用 ethers 的 <code>computeAddress</code>，Qtum 用 bitcoinjs-lib 的 <code>payments.p2pkh</code>，版本字节改成 58 或 120）。两份一致，才写进签名服务的配置、交给多签持有人登记到网关；多签持有人签名前再核对硬件钱包屏幕上的地址</td><td>一个人的代码有错（例如用了非压缩公钥、用错哈希函数），没人发现</td></tr>
+      <tr><td>冷启动自检</td><td>签名程序每次启动先调一次 <code>GetPublicKey</code>：检查 SPKI 的固定头是 secp256k1，再算出地址，和配置里的预期地址比，不一致就拒绝所有请求、发严重告警。配置里的钥匙写完整 ARN，不写别名</td><td>配置里的钥匙 ARN 写错；别名被改指到另一把钥匙；钥匙被换过。不查的话，签出的交易发送方不是运营地址，网关全部拒绝</td></tr>
+    </tbody>
+  </table></div>
+  <h3>从建钥匙到登记到网关</h3>
+  <ol>
+    <li><b>建钥匙</b>：用 CDK（或直接写 CloudFormation）建，规格 <code>ECC_SECG_P256K1</code>、用途 <code>SIGN_VERIFY</code>；钥匙策略显式写（见<a href="#iam">权限</a>），不用 CDK 的默认策略，也不调 <code>grant*</code> 方法；给一个带日期的别名，方便以后换钥匙时区分；删栈也保留钥匙（<code>RemovalPolicy.RETAIN</code>）。部署前用 <code>cdk synth</code> 看一眼生成的钥匙策略，只有自己写的几条。</li>
+    <li><b>查规格、取公钥</b>：<code>aws kms describe-key</code> 看 <code>KeySpec</code>、<code>KeyUsage</code>、<code>KeyState</code>、<code>MultiRegion</code>，期望是 <code>ECC_SECG_P256K1</code>、<code>SIGN_VERIFY</code>、<code>Enabled</code>、<code>false</code>；再按<a href="#lab">动手</a>一节的第 ② 步取公钥、看曲线（取公钥和看曲线<span class="ok-tag">已实测</span>，<code>describe-key</code> 还没跑过）。</li>
+    <li><b>算地址</b>：按上面的两张表，从 SPKI 取出 65 字节公钥（固定头不是 secp256k1 就报错），以太坊地址 = keccak256(X ‖ Y) 后 20 字节、写成 EIP-55 大小写；Qtum 用压缩公钥的 hash160，展示和充值用 Base58Check 地址，和合约打交道用 hash160 的十六进制。两样都写进配置。</li>
+    <li><b>两人各自算、冷启动自检</b>：见上面的表。</li>
+    <li><b>登记到网关</b>：以太坊由冷钱包 Safe 调 EthGateway 换运营地址的函数，参数是以太坊地址；Qtum 由管理多签调 MintGateway 的同类函数，参数是 hash160。多签持有人签名前，自己核对硬件钱包屏幕上的地址。</li>
+    <li><b>充 gas，准备 Qtum 的输入</b>：以太坊转够一两周用量的 ETH，低于约 3 天用量时告警补充。Qtum 要多张 UTXO，每一笔在途的交易占一张：分几次（例如 4 次）给运营地址转账，每次产生一张。每张要够好几笔铸币：一笔预付 gasLimit × gasPrice（例如 150000 × 40 聪 = 0.06 QTUM），加字节手续费（1 个输入约 332 字节，按 400 聪每字节约 0.0013 QTUM），再留余量，每张例如 0.5 QTUM，按实测用量调整。退回的 gas 约 17.8 小时后才能花，算余额时不算可用。</li>
+    <li><b>小额验证</b>：测试网全部跑通后，主网先做一笔最小金额的存入和一笔提现，看到铸币和放款上链、合约记下的调用者是运营地址、签名账本和链上对得上，再放开额度。</li>
+  </ol>
   <p class="note">Qtum 的 Q 地址和 40 位 hex 互转：<a class="chap-link" href="qtum.html#addr">第 01 章的小工具</a>。状态：Qtum 版本字节已核实（Qtum 源码 chainparams）；其余是两条链的通用规则，示例数据用 Node 和 OpenSSL 实际算出。</p>
 </section>
 
@@ -459,10 +782,10 @@
   <div class="bgrid">
     <div class="bit"><div class="bh"><span class="term">DER → r, s</span><h4>① 拆出 r、s</h4></div>
       <p>DER 里的 r、s 都是“大端、最短”编码的整数：前导 0 会去掉，最高位是 1 时要补一个 0，所以长度可能是 31、32 或 33 字节。拆出来后去掉补的那个 0，当作两个 256 位整数处理。</p>
-      <p><b>以太坊</b>：r、s 作为整数写进 RLP，同样要按最短字节写、不带前导 00。自己拼字节时，r 或 s 不足 32 字节（概率大约 1%）要按实际长度写，硬补到 32 字节的话，go-ethereum 解码时报 <code>rlp: non-canonical integer format</code>，交易被拒<span class="ok-tag">已核实</span>。<b>Qtum</b>：见第 ④ 步。</p></div>
+      <p><b>以太坊</b>：r、s 作为整数写进 RLP，同样要按最短字节写、不带前导 00。自己拼字节时，r 或 s 不足 32 字节（本地实测 3000 次里 25 次，约 0.8%）要按实际长度写，硬补到 32 字节的话，go-ethereum 解码时报 <code>rlp: non-canonical integer format</code>，交易被拒<span class="ok-tag">已核实</span>。<b>Qtum</b>：见第 ④ 步。</p></div>
     <div class="bit"><div class="bh"><span class="term">Low-s</span><h4>② s 规范成低位</h4></div>
       <p>(r, s) 和 (r, n − s) 都是同一条消息的有效签名。为了防止别人把 s 换成 n − s、改出另一个交易哈希，两条链都只接受 s ≤ n/2：</p>
-      <p><b>以太坊</b>：协议规则（EIP-2），高位 s 的交易无效。<b>Qtum</b>：节点的标准策略要求低位 s（继承自比特币），高位 s 的交易不进内存池。</p>
+      <p><b>以太坊</b>：协议规则（EIP-2），高位 s 的交易无效，go-ethereum 报 <code>invalid sender: invalid transaction v, r, s values</code><span class="ok-tag">已核实</span>。<b>Qtum</b>：节点的标准策略包含 <code>SCRIPT_VERIFY_LOW_S</code>（继承自比特币），高位 s 的交易不进内存池<span class="ok-tag">已核实</span>。</p>
       <p>KMS 签出来的 s 大约一半是高位。s &gt; n/2 时，用 n − s 替换。这一步不需要私钥。</p></div>
     <div class="bit"><div class="bh"><span class="term">v · yParity</span><h4>③ 以太坊：算出 v</h4></div>
       <p>以太坊交易里不放公钥，节点要从签名恢复出公钥，再算出发送方地址。同一组 (r, s) 能恢复出两个候选公钥，v（EIP-1559 里叫 yParity，取 0 或 1）指明是哪一个。</p>
@@ -472,6 +795,19 @@
       <p>Qtum 输入里放的签名格式是：严格 DER（BIP66）编码的 (r, 低位 s)，后面跟 1 字节 sighash 类型（<code>SIGHASH_ALL</code> = 0x01）。</p>
       <p>KMS 给的已经是 DER，但 s 可能被签名服务换过，所以要用规范后的 r、s <b>重新编一次</b>，不能直接拿 KMS 的原始 DER 用。sighash 是什么见 <a href="#c-script">脚本卡片</a>。</p></div>
   </div>
+  <p><b>这几种情况有多常见</b>：本地用 Node.js 22 自带的 crypto 对 3000 个随机摘要做 secp256k1 签名，KMS 的输出格式和它相同（DER、s 不规范）。统计如下（本地实测）：</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>项</th><th>结果</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>高位 s</td><td>1536 次，51.2%</td><td>和“约一半”的理论值一致。不规范，一半的交易发不出去</td></tr>
+      <tr><td>r 或 s 短于 32 字节</td><td>25 次，0.8%</td><td>开头字节是 00 的概率约 1/256，两个数各一次。测试只签几十笔很可能碰不到，以太坊硬补 32 字节的错误要靠大量随机测试才暴露</td></tr>
+      <tr><td>原始 DER 长度</td><td>69 字节 8 次，70 字节 746 次，71 字节 1477 次，72 字节 769 次</td><td>72 字节是 r、s 开头都 ≥ 0x80、各补一个 00</td></tr>
+      <tr><td>规范低位 s 后重编</td><td>69 字节 15 次，70 字节 1506 次，71 字节 1479 次</td><td><b>低位 s 永远不用补 00</b>：s ≤ n/2，开头最多是 7f。所以规范后的签名最长 71 字节，加上 0x01 最长 72 字节，估 Qtum 交易大小时按这个上限算</td></tr>
+      <tr><td>规范后验签</td><td>3000 次全部通过</td><td>用 Node.js（OpenSSL）对重编后的 DER 验证</td></tr>
+      <tr><td>同一个摘要签两次</td><td>两次结果不同</td><td>KMS 也一样<span class="ok-tag">已实测</span>，见 <a href="#c-ecdsa">ECDSA</a> 卡片</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">开源库也不一定替你规范：Qtum 常用的 qtum-ethers-wrapper 把签名编成 DER 时不规范 s；平时没出问题，是因为它默认的签名器（libsecp256k1）签出来的本来就是低位 s。换成 KMS 这种自定义签名器，库不会替你改，这一步只能签名服务自己做<span class="ok-tag">已核实源码</span>。</p>
   <div class="tool">
     <label for="dSel">小工具：拆一个 DER 签名。先选一个示例，或者粘贴自己的（十六进制，可以带末尾的 sighash 字节）<select id="dSel">
       <option value="3045022065bf6cee9ece10b8afa6fd3f06233f8b6ff66dcf8bbb2c702b5ecc9bba957afa022100c9644549b8d807d6d064ae637f52dd4694b3e49d73a8816492fafebba552e842">例 1：高位 s，71 字节（KMS 可能给出这种）</option>
@@ -507,8 +843,23 @@
   <div class="anim" data-anim="eth"></div>
   <div class="callout">
     <p><b>签的内容包含 chainId</b>，签好的交易拿到别的链上用不了。</p>
-    <p><b>加价重发</b>：nonce 不变，调高两个 fee 字段，重新算摘要、重新签。签名服务只对“同一笔转账、同一个 nonce”的加价版本再签。</p>
+    <p><b>加价重发</b>：nonce 不变，调高两个 fee 字段，重新算摘要、重新签。签名服务只对“同一笔转账、同一个 nonce、只有两个费用字段变了”的版本再签。涨多少才会被节点接受，看下面的动画。</p>
   </div>
+  <div class="anim" data-anim="bump"></div>
+  <p><b>执行器这一侧</b>：签名服务只管签，nonce 怎么分、什么时候加价，是执行器的事。同一时刻每条链只能有一个执行器实例在工作，否则会抢同一个 nonce。下面的倍数和时间是常见的起点，不是规定。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>事项</th><th>做法</th></tr></thead>
+    <tbody>
+      <tr><td>nonce</td><td>执行器在自己的数据库里记下一个要用的 nonce，启动时和 <code>eth_getTransactionCount(运营地址, "pending")</code> 核对。签名服务另记一个“下一个 nonce”（见<a href="#ledger">账本</a>），两边对不上时签名服务拒签，执行器以签名服务为准查原因</td></tr>
+      <tr><td>在途数量</td><td>同时在途的交易不超过几笔（例如 4 笔）。nonce 必须按顺序上链，堆得越多，前面一笔卡住影响的越多</td></tr>
+      <tr><td>手续费</td><td><code>maxFeePerGas</code> ＝ 2 × 当前基础费 ＋ 小费。基础费每个区块最多涨 12.5%（EIP-1559），2 倍能撑过连续 5 个满块。不超过签名服务的上限</td></tr>
+      <tr><td>gasLimit</td><td><code>eth_estimateGas</code> 的结果 × 1.2，不超过签名服务的上限</td></tr>
+      <tr><td>加价重发</td><td>一段时间（例如 10 分钟）没上链：同一个 nonce，两项费用各 × 1.15、向上取整，用新的 requestId 请签名服务签。旧交易的哈希留着，任何一个上链都算完成</td></tr>
+      <tr><td>交易执行失败</td><td>回执 status 为 0（例如 gas 不够）：nonce 已经用掉，钱没放出去。确认之后用新 nonce 重签。签名服务自己查到旧 nonce 确实是被这笔转账已签的交易用掉、而且失败了，才允许换 nonce；旧 nonce 被一笔账本里没有的交易用掉，就是有人在账本之外签过，严重告警</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>为什么统一按 1.15 倍、向上取整</b>：原型阶段在本地 Hardhat 链上试过替换的门槛：两项各涨 5% 被拒；只涨小费、或只涨上限被拒；两项都涨 10%，按向下取整算出的值差 1 wei 被拒，向上取整才被接受、旧交易被替换（原型阶段的本地记录）。go-ethereum 算门槛时向下取整（见上面的动画），可见各家节点取整不一样；多涨一点、向上取整，哪家都收。</p>
+  <p class="note">签名的原型记录（本地私钥代替 KMS，原型阶段的本地记录）：签 300 笔，153 笔原始签名是高位 s，yParity 为 0 和 1 的各 147、153 笔，每笔用 ethers 独立解析出的发送方都是运营地址；签名器背后换成另一把钥匙，两个 yParity 都恢复不出运营地址，拒签；Hardhat 本地链接受签好的交易，合约记下的调用者是运营地址；同一笔改成高位 s 被拒；签给 chainId 1 的交易被拒。ethers 序列化时 r、s 按最短字节写，不会出现硬补 32 字节的问题。</p>
 </section>
 
 <section id="qtum">
@@ -523,7 +874,7 @@
       <tr><td>手续费</td><td>输入总额 − 输出总额。要覆盖 gasLimit × gasPrice（预付的 gas），加上按交易字节数算的手续费</td></tr>
     </tbody>
   </table></div>
-  <p class="note">状态：<code>OP_CALL</code> 是 0xc2<span class="ok-tag">已核实 Qtum 源码</span>。合约调用脚本的写法和开源库 qtum-ethers-wrapper 一致<span class="ok-tag">已核实</span>；该库默认 gasLimit 250000、gasPrice 40 sat（库的默认值，不是协议规定）。最低 gasPrice、用不完的 gas 怎么退回<span class="unv">待验证</span>。</p>
+  <p class="note">状态：<code>OP_CALL</code> 是 0xc2<span class="ok-tag">已核实 Qtum 源码</span>。合约调用脚本的写法和开源库 qtum-ethers-wrapper 一致<span class="ok-tag">已核实</span>；该库默认 gasLimit 250000、gasPrice 40 sat（库的默认值，不是协议规定）。最低 gasPrice、gas 怎么退回见 <a href="#c-qcall">OP_CALL 卡片</a>。</p>
   <div class="tbl"><table class="mw-760">
     <thead><tr><th>每个输入怎么签（传统的 <code>SIGHASH_ALL</code>）</th><th>做什么</th></tr></thead>
     <tbody>
@@ -536,9 +887,36 @@
   <div class="anim" data-anim="qtum"></div>
   <div class="callout">
     <p><b>一笔有 3 个输入的交易，要调 3 次 KMS</b>。动画里的金额是示意值，只为说明“手续费 ＝ 输入 − 输出，要覆盖预付的 gas”。</p>
-    <p><b>合约里看到的调用者</b>：合约调用交易里，合约看到的 <code>msg.sender</code>，通常认为是第一个输入所花 UTXO 的地址。所以所有输入都用运营地址的 UTXO，就能保证调用者是运营地址<span class="unv">待验证</span>：要在测试网上确认 MintGateway 看到的调用者确实是运营地址。</p>
-    <p><b>重发</b>：没有 nonce，加价重发的做法是“花同一批输入、提高手续费、重新签”，让新旧两笔互相冲突，只可能上链一笔<span class="unv">待验证</span>。</p>
+    <p><b>合约里看到的调用者</b>：是第一个输入所花那个输出的地址，源码已经核实（见 <a href="#c-qcall">OP_CALL 卡片</a>）。所有输入都用运营地址的 UTXO，调用者就是运营地址。上线前仍要在 regtest 上发一笔真实调用，看 MintGateway 记下的调用者<span class="unv">待验证</span>。</p>
+    <p><b>重发</b>：没有 nonce，加价重发的做法是“花同一批输入、提高手续费、重新签”，新旧两笔互相冲突，只可能上链一笔。别人改不了这笔交易：替换要花同一批输入，只有运营钥匙能签。比特币的 BIP125 原本要求原交易用 nSequence 声明“可以被替换”；Qtum 现在的代码基于 Bitcoin Core 30.2，已经是 full RBF，不看这个声明，有冲突就按费用规则判断：新交易费率更高、总手续费更高且多出的至少是“字节数 × 10 聪”、最多替换 100 笔、不新增未确认的输入。没有针对合约调用的特殊规则，但替换交易同样要过 gas 和手续费的检查<span class="ok-tag">已核实源码</span>。仍建议把 nSequence 设成 <code>0xfffffffd</code>（明确声明可替换），节点哪天改回只认声明也不受影响。实际替换效果要在测试网上试<span class="unv">待验证</span>。</p>
   </div>
+  <p><b>一笔铸币交易多大、手续费多少</b>：按字节拼出一笔 1 个输入的铸币交易量的（本地实测，签名按规范后的最长 72 字节算）。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>部分</th><th>字节</th><th>怎么来的</th></tr></thead>
+    <tbody>
+      <tr><td>版本、输入个数、输出个数、locktime</td><td>10</td><td>4 ＋ 1 ＋ 1 ＋ 4</td></tr>
+      <tr><td>一个输入</td><td>148</td><td>前序交易 ID 32 ＋ 输出序号 4 ＋ scriptSig 长度 1 ＋ scriptSig 107（签名 72 ＋ 压缩公钥 33 ＋ 两个推入字节）＋ nSequence 4</td></tr>
+      <tr><td>输出 0：合约调用</td><td>140</td><td>金额 8 ＋ 脚本长度 1 ＋ 脚本 131：<code>OP_4</code> 1、gasLimit 1 ＋ 3、gasPrice 1 ＋ 1、调用数据 2 ＋ 100、合约地址 1 ＋ 20、<code>OP_CALL</code> 1。调用数据是 <code>mint(bytes32,address,uint256)</code>：选择器 4 ＋ 3 × 32</td></tr>
+      <tr><td>输出 1：找零</td><td>34</td><td>金额 8 ＋ 脚本长度 1 ＋ P2PKH 脚本 25</td></tr>
+      <tr><td>合计</td><td>332</td><td>每多一个输入加 148：2 个输入 480，3 个 628</td></tr>
+    </tbody>
+  </table></div>
+  <p>按 gasLimit 250000、gasPrice 40 聪、费率 400 聪每字节：预付 gas ＝ 10,000,000 聪（0.1 QTUM），字节手续费 ＝ 332 × 400 ＝ 132,800 聪（约 0.0013 QTUM），<b>预付 gas 占手续费的 98.7%</b>。所以 Qtum 这边真正要算的是 gasLimit：照抄库的默认值 250000、实际只用 60000 的话（假设的用量），多付的 (250000 − 60000) × 40 ＝ 7,600,000 聪（0.076 QTUM）要等约 17.8 小时才能再花。gasLimit 应按预估用量再留余量。</p>
+  <p class="note">最低转发费率比的是总手续费：节点先检查预付 gas（所有合约输出的 gasLimit × gasPrice 之和）不超过手续费，再拿完整的手续费去比最低转发费率和内存池的最低费率；读到的代码里两项检查都用完整的手续费，没有先扣掉 gas<span class="ok-tag">已核实源码</span>。上面的例子里，预付 gas 0.1 QTUM 远超 332 字节需要的约 0.0013 QTUM，在内存池这一层不用另付字节手续费。出块时怎么排序、钱包怎么算费，没有核对。</p>
+  <p><b>执行器这一侧</b>：Qtum 没有 nonce，执行器管的是运营地址的 UTXO。下面的数字是常见的起点。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>事项</th><th>做法</th></tr></thead>
+    <tbody>
+      <tr><td>UTXO 池</td><td>运营地址保持几张可用的 UTXO（例如 4 张），每张都够好几笔铸币。执行器给每张记“被哪个任务占用”，同时在途的铸币不超过可用张数</td></tr>
+      <tr><td>一笔铸币</td><td>用 1 张 UTXO 做输入，输出是合约调用和找零。找零确认后成为新的可用 UTXO；不花还没确认的找零，免得一串交易互相依赖，前面一笔卡住后面全卡</td></tr>
+      <tr><td>gasLimit</td><td>先用 <code>callcontract</code>（以运营地址为调用者）预估用量，× 1.2；不低于 22000，不超过签名服务的上限</td></tr>
+      <tr><td>加价重发</td><td>一段时间没上链：花同一批输入，合约调用输出不变，只把找零减少。新交易的总手续费要更高，而且多出的部分至少是“新交易的字节数 × 增量费率（10 聪每字节）”</td></tr>
+      <tr><td>换输入重签</td><td>旧交易从内存池消失超过一段时间（例如 30 分钟）：换一张 UTXO 重签，旧的那张解锁。万一新旧两笔都上链，第二笔铸币被合约按转账 ID 拒绝，只损失这笔用掉的 gas</td></tr>
+      <tr><td>字节手续费</td><td>交易字节数 × 费率，费率用 <code>estimatesmartfee</code> 估，不低于 400 聪每字节。签名服务的手续费上限包含这一部分</td></tr>
+      <tr><td>退回的 gas</td><td>出现在出块交易里，付给运营地址，约 17.8 小时后才能花，到期前不放进可用池。节点开 <code>-addrindex</code> 后能用 <code>getaddressutxos</code> 查到它<span class="ok-tag">已核实</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">签名的原型记录（原型阶段的本地记录）：不用 bitcoinjs-lib 的序列化，另写了一份传统 sighash 原像的拼法，算出的摘要和 bitcoinjs-lib 的 <code>hashForSignature</code> 逐字节相同；每个签名用 OpenSSL 按这份原像验证通过；scriptSig 里的签名是严格 DER、末尾是 0x01、公钥是运营压缩公钥；两个输入的交易，两个摘要不同；签名器背后换成另一把钥匙，自检不通过、拒签。签好的交易 1 个输入 332 字节、2 个输入 479 字节，和上面按最长签名算的 332、480 对得上（差的一个字节，是其中一个签名短了一字节）。还没在真实节点上试过的：节点收不收、高位 s 是否被拒、调用者、gas 退回、替换，见<a href="#verify">还要验证的</a>。</p>
 </section>
 
 <section id="compare">
@@ -553,78 +931,531 @@
       <tr><td>要不要 v</td><td>要，靠两个都试来确定</td><td>不要，公钥直接放在交易里</td></tr>
       <tr><td>低位 s</td><td>必须（协议规则）</td><td>必须（标准策略）</td></tr>
       <tr><td>重发</td><td>同一 nonce 加价</td><td>同一批输入加价</td></tr>
+      <tr><td>替换门槛（节点默认）</td><td>两个费用上限都严格更高，且都 ≥ 旧值的 110%（go-ethereum）</td><td>总手续费更高，多出的至少是“字节数 × 10 聪”</td></tr>
+      <tr><td>源链的“确定”</td><td>finalized，约两个 epoch（约 12.8 分钟）</td><td>没有最终确定，只看确认数（目标 32 秒一块）</td></tr>
+      <tr><td>gas</td><td>按实际用量扣，余额只需要够上限</td><td>按上限预付，用剩的约 17.8 小时后才能花</td></tr>
+      <tr><td>签名服务要额外核对</td><td>调用数据重新编码后逐字节相同</td><td>每个输入的前序交易：哈希对得上、花的是运营地址的输出</td></tr>
+      <tr><td>签好的交易多大</td><td>不固定，主要看调用数据</td><td>1 个输入的铸币最多 332 字节，每多一个输入加 148</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="check">
+  <h2 class="eyebrow">核对</h2>
+  <p class="sub">签名服务不信执行器给的任何数据，只信自己解析出的交易和自己读到的链</p>
+  <p class="lead">执行器送来的未签名交易、源链交易哈希、审核员签名，在签名服务眼里都只是“线索”：交易自己解析，源链自己读，审核员的消息自己生成。执行器被攻破，也只能送来过不了这一层的请求。先看懂：<a href="#c-fields">交易字段和调用数据</a>、<a href="#c-utxo">UTXO</a>、<a href="#c-712">EIP-712</a>。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>顺序</th><th>核对什么</th><th>不通过时</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>冷启动自检：钥匙算出的地址等于配置的预期地址（见<a href="#addr">地址</a>）</td><td>拒绝所有请求，严重告警</td></tr>
+      <tr><td>2</td><td>请求格式；按 <code>requestId</code> 查账本，签过就原样返回（见<a href="#ledger">账本</a>）</td><td>拒绝</td></tr>
+      <tr><td>3</td><td>解析交易：只认网关的两个函数，逐个字段核对，手续费不超上限；解析出的操作和转账 ID 要和请求里写的一致</td><td>拒绝</td></tr>
+      <tr><td>4</td><td>读源链：事件存在、字段一致、已经 finalized 或确认数够</td><td>事件不对就拒绝；还没确定就稍后重试</td></tr>
+      <tr><td>5</td><td>审核员签名：人数够、在名单里、没过期</td><td>拒绝</td></tr>
+      <tr><td>6</td><td>额度和看门狗状态（只管不带审核员签名的任务）</td><td>稍后重试</td></tr>
+      <tr><td>7</td><td>账本占位，然后调 KMS、转换签名、自己验一遍</td><td>并发冲突、KMS 不可用就稍后重试；自检不过就拒绝，严重告警</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>“拒绝”和“稍后重试”要分开</b>：拒绝是请求本身有问题，等多久都不会好（交易被改过、签名人不在名单、钥匙对不上），一律告警，后端暂停自动放行，转人工。稍后重试是条件还不满足（源链还没 finalized、两家 RPC 不一致、KMS 限流），执行器用<b>同一个 requestId</b> 过一会儿再来，持续太久（例如 15 分钟）才告警。分不开的话，要么正常的延迟天天告警，要么真正的攻击被当成网络抖动。</p>
+  <h3>以太坊：只认网关的两个函数</h3>
+  <ul>
+    <li>交易还没带签名；类型是 2；chainId 是本链；<code>to</code> 是本链的网关合约；<code>value</code> 为 0；<code>accessList</code> 为空。</li>
+    <li>gasLimit、<code>maxFeePerGas</code>、小费都不超过配置的上限，小费不高于 <code>maxFeePerGas</code>。</li>
+    <li>调用数据按网关的 ABI 解析，函数只能是 <code>release</code> 或 <code>cancelWithdrawal</code>；解析出的参数<b>再编码一次，必须和原来的调用数据逐字节相同</b>。</li>
+  </ul>
+  <p><b>为什么要“再编码比一次”</b>：解析出参数，不等于看到了全部字节。调用数据在参数后面还可以多带字节，而且对有的合约有意义：ERC-2771 的转发合约就是把真正的发起人地址（20 字节）接在调用数据末尾，接收合约从最后 20 字节读出发起人<span class="ok-tag">已核实</span>。签名服务不知道网关以后会不会读这些字节，就只签自己能完整复原的东西：多一个字节、少一个字节、编码不规范，都拒签。</p>
+<pre class="json">const call = gateway.interface.parseTransaction({ data: tx.data });
+if (!call || !["release", "cancelWithdrawal"].includes(call.name)) reject("不是允许的函数");
+// 按解析出的参数重新编码，必须和原来的调用数据逐字节相同
+if (gateway.interface.encodeFunctionData(call.fragment, call.args) !== tx.data.toLowerCase())
+  reject("调用数据和重新编码的结果不同");</pre>
+  <p class="note">原型阶段用伪造的请求试过，下面这些全部被拒（原型阶段的本地记录）：改目标合约、chainId、value、accessList；调铸币函数、调 ERC20 的 <code>transfer</code>；调用数据末尾多一个字节、少一个字节；gasLimit、<code>maxFeePerGas</code>、小费超限；类型 1 的交易；已经签过名的交易；乱码。</p>
+  <h3>Qtum：每个输入的金额要靠前序交易核对</h3>
+  <p>除了未签名交易，执行器还要送来每个输入所花的前序交易（顺序和输入一致）。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>检查</th><th>防的是什么</th></tr></thead>
+    <tbody>
+      <tr><td>前序交易的哈希等于输入引用的交易 ID</td><td>执行器谎报输入金额，让签名服务签一笔手续费极高的交易（见下面的动画）</td></tr>
+      <tr><td>每个输入都花运营地址的 P2PKH 输出；同一个输入不能出现两次</td><td>第一个输入决定调用者和 gas 退给谁（见 <a href="#c-qcall">OP_CALL 卡片</a>）；混进别人的输出，调用者就不是运营地址</td></tr>
+      <tr><td>只有一个合约调用输出，金额为 0；脚本按自己的写法重新生成，必须逐字节相同；调用数据同样“再编码比一次”</td><td>夹带别的输出把 QTUM 转走；随调用转出 QTUM；脚本里夹带字节</td></tr>
+      <tr><td>找零只能回运营地址</td><td>把找零转给别人</td></tr>
+      <tr><td>手续费 ≤ gasLimit × gasPrice ＋ 字节手续费上限；gasLimit、gasPrice 不超上限</td><td>把运营地址的 QTUM 烧成手续费</td></tr>
+      <tr><td>版本为 2、locktime 为 0、没有见证数据、nSequence 固定、scriptSig 为空</td><td>不认识的写法一律不签</td></tr>
+    </tbody>
+  </table></div>
+  <div class="anim" data-anim="prev"></div>
+  <p><b>为什么非要前序交易</b>：传统的 sighash 不覆盖输入金额。BIP143 设计隔离见证的签名算法时，把这一点写进了动机：传统签名不包含被花的金额，离线签名设备（冷钱包）必须拿到完整的被花交易，才能确认金额<span class="ok-tag">已核实</span>。运营地址用的是传统 P2PKH，只能靠核对前序交易把金额锁住。</p>
+  <p class="note">Qtum 一侧原型阶段试过的 13 种伪造请求全部被拒（原型阶段的本地记录）：改前序交易里的金额、花别人的输出、找零给别人、多一个输出、调别的合约、调用带金额、手续费超限、gasPrice 超限、调以太坊那边的放款函数、调用数据末尾多字节、nSequence 不对、同一个输入用两次、已经签过名的交易。脚本里的 gasLimit、gasPrice 按小端、最短写法编码，和节点的解码方式、qtum-ethers-wrapper 的写法一致<span class="ok-tag">已核实</span>。</p>
+  <h3>源链事件：自己读、自己比</h3>
+  <p>请求里的源链交易哈希只用来定位。签名服务拿它去源链读回执，自己找事件、自己比字段；哈希是伪造的，就找不到对应的事件。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th></th><th>Qtum 签名服务核对以太坊上的存入</th><th>以太坊签名服务核对 Qtum 上的提现</th></tr></thead>
+    <tbody>
+      <tr><td>数据源</td><td>两家以太坊 RPC，结果一致才算数</td><td>本账号自己的 Qtum 节点（开 <code>-logevents</code>）</td></tr>
+      <tr><td>读什么</td><td><code>eth_getTransactionReceipt</code>；<code>eth_getBlockByNumber("finalized")</code></td><td><code>gettransactionreceipt</code>；<code>getblockheader</code></td></tr>
+      <tr><td>交易本身</td><td>回执 <code>status</code> 为成功</td><td>回执里合约执行没有异常</td></tr>
+      <tr><td>事件</td><td>日志的 <code>address</code> 是以太坊网关，第一个 topic 是存入事件的签名</td><td>日志的 <code>address</code> 是 Qtum 网关，第一个 topic 是提现事件的签名</td></tr>
+      <tr><td>字段</td><td>事件里的转账 ID、收款人、金额等于 <code>mint</code> 的参数</td><td>事件里的转账 ID、收款人、金额等于 <code>release</code> 的参数</td></tr>
+      <tr><td>确定</td><td>回执的区块号 ≤ finalized 区块号；两家 RPC 给出的这个区块哈希相同</td><td>确认数 ≥ 配置值；区块仍在主链上</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>事件必须来自网关地址</b>：任何人都能部署一个合约，发出同名同字段的事件。只认 <code>address</code> 等于本链网关的日志。</li>
+    <li><b>两家 RPC 不一致</b>就稍后重试；一家连不上也稍后重试。不因为只剩一家就放行，否则一家服务商出错或被攻破，就能骗过签名服务。</li>
+    <li><b>取消也要核对</b>：取消一笔存入或提现，同样要求源链事件存在、已经确定，并且有审核员的“拒绝”签名。否则被攻破的执行器可以随手取消正常的转账。</li>
+    <li>Qtum 节点不开 <code>-logevents</code>，<code>gettransactionreceipt</code> 直接报 “Events indexing disabled”；这个选项默认关闭<span class="ok-tag">已核实</span>。回执里执行结果的字段叫 <code>excepted</code>，成功时是 <code>None</code>；合约地址和日志地址是不带 <code>0x</code> 的十六进制，和以太坊的写法不同，比较前要统一格式<span class="ok-tag">已核实源码</span>。</li>
+  </ul>
+  <h3>审核员签名、额度、看门狗</h3>
+  <p><b>什么时候要审核员签名</b>：按金额分档。A、B、C 是三条线，A ＜ B ＜ C，具体金额由团队定：</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>签名服务</th><th>不要审核员</th><th>1 名审核员</th><th>2 名不同的审核员</th><th>直接拒签</th></tr></thead>
+    <tbody>
+      <tr><td>以太坊（放款）</td><td>≤ 自动上限 A，且 24 小时自动累计不超日上限</td><td>A ～ 双人审批线 B</td><td>B ～ 链上单笔上限 C</td><td>&gt; C：链上本来就会拒，这种走多签</td></tr>
+      <tr><td>Qtum（铸币）</td><td>≤ 自动上限，且 24 小时累计不超上限</td><td>超过自动上限</td><td>—</td><td>—</td></tr>
+      <tr><td>取消（两条链）</td><td>—</td><td>至少 1 个“拒绝”签名</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p>签名服务的自动上限略高于后端“要不要送审”的那条线：后端判断对了，签名服务不会多拦；后端出错、放过了大额，签名服务拦得住。</p>
+  <p><b>消息由签名服务自己生成</b>：执行器只送来签名和过期时间，不送消息内容。签名服务按自己解析出的交易和自己读到的源链事件，拼出“应该被签的消息”，再拿每个签名去恢复签名者地址。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>消息字段</th><th>取自</th></tr></thead>
+    <tbody>
+      <tr><td>转账 ID</td><td>解析出的交易</td></tr>
+      <tr><td>目标链 ID、目标网关</td><td>签名服务自己的配置（以太坊 1 和以太坊网关；Qtum 81 和 Qtum 网关）</td></tr>
+      <tr><td>收款人、金额</td><td>铸币、放款：解析出的交易参数，已经和源链事件比过；取消：源链事件</td></tr>
+      <tr><td>决定</td><td>铸币、放款要“批准”，取消要“拒绝”</td></tr>
+      <tr><td>过期时间</td><td>审核员签名时选定；签名服务只检查它在“现在”到“现在 ＋ 24 小时”之间</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>一个签名不对，整笔拒签</b>，而不是跳过它、只数对的。签名不对通常说明有人在改数据，要告警。</li>
+    <li><b>按恢复出的地址去重</b>：同一个人签两次只算一次。要两名审核员时，必须是两个不同的地址。</li>
+    <li>审核员名单写在签名服务的配置里，随代码发布，改名单要另一个人批准（见<a href="#iam">权限</a>）。审核员签名不上链，合约只认运营地址，所以签名服务的这一道核对是唯一的一道。</li>
+    <li><b>额度</b>只对不带审核员签名、自动放行的任务计：单笔不超自动上限，24 小时滚动累计（含本笔）不超日上限，超了就稍后重试，等窗口滚动或补审核员签名。每笔转账只计一次，加价重发、换输入重签不再计；累计和账本占位写在同一个事务里，两个并发请求不会都挤过上限。签名服务的上限低于链上网关的上限，被攻破也越不过链上那一层。</li>
+    <li><b>看门狗</b>：签名服务读看门狗最近一次对账的结果。结果过期、读不到或异常时，自动放行的任务一律稍后重试；带够审核员签名的照常签，因为已经有人看过。看门狗停了，自动放行也就停了，不会变成“没人看着还在自动放款”。</li>
+  </ul>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>看门狗的结果</th><th>不带审核员签名的任务</th><th>带够审核员签名的任务</th></tr></thead>
+    <tbody>
+      <tr><td>正常，且不超过例如 5 分钟</td><td>继续</td><td>继续</td></tr>
+      <tr><td>过期、读不到</td><td>稍后重试</td><td>继续：有人看过了</td></tr>
+      <tr><td>异常</td><td>稍后重试，并告警</td><td>继续，但以太坊放款仍要过下面的对账预检</td></tr>
+    </tbody>
+  </table></div>
+  <h3>对账预检：只有以太坊放款</h3>
+  <p>以太坊签名服务每次签放款前，自己核一次储备够不够：</p>
+  <div class="callout"><p>储备（冷钱包的 USDC ＋ EthGateway 的账面余额）≥ Qtum 上 USDC.e 的总供应量 ＋ 已存入未铸币 ＋ 已销毁未放款 ＋ 已取消待退款 ＋ 待处理的误转 ＋ 留存的手续费</p></div>
+  <ul>
+    <li><b>在途的几项要按转账 ID 算</b>：只统计还没有对应铸币、放款或取消事件的那些 ID。只看总量的话，用假 ID 超发的部分会抵掉真实的待铸存入，发现不了。</li>
+    <li><b>按 ID 算要一个索引</b>：以太坊签名账号里跑一个定时任务（例如每分钟一次），用本账号的 Qtum 节点和两家以太坊 RPC，把两个网关的事件按 ID 写进一张索引表；签名 Lambda 读这张表、链上余额和供应量来算。就是全貌图里的“事件索引”。</li>
+    <li>储备少于负债就拒签，严重告警。一笔放款让储备和“已销毁未放款”同时减少同样的金额，两边一起变，所以签之前核一次就够。</li>
+    <li>“待处理的误转”“留存的手续费”怎么从链上算，要和看门狗的对账一起设计；这一段原型阶段没写代码<span class="unv">待验证</span>。</li>
+  </ul>
+  <h3>拒绝和稍后重试的原因</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>类型</th><th>什么时候</th></tr></thead>
+    <tbody>
+      <tr><td>拒绝</td><td>字段缺失、格式不对；交易解析不出来，或者已经带签名；调的不是本链网关、不是允许的函数；chainId、value、accessList、调用数据、版本、nSequence、输出个数不对；gasLimit、费率或总手续费超上限</td></tr>
+      <tr><td>拒绝（只有 Qtum）</td><td>前序交易对不上；输入或找零不属于运营地址</td></tr>
+      <tr><td>拒绝</td><td>请求里写的操作、转账 ID 和解析出的交易不一致；同一个 requestId 换了交易内容</td></tr>
+      <tr><td>拒绝</td><td>源链交易里没有对应的事件，或者转账 ID、收款人、金额对不上</td></tr>
+      <tr><td>拒绝</td><td>缺审核员签名、签名坏了、签名人不在名单、过期或有效期太长；金额超过链上单笔上限（应走多签）</td></tr>
+      <tr><td>拒绝</td><td>nonce 不对或被别的转账占了；同一笔重签次数超限</td></tr>
+      <tr><td>拒绝，严重</td><td>对账预检不成立；钥匙和配置的地址不符；签出的签名自己验不过；钥匙被禁用或待删除</td></tr>
+      <tr><td>稍后重试</td><td>源链还没 finalized 或确认数不够；两家 RPC 不一致或连不上；自动放行的任务碰上看门狗结果过期或异常；自动额度用完；账本并发冲突；KMS 限流或暂时不可用</td></tr>
+    </tbody>
+  </table></div>
+  <p>“拒绝”一律告警，后端暂停自动放行；“稍后重试”持续超过例如 15 分钟才告警。</p>
+</section>
+
+<section id="ledger">
+  <h2 class="eyebrow">账本</h2>
+  <p class="sub">先在账本里占位，再调 KMS：重试多少次，交出去的都是同一笔</p>
+  <p class="lead">先看懂：<a href="#c-ddb">DynamoDB 的条件写入和事务</a>、<a href="#c-idem">幂等和乐观锁</a>。</p>
+  <p><b>先说清楚账本防什么</b>：同一笔转账就算被签出两笔交易、两笔都上了链，网关按转账 ID 去重，第二笔会失败，不会重复付款。防重复付款的是合约。账本要保证的是另外四件事：</p>
+  <ol>
+    <li>额度每笔转账只计一次，不能靠重复请求把自动上限用掉或绕过。</li>
+    <li>以太坊每个 nonce 只给一笔转账用，不跳号。跳号或撞号，后面的交易全部卡住。</li>
+    <li>执行器重试时拿到的是同一笔交易，不会越签越多。</li>
+    <li>每次调用 KMS 都有记录，看门狗能逐笔核对。</li>
+  </ol>
+  <p><b>为什么不能按“签好的交易哈希”去重</b>：同一笔未签名交易签两次，ECDSA 签名不同（见 <a href="#c-ecdsa">ECDSA</a>），签好的交易哈希也不同。所以账本按重签前后都不变的东西去重：请求号、nonce（以太坊）、输入（Qtum）。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>记录</th><th>主键</th><th>主要字段</th></tr></thead>
+    <tbody>
+      <tr><td>转账</td><td>转账 ID ＋ 操作</td><td>绑定的 nonce（以太坊）或输入列表（Qtum）、金额、是否计过额度、已签次数、版本号</td></tr>
+      <tr><td>签名尝试</td><td>转账 ID ＋ 操作 ＋ 序号</td><td>requestId、未签名交易的哈希、摘要、状态（<code>PENDING</code> / <code>SIGNED</code>）、签好的交易</td></tr>
+      <tr><td>requestId 索引</td><td>requestId</td><td>指向哪一条签名尝试、未签名交易的哈希</td></tr>
+      <tr><td>nonce 归属、下一个 nonce（以太坊）</td><td>地址 ＋ nonce；地址</td><td>这个 nonce 归哪笔转账；下一个该用的 nonce 和版本号</td></tr>
+      <tr><td>自动额度</td><td>一条记录</td><td>最近 24 小时每笔自动放行的（时间、转账 ID、金额）、版本号。每次写入顺便删掉 24 小时以前的项；每天几百笔，远小于单条 400 KB</td></tr>
+      <tr><td>KMS 调用记录</td><td>日期 ＋ 时间 ＋ requestId ＋ 输入序号</td><td>摘要、调用结果。<b>调 KMS 之前先写</b></td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>情况</th><th>以太坊</th><th>Qtum</th></tr></thead>
+    <tbody>
+      <tr><td>第一次签</td><td>nonce 必须等于“下一个 nonce”；写入时它加一，同时记下 nonce 归属</td><td>输入都属于运营地址（见<a href="#check">核对</a>）；记下用到的输入</td></tr>
+      <tr><td>原地加价重发</td><td>除两个费用上限外，其他字段完全相同；两项费用都比上一次至少高 10%</td><td>输入、合约调用输出完全相同，只有找零变少</td></tr>
+      <tr><td>换位置重签</td><td>只有一种情况允许：签名服务自己查到旧 nonce 已经被用掉，而且用掉它的是本转账某一次已签的交易、执行失败了</td><td>距上一次签名超过冷却时间（例如 30 分钟），说明旧交易可能已从内存池消失</td></tr>
+    </tbody>
+  </table></div>
+  <p>两条链都一样：同一笔转账最多签几次（例如 5 次，含加价重发），超过就拒签、转人工。Qtum 不独占输入：Qtum 签名服务只核对以太坊上的存入，手上没有 Qtum 节点，看不到输入有没有被花掉；独占的话，一笔交易被内存池丢掉，它的输入就永远解不开。输入别被两笔交易抢用，靠执行器的 UTXO 锁和看门狗核对。</p>
+  <h3>写入顺序</h3>
+  <ol>
+    <li><b>查 requestId</b>：有记录、未签名交易的哈希也相同时，状态是 <code>SIGNED</code> 就原样返回签好的交易，是 <code>PENDING</code> 就跳到第 4 步、用同一笔交易重签；哈希不同就拒绝（同一个请求号换了交易内容）。</li>
+    <li><b>读转账记录</b>（强一致读），按上面的表判断这次属于哪种情况，不合规则就拒签。</li>
+    <li><b>一个事务写入</b>：新建签名尝试和 requestId 索引（条件“不存在”）；更新转账记录（条件“版本号还是读到的那个”，第一次签时是“不存在”）；以太坊第一次签时新建 nonce 归属（条件“不存在”）、“下一个 nonce”加一（条件“值等于本次 nonce”）；自动放行的第一次签再更新自动额度（条件“版本号不变”）。任何一个条件不成立，整个事务失败，执行器稍后重试。</li>
+    <li><b>写 KMS 调用记录</b>，然后调 KMS、转换签名、自己验一遍。</li>
+    <li><b>把签名尝试改成 <code>SIGNED</code></b>，存签好的交易，条件“状态还是 <code>PENDING</code>”。条件不成立，说明另一个并发请求先签完了：丢掉自己这份，读出对方的返回。所以同一次签名尝试，签名服务只交出一笔签好的交易。</li>
+  </ol>
+<pre class="json">// 第 3 步，以太坊第一次签、不计额度（简写：省略了表名和属性类型）
+TransactWriteItems({
+  ClientRequestToken: requestId,   // 1–36 个字符；第一次请求完成后 10 分钟内重复提交不再执行
+  TransactItems: [
+    { Put: { Item: { pk: "转账#ID#放款", sk: "尝试#1", 状态: "PENDING", requestId, 摘要 },
+             ConditionExpression: "attribute_not_exists(pk)" } },
+    { Put: { Item: { pk: "请求#" + requestId, sk: "-", 指向: "转账#ID#放款 / 尝试#1" },
+             ConditionExpression: "attribute_not_exists(pk)" } },
+    { Put: { Item: { pk: "转账#ID#放款", sk: "概要", nonce: 7, 已签次数: 1, 版本: 1 },
+             ConditionExpression: "attribute_not_exists(pk)" } },
+    { Put: { Item: { pk: "nonce#运营地址#7", sk: "-", 归属: "转账#ID#放款" },
+             ConditionExpression: "attribute_not_exists(pk)" } },
+    { Update: { Key: { pk: "下一个nonce#运营地址", sk: "-" },
+                UpdateExpression: "SET #n = #n + :one", ConditionExpression: "#n = :seven" } }
+  ]
+})</pre>
+  <p class="note">这是写法示意，没有在真实的 DynamoDB 上跑过；并发下的行为要在 AWS 测试账号上实测<span class="unv">待验证</span>。</p>
+  <div class="anim" data-anim="ledger"></div>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>在哪一步出错</th><th>账本里是什么</th><th>执行器重试时</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>第 3 步事务之前</td><td>什么都没有</td><td>从头来</td><td>正常</td></tr>
+      <tr><td>事务失败（并发冲突）</td><td>什么都没变</td><td>稍后重试</td><td>正常</td></tr>
+      <tr><td>事务成功，调 KMS 之前崩溃</td><td>尝试为 <code>PENDING</code></td><td>按 requestId 找到它，用同一笔交易重签</td><td>正常</td></tr>
+      <tr><td>KMS 签完，第 5 步之前崩溃</td><td>尝试为 <code>PENDING</code>，KMS 已签过一次但结果丢了</td><td>同上</td><td>KMS 多签了一次（调用记录里有），交出去的仍只有一笔</td></tr>
+      <tr><td>KMS 报错或限流</td><td>尝试为 <code>PENDING</code></td><td>稍后重试</td><td>正常</td></tr>
+      <tr><td>两个相同的请求同时到达</td><td>一个事务成功，另一个失败</td><td>失败的那个重试时直接拿到结果</td><td>正常</td></tr>
+      <tr><td>两个请求都签完，同时改状态</td><td>先写的成功</td><td>后写的丢掉自己的签名，返回先写的那笔</td><td>正常</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>重签为什么可以接受</b>：重签出来的交易哈希不同，但 nonce（或输入）相同，最多只有一笔能上链。看门狗核对时按 nonce 或“去掉签名后的交易”匹配，不按签好的交易哈希匹配。</li>
+    <li><b>KMS 调用记录为什么先写后调</b>：中途崩溃，最多多出一条没有对应 CloudTrail 事件的记录。看门狗按“CloudTrail 里 <code>Sign</code> 的次数 ≤ 调用记录的条数”核对，CloudTrail 多出来的 <code>Sign</code>，就是账本之外有人签过，立即暂停网关。</li>
+    <li><b>账本坏了</b>：账本记的是签过什么，资金的最终依据是链上。账本丢失或被改：签名服务停签；用时间点恢复建一张新表，恢复到出问题之前；按链上运营地址的交易和 CloudTrail 的 <code>Sign</code> 记录补齐恢复点之后的部分，核对“下一个 nonce”和自动额度；发布新配置指向新表，再恢复签名。期间合约按转账 ID 去重，不会因为账本落后而重复执行。</li>
+  </ul>
+  <h3>执行器崩溃后怎么恢复</h3>
+  <p>原则：先查链上，再决定；能广播已签的那笔，就不新签。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>崩溃时点</th><th>恢复时先做什么</th><th>然后</th></tr></thead>
+    <tbody>
+      <tr><td>请求签名之后、拿到结果之前</td><td>用同一个 requestId 重新请求</td><td>签名服务按 requestId 返回同一笔</td></tr>
+      <tr><td>拿到签好的交易、广播之前</td><td>用只读查询从签名服务找回签好的交易</td><td>查链上这个转账 ID 是否已执行；没执行就广播这一笔，不另签新的</td></tr>
+      <tr><td>广播之后、确认之前</td><td>查链上：交易在不在、转账 ID 是否已执行</td><td>还在途就继续等或加价重发；已执行就标记完成</td></tr>
+      <tr><td>确认之后、写数据库之前</td><td>查链上转账 ID 的状态</td><td>已执行就标记完成，以监听到的链上事件为准</td></tr>
     </tbody>
   </table></div>
 </section>
 
 <section id="iam">
   <h2 class="eyebrow">权限</h2>
-  <p class="lead"><b>一句话</b>：AWS 里“谁能对哪个资源做什么”，由策略决定。签名服务能调用 KMS 签名，是因为它的执行角色被策略允许了 <code>kms:Sign</code>，<b>而且</b>这把钥匙的钥匙策略也允许。</p>
+  <p class="sub">锁住的不只是 kms:Sign，而是“谁能改签名程序”的整条链</p>
+  <p class="lead">先看懂：<a href="#c-org">账号、组织、SCP</a>、<a href="#c-iampol">IAM 和钥匙策略</a>、<a href="#c-trail">CloudTrail 和 CDK</a>。</p>
   <div class="tbl"><table class="mw-820">
-    <thead><tr><th>词</th><th>意思</th><th>在托管桥里</th></tr></thead>
+    <thead><tr><th>账号</th><th>里面有什么</th><th>为什么单独一个</th></tr></thead>
     <tbody>
-      <tr><td>账号</td><td>AWS 里资源和权限的边界，不同账号默认互相看不到</td><td>业务、以太坊签名、Qtum 签名、看门狗、日志、管理，共 6 个</td></tr>
-      <tr><td>IAM 角色</td><td>一种身份，程序“扮演”它来调用 AWS；用临时凭证，没有长期密码</td><td>签名 Lambda 的执行角色</td></tr>
-      <tr><td>策略</td><td>一段 JSON 规则：允许或拒绝哪些操作、对哪些资源、在什么条件下</td><td>只允许签名角色对这一把钥匙做 <code>Sign</code>、<code>GetPublicKey</code></td></tr>
-      <tr><td>ARN</td><td>AWS 资源的唯一名字，例如 <code>arn:aws:kms:区域:账号:key/钥匙ID</code></td><td>策略里用 ARN 指定这一把钥匙，不用通配符 <code>*</code></td></tr>
-      <tr><td>钥匙策略</td><td>挂在 KMS 钥匙本身上的策略</td><td>见下面的“要注意”</td></tr>
-      <tr><td>SCP</td><td>AWS Organizations 给整个账号设的上限，账号里的管理员也越不过</td><td>禁止删除 KMS 钥匙、关闭 CloudTrail</td></tr>
-      <tr><td>Lambda</td><td>AWS 的托管运行环境：有请求时运行一段代码，不用自己管服务器</td><td>签名服务跑在 Lambda 上</td></tr>
-      <tr><td>CloudTrail</td><td>记录每一次 AWS API 调用的日志</td><td>每次 <code>Sign</code> 都留一条记录</td></tr>
+      <tr><td>管理账号</td><td>Organizations、SCP、账单</td><td>不跑任何业务。SCP 管不到它，谁控制它谁就能改 SCP</td></tr>
+      <tr><td>日志账号</td><td>组织级 CloudTrail 的存储桶</td><td>签名账号的管理员删不掉、改不了日志</td></tr>
+      <tr><td>业务账号</td><td>后端、执行器</td><td>没有任何钥匙，被攻破也签不了</td></tr>
+      <tr><td>以太坊签名账号、Qtum 签名账号</td><td>各一把运营钥匙、签名 Lambda、账本；以太坊那个另有一个 Qtum 节点，用来核对 Qtum 上的提现</td><td>一个账号被拿下，只影响一把钥匙。两个账号的管理员不是同一个人</td></tr>
+      <tr><td>看门狗账号</td><td>看门狗</td><td>对账的人和签名的人分开</td></tr>
     </tbody>
   </table></div>
-  <div class="callout"><p><b>要注意：KMS 的钥匙策略说了算</b><span class="ok-tag">已核实</span>。每把 KMS 钥匙都必须有且只有一份钥匙策略。钥匙策略不允许的话，IAM 策略里写了允许也不生效。钥匙策略按区域生效，只管同一区域里的钥匙。</p></div>
-  <p><b>IAM 策略示例</b>（挂在签名角色上；“区域、账号、钥匙ID”是占位）：</p>
+  <p class="note">测试网另开一套签名账号，钥匙和配置和主网完全分开，权限可以放宽，方便调试；测试和主网不共用任何钥匙。</p>
+  <p>两个签名账号放在同一个组织单元（OU）里，SCP 挂在这个 OU 上。人的分工：两个签名账号的管理员不能是同一个人；日志账号、管理账号不归写签名程序的人管；看门狗账号由另一个人管，或者两人共管。</p>
+  <p><b>只锁 <code>kms:Sign</code> 为什么不够</b>：能调 <code>kms:Sign</code> 的身份只有一个，签名 Lambda 的执行角色（下面叫 <code>signer-fn</code>）。可签名账号的管理员能改这个 Lambda 的代码，或者新建一个 Lambda 挂上 <code>signer-fn</code>，照样想签什么签什么。所以要沿着“谁能改签名程序”一路锁上去：</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>环节</th><th>谁能做</th><th>靠什么</th></tr></thead>
+    <tbody>
+      <tr><td>调用 <code>kms:Sign</code></td><td>只有 <code>signer-fn</code></td><td>SCP 拒绝其他身份；钥匙策略只列 <code>signer-fn</code></td></tr>
+      <tr><td>扮演 <code>signer-fn</code></td><td>只有 Lambda 服务</td><td><code>signer-fn</code> 的信任策略只写 <code>lambda.amazonaws.com</code></td></tr>
+      <tr><td>把 <code>signer-fn</code> 挂到函数上（<code>iam:PassRole</code>），改函数代码和配置</td><td>只有 CloudFormation 的执行角色</td><td>SCP</td></tr>
+      <tr><td>用 CloudFormation 部署</td><td>只有 CDK 的部署角色，而部署角色只有 CI 能扮演</td><td>SCP；CI 角色的信任策略只认 GitHub 上受保护的发布环境</td></tr>
+      <tr><td>让 CI 部署主网</td><td>合并代码和发布都要另一个人批准</td><td>GitHub 分支保护和环境审批（见下面的“发布”）</td></tr>
+      <tr><td>改上面任何一条</td><td>只有管理账号</td><td>SCP 本身在管理账号里，成员账号改不了</td></tr>
+    </tbody>
+  </table></div>
+  <p>人在签名账号里只剩两种权限：查看，以及应急时禁用钥匙。重新启用钥匙要走发布。暂停要快、恢复要严。</p>
+  <div class="anim" data-anim="iam"></div>
+  <p><b>SCP 示例</b>（挂在两个签名账号所在的组织单元上，节选三条；写法都是“拒绝，除非调用者是某个角色”。<code>cdk-hnb659fds-…</code> 是 CDK 用默认限定符引导出来的角色名，实际以引导结果为准）：</p>
 <pre class="json">{
   "Version": "2012-10-17",
   "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "kms:Sign",
-      "Resource": "arn:aws:kms:区域:账号:key/钥匙ID",
+    { "Sid": "DenySignExceptSigner", "Effect": "Deny", "Action": "kms:Sign", "Resource": "*",
+      "Condition": { "ArnNotLike": { "aws:PrincipalArn": "arn:aws:iam::*:role/signer-fn" } } },
+    { "Sid": "DenyGrantDeleteReplicate", "Effect": "Deny", "Resource": "*",
+      "Action": ["kms:CreateGrant", "kms:ScheduleKeyDeletion", "kms:ReplicateKey"] },
+    { "Sid": "DenySignerLambdaChangeExceptCfn", "Effect": "Deny",
+      "Resource": "arn:aws:lambda:*:*:function:*signer*",
+      "Action": ["lambda:UpdateFunctionCode", "lambda:UpdateFunctionConfiguration",
+                 "lambda:UpdateAlias", "lambda:AddPermission"],
+      "Condition": { "ArnNotLike": {
+        "aws:PrincipalArn": "arn:aws:iam::*:role/cdk-hnb659fds-cfn-exec-role-*" } } }
+  ]
+}</pre>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>整份 SCP 里的语句</th><th>防的是什么</th></tr></thead>
+    <tbody>
+      <tr><td>只有 <code>signer-fn</code> 能 <code>Sign</code></td><td>管理员给自己或别的角色加 <code>kms:Sign</code></td></tr>
+      <tr><td>谁都不许 <code>CreateGrant</code>、<code>ScheduleKeyDeletion</code>、<code>ReplicateKey</code></td><td>用 grant 绕开钥匙策略；删钥匙（删了地址就作废）；把钥匙复制到别的区域，另配一份宽松的钥匙策略</td></tr>
+      <tr><td>钥匙管理（改钥匙策略、启用钥匙、改别名）只能经 CloudFormation</td><td>手动改钥匙策略；重新启用被禁用的钥匙；把别名指到另一把钥匙</td></tr>
+      <tr><td>签名 Lambda 的代码、配置、版本、别名、调用权限、并发只能经 CloudFormation 改</td><td>手动换掉签名程序</td></tr>
+      <tr><td>保护几个关键角色：<code>PassRole</code>、改信任策略、挂策略都只能经 CloudFormation</td><td>把 <code>signer-fn</code> 挂到别的函数或机器上；改调用角色和部署角色的信任关系</td></tr>
+      <tr><td>CDK 的部署角色只能由 CI 扮演</td><td>人直接扮演部署角色，绕过 CI 和发布审批</td></tr>
+      <tr><td>账本记录只能由 <code>signer-fn</code> 写；账本表只能经 CloudFormation 改</td><td>手动改账本记录、删表、关时间点恢复</td></tr>
+      <tr><td>不许退出组织，不许停掉或删除 trail</td><td>账号退出组织以摆脱 SCP；关掉日志</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>先引导，再挂 SCP</b>：CDK 引导要建角色、改信任策略，SCP 挂上后就做不了。以后要改引导配置，由管理账号临时摘下 SCP，改完再挂回去，两个人在场。</li>
+    <li><b>名字要对得上</b>：SCP 按名字放行，CDK 代码里要显式写 <code>roleName: "signer-fn"</code>，函数名、账本表名也按约定起，否则 SCP 管不到。</li>
+    <li><b>长度有上限</b>：一份 SCP 最多 10,240 个字符，用 SDK 或 CLI 保存时空白也算<span class="ok-tag">已核实</span>。写不下就拆成两份，挂在同一个组织单元上。</li>
+    <li>整份 SCP 挂到测试账号后，按越权清单逐条试，该拒的都要拒、该能做的都能做（见<a href="#verify">还要验证的</a>）。账本事务不用单独防：DynamoDB 文档写明，事务里的 Put、Update、Delete 按底层的 <code>PutItem</code>、<code>UpdateItem</code>、<code>DeleteItem</code> 授权，条件检查是 <code>ConditionCheckItem</code><span class="ok-tag">已核实</span>，所以按单个操作写的拒绝也管得住事务；挂上以后在测试账号上照样试一次。</li>
+  </ul>
+  <p><b>钥匙策略示例</b>（“签名账号、区域、端点 ID”是占位）：</p>
+<pre class="json">{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Sid": "AllowSignerToSign", "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::签名账号:role/signer-fn" },
+      "Action": "kms:Sign", "Resource": "*",
       "Condition": { "StringEquals": {
-        "kms:SigningAlgorithm": "ECDSA_SHA_256",
-        "kms:MessageType": "DIGEST" } }
-    },
-    {
-      "Effect": "Allow",
-      "Action": "kms:GetPublicKey",
-      "Resource": "arn:aws:kms:区域:账号:key/钥匙ID"
-    }
+        "kms:SigningAlgorithm": "ECDSA_SHA_256", "kms:MessageType": "DIGEST",
+        "aws:sourceVpce": "vpce-KMS接口端点ID" } } },
+    { "Sid": "AllowReadPublicKey", "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::签名账号:role/signer-fn" },
+      "Action": ["kms:GetPublicKey", "kms:DescribeKey"], "Resource": "*" },
+    { "Sid": "AllowCfnToManage", "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::签名账号:role/cdk-hnb659fds-cfn-exec-role-签名账号-区域" },
+      "Action": ["kms:DescribeKey", "kms:GetKeyPolicy", "kms:PutKeyPolicy",
+                 "kms:EnableKey", "kms:DisableKey", "kms:CreateAlias", "kms:UpdateAlias"],
+      "Resource": "*" }
   ]
 }</pre>
   <ul>
-    <li>第一条只许用 ECDSA_SHA_256、只许签摘要。这两个条件只作用于 <code>Sign</code> 和 <code>Verify</code><span class="ok-tag">已核实</span>，所以 <code>GetPublicKey</code> 单独写一条。</li>
-    <li>IAM 默认拒绝：没有任何策略允许的操作都做不了。签名角色只挂这一份策略，就做不了 <code>kms:Decrypt</code>、<code>kms:ScheduleKeyDeletion</code> 这类操作。</li>
-    <li>钥匙策略里也要有一条允许这个角色的语句，写法类似，多一个 <code>Principal</code> 字段指明是哪个角色。</li>
+    <li><b>故意没有“允许本账号 root 使用 <code>kms:*</code>”那一条</b>（见 <a href="#c-iampol">IAM 卡片</a> ①）。签名账号的 IAM 管理员改自己的 IAM 策略，拿不到 <code>kms:Sign</code>。</li>
+    <li><code>AllowSignerToSign</code> 的三个条件：只许签摘要、只许 <code>ECDSA_SHA_256</code>、请求只许经过本账号的 KMS 接口端点。<code>signer-fn</code> 的临时凭证被偷到 VPC 外面，也签不了。文档提醒，<code>aws:sourceVpce</code> 会让“AWS 服务代你调 KMS”的请求失败；签名 Lambda 是自己直接调 <code>Sign</code>，不受影响<span class="ok-tag">已核实</span>。</li>
+    <li><code>AllowCfnToManage</code> 满足防锁死检查：建钥匙的 CloudFormation 执行角色以后还能改策略。这个角色被删掉的话，钥匙就没人能管，要找 AWS Support；它本身受 SCP 保护，运营钥匙也可以换（见<a href="#ops">运维</a>），这个风险可以接受。</li>
+    <li>另有一条给人工登录角色禁用钥匙：主体写本账号、条件限定登录角色，操作只有 <code>kms:DisableKey</code> 和 <code>kms:DescribeKey</code>。主体写账号时，还要那个角色的 IAM 策略也允许才生效，能授出的也只有这两个操作。</li>
+  </ul>
+  <p><b>跨账号调用</b>：执行器在业务账号里，先 AssumeRole 扮演签名账号里的调用角色，再调签名 Lambda。调用角色只能调签名 Lambda 的 <code>live</code> 别名（不能调 <code>$LATEST</code> 或别的版本），碰不到 KMS：SCP 和钥匙策略都不允许它。这样授权完全由签名账号决定，签名账号一改信任策略，业务账号就调不了；CloudTrail 里也留下每次 AssumeRole 的会话名。要配三处：</p>
+  <ul>
+    <li><b>调用角色的信任策略</b>（签名账号里）：只允许业务账号里执行器的那个角色 <code>sts:AssumeRole</code>。</li>
+    <li><b>调用角色的权限</b>：只有一条 <code>lambda:InvokeFunction</code>，资源写签名 Lambda 的 <code>live</code> 别名的 ARN。</li>
+    <li><b>执行器的角色</b>（业务账号里）：另需一条允许 <code>sts:AssumeRole</code> 到这个调用角色。Qtum 一侧同样配一套。</li>
   </ul>
   <div class="tbl"><table class="mw-760">
-    <thead><tr><th>运维</th><th>做法</th></tr></thead>
+    <thead><tr><th><code>signer-fn</code> 的权限</th><th>资源</th></tr></thead>
     <tbody>
-      <tr><td>权限最小化</td><td>只给签名服务的执行角色这把钥匙的 <code>kms:Sign</code> 和 <code>kms:GetPublicKey</code>，用钥匙的 ARN 限定，不用通配符。钥匙策略里只列这个角色</td></tr>
-      <tr><td>防误删</td><td>用 SCP 禁止删除密钥</td></tr>
-      <tr><td>轮换</td><td>换钥匙就是建一把新钥匙，算出新地址，由多签在网关上把运营地址换成新地址；新地址充好 gas 后，停用旧钥匙。Qtum 旧地址剩下的 UTXO 要先转出来</td></tr>
-      <tr><td>审计</td><td>每次 <code>Sign</code> 都会记一条 CloudTrail 日志。日志里是否带被签的摘要<span class="unv">待核实</span>；签名服务自己的账本要记“签了哪个摘要、对应哪笔交易”</td></tr>
-      <tr><td>费用和限额</td><td>每把钥匙的月费、每次签名的费用、<code>Sign</code> 的每秒请求上限，上线前按 AWS 官方价格页和限额页核实。托管桥的签名量通常很小，一般碰不到上限</td></tr>
+      <tr><td><code>kms:Sign</code>、<code>kms:GetPublicKey</code></td><td>本账号这一把钥匙的 ARN，不用通配符</td></tr>
+      <tr><td><code>dynamodb:GetItem</code>、<code>Query</code>、<code>PutItem</code>、<code>UpdateItem</code>、<code>ConditionCheckItem</code></td><td>账本表</td></tr>
+      <tr><td><code>secretsmanager:GetSecretValue</code></td><td>RPC 凭证那一个 secret</td></tr>
+      <tr><td><code>s3:GetObject</code></td><td>看门狗账号里的对账结果（对方的桶策略只给两个签名账号的 <code>signer-fn</code> 读）</td></tr>
+      <tr><td>VPC 内运行要的网络接口权限</td><td>AWS 托管策略 <code>AWSLambdaVPCAccessExecutionRole</code><span class="ok-tag">已核实</span></td></tr>
     </tbody>
   </table></div>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>和看门狗互相读</th><th>读什么</th><th>怎么授权</th></tr></thead>
+    <tbody>
+      <tr><td>签名 Lambda 读看门狗</td><td>最近一次对账的时间、结果（正常或异常）、各项金额。只认这三样</td><td>看门狗账号的存储桶策略只给两个签名账号的 <code>signer-fn</code> 读</td></tr>
+      <tr><td>看门狗读签名账号</td><td>两个账本</td><td>账本表的资源策略只给看门狗的角色 <code>GetItem</code>、<code>Query</code></td></tr>
+    </tbody>
+  </table></div>
+  <p><b>发布要另一个人批准</b>：谁能发布签名程序的代码和配置（审核员名单、上限都在配置里），谁就能改签名规则。所以发布要两个人。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>环节</th><th>做法</th></tr></thead>
+    <tbody>
+      <tr><td>代码仓库</td><td>签名程序单独一个仓库，不和后端放在一起</td></tr>
+      <tr><td>合并</td><td>主分支开保护：合并要 CODEOWNERS 指定的另一人批准，PR 作者不能批准自己的，开“最近一次推送要由推送者以外的人批准”；勾选“不允许绕过以上设置”，否则分支保护对管理员不生效<span class="ok-tag">已核实</span></td></tr>
+      <tr><td>部署</td><td>只能由 GitHub Actions 部署。主网的 job 用一个受保护的环境，设“必须由指定的人批准”、开“禁止自审”（发起部署的人不能批准自己），并且<b>取消勾选</b>“允许管理员绕过保护规则”：这个选项默认是开的<span class="ok-tag">已核实</span></td></tr>
+      <tr><td>CI 怎么进 AWS</td><td>用 GitHub 的 OIDC 换临时凭证，扮演签名账号里的部署入口角色，不存长期密钥。信任策略要求 <code>token.actions.githubusercontent.com:aud</code> 等于 <code>sts.amazonaws.com</code>，<code>:sub</code> 等于 <code>repo:组织/仓库:environment:环境名</code><span class="ok-tag">已核实</span></td></tr>
+      <tr><td>测试网</td><td>另一个环境，可以不要审批，部署到测试网的签名账号</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>套餐</b>：私有仓库上，“必须由指定的人批准”在 GitHub Free、Pro、Team 套餐里都用不了，要 GitHub Enterprise<span class="ok-tag">已核实</span>。用不了就要换别的审批方式。</li>
+    <li><b>组织所有者</b>能改环境设置和分支保护。写签名程序的两个人都是所有者的话，“两人批准”在 GitHub 这一层挡不住其中一人。所有者应当是不写签名程序的人。</li>
+    <li><b>sub 的格式会变</b>：job 引用了环境后，<code>sub</code> 是 <code>…:environment:环境名</code>，不再是 <code>…:ref:refs/heads/main</code>。照分支写的信任条件匹配不上。上线前在测试账号上试：别的分支、别的环境的令牌去扮演，必须失败<span class="unv">待验证</span>。</li>
+  </ul>
   <p class="note">审计时怎么查这些权限：<a class="chap-link" href="audit.html#offchain">第 10 章：链下系统和运营怎么审</a></p>
+</section>
+
+<section id="ops">
+  <h2 class="eyebrow">运维</h2>
+  <p class="sub">换钥匙就是换地址；出事先暂停、再禁用、再查</p>
+  <p class="lead">部署、监控、换钥匙、应急和费用。先看懂：<a href="#c-lambda">Lambda 和网络</a>、<a href="#c-trail">CloudTrail 和 EventBridge</a>。</p>
+  <h3>部署</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>组件</th><th>放在哪</th><th>出入</th></tr></thead>
+    <tbody>
+      <tr><td>签名 Lambda</td><td>每个签名账号一个 VPC，两个可用区的私有子网</td><td>出：KMS 接口端点、DynamoDB 和 S3 网关端点、NAT（到第三方 RPC、Secrets Manager）、本账号 Qtum 节点的 RPC 端口。入：无</td></tr>
+      <tr><td>KMS 接口端点</td><td>两个私有子网</td><td>只允许 Lambda 的安全组访问；钥匙策略用 <code>aws:sourceVpce</code> 只认这个端点（见<a href="#iam">权限</a>）</td></tr>
+      <tr><td>NAT 网关</td><td>公有子网</td><td>Lambda 访问第三方以太坊 RPC</td></tr>
+      <tr><td>Qtum 节点（只在以太坊签名账号）</td><td>公有子网，有公网地址</td><td>出：P2P 同步，不经过 NAT，省掉按流量计的 NAT 费用。入：RPC 端口只对 Lambda 的安全组开放，P2P 入站不开。开 <code>-logevents</code>，RPC 只监听私网地址，凭证放 Secrets Manager</td></tr>
+    </tbody>
+  </table></div>
+  <ul>
+    <li><b>签名 Lambda、Qtum 节点</b>的设置见下面两张表。</li>
+    <li><b>一次发布</b>：提交改动、另一人审查后合并 → CI 跑全部测试 → 部署测试网签名账号、跑冒烟测试 → 主网部署等批准，批准人核对这次的提交和配置差异 → CloudFormation 发布新版本，<code>live</code> 指过去 → 新版本冷启动自检通过。出问题就把 <code>live</code> 指回上一个版本，同样走一次发布。</li>
+  </ul>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>签名 Lambda</th><th>设置</th></tr></thead>
+    <tbody>
+      <tr><td>运行时</td><td>Lambda 当前支持的 Node.js LTS：2026-11 是 <code>nodejs22.x</code>、<code>nodejs24.x</code>；<code>nodejs20.x</code> 已于 2026-04-30 弃用<span class="ok-tag">已核实</span></td></tr>
+      <tr><td>内存</td><td>例如 512 MB</td></tr>
+      <tr><td>超时</td><td>几十秒（例如 30 秒），默认 3 秒不够；执行器那边的调用超时再长一点</td></tr>
+      <tr><td>预留并发</td><td>小（例如 5）：限制同时签名的数量，也限住被滥用时的速度</td></tr>
+      <tr><td>别名</td><td><code>live</code>，指向已发布的版本，执行器只能调它</td></tr>
+      <tr><td>配置</td><td>钥匙 ARN、预期地址、网关地址、chainId、各项上限、审核员名单、RPC 地址写在仓库的配置文件里，随代码发布；只有 RPC 凭证放 Secrets Manager，冷启动时读一次、缓存在内存里</td></tr>
+      <tr><td>事件索引任务（只在以太坊签名账号）</td><td>另一个 Lambda，由 EventBridge 每分钟定时触发，写索引表（见<a href="#check">核对</a>的对账预检）。它没有 <code>kms:Sign</code></td></tr>
+    </tbody>
+  </table></div>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th>Qtum 节点</th><th>设置</th></tr></thead>
+    <tbody>
+      <tr><td>实例和磁盘</td><td>EC2 ＋ gp3 磁盘，规格和大小按同步测试的实际占用再留余量定；同步要多久、占多少盘要实测</td></tr>
+      <tr><td>选项</td><td><code>-logevents</code>（<code>gettransactionreceipt</code>、<code>searchlogs</code> 要用）、<code>-txindex</code>（按交易哈希查交易）；RPC 只监听私网地址。升级到 v30.3 时，开过 <code>-logevents</code> 的节点要按发布说明重建索引<span class="ok-tag">已核实</span></td></tr>
+      <tr><td>RPC 凭证</td><td>放 Secrets Manager</td></tr>
+      <tr><td>监控</td><td>落后链头超过例如 5 分钟告警；修好之前以太坊签名服务停签放款，不改用别的节点</td></tr>
+      <tr><td>备份</td><td>定期给数据盘做快照，坏了从快照恢复再追块</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">Secrets Manager 也可以加一个接口端点，不走 NAT，多一份按小时的费用。</p>
+  <h3>监控和告警</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>检查项</th><th>怎么发现</th><th>级别和动作</th></tr></thead>
+    <tbody>
+      <tr><td>签名服务拒签</td><td>返回“拒绝”时直接告警</td><td>警告；钥匙和地址不符、自检失败、nonce 被未知交易用掉为严重。后端暂停自动放行</td></tr>
+      <tr><td>“稍后重试”持续太久</td><td>同一笔转账超过例如 15 分钟</td><td>警告：查 RPC、节点、看门狗</td></tr>
+      <tr><td>有别的身份调 <code>Sign</code></td><td>EventBridge：来源 KMS、事件名 <code>Sign</code>、调用者不是 <code>signer-fn</code>，或带 AccessDenied</td><td>严重：电话告警，查 CloudTrail</td></tr>
+      <tr><td>钥匙管理操作</td><td>EventBridge：<code>DisableKey</code>、<code>EnableKey</code>、<code>PutKeyPolicy</code>、<code>UpdateAlias</code>、<code>ScheduleKeyDeletion</code> 等</td><td>严重：确认是不是计划内的发布或应急操作</td></tr>
+      <tr><td>签名 Lambda 被改</td><td>EventBridge：<code>UpdateFunctionCode</code>、<code>UpdateAlias</code> 等</td><td>警告：和发布记录对照</td></tr>
+      <tr><td><code>Sign</code> 次数和账本对不上</td><td>看门狗定时核对：CloudTrail 里 <code>Sign</code> 的次数 ≤ KMS 调用记录数</td><td>严重：暂停网关，有账本之外的签名</td></tr>
+      <tr><td>账本和链上对不上</td><td>看门狗：链上运营地址发出的每笔交易都在账本里；账本里签过的都上链了，或被同一 nonce（同一批输入）的另一笔替代</td><td>严重：暂停网关</td></tr>
+      <tr><td>运营地址 gas 低、Qtum 节点落后</td><td>执行器定时查余额；节点高度和公开浏览器比</td><td>警告：补 gas；修节点，修好之前以太坊签名服务停签放款</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">EventBridge 规则状态要设成 <code>ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS</code>，否则 <code>Sign</code> 这类只读事件永远匹配不到（见 <a href="#c-trail">CloudTrail 卡片</a>）。账号里要有开着的 trail；组织级 trail 能不能满足这一条，要在测试账号上确认，不行就在签名账号里另开一个<span class="unv">待验证</span>。CloudTrail 里没有被签的摘要，所以按次数和时间核对，摘要以账本为准。</p>
+  <h3>第一次上线</h3>
+  <ol>
+    <li><b>管理账号</b>：建组织、组织单元、日志账号、组织级 CloudTrail（不排除 KMS 事件）。root 绑硬件 MFA。</li>
+    <li><b>签名账号</b>：建账号，配人的登录权限（只读、禁用钥匙），做一次 CDK 引导。</li>
+    <li><b>挂 SCP</b>：引导完成后，把 SCP 挂到签名账号所在的组织单元。先在测试账号上按越权清单试过。</li>
+    <li><b>GitHub</b>：建仓库、分支保护、测试网和主网两个发布环境，关掉管理员绕过。</li>
+    <li><b>测试网先走一遍</b>：在测试网签名账号上完成“从建钥匙到登记到网关”的全部步骤，和测试网上的测试。</li>
+    <li><b>主网发布</b>：经批准部署主网签名服务，CloudFormation 建出钥匙。</li>
+    <li><b>算地址</b>：两人各自算、核对一致，写进配置，再发布一次。</li>
+    <li><b>登记</b>：多签把运营地址登记到两个网关。</li>
+    <li><b>充 gas</b>：以太坊转 ETH；Qtum 分几次转账准备 UTXO。</li>
+    <li><b>小额验证</b>：一笔最小金额的存入和提现，然后逐步放开额度。</li>
+  </ol>
+  <h3>换钥匙</h3>
+  <p>非对称钥匙不能自动轮换（见 <a href="#kms">KMS 提供什么</a>），换钥匙就是建新钥匙、换运营地址。按计划定期换（例如每季度）；人员变动、怀疑泄露时不等计划，立即换。</p>
+  <div class="anim" data-anim="rot"></div>
+  <p><b>旧地址上剩下的钱</b>：签名服务只签网关调用，旧地址上剩下的少量 ETH、QTUM，以及换钥匙前约 17.8 小时内退回、还没成熟的 gas，都转不出来。所以换钥匙前一两周就停止给旧地址补 gas，让余额自然用完。真要收回，可以给签名服务加一种“只能把余额转到固定地址、只对退役钥匙可用”的操作；这又是一个新的签名口子，要和别的规则一样核对。</p>
+  <h3>出事怎么办</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>情况</th><th>步骤</th></tr></thead>
+    <tbody>
+      <tr><td>怀疑运营钥匙被滥用（签名程序被改、<code>signer-fn</code> 的凭证被偷、权限有漏洞）</td><td>① 值班人员用守护者硬件钱包暂停两个网关：先暂停，再判断。② 登录角色禁用这把钥匙，之后任何人都签不了。③ 查 CloudTrail 里的 <code>Sign</code>、AssumeRole、Lambda 和 IAM 的变更，账本里的签名记录，链上运营地址发出的所有交易，确认哪些签名不是正常请求产生的、损失多少。④ 找到入口修好，走发布。⑤ 换钥匙，被禁用的旧钥匙不再启用。⑥ 多签恢复网关，先把上限调低运行一段时间</td></tr>
+      <tr><td>KMS 或整个区域不可用</td><td>签名返回“稍后重试”，转账排队，执行器自动重试。时效允许就等它恢复；故障持续、快超过时效，就在另一个区域部署签名服务、建新钥匙、换运营地址，账本在新区域另建，起点按链上状态</td></tr>
+      <tr><td>账本丢失或损坏</td><td>见<a href="#ledger">账本</a>最后一条</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>演练</b>：上线前和此后定期，在测试网签名账号上演练禁用钥匙后恢复、执行器在各个时点崩溃、账本时间点恢复、完整换一次钥匙。每次都验证：没有重复铸币或放款，所有转账最后完成或进入退款。</p>
+  <div class="tbl"><table class="mw-760">
+    <thead><tr><th></th><th>单区域钥匙</th><th>多区域钥匙</th></tr></thead>
+    <tbody>
+      <tr><td>区域故障时</td><td>签名停止，转账排队；故障久了就在别的区域建新钥匙、换地址</td><td>在副本区域部署签名服务就能继续，地址不变</td></tr>
+      <tr><td>攻击面</td><td>一份钥匙策略</td><td>每个副本各有一份钥匙策略，都要管住</td></tr>
+      <tr><td>复杂度</td><td>低</td><td>两个区域的签名服务要共用一个账本才不会重复签，要另外设计</td></tr>
+    </tbody>
+  </table></div>
+  <p>托管桥的时效如果是“一天内到账”，区域故障可以等或者换钥匙，首版用单区域更简单，并在 SCP 里禁止 <code>ReplicateKey</code>。要用多区域，建钥匙时就得选，事后改不了。</p>
+  <h3>费用和限额</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>项</th><th>单价（us-east-1，2026-11 读取）</th><th>每个签名账号每月大约</th></tr></thead>
+    <tbody>
+      <tr><td>KMS 钥匙</td><td>每把每月 1 美元</td><td>1 美元 × 钥匙把数（换下来的旧钥匙也算）</td></tr>
+      <tr><td>KMS 签名</td><td>ECC 每 1 万次 0.15 美元，没有免费额度</td><td>每天 1000 次约 0.45 美元</td></tr>
+      <tr><td>NAT 网关</td><td>每小时 0.045 美元，每 GB 0.045 美元</td><td>约 33 美元 ＋ 流量</td></tr>
+      <tr><td>KMS 接口端点</td><td>每个可用区每小时 0.01 美元，每 GB 0.01 美元</td><td>两个可用区约 15 美元</td></tr>
+      <tr><td>DynamoDB、S3 网关端点</td><td>不收费</td><td>0</td></tr>
+      <tr><td>Secrets Manager</td><td>每个 secret 每月 0.40 美元，每 1 万次调用 0.05 美元</td><td>不到 1 美元</td></tr>
+      <tr><td>Lambda、DynamoDB</td><td>按量计费</td><td>签名量小，很少（没有单独核实价格）</td></tr>
+    </tbody>
+  </table></div>
+  <p>不算 Qtum 节点，每个签名账号的固定费用大约 50 美元一个月，大头是 NAT 和接口端点，KMS 本身只有几美元。公网 IPv4 地址另按每个每小时 0.005 美元计，NAT 网关的地址是否另算没有核实。限额方面，ECC 的 <code>Sign</code> 每秒 1000 次，托管桥的签名量远低于这个数；签名 Lambda 的预留并发也限住了速度。</p>
 </section>
 
 <section id="project">
   <h2 class="eyebrow">上线前</h2>
-  <p class="sub">KMS 不是唯一的防线，还有几件事要实测</p>
-  <p class="lead">KMS 只保证私钥拿不走。谁能让 KMS 签、签什么，要靠签名服务的核对和链上额度来限制。下面这些，文档和源码里查不到确定答案，要在测试网或 regtest 上验证。</p>
+  <p class="sub">文档和源码能查的都查了，剩下的要实测</p>
+  <p class="lead">KMS 只保证私钥拿不走。谁能让 KMS 签、签什么，靠签名服务的核对、账本和链上额度来限制，这些都要在真实环境里跑过才算数。下面这些，文档和源码里查不到确定答案，或者必须看真实结果。</p>
+  <h3>开工前要定的事</h3>
+  <p>下面每一项不定，对应的步骤就做不下去。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>事项</th><th>要定什么</th><th>不定会卡住</th></tr></thead>
+    <tbody>
+      <tr><td>合约接口</td><td>放款、取消提现、铸币、取消存入四个函数的参数；存入、提现两个事件的字段和哪些带 indexed；换运营地址的函数</td><td>交易解析、源链核对</td></tr>
+      <tr><td>转账 ID</td><td>怎么算（例如源链 ID ＋ 源网关地址 ＋ 序号的哈希），事件里是否直接给出</td><td>源链核对、账本主键</td></tr>
+      <tr><td>金额和地址</td><td>两边代币的小数位（USDC 和 USDC.e 都是 6 位就不用换算）；Qtum 收款地址在合约里按 20 字节 hash160 处理</td><td>字段比对</td></tr>
+      <tr><td>审核员签名</td><td>EIP-712 的 domain 和字段</td><td>审核员签名的校验</td></tr>
+      <tr><td>参数</td><td>两个签名服务的自动上限（单笔、24 小时）、双人审批线、手续费上限、Qtum 确认数、看门狗结果的过期时间</td><td>配置</td></tr>
+      <tr><td>人</td><td>两个签名账号的管理员各是谁；谁批准发布；审核员名单和硬件钱包</td><td>账号、发布流程、审核员名单</td></tr>
+      <tr><td>AWS</td><td>谁建组织、谁保管管理账号的 root；用哪个区域；单区域还是多区域钥匙</td><td><a href="#iam">权限</a>一节的全部</td></tr>
+      <tr><td>RPC 和 GitHub</td><td>两家以太坊 RPC 服务商；GitHub 组织的套餐（影响私有仓库能不能用发布审批）</td><td>源链核对、发布流程</td></tr>
+    </tbody>
+  </table></div>
   <h3 id="verify">还要验证的</h3>
   <div class="tbl"><table class="mw-820">
-    <thead><tr><th>项</th><th>怎么验</th></tr></thead>
+    <thead><tr><th>在哪</th><th>项</th><th>怎么验</th></tr></thead>
     <tbody>
-      <tr><td>两条链的签名转换（DER、低位 s、v）写得对</td><td>离线原型：本地私钥模拟 KMS 的输出格式，签出的交易用第三方库独立核对</td></tr>
-      <tr><td>Qtum 合约看到的调用者是运营地址</td><td>regtest 或测试网上发一笔调用，看合约记下的 <code>msg.sender</code></td></tr>
-      <tr><td>Qtum 的最低 gasPrice、剩余 gas 怎么退、多久能用</td><td>测试网实测</td></tr>
-      <tr><td>Qtum 同一批输入加价重发能否替换旧交易</td><td>测试网实测</td></tr>
-      <tr><td>CloudTrail 日志里有没有被签的摘要</td><td>有 AWS 账号后看一条真实日志</td></tr>
-      <tr><td>KMS 费用和限额</td><td>查 AWS 价格页和限额页</td></tr>
+      <tr><td>Qtum regtest、测试网</td><td>节点接受 KMS 签的交易；高位 s 被拒；合约看到的调用者是运营地址；第一个输入换成非 P2PKH 输出时报 <code>bad-txns-invalid-sender-script</code></td><td>部署一个记录调用者的小合约，签一笔调用；再各改一处广播，记下报错</td></tr>
+      <tr><td>Qtum regtest、测试网</td><td>gas 退回：出块交易里有没有付给运营地址的输出，金额是否等于 (gasLimit − 实际用量) × gasPrice，多少个块后能花</td><td>看出块交易，试着提前花</td></tr>
+      <tr><td>Qtum regtest、测试网</td><td>加价替换生效、旧交易消失；只多 1 聪的替换被拒；只付预付 gas 的交易能不能进内存池、能不能被打包</td><td>同一批输入签两笔，依次广播</td></tr>
+      <tr><td>Sepolia</td><td>KMS 签的 <code>release</code> 上链，发送方是运营地址；低手续费卡住后按 1.15 倍加价能替换；签名服务对 finalized 的判断和区块浏览器一致</td><td>端到端跑一遍</td></tr>
+      <tr><td>AWS 测试账号</td><td>KMS 签一个摘要、openssl 验证通过，已经做过<span class="ok-tag">已实测</span>（见<a href="#lab">动手</a>）。还要做：用 KMS 签出一整笔交易，ethers 和 OpenSSL 独立验证；禁用钥匙后 <code>Sign</code> 报什么错；CloudTrail 里一条 <code>Sign</code> 记了哪些字段</td><td>签几笔、禁用一次、看日志</td></tr>
+      <tr><td>AWS 测试账号</td><td>账本并发：同一个 requestId 并发 10 次只签出一笔、10 次都拿到同一笔；两笔转账抢同一个 nonce 只成一笔；额度只剩一笔时两笔同时到只过一笔；在崩溃表的每个时点注入异常，重试后结果正确；时间点恢复出的新表和恢复点一致</td><td>写测试脚本并发打</td></tr>
+      <tr><td>AWS 测试账号</td><td>越权清单：挂上 SCP 后，签名账号管理员直接调 <code>Sign</code>、改钥匙策略、建 grant、安排删除、启用禁用的钥匙、改签名 Lambda、新建函数挂 <code>signer-fn</code>、扮演部署角色、写账本、关时间点恢复、退出组织，全部失败；调用角色调 KMS、调 <code>$LATEST</code> 失败；VPC 外用 <code>signer-fn</code> 的凭证 <code>Sign</code> 失败。同时登录角色能禁用钥匙、CI 能发布、看门狗能读账本</td><td>逐条试，记录结果</td></tr>
+      <tr><td>AWS 测试账号</td><td>EventBridge 告警真的会触发；组织级 trail 能否满足 EventBridge 的要求；<code>cdk synth</code> 生成的钥匙策略只有自己写的几条</td><td>故意触发一次，看生成的模板</td></tr>
+      <tr><td>GitHub</td><td>别的分支、测试网环境的 OIDC 令牌扮演主网部署角色必须失败</td><td>用两个令牌各试一次</td></tr>
+      <tr><td>审核员的钱包</td><td>实际要用的硬件钱包加钱包软件签 EIP-712 消息，屏幕上逐字段显示金额和收款人，不需要开盲签</td><td>签一次，看屏幕</td></tr>
+    </tbody>
+  </table></div>
+  <h3>测试分四层</h3>
+  <p>签名逻辑只依赖一个接口：输入 32 字节摘要，输出 DER 签名，再加一个取公钥。生产环境用 KMS 实现，开发和测试用一把本地私钥实现；本地实现故意签出随机 k、不规范的 s，和 KMS 的输出格式完全一样，上层代码一行不改。</p>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>层</th><th>用什么</th><th>测什么</th></tr></thead>
+    <tbody>
+      <tr><td>单元测试</td><td>本地私钥代替 KMS，不连任何网络</td><td>DER、低位 s、地址、交易解析和签名、审核员签名、各种伪造的请求</td></tr>
+      <tr><td>本地链</td><td>以太坊：Hardhat 或 Anvil；Qtum：qtumd regtest</td><td>节点接不接受、合约看到的调用者、高位 s、替换、gas 退回</td></tr>
+      <tr><td>AWS 测试账号</td><td>真实的 KMS、DynamoDB、Lambda，挂和主网相同的 SCP</td><td>KMS 调用、账本并发、越权、发布流程</td></tr>
+      <tr><td>公共测试网</td><td>Sepolia、Qtum Testnet</td><td>端到端：存入铸币、提现放款、取消、重发、执行器崩溃恢复、换钥匙</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">看“合约眼里的调用者是谁”不用写测试合约：部署一个运行时代码只有 5 字节的合约 <span class="mono">3360005500</span>（<code>CALLER PUSH1 0 SSTORE STOP</code>，把调用者写进存储槽 0），调用后读它的槽 0 就行。</p>
+  <p class="note">本地模拟 KMS：LocalStack 的源码支持 <code>ECC_SECG_P256K1</code>，DIGEST 模式按“已经哈希过”处理；moto 能建这种钥匙、也能签，但没把 <code>MessageType</code> 传给后端，按代码看会把 32 字节摘要再哈希一次，签名对不上以太坊的摘要，恢复出的地址就不对<span class="ok-tag">已核实源码</span>。所以模拟器只适合测流程，签名结果以真 KMS 为准；测试账号里的真 KMS 一把每月 1 美元，直接用更省事。</p>
+  <p class="note">Qtum regtest：EVM 链 ID 8890，Shanghai 高度为 0；出块间隔缩短的高度也是 0，所以出块交易的成熟期从第 0 块起就是 2000 个块（按参数推算，没实测），用 <code>generatetoaddress</code> 出块拿能花的币时要出够块。Docker Hub 上的 <code>qtum/qtum</code> 是 Qtum 项目自己发布的镜像，不是 Docker 官方镜像<span class="ok-tag">已核实</span>。</p>
+  <h3>做到什么算完成</h3>
+  <div class="tbl"><table class="mw-820">
+    <thead><tr><th>阶段</th><th>做到什么</th></tr></thead>
+    <tbody>
+      <tr><td>开工前</td><td>上面“开工前要定的事”全部定下</td></tr>
+      <tr><td>AWS 和发布</td><td>管理账号、日志账号、两个主网签名账号、两个测试网签名账号建好，两个签名账号的管理员不是同一个人；SCP 挂上，越权清单全部失败、该能做的都能做；GitHub 分支保护和发布环境配好，管理员不能绕过，OIDC 只认受保护的环境</td></tr>
+      <tr><td>签名服务</td><td>代码按合约定稿更新（ABI、事件、转账 ID），本地测试全部通过并进了 CI；KMS 签名器和账本在测试账号上通过 KMS 和并发测试；源链核对、对账预检写完并在测试网上跑通；冷启动自检、拒绝告警、看门狗状态检查生效</td></tr>
+      <tr><td>两条链</td><td>Qtum regtest 和测试网的验证项全部做完，结论写回本章标“待验证”的地方；Sepolia 上 KMS 签名、加价重发通过；测试网端到端，包括崩溃恢复和换一次钥匙；审核员用实际的硬件钱包看到逐字段显示</td></tr>
+      <tr><td>运维</td><td>告警都接上，各触发过一次；上线、换钥匙、应急步骤写进值班手册，演练过一次</td></tr>
+      <tr><td>主网</td><td>主网钥匙建好，两人核对地址，多签登记，充好 gas 和 UTXO；小额验证通过</td></tr>
     </tbody>
   </table></div>
   <h3>和其他章节的关系</h3>
@@ -651,8 +1482,18 @@
     <li>go-ethereum：<a href="https://github.com/ethereum/go-ethereum/blob/master/rlp/decode.go" rel="noopener">rlp/decode.go</a>（<code>ErrCanonInt</code>：大整数带前导 0 字节时拒绝）、<a href="https://github.com/ethereum/go-ethereum/blob/master/core/types/tx_dynamic_fee.go" rel="noopener">core/types/tx_dynamic_fee.go</a>（<code>R</code>、<code>S</code> 是 <code>*big.Int</code>），2026-11-05 读取</li>
     <li>规范：<a href="https://eips.ethereum.org/EIPS/eip-1559" rel="noopener">EIP-1559</a>（类型 2 交易）、<a href="https://eips.ethereum.org/EIPS/eip-2" rel="noopener">EIP-2</a>（低位 s）、<a href="https://eips.ethereum.org/EIPS/eip-55" rel="noopener">EIP-55</a>（地址大小写校验）、<a href="https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki" rel="noopener">BIP66</a>（严格 DER）</li>
     <li>示例数据：用 Node.js 自带的 crypto（secp256k1、SHA256、RIPEMD160）和 OpenSSL 的 keccak-256 实际算出。例 1 的钥匙每次生成都不一样，只用来说明格式；私钥 1 是公开测试用例，结果固定，其中的比特币地址可以对照公开资料核对。“试 v”的数据用 BigInt 按曲线公式算出，签名经 OpenSSL <code>pkeyutl -verify</code> 验证</li>
+    <li>AWS KMS 开发者指南：<a href="https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html" rel="noopener">轮换</a>（非对称钥匙不能自动轮换）、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-state.html" rel="noopener">钥匙状态</a>（禁用、待删除时 <code>Sign</code> 的报错）、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html" rel="noopener">删除</a>（7–30 天等待期）、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/key-policy-default.html" rel="noopener">默认钥匙策略</a>（root 那条语句的作用、防锁死）、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/grants.html" rel="noopener">grant</a>（授出自己没有的操作）、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/multi-region-keys-overview.html" rel="noopener">多区域钥匙</a>、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/requests-per-second.html" rel="noopener">请求限额</a>（ECC 每秒 1000 次）、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/vpce-policy-condition.html" rel="noopener">VPC 端点条件</a>、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/ct-sign.html" rel="noopener">Sign 的 CloudTrail 记录</a>、<a href="https://docs.aws.amazon.com/kms/latest/developerguide/logging-using-cloudtrail.html" rel="noopener">用 CloudTrail 记录 KMS</a>；API <a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_ScheduleKeyDeletion.html" rel="noopener">ScheduleKeyDeletion</a>、<a href="https://docs.aws.amazon.com/kms/latest/APIReference/API_PutKeyPolicy.html" rel="noopener">PutKeyPolicy</a>；<a href="https://aws.amazon.com/kms/pricing/" rel="noopener">KMS 价格</a></li>
+    <li>AWS 其他服务：<a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html" rel="noopener">SCP</a>（作用范围）、<a href="https://docs.aws.amazon.com/organizations/latest/userguide/orgs_reference_limits.html" rel="noopener">Organizations 限额</a>（SCP 10,240 字符）、<a href="https://docs.aws.amazon.com/awscloudtrail/latest/userguide/creating-trail-organization.html" rel="noopener">组织级 trail</a>、<a href="https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-service-event-cloudtrail.html" rel="noopener">EventBridge 接收 CloudTrail 事件</a>、Lambda 的<a href="https://docs.aws.amazon.com/lambda/latest/dg/configuration-timeout.html" rel="noopener">超时</a>、<a href="https://docs.aws.amazon.com/lambda/latest/dg/invocation-retries.html" rel="noopener">重试</a>、<a href="https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html" rel="noopener">并发</a>、<a href="https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html" rel="noopener">VPC</a>、SDK <a href="https://docs.aws.amazon.com/sdkref/latest/guide/feature-retry-behavior.html" rel="noopener">重试行为</a>、DynamoDB <a href="https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_TransactWriteItems.html" rel="noopener">TransactWriteItems</a>、<a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Constraints.html" rel="noopener">限制</a>、<a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Point-in-time-recovery.html" rel="noopener">时间点恢复</a>；价格页 <a href="https://aws.amazon.com/vpc/pricing/" rel="noopener">VPC（NAT、网关端点）</a>、<a href="https://aws.amazon.com/privatelink/pricing/" rel="noopener">PrivateLink</a>、<a href="https://aws.amazon.com/secrets-manager/pricing/" rel="noopener">Secrets Manager</a>；CDK 源码 <a href="https://github.com/aws/aws-cdk/blob/main/packages/aws-cdk-lib/aws-kms/lib/key.ts" rel="noopener">aws-kms/lib/key.ts</a></li>
+    <li>GitHub 文档：<a href="https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments" rel="noopener">部署和环境</a>（管理员默认可以绕过、私有仓库的套餐限制）、<a href="https://docs.github.com/en/actions/reference/security/oidc" rel="noopener">OIDC</a>（引用环境时 <code>sub</code> 的格式）、<a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" rel="noopener">分支保护</a></li>
+    <li>Qtum 源码（master，v30.3，基于 Bitcoin Core 30.2，2026-11-09 读取）：<code>src/validation.cpp</code>（<code>GetSenderAddress</code>、<code>CheckSenderScript</code>、gas 退回、替换流程）、<code>src/consensus/params.h</code> 和 <code>src/kernel/chainparams.cpp</code>（成熟期 2000、出块间隔 32 秒）、<code>src/policy/policy.h</code>（转发费率、<code>SCRIPT_VERIFY_LOW_S</code>）、<code>src/qtum/qtumDGP.h</code> 和 <code>src/validation.h</code>（gas 默认值）、<code>src/qtum/qtumutils.cpp</code>（EVM 链 ID）、<code>src/init.cpp</code>（<code>-logevents</code>）</li>
+    <li>go-ethereum：<code>core/txpool/legacypool/list.go</code>（替换门槛，<code>PriceBump: 10</code>）、<code>crypto/crypto.go</code>（<code>ValidateSignatureValues</code>，拒绝高位 s）；<a href="https://ethereum.org/developers/docs/consensus-mechanisms/pos/" rel="noopener">ethereum.org 权益证明</a>、<a href="https://ethereum.org/roadmap/single-slot-finality/" rel="noopener">单槽最终确定</a></li>
+    <li>规范：<a href="https://eips.ethereum.org/EIPS/eip-712" rel="noopener">EIP-712</a>、<a href="https://eips.ethereum.org/EIPS/eip-2771" rel="noopener">ERC-2771</a>（转发合约把发起人地址接在调用数据末尾）、<a href="https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki" rel="noopener">BIP143</a>（传统 sighash 不覆盖金额）、<a href="https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki" rel="noopener">BIP125</a>；MetaMask 源码 <a href="https://github.com/MetaMask/core/blob/main/packages/signature-controller/src/utils/validation.ts" rel="noopener">signature-controller/src/utils/validation.ts</a>（domain 的 chainId 必须等于当前链）；qtum-ethers-wrapper 2.1.2 的 <code>encodeSig</code>（不规范 s）</li>
+    <li>AWS 账号和 CloudShell：<a href="https://docs.aws.amazon.com/accounts/latest/reference/getting-started.html" rel="noopener">注册步骤</a>、<a href="https://docs.aws.amazon.com/accounts/latest/reference/sign-up-for-aws.html" rel="noopener">两种注册方式</a>、<a href="https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/free-tier-plans.html" rel="noopener">Free plan 和 Paid plan</a>、<a href="https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-regions.html" rel="noopener">区域和分区</a>、<a href="https://www.amazonaws.cn/en/about-aws/china/faqs/" rel="noopener">AWS 中国区 FAQ</a>（营业执照）、<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/root-user-best-practices.html" rel="noopener">root 用户最佳实践</a>（MFA 强制、不建访问密钥）、<a href="https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa_lost-or-broken.html" rel="noopener">MFA 丢了怎么办</a>、CloudShell 的<a href="https://docs.aws.amazon.com/cloudshell/latest/userguide/welcome.html" rel="noopener">介绍</a>、<a href="https://docs.aws.amazon.com/cloudshell/latest/userguide/vm-specs.html" rel="noopener">预装软件</a>、<a href="https://docs.aws.amazon.com/cloudshell/latest/userguide/limits.html" rel="noopener">限制</a>；CLI <a href="https://docs.aws.amazon.com/cli/latest/reference/kms/create-key.html" rel="noopener">create-key</a>、<a href="https://docs.aws.amazon.com/cli/latest/reference/kms/sign.html" rel="noopener">sign</a>；Lambda <a href="https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html" rel="noopener">运行时</a>；DynamoDB <a href="https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis-iam.html" rel="noopener">事务的 IAM 授权</a></li>
+    <li>其他：Ledger <a href="https://github.com/LedgerHQ/app-ethereum/blob/develop/CHANGELOG.md" rel="noopener">app-ethereum 更新记录</a>（1.10.0 起完整 EIP-712）；<a href="https://docs.getmoto.org/en/latest/docs/services/kms.html" rel="noopener">moto 的 KMS 文档</a>、LocalStack 源码 <code>services/kms/models.py</code>；Qtum 源码 <code>src/validation.cpp</code>（内存池的手续费检查）、<code>src/rpc/contract_util.cpp</code>（回执的 <code>excepted</code> 字段）；Docker Hub <a href="https://hub.docker.com/r/qtum/qtum" rel="noopener">qtum/qtum</a></li>
+    <li>实测：<a href="#lab">动手</a>一节的 KMS 实验，2026-11-09 在一个 Free plan 测试账号的 CloudShell 里做。原型阶段的本地记录：写这套方案时在本机跑的原型测试（Node.js、ethers 6、bitcoinjs-lib 6、Hardhat），这次没有重跑</li>
+    <li>本地实测（2026-11-09，Node.js 22.22）：3000 次随机签名的高位 s、DER 长度、规范后验签；按字节拼出的 Qtum 铸币交易大小（1、2、3 个输入）</li>
   </ol>
-  <p>核查日期 2026-11-04；本页 2026-11-05 整理。</p></div>
+  <p>核查日期 2026-11-04；2026-11-09 补充“落地”部分并重新核实，本页同日整理。</p></div>
 </section>
     </article>
   </div>
@@ -687,27 +1528,29 @@
       {c:'所以两条链都只认低位那一半：以太坊是协议规则（EIP-2），Qtum 是节点的转发策略。高位那一半的签名发不出去。', set:{s:{h:chip('s：高位，链不认','--warn','out')}, txh:{hide:1}}, lit:['lo'], bad:['hi']},
       {c:'签名服务的做法：比一下 s 和 n/2，s 在高位就换成 n − s。只是一次减法，不需要私钥，也不用再调 KMS。发出去的只有低位这一个版本。', set:{s:{hide:1}, txl:{h:lbl('只发这一笔','g')}}, lit:['lo']},
     ]};
-  // 一次签名：执行器 → 签名服务 → KMS → 签名服务 → 执行器
+  // 一次签名：执行器 → 签名服务（查账本、核对、占位）→ KMS → 签名服务（转换、自检、记账）→ 执行器
   A.flow = {h:300,
     b:[['ex',2,8,24,84,'交易执行器'],['sg',29,8,42,84,'签名服务（独立账号）'],['km',74,8,24,84,'AWS KMS']],
     it:[
       {id:'tx', h:chip('未签名交易','--muted'), x:14, y:30},
-      {id:'ap', h:lbl('+ 任务 ID<br>大额附审核员签名','m'), x:14, y:50},
-      {id:'chk', h:lbl('核对源链事件、金额、收款人<br>审核员签名、额度、只调指定函数<br>这一笔签过没有','m'), x:50, y:58, hide:1},
+      {id:'ap', h:lbl('+ requestId<br>审核员签名','m'), x:14, y:50},
+      {id:'chk', h:lbl('核对交易、源链事件<br>审核员签名、额度、看门狗','m'), x:50, y:56, hide:1},
       {id:'dg', h:chip('32 字节摘要','--accent'), x:50, y:28, hide:1},
       {id:'key', h:'<span class="keyi on">钥</span>', x:86, y:56},
       {id:'kl', h:lbl('私钥不出 HSM','m'), x:86, y:72},
       {id:'sig', h:chip('DER 签名','--eth','out'), x:86, y:30, hide:1},
-      {id:'led', h:lbl('账本：摘要 ↔ 任务','m'), x:50, y:82, hide:1}],
+      {id:'led', h:lbl('账本：查 requestId','m'), x:50, y:82, hide:1}],
     s:[
-      {c:'执行器把一笔未签名交易交给签名服务，带上任务 ID；大额转账还附上审核员的签名。执行器和签名服务在不同的 AWS 账号里。', lit:['ex']},
-      {c:'签名服务不信执行器，自己核对：用自己的节点查源链事件，金额、收款人对不对，审核员签名、额度，交易是不是只调用网关的指定函数，这一笔有没有签过。任何一项不对就拒签。', set:{tx:{x:50, y:28}, ap:{hide:1}, chk:{hide:0}}, lit:['sg']},
-      {c:'核对通过，按链的规则算出 32 字节摘要：以太坊用 keccak256，Qtum 用双 SHA256。', set:{tx:{hide:1}, dg:{hide:0}, chk:{h:lbl('核对通过','g')}}, lit:['sg']},
+      {c:'执行器把一笔未签名交易交给签名服务，带上 requestId（重试时不变）；超过自动上限的转账还附上审核员签名。执行器和签名服务在不同的 AWS 账号里。', lit:['ex']},
+      {c:'签名服务先按 requestId 查账本：签过就把上次签好的交易原样返回，不再调 KMS。这一笔是第一次来。', set:{tx:{x:50, y:28}, ap:{hide:1}, led:{hide:0, h:lbl('账本：查 requestId → 没有','m')}}, lit:['sg']},
+      {c:'签名服务不信执行器，自己核对：解析交易，只认网关的两个函数；用自己的节点读源链事件；核对审核员签名、额度和看门狗状态。任何一项不对就拒签。', set:{chk:{hide:0}}, lit:['sg']},
+      {c:'核对通过，先在账本里占位：一个事务里记下这次尝试（PENDING），以太坊同时绑定 nonce。两个相同的请求同时到，只有一个能占到。', set:{chk:{h:lbl('核对通过','g')}, led:{h:lbl('账本：PENDING，nonce 7','m')}}, lit:['sg']},
+      {c:'按链的规则算出 32 字节摘要：以太坊用 keccak256，Qtum 用双 SHA256。', set:{tx:{hide:1}, dg:{hide:0}}, lit:['sg']},
       {c:'调用 KMS 的 Sign(摘要, DIGEST, ECDSA_SHA_256)。KMS 收到的只有这 32 字节，看不到交易本身。', set:{dg:{x:86, y:30}}, lit:['km']},
       {c:'HSM 用私钥签名，返回 DER 编码的 (r, s)。没有 v，s 也可能是高位。私钥自始至终没离开 HSM。', set:{dg:{hide:1}, sig:{hide:0}}, lit:['km']},
-      {c:'签名服务转格式：从 DER 拆出 r、s；s > n/2 就换成 n − s；以太坊再试出 v，Qtum 重新编 DER、加 0x01。', set:{sig:{x:50, y:28, h:chip('链要的格式','--eth','out')}, chk:{hide:1}}, lit:['sg']},
-      {c:'把签名放回交易，在自己的账本里记下“签了哪个摘要、对应哪个任务”，同一笔以后不会再签。', set:{sig:{h:chip('签好的交易','--ok')}, led:{hide:0}}, lit:['sg']},
-      {c:'签好的交易交回执行器，由执行器广播、跟踪上链。执行器自己没有调用 KMS 的权限。Qtum 交易有几个输入，第 3–6 步就做几遍。', set:{sig:{x:14, y:30}}, lit:['ex']},
+      {c:'签名服务转格式：拆出 r、s；s > n/2 就换成 n − s；以太坊试出 v，Qtum 重新编 DER、加 0x01。然后自己验一遍：以太坊恢复出的发送方必须是运营地址，Qtum 每个签名都要能用运营公钥验证通过。', set:{sig:{x:50, y:28, h:chip('链要的格式','--eth','out')}, chk:{hide:1}}, lit:['sg']},
+      {c:'账本里把这次尝试改成 SIGNED，存下签好的交易。同一个 requestId 再来，直接返回这一笔。', set:{sig:{h:chip('签好的交易','--ok')}, led:{h:lbl('账本：SIGNED','g')}}, lit:['sg']},
+      {c:'签好的交易交回执行器，由执行器广播、跟踪上链。执行器自己没有调用 KMS 的权限。Qtum 交易有几个输入，第 5–8 步就做几遍。', set:{sig:{x:14, y:30}}, lit:['ex']},
     ]};
   // 地址：同一个公钥分两路（私钥 = 1 的真实数据）
   A.addr = {h:300,
@@ -770,7 +1613,114 @@
       {c:'签输入 ②：重新复制，这次换的是输入 ② 的 scriptSig，①、③ 清空。改写的位置不同，摘要 ② 和摘要 ① 完全不同，签名 ① 不能拿来用。', set:{cp:{h:lbl('副本：② = 锁定脚本<br>①③ 清空','m')}, dg:{h:chip('摘要 ②','--accent')}, sgn:{hide:1}, i2:{h:chip('② 0.5 · 正在签','--accent')}}, lit:['sg']},
       {c:'KMS 签摘要 ②，写进输入 ② 的 scriptSig。', set:{sgn:{hide:0, h:chip('签名 ②','--qtum','out')}, i2:{h:chip('② 0.5 · 已签','--ok')}, cnt:{h:lbl('KMS 调用 2 次','m')}}, lit:['sg','in']},
       {c:'输入 ③ 照做一遍：改写、算摘要 ③、KMS 签名、写回。3 个输入，一共调了 3 次 KMS。', set:{cp:{h:lbl('副本：③ = 锁定脚本<br>①② 清空','m')}, dg:{h:chip('摘要 ③','--accent')}, sgn:{h:chip('签名 ③','--qtum','out')}, i3:{h:chip('③ 0.4 · 已签','--ok')}, cnt:{h:lbl('KMS 调用 3 次','g')}}, lit:['sg','in']},
-      {c:'三个输入都签好，交易交给执行器广播。合约看到的 msg.sender，通常认为是第一个输入所花 UTXO 的地址；三个输入都是运营地址的，调用者就是运营地址（待验证）。', set:{cp:{hide:1}, dg:{hide:1}, sgn:{hide:1}}, lit:['in','out']},
+      {c:'三个输入都签好，交易交给执行器广播。合约看到的 msg.sender 是第一个输入所花那个输出的地址；三个输入都是运营地址的，调用者就是运营地址。', set:{cp:{hide:1}, dg:{hide:1}, sgn:{hide:1}}, lit:['in','out']},
+    ]};
+  // 以太坊加价替换：go-ethereum 的门槛（两项都要更高，且都 ≥ 110%）
+  A.bump = {h:300,
+    b:[['old',2,8,46,40,'池里：nonce 7（卡住）'],['new',52,8,46,40,'替换：同一个 nonce 7'],['node',2,54,96,40,'节点和签名服务的判断']],
+    it:[
+      {id:'o1', h:chip('小费 2 · 上限 40 gwei','--warn'), x:25, y:26},
+      {id:'o2', h:lbl('后面的 8、9 都在等它','m'), x:25, y:40},
+      {id:'n1', h:chip('—','--accent'), x:75, y:26, hide:1},
+      {id:'n2', h:lbl('—','m'), x:75, y:40, hide:1},
+      {id:'v', h:lbl('—','m'), x:50, y:76, hide:1}],
+    s:[
+      {c:'nonce 7 那笔放款的手续费给低了，一直没上链；nonce 8、9 都排在它后面，全部堵住。办法是用同一个 nonce 7 签一笔手续费更高的交易，替换池里那笔。', lit:['old']},
+      {c:'go-ethereum 默认的门槛（PriceBump 10）：新交易的小费和 maxFeePerGas 都要严格高于旧的，而且都不低于旧值的 110%。这一笔就是小费至少 2.2 gwei、上限至少 44 gwei。', set:{o2:{h:lbl('门槛：两项都 ≥ 110%<br>小费 2.2 · 上限 44','m')}, v:{hide:0, h:lbl('两项都更高，且都 ≥ 旧值的 110%','m')}}, lit:['old','node']},
+      {c:'两项各涨 5%：小费 2.1、上限 42。没到 110%，节点拒收，报 replacement transaction underpriced。', set:{n1:{hide:0, h:chip('小费 2.1 · 上限 42','--accent')}, n2:{hide:0, h:lbl('各涨 5%','m')}, v:{h:lbl('拒收：replacement transaction underpriced','w')}}, lit:['new'], bad:['node']},
+      {c:'只把上限涨到 46，小费不动：还是拒收。两项都要涨，只涨一项不行。', set:{n1:{h:chip('小费 2 · 上限 46','--accent')}, n2:{h:lbl('只涨上限','m')}, v:{h:lbl('拒收：小费没涨','w')}}, lit:['new'], bad:['node']},
+      {c:'两项各涨 15%、向上取整：小费 2.3、上限 46。都过了门槛，节点接受，替换池里那笔。go-ethereum 算门槛时向下取整，别的节点不一定一样，执行器统一按 1.15 倍、向上取整，不去卡正好 110% 的线。', set:{n1:{h:chip('小费 2.3 · 上限 46','--ok')}, n2:{h:lbl('各涨 15%，向上取整','g')}, v:{h:lbl('接受：替换池里的 nonce 7','g')}, o1:{h:chip('小费 2 · 上限 40 gwei','--muted')}}, lit:['new','node']},
+      {c:'旧交易在被替换之前也可能已经上链。所以执行器两个交易哈希都留着，哪一个上链都算这笔放款完成：nonce 7 只能用一次，两笔不会都执行。', set:{o2:{h:lbl('哈希 ① 留着','m')}, n2:{h:lbl('哈希 ② 留着','m')}}, lit:['old','new']},
+      {c:'签名服务只签这种重签：同一笔转账、同一个 nonce、只有两个费用字段变了、两项都比上一次至少高 10%，而且不超过配置的上限。涨到上限还不上链就告警，改上限要走发布；不能用别的交易把 nonce 7 顶掉。', set:{v:{h:lbl('签名服务：只签同一笔调用的加价版本','m')}}, lit:['new','node']},
+    ]};
+  // Qtum：执行器谎报输入金额（金额是示意值）
+  A.prev = {h:300,
+    b:[['ex',2,6,30,88,'执行器（被攻破）'],['sg',35,6,30,88,'签名服务'],['ch',68,6,30,88,'链上的记录']],
+    it:[
+      {id:'req', h:chip('铸币交易','--muted'), x:17, y:22},
+      {id:'cl', h:lbl('声称输入 0.5<br>找零 0.39','m'), x:17, y:42},
+      {id:'utxo', h:chip('输出 …ab12:0','--qtum'), x:83, y:22},
+      {id:'rv', h:lbl('实际金额 50','m'), x:83, y:40, hide:1},
+      {id:'calc', h:lbl('算出手续费 0.11<br>没超上限，签','m'), x:50, y:42, hide:1},
+      {id:'dg', h:chip('摘要','--accent'), x:50, y:62, hide:1},
+      {id:'res', h:lbl('—','w'), x:50, y:82, hide:1},
+      {id:'ver', h:lbl('—','m'), x:17, y:78, hide:1}],
+    s:[
+      {c:'被攻破的执行器送来一笔铸币交易请签名：输入引用某笔前序交易的第 0 个输出，它声称这个输出是 0.5 QTUM；找零 0.39，算下来手续费 0.11，看着正常。', lit:['ex']},
+      {c:'Qtum 交易的输入里只写“哪笔交易的第几个输出”，没有金额，金额记在那笔前序交易里。这个输出在链上其实是 50 QTUM。', set:{rv:{hide:0}}, lit:['ch']},
+      {c:'签名服务要是信了执行器报的金额：算出手续费 0.11，没超上限，就签了。', set:{req:{x:50, y:22}, calc:{hide:0}}, lit:['sg']},
+      {c:'签名本身也拦不住：传统 sighash 的摘要只覆盖改写后的交易和 4 字节类型，不包含输入金额。按假金额和按真金额算出的摘要一模一样，链照样认这个签名。', set:{dg:{hide:0}}, lit:['sg']},
+      {c:'上链后的真实手续费是 50 − 0.39 = 49.61 QTUM，全归出块者。运营地址一笔就烧掉 49.6 QTUM。', set:{res:{hide:0, h:lbl('真实手续费<br>49.61 QTUM','w')}}, bad:['sg']},
+      {c:'所以签名服务要求执行器把整笔前序交易一起送来，自己算它的哈希，和输入引用的交易 ID 比。交易 ID 就是整笔交易的哈希，金额和锁定脚本都在里面。', set:{ver:{hide:0, h:lbl('附上整笔<br>前序交易','m')}, calc:{hide:1}, dg:{hide:1}, res:{hide:1}}, lit:['ex','sg']},
+      {c:'哈希对上了，读出这个输出的真实金额 50 QTUM：手续费是 49.61，超过上限，拒签：手续费超上限。', set:{calc:{hide:0, h:lbl('哈希对上，金额 50<br>手续费 49.61','w')}, res:{hide:0, h:lbl('拒签','g')}}, lit:['sg']},
+      {c:'执行器要是改了前序交易里的金额，哈希就对不上交易 ID，同样拒签：前序交易对不上。BIP143 的隔离见证签名把输入金额写进了摘要，堵的就是这个口子；运营地址是传统 P2PKH，只能靠核对前序交易。', set:{ver:{h:lbl('改过金额的<br>前序交易','w')}, calc:{h:lbl('哈希对不上<br>交易 ID','w')}}, lit:['sg']},
+    ]};
+  // 账本：先占位再调 KMS；签完、记账之前崩溃，重试也只交出一笔
+  A.ledger = {h:300,
+    b:[['ex',2,6,22,40,'执行器'],['sg',27,6,40,40,'签名服务'],['km',70,6,28,40,'KMS'],['db',2,52,96,42,'账本（DynamoDB）']],
+    it:[
+      {id:'req', h:chip('r-17','--muted'), x:13, y:24},
+      {id:'rl', h:lbl('放款 nonce 7','m'), x:13, y:38},
+      {id:'st', h:lbl('—','m'), x:47, y:30, hide:1},
+      {id:'k1', h:chip('签名 ①','--eth','out'), x:84, y:24, hide:1},
+      {id:'k2', h:chip('签名 ②','--eth','out'), x:84, y:38, hide:1},
+      {id:'att', h:lbl('尝试 1：PENDING','m'), x:20, y:66, hide:1},
+      {id:'idx', h:lbl('r-17 → 尝试 1','m'), x:20, y:82, hide:1},
+      {id:'non', h:lbl('nonce 7 → 本转账','m'), x:52, y:66, hide:1},
+      {id:'nxt', h:lbl('下一个 nonce：7','m'), x:52, y:82},
+      {id:'kr', h:lbl('KMS 调用记录：0','m'), x:80, y:74}],
+    s:[
+      {c:'执行器请签名服务签一笔放款，nonce 7，requestId 是 r-17。重试时 requestId 不变。', lit:['ex']},
+      {c:'签名服务按 r-17 查账本：没有记录，是第一次。核对通过后准备占位。', set:{st:{hide:0, h:lbl('查 r-17：没有','m')}}, lit:['sg','db']},
+      {c:'一个事务写入四样：尝试 1 记为 PENDING；r-17 指向尝试 1；nonce 7 归这笔转账；“下一个 nonce”从 7 改成 8，条件是它还等于 7。任何一个条件不成立，整个事务失败。', set:{att:{hide:0}, idx:{hide:0}, non:{hide:0}, nxt:{h:lbl('下一个 nonce：8','m')}}, lit:['db']},
+      {c:'调 KMS 之前，先写一条 KMS 调用记录；然后调 KMS，拿到签名 ①。', set:{kr:{h:lbl('KMS 调用记录：1','m')}, k1:{hide:0}}, lit:['km','db']},
+      {c:'签名服务在把尝试 1 改成 SIGNED 之前崩溃了。签名 ① 丢了，执行器等到超时，什么也没拿到。', set:{st:{h:lbl('崩溃','w')}, k1:{h:chip('签名 ① 丢了','--warn','out')}, rl:{h:lbl('超时，没拿到','w')}}, bad:['sg']},
+      {c:'执行器用同一个 r-17 重试。签名服务查到尝试 1 还是 PENDING、未签名交易的哈希也相同：不重新绑定 nonce、不重新计额度，只用同一笔交易重签。', set:{st:{h:lbl('r-17：PENDING → 重签','m')}, rl:{h:lbl('重试 r-17','m')}}, lit:['ex','sg']},
+      {c:'再写一条调用记录，KMS 签出签名 ②。k 是随机的，签名 ② 和 ① 不同，签好的交易哈希也不同；nonce 还是 7。', set:{kr:{h:lbl('KMS 调用记录：2','m')}, k2:{hide:0}}, lit:['km']},
+      {c:'条件“状态还是 PENDING”成立，尝试 1 改成 SIGNED，用签名 ② 组成的交易交给执行器。① 从来没离开签名服务；就算离开了，它和 ② 用同一个 nonce，最多只有一笔能上链。', set:{att:{h:lbl('尝试 1：SIGNED','g')}, st:{h:lbl('交出签名 ②','g')}, rl:{h:lbl('拿到签名 ②','g')}}, lit:['sg','ex','db']},
+      {c:'看门狗核对：CloudTrail 里 Sign 2 次，调用记录 2 条，对得上。要是 CloudTrail 里的 Sign 比调用记录多，就是有人在账本之外签过，立即暂停网关。', set:{kr:{h:lbl('Sign 2 次 = 记录 2 条','g')}}, lit:['db','km']},
+    ]};
+  // 权限：管理员想绕过签名服务直接签，每条路在哪被拦住
+  A.iam = {h:300,
+    b:[['adm',2,6,30,88,'签名账号的管理员'],['acct',35,6,63,56,'签名账号（挂着 SCP）'],['mg',35,66,63,28,'管理账号']],
+    it:[
+      {id:'who', h:chip('管理员','--warn'), x:17, y:22},
+      {id:'try', h:lbl('—','m'), x:17, y:48, hide:1},
+      {id:'key', h:'<span class="keyi on">钥</span>', x:52, y:30},
+      {id:'kl', h:lbl('只有 signer-fn 能签','m'), x:52, y:44},
+      {id:'why', h:lbl('—','m'), x:80, y:30, hide:1},
+      {id:'res', h:lbl('拦住','g'), x:80, y:50, hide:1},
+      {id:'mgl', h:lbl('SCP 管不到这里','m'), x:66, y:80}],
+    s:[
+      {c:'签名账号里，只有签名 Lambda 的执行角色 signer-fn 能调 kms:Sign。下面看这个账号的管理员想绕过签名服务、直接签，每条路在哪被拦住。', lit:['acct']},
+      {c:'直接调 kms:Sign：SCP 拒绝除 signer-fn 以外的所有身份，管理员和 root 都一样。', set:{try:{hide:0, h:lbl('直接调 kms:Sign','m')}, why:{hide:0, h:lbl('SCP：除了 signer-fn<br>谁都不许 Sign','m')}, res:{hide:0}}, bad:['adm'], lit:['acct']},
+      {c:'给自己的 IAM 策略加上允许 Sign：钥匙策略里没有“允许本账号 root 使用 kms:*”那一条，IAM 的允许对这把钥匙无效；SCP 也照样拒绝。', set:{try:{h:lbl('给自己的 IAM<br>策略加 Sign','m')}, why:{h:lbl('钥匙策略没有 root 那条<br>IAM 的允许无效','m')}}, bad:['adm'], lit:['acct']},
+      {c:'改钥匙策略把自己加进去，或者建一个 grant 把 Sign 授给自己：SCP 只许 CloudFormation 的执行角色改钥匙策略，CreateGrant 谁都不许。', set:{try:{h:lbl('改钥匙策略<br>或建 grant','m')}, why:{h:lbl('只有 CloudFormation<br>能改；grant 全禁','m')}}, bad:['adm'], lit:['acct']},
+      {c:'改签名 Lambda 的代码，让它什么都签：代码、配置、别名都只能经 CloudFormation 改。', set:{try:{h:lbl('改签名 Lambda<br>的代码','m')}, why:{h:lbl('代码、配置、别名<br>只能经 CloudFormation','m')}}, bad:['adm'], lit:['acct']},
+      {c:'新建一个函数挂上 signer-fn：要 iam:PassRole，SCP 不许。直接扮演 CDK 的部署角色也不行：SCP 规定只有 CI 能扮演它，CI 的信任策略只认 GitHub 上受保护的发布环境。', set:{try:{h:lbl('新建函数<br>挂上 signer-fn','m')}, why:{h:lbl('挂角色要 PassRole<br>SCP 不许','m')}}, bad:['adm'], lit:['acct']},
+      {c:'走正规发布：合并要另一个人批准，部署主网要指定的人批准，管理员绕过已经关掉。一个人改不了。', set:{try:{h:lbl('走正规发布','m')}, why:{h:lbl('合并、部署主网<br>都要另一个人批准','m')}, res:{h:lbl('一个人做不到','g')}}, lit:['acct']},
+      {c:'剩下的口子是管理账号：SCP 管不到它，谁控制它，谁就能改 SCP。所以它不跑任何业务，root 绑硬件 MFA、日常不用，由不写签名程序的人保管。', set:{try:{h:lbl('改 SCP 本身','m')}, why:{hide:1}, res:{hide:1}, mgl:{h:lbl('SCP 管不到这里<br>不跑业务、root 绑硬件 MFA','w')}}, bad:['mg']},
+    ]};
+  // 换钥匙：建 B → 核对地址 → 充 gas → 等 A 的交易 → 网关换地址 → 发布新配置 → 禁用 A
+  A.rot = {h:300,
+    b:[['a',2,6,46,40,'旧钥匙 A'],['bb',52,6,46,40,'新钥匙 B'],['gw',2,52,96,42,'网关合约 · 签名服务 · 执行器']],
+    it:[
+      {id:'ka', h:'<span class="keyi on">A</span>', x:12, y:28},
+      {id:'al', h:lbl('签名中','g'), x:32, y:28},
+      {id:'kb', h:'<span class="keyi">B</span>', x:62, y:28, hide:1},
+      {id:'bl', h:lbl('已建好','m'), x:82, y:28, hide:1},
+      {id:'g1', h:lbl('网关认：地址 A','m'), x:28, y:70},
+      {id:'g2', h:lbl('签名服务用：A','m'), x:73, y:70},
+      {id:'g3', h:lbl('执行器：运行','m'), x:50, y:86}],
+    s:[
+      {c:'非对称钥匙不能自动轮换，换钥匙就是换地址。现在网关认的是 A 的地址，签名服务用 A 签。', lit:['a']},
+      {c:'发布一个版本，建新钥匙 B（新别名）。A 保留，签名服务仍用 A。', set:{kb:{hide:0}, bl:{hide:0}}, lit:['bb']},
+      {c:'两个人各自从 B 的公钥算出地址并核对（见“地址”一节），一致才交给多签持有人。', set:{bl:{h:lbl('两人核对地址','m')}}, lit:['bb']},
+      {c:'给 B 充 gas，Qtum 还要给 B 准备几张 UTXO。提前一两周就停止给 A 补 gas，让 A 的余额自然用完。', set:{bl:{h:lbl('充 gas、UTXO','m')}, al:{h:lbl('停止补 gas','m')}}, lit:['a','bb']},
+      {c:'暂停执行器的新任务，等 A 已签的交易全部上链或作废。', set:{g3:{h:lbl('执行器：暂停新任务','m')}, al:{h:lbl('已签的上链或作废','m')}}, lit:['gw']},
+      {c:'多签把网关的运营地址从 A 换成 B。从这一刻起，A 签的交易网关不认。', set:{g1:{h:lbl('网关认：地址 B','g')}}, lit:['gw','bb']},
+      {c:'发布新配置：钥匙 ARN 和预期地址改成 B，账本里 B 的“下一个 nonce”从链上的值开始；冷启动自检通过。恢复执行器，开始用 B 签。', set:{g2:{h:lbl('签名服务用：B（自检通过）','g')}, g3:{h:lbl('执行器：运行','m')}, kb:{h:'<span class="keyi on">B</span>'}, bl:{h:lbl('签名中','g')}}, lit:['bb','gw']},
+      {c:'在 KMS 里禁用 A，不删除：A 留在账本和配置的历史里。A 上剩下的零头和还没成熟的 gas 转不出来，因为签名服务只签网关调用。', set:{ka:{h:'<span class="keyi">A</span>'}, al:{h:lbl('禁用，不删','m')}}, lit:['bb']},
     ]};
   Guide.mount(A);
 
