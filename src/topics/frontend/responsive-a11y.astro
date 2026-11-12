@@ -1,0 +1,383 @@
+---
+// 前端与设计 · 第 3 章（概念类）：why → core → how → breaks → media → touch → tree → keys → prefs → example → pitfalls → sources
+// 2026-11-12 在本机 Chrome 157（headless）里实测：Node 用 --remote-debugging-pipe 驱动，Emulation 模拟 iPhone、iPad、Mac 的宽度和像素比，
+// 读视口、断点、srcset 选中的图；Accessibility.getFullAXTree 读无障碍树；Input.dispatchKeyEvent 按 Tab、Enter、空格
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 视口：没写 meta viewport 时按 980 排版再缩小；写了以后按屏幕宽排；横屏、电脑上的放大
+const VIEWPORT = {
+  h: 300,
+  b: [["pg", 2, 8, 30, 84, "页面写了什么"], ["lv", 35, 8, 30, 84, "按多宽排版"], ["sc", 68, 8, 30, 84, "屏幕上"]],
+  it: [
+    { id: "msg", h: chip("没写 meta", "--muted", "out"), x: 17, y: 30 },
+    { id: "dev", h: lbl("iPhone 竖屏<br>430 宽", "m"), x: 17, y: 62 },
+    { id: "l1", h: lbl("按 980 排", "w"), x: 50, y: 40, hide: 1 },
+    { id: "l2", h: lbl("640 的断点<br>不成立", "w"), x: 50, y: 66, hide: 1 },
+    { id: "s1", h: lbl("缩到 0.439", "w"), x: 83, y: 40, hide: 1 },
+    { id: "s2", h: lbl("16px 的字<br>只剩 7px", "w"), x: 83, y: 66, hide: 1 },
+  ],
+  s: [
+    { c: "iPhone 竖屏，屏幕是 430 个 CSS 像素宽（devicePixelRatio 是 3，实际有 1290 个物理像素）。这一页的 head 里没有写 meta viewport。", lit: ["pg"] },
+    { c: "手机浏览器假定这是给电脑做的页面，先按 980 宽排版，这是苹果文档写明的默认值。实测 innerWidth 是 980，(max-width: 640px) 不成立：写好的手机版样式一条都没用上。",
+      set: { l1: { hide: 0 }, l2: { hide: 0 } }, bad: ["lv"] },
+    { c: "排好的 980 宽再整体缩小，塞进 430 的屏幕：缩放 0.439，16px 的字在屏幕上只有 7px，要双指放大才看得清。页面里有一个 1200 宽的元素时，缩放变成 0.358，更小。",
+      set: { s1: { hide: 0 }, s2: { hide: 0 } }, bad: ["sc"] },
+    { c: "写上 meta name=viewport content=\"width=device-width, initial-scale=1\"：按屏幕宽 430 排版，缩放 1，(max-width: 640px) 成立，手机版的样式生效。",
+      set: { msg: { h: chip("device-width", "--accent") }, l1: { h: lbl("按 430 排", "g") }, l2: { h: lbl("640 的断点<br>成立", "g") }, s1: { h: lbl("缩放 1", "g") }, s2: { h: lbl("16px 的字<br>就是 16px", "g") } }, lit: ["pg", "lv", "sc"] },
+    { c: "转成横屏，屏幕 956 宽，布局宽度跟着变成 956。没写 meta 时仍按 980 排，缩放 0.976，几乎看不出毛病：所以漏写 meta 在横屏、平板上不明显，竖屏一眼就看出来。",
+      set: { dev: { h: lbl("iPhone 横屏<br>956 宽", "m") }, l1: { h: lbl("按 956 排", "g") }, l2: { h: lbl("640 的断点<br>不成立", "m") } }, lit: ["lv"] },
+    { c: "电脑上的浏览器不认 meta viewport：实测桌面模式下写 width=600，照样按窗口宽排。电脑上改变布局宽度的是缩放：1512 宽的窗口放大到 200%，只剩 756 个 CSS 像素，960 的断点成立，目录挪到正文上面。",
+      set: { msg: { h: chip("Mac 放大 200%", "--doubt") }, dev: { h: lbl("窗口<br>1512 宽", "m") }, l1: { h: lbl("按 756 排", "g") }, l2: { h: lbl("960 的断点<br>成立", "g") }, s1: { h: lbl("缩放 2", "m") }, s2: { h: lbl("目录挪到<br>正文上面", "m") } }, lit: ["lv"] },
+  ],
+};
+
+// 断点：这个站同一页在各宽度下怎么排；数字都是实测
+const BREAK = {
+  h: 300,
+  b: [["s", 2, 8, 30, 84, "≤ 640"], ["m", 35, 8, 30, 84, "641–960"], ["l", 68, 8, 30, 84, "≥ 961"]],
+  it: [
+    { id: "dev", h: chip("iPhone 430", "--accent"), x: 17, y: 28 },
+    { id: "s1", h: lbl("边距 16<br>正文栏 398", "m"), x: 17, y: 54, hide: 1 },
+    { id: "s2", h: lbl("目录在上<br>流程块竖排", "m"), x: 17, y: 79, hide: 1 },
+    { id: "m1", h: lbl("边距 48<br>正文栏 545", "w"), x: 50, y: 54, hide: 1 },
+    { id: "m2", h: lbl("流程块横排<br>每项 85", "w"), x: 50, y: 79, hide: 1 },
+    { id: "l1", h: lbl("边距 58<br>正文栏 634", "w"), x: 83, y: 54, hide: 1 },
+    { id: "l2", h: lbl("目录在侧<br>180 + 32", "m"), x: 83, y: 79, hide: 1 },
+  ],
+  s: [
+    { c: "iPhone 竖屏 430，落在第一段：两侧边距 16，正文栏 398，目录横排在正文上面，流程块竖排。实测第一节正文从 1054px 才开始，可一屏只有 932 高：第一屏全是标题、导语、“一句话”和目录。",
+      set: { s1: { hide: 0 }, s2: { hide: 0 } }, lit: ["s"] },
+    { c: "640 → 641，屏幕只宽了 1px：两侧边距从 16 跳到 48，正文栏从 608 变成 545，反而窄了 63；流程块改成横排，5 项每项只有 85 宽。",
+      set: { dev: { x: 50, h: chip("641", "--warn") }, m1: { hide: 0 }, m2: { hide: 0 } }, bad: ["m"] },
+    { c: "iPad 竖屏 834：边距 clamp(48px, 6vw, 96px) 算出 50，正文栏 734，标题 4.6vw 算出 38.4px。这一段里没有断点，边距和标题随宽度连续地变，不跳。",
+      set: { dev: { h: chip("iPad 834", "--accent") }, m1: { h: lbl("边距 50<br>正文栏 734", "g") }, m2: { h: lbl("标题 38.4px", "m") } }, lit: ["m"] },
+    { c: "960 → 961：目录挪到侧面，占 180，再加 32 的间隙。正文栏从 845 变成 634，又窄了 211。iPhone 横屏是 956，差 5px 够不着，所以横屏时目录还在正文上面。",
+      set: { dev: { x: 83, h: chip("961", "--warn") }, l1: { hide: 0 }, l2: { hide: 0 } }, bad: ["l"] },
+    { c: "MacBook 1512：边距 90.7，正文栏 1104，标题封顶 46px。版心最宽 1600、边距最多 96，所以到 2399 宽时正文栏是 1196，不再变宽。",
+      set: { dev: { h: chip("Mac 1512", "--accent") }, l1: { h: lbl("边距 90.7<br>正文栏 1104", "g") } }, lit: ["l"] },
+    { c: "2400 以上（比如 4K 屏选了较高的分辨率）：不再加宽，整页 zoom: 1.2。正文栏显示出来 1435 宽，正文的字 19.2px。样式表注释里的理由是让内容约占窗口的七到八成，否则 1600 的版心在大屏上只占一半，字也显得太小。",
+      set: { dev: { h: chip("2400", "--doubt") }, l1: { h: lbl("zoom 1.2<br>字 19.2px", "g") } }, lit: ["l"] },
+  ],
+};
+
+// 无障碍树：读屏软件读到的是什么
+const TREE = {
+  h: 300,
+  b: [["h", 2, 8, 30, 84, "HTML"], ["t", 35, 8, 30, 84, "无障碍树"], ["v", 68, 8, 30, 84, "读屏软件"]],
+  it: [
+    { id: "src", h: chip("button", "--muted", "out"), x: 17, y: 30 },
+    { id: "t1", h: lbl("角色 button<br>名字“下一步”", "m"), x: 50, y: 46, hide: 1 },
+    { id: "t2", h: lbl("可以聚焦", "g"), x: 50, y: 72, hide: 1 },
+    { id: "v1", h: lbl("“下一步，<br>按钮”", "g"), x: 83, y: 50, hide: 1 },
+  ],
+  s: [
+    { c: "浏览器从 DOM 再建一棵无障碍树，通过系统的辅助功能接口交给 VoiceOver 这类读屏软件。读屏软件读的是这棵树，不是屏幕上的像素。实测第 1 章那一页：757 个元素，树里有 1808 个不被忽略的节点，每段文字也算一个。",
+      lit: ["h", "t"] },
+    { c: "每个节点有三样：角色、名字、状态。动画的“下一步”是 button 标签：角色 button，名字取自里面的文字，可以聚焦。读屏软件据此读出名字和角色，比如“下一步，按钮”（具体措辞各软件不同）。",
+      set: { t1: { hide: 0 }, t2: { hide: 0 }, v1: { hide: 0 } }, lit: ["t", "v"] },
+    { c: "换成 div 加 onclick：鼠标点着一样，树里却是 generic，没有名字，不能聚焦。读屏软件不知道它能点，按 Tab 也到不了。",
+      set: { src: { h: chip("div onclick", "--warn") }, t1: { h: lbl("角色 generic<br>没有名字", "w") }, t2: { h: lbl("不能聚焦", "w") }, v1: { h: lbl("当成<br>普通文字", "w") } }, bad: ["t", "v"] },
+    { c: "角色从标签来，不用另写 ARIA：body 下的 header 是 banner，main 是 main，带 aria-label=\"本文目录\" 的 nav 是“本文目录”导航，footer 是 contentinfo。这些是地标，读屏用户可以直接跳过去。没有名字的 section 只是 generic，不算地标。",
+      set: { src: { h: chip("main、nav", "--accent") }, t1: { h: lbl("这一页<br>6 个地标", "g") }, t2: { h: lbl("section 是<br>generic", "m") }, v1: { h: lbl("按地标<br>跳着读", "g") } }, lit: ["t", "v"] },
+    { c: "怎么藏起来，决定树里还有没有它。display: none、visibility: hidden、aria-hidden、inert 都不进树；opacity: 0 和挪到屏幕外的，树里照样有，Tab 也照样能到。实测 aria-hidden 的按钮不在树里，却还能 Tab 到：焦点落在一个读屏软件读不出来的地方。",
+      set: { src: { h: chip("opacity: 0", "--doubt") }, t1: { h: lbl("还在树里", "w") }, t2: { h: lbl("还能聚焦", "w") }, v1: { h: lbl("照样<br>读出来", "w") } }, bad: ["t"] },
+    { c: "这个站的分步动画：还没显示的元素只是 opacity: 0，所以在第 1 步，读屏软件就能读到后面各步的“1.9 ms”“26.4 ms”，没有上下文。说明文字写了 aria-live=\"polite\"：点“下一步”换了说明，读屏软件会在空下来时自动读出新的一句。",
+      set: { src: { h: chip("分步动画", "--warn") }, t1: { h: lbl("第 1 步就有<br>8 个提前读到", "w") }, t2: { h: lbl("说明是<br>aria-live", "g") }, v1: { h: lbl("换一步<br>读新说明", "g") } }, bad: ["t"] },
+  ],
+};
+
+// 键盘：从页面开头按 Tab，焦点怎么走
+const KEYS = {
+  h: 300,
+  b: [["tb", 2, 8, 30, 84, "顶栏、路径"], ["tc", 35, 8, 30, 84, "目录"], ["ar", 68, 8, 30, 84, "正文"]],
+  it: [
+    { id: "f", h: chip("焦点", "--accent"), x: 17, y: 30 },
+    { id: "a1", h: lbl("第 1–2 下<br>阅读库、主题", "m"), x: 17, y: 56, hide: 1 },
+    { id: "a2", h: lbl("第 3–4 下<br>路径", "m"), x: 17, y: 80, hide: 1 },
+    { id: "b1", h: lbl("第 5–15 下<br>11 个目录项", "m"), x: 50, y: 56, hide: 1 },
+    { id: "c1", h: lbl("第 16 下<br>动画“下一步”", "w"), x: 83, y: 56, hide: 1 },
+    { id: "c2", h: lbl("第 36 下<br>“下一章”", "m"), x: 83, y: 80, hide: 1 },
+  ],
+  s: [
+    { c: "不碰鼠标，从页面开头按 Tab。焦点按 DOM 的先后走，只停在能聚焦的元素上：带 href 的链接、按钮、输入框，以及写了 tabindex 的。第 1、2 下是顶栏的“阅读库”和主题按钮。",
+      set: { a1: { hide: 0 } }, lit: ["tb"] },
+    { c: "第 3、4 下是路径里的两个链接。每停一下，元素外面都有一圈 2px 的蓝框，来自 base.css 的 :focus-visible，实测 36 个停靠点都有。用它而不用 :focus：鼠标点按钮时不出框，键盘走过来才出。",
+      set: { a2: { hide: 0 } }, lit: ["tb"] },
+    { c: "第 5 到 15 下：目录的 11 项。", set: { f: { x: 50 }, b1: { hide: 0 } }, lit: ["tc"] },
+    { c: "第 16 下才进正文，停在第一个动画的“下一步”（“上一步”在第 1 步是禁用的，跳过）。这一页没有“跳到正文”的链接，只用键盘的人每打开一页都要先按 15 下。",
+      set: { f: { x: 83 }, c1: { hide: 0 } }, bad: ["tc"] },
+    { c: "停在按钮上，Enter 和空格都会触发点击。实测 span 加上 role=\"button\" 和 tabindex=\"0\"，Tab 能到，读屏也说它是按钮，可 Enter、空格都不触发 click：键盘行为是 button 标签自带的，换成别的标签就得自己写。带 href 的链接只认 Enter。",
+      set: { c1: { h: lbl("button：<br>Enter、空格", "g") }, c2: { hide: 0, h: lbl("span 加 role：<br>都不触发", "w") } }, lit: ["ar"] },
+    { c: "一圈走完：第 36 下是翻页的“下一章”，第 37 下回到页面本身，再按就从头开始。tabindex 写正数会插到所有元素前面：实测 tabindex=1 的按钮排在第一个，顺序乱了，所以只用 0 和 -1。",
+      set: { f: { x: 17, h: chip("tabindex=1", "--warn") }, a1: { h: lbl("tabindex=1<br>排到最前", "w") }, c1: { h: lbl("第 16 下<br>动画“下一步”", "m") }, c2: { h: lbl("第 36 下<br>“下一章”", "m") } }, bad: ["tb"] },
+  ],
+};
+
+const META = `<!-- 这个站每一页 head 里的第二行 -->
+<meta name="viewport" content="width=device-width, initial-scale=1">`;
+
+const BREAKCSS = `/* base.css：版心两侧留白随宽度连续变，640 以下固定 16 */
+.wrap { max-width: 1600px; padding: 0 clamp(48px, 6vw, 96px); }
+@media (max-width: 640px) { .wrap { padding: 0 16px; } }
+/* 标题字号也随宽度连续变：30px 到 46px 之间取 4.6vw */
+.case-head h1 { font-size: clamp(30px, 4.6vw, 46px); }
+/* 目录栏 180 + 间隙 32；960 以下目录挪到正文上面，横排 */
+.case-body { grid-template-columns: 180px minmax(0, 1fr); gap: 32px; }
+@media (max-width: 960px) { .case-body { grid-template-columns: 1fr; } .toc ol { display: flex; flex-wrap: wrap; } }
+/* 640 以下流程块竖排 */
+@media (max-width: 640px) { .flow { flex-direction: column; } }
+/* 2400 以上整页放大，不再加宽 */
+@media (min-width: 2400px) { body { zoom: 1.2; } }`;
+
+const SRCSET = `srcset="p400.jpg 400w, p800.jpg 800w, p1200.jpg 1200w, p1600.jpg 1600w, p2400.jpg 2400w"
+sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 960px) 88vw, 60vw"
+# srcset：有哪几张，各多少像素宽（w）
+# sizes：这张图在页面上大概显示多宽；从左往右，第一个条件成立的就用它
+# 浏览器拿显示宽度 × devicePixelRatio，挑够用的最小一张`;
+
+const KEYJS = `// 非要用 span 做按钮，这些都得自己补：
+el.setAttribute("role", "button");      // 读屏才知道它是按钮
+el.tabIndex = 0;                         // Tab 才到得了
+el.addEventListener("keydown", (e) => {  // Enter、空格才会触发
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); }
+});
+// 还有禁用状态、表单里的提交行为……用 button 标签，这些都自带`;
+
+const MOTIONCSS = `/* components.css：系统设置了“减少动态效果”，动画里的元素直接跳到位，不滑过去 */
+@media (prefers-reduced-motion: reduce) { .mini .it, .mini .bx { transition: none; } }`;
+
+const SOURCES = [
+  { title: "Configuring the Viewport（Safari Web Content Guide）", url: "https://developer.apple.com/library/archive/documentation/AppleApplications/Reference/SafariWebContent/UsingtheViewport/UsingtheViewport.html", by: "Apple", note: "没写 viewport 时默认宽度 980；device-width 是设备的宽。" },
+  { title: "New Interaction Behaviors in iOS 10", url: "https://webkit.org/blog/7367/new-interaction-behaviors-in-ios-10/", by: "WebKit，2017", note: "iOS 10 起每一页都能双指放大，忽略 user-scalable、minimum-scale、maximum-scale。" },
+  { title: "Designing Websites for iPhone X", url: "https://webkit.org/blog/7929/designing-websites-for-iphone-x/", by: "WebKit，2017", note: "横屏时默认把页面放在安全区里，两侧用 body 或 html 的底色填上；viewport-fit=cover 铺满全屏；env(safe-area-inset-*) 给出四边的留白。" },
+  { title: "Media Queries Level 4", url: "https://www.w3.org/TR/mediaqueries-4/", by: "W3C", note: "width 是视口宽度，包括滚动条；范围写法 (width <= 320px)；hover、pointer 说的是主要的输入设备，any-hover、any-pointer 说的是所有输入设备。" },
+  { title: "CSS Values and Units Level 4：视口单位", url: "https://www.w3.org/TR/css-values-4/", by: "W3C", note: "sv*、lv*、dv* 分别按工具栏展开、收起、实时的视口算；默认的 vh、vw 按收起时的大视口算。" },
+  { title: "HTML Standard：Images", url: "https://html.spec.whatwg.org/multipage/images.html", by: "WHATWG", note: "srcset 和 sizes；不写 sizes 时按 100vw；已经下好的高密度图可以直接用，不用再下载。" },
+  { title: "MDN：@container", url: "https://developer.mozilla.org/en-US/docs/Web/CSS/@container", by: "MDN", note: "容器查询，2023 年 2 月起各主流浏览器都支持。" },
+  { title: "HTML Accessibility API Mappings 1.0", url: "https://www.w3.org/TR/html-aam-1.0/", by: "W3C", note: "section 有名字才是 region，否则是 generic；body 下的 header、footer 是 banner、contentinfo。" },
+  { title: "WAI-ARIA 1.2：aria-hidden", url: "https://www.w3.org/TR/wai-aria-1.2/", by: "W3C", note: "用 aria-hidden 对读屏藏起看得见的内容时，必须保证读屏用户能得到同样的意思和功能。" },
+  { title: "ARIA Authoring Practices Guide：Button Pattern", url: "https://www.w3.org/WAI/ARIA/apg/patterns/button/", by: "W3C WAI", note: "按钮用 Enter 和空格都能触发。" },
+  { title: "Understanding SC 2.5.8 Target Size (Minimum) 和 2.5.5 Target Size (Enhanced)", url: "https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html", by: "W3C WAI", note: "AA 级要 24 × 24 CSS 像素，例外有间距、行内、等效控件、浏览器自带、必需；AAA 级要 44 × 44。" },
+  { title: "Understanding SC 1.4.10 Reflow", url: "https://www.w3.org/WAI/WCAG22/Understanding/reflow.html", by: "W3C WAI", note: "320 CSS 像素宽时只需竖着滚动，相当于 1280 宽放大到 400%；地图、示意图、视频、数据表格等需要二维排列的除外。" },
+  { title: "Understanding SC 2.4.1 Bypass Blocks 和 2.4.7 Focus Visible", url: "https://www.w3.org/WAI/WCAG22/Understanding/bypass-blocks.html", by: "W3C WAI", note: "跳过重复内容（A 级）：页首放跳到正文的链接、用地标、每节开头放标题都算；键盘焦点要看得见（AA 级）。" },
+  { title: "MDN：prefers-reduced-motion", url: "https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion", by: "MDN", note: "iOS 在“设置 › 辅助功能 › 动态效果”；macOS 15 及以前在“系统设置 › 辅助功能 › 显示”。" },
+  { title: "本站实测", note: "2026-11-12 在本机 Chrome 157（headless）里：模拟 iPhone（430、956，像素比 3）、iPad（834，像素比 2）、Mac（1512，像素比 2）读视口和断点；用 macOS 自带的壁纸生成 5 种宽度的 JPEG 测 srcset；读第 1 章那一页的无障碍树；按 Tab、Enter、空格看焦点和点击。没有用真机和 VoiceOver。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>同一页在 iPhone、iPad、Mac 上，这个站排得不一样：目录有时在正文侧面，有时横排在正文上面；流程块有时横排，有时竖排；iPhone 横屏时明明有 956 宽，目录却不在侧面。每一页 head 里还有一行 <code>meta name="viewport"</code>，删掉它，手机上的字会小到看不清。</p>
+  <p>还有一些人看不到这些变化：用读屏软件听网页的人，只用键盘的人，把字放大到两倍的人。他们用的是同一个页面，只是“看”的方式不同。</p>
+  <p>这一章讲背后的机制：手机怎么决定页面有多宽，断点怎么起作用，图片怎么按屏幕挑；读屏软件读到的是什么，键盘能走到哪里，用户自己的设置怎么影响页面。最后拿这几样把这个站的一页查一遍，查出了几处真问题。数字都在本机 Chrome 157 里实测：用 DevTools 协议模拟各设备的宽度和像素比，读无障碍树，按 Tab 和 Enter。没有用真机和 VoiceOver，Safari 的行为按苹果和 WebKit 的文档写。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="CSS px · devicePixelRatio" title="CSS 像素不是屏幕上的点">
+      <p>iPhone 的 devicePixelRatio 是 3：430 个 CSS 像素宽的屏幕，有 1290 个物理像素。断点、width、字号说的都是 CSS 像素；只有挑图片时才要乘上像素比。</p>
+    </Card>
+    <Card term="Layout Viewport" title="布局视口：按多宽排版">
+      <p>媒体查询、vw、百分比都按它算。手机上它默认是 980，写了 meta viewport 才等于屏幕宽。双指放大不改变它，只改变屏幕上露出的那一块（可视视口）。</p>
+    </Card>
+    <Card term="Media Query" title="媒体查询和断点">
+      <p><code>@media (max-width: 640px)</code> 问的是视口有多宽，成立就套用里面的样式。样式变化的那个宽度就是断点。它看的是整个视口，不管组件自己放在多宽的地方。</p>
+    </Card>
+    <Card term="Container Query" title="容器查询">
+      <p>问的是某个容器有多宽。同一张卡片放进 300 宽的侧栏和 1140 宽的主栏，可以排得不一样。2023 年 2 月起各主流浏览器都支持。</p>
+    </Card>
+    <Card term="srcset · sizes" title="按屏幕挑图片">
+      <p>给出同一张图的几种宽度，再告诉浏览器这张图大概显示多宽，浏览器按显示宽度乘像素比挑够用的最小一张。手机不用下电脑那么大的图。</p>
+    </Card>
+    <Card term="Accessibility Tree" title="无障碍树">
+      <p>浏览器从 DOM 建出来、交给读屏软件的另一棵树。每个节点有角色（按钮、链接、标题）、名字（读出来的文字）和状态（可聚焦、已禁用）。读屏软件只读这棵树。</p>
+    </Card>
+    <Card term="Focus · Tab Order" title="焦点和 Tab 顺序">
+      <p>键盘一次只作用在一个元素上，就是有焦点的那个。按 Tab 按 DOM 的先后，走到下一个能聚焦的元素：带 href 的链接、按钮、表单控件和写了 tabindex 的。</p>
+    </Card>
+    <Card term="User Preferences" title="用户自己的设置">
+      <p>深浅色、减少动态效果、默认字号、缩放比例，用户在系统或浏览器里设一次，每个网页都该跟着变。CSS 用 <code>prefers-color-scheme</code>、<code>prefers-reduced-motion</code> 这些媒体特性读到前两样。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="how" title="视口：手机按多宽来排" short="视口">
+  <p>点“下一步”，看 iPhone 拿到一个没写 meta viewport 的页面时做了什么，以及写上以后有什么不同：</p>
+  <Anim data={VIEWPORT} label="视口：没写 meta viewport 时手机按 980 宽排版再缩小到屏幕宽，16px 的字只剩 7px，断点不成立；写上 device-width 以后按屏幕宽排版；横屏时差别小；电脑上不认 meta viewport，放大会让布局宽度变窄" />
+  <Table cap="本机 Chrome 157 模拟 iPhone（像素比 3）实测。“缩放”是可视视口的 scale，16px 的字在屏幕上的大小 = 16 × 缩放。">
+    <tr><th>meta viewport 写的是</th><th class="n">竖屏 430：排版宽</th><th class="n">缩放</th><th class="n">横屏 956：排版宽</th><th class="n">缩放</th></tr>
+    <tr><td>不写</td><td class="n">980</td><td class="n">0.439</td><td class="n">980</td><td class="n">0.976</td></tr>
+    <tr><td><code>width=device-width, initial-scale=1</code></td><td class="n">430</td><td class="n">1</td><td class="n">956</td><td class="n">1</td></tr>
+    <tr><td>只写 <code>width=device-width</code></td><td class="n">430</td><td class="n">1</td><td class="n">956</td><td class="n">1</td></tr>
+    <tr><td>只写 <code>initial-scale=1</code></td><td class="n">430</td><td class="n">1</td><td class="n">956</td><td class="n">1</td></tr>
+    <tr><td><code>width=600</code></td><td class="n">600</td><td class="n">0.717</td><td class="n">600</td><td class="n">1.593</td></tr>
+    <tr><td>不写，页面里有一个 1200 宽的元素</td><td class="n">980</td><td class="n">0.358</td><td class="n">980</td><td class="n">0.797</td></tr>
+  </Table>
+  <Code code={META} lang="text" cap="表里三种写法在 Chrome 里效果一样；常见的写法是两样都写，这个站也是。" />
+  <p>980 是 Safari 定下的默认值。思路是：大多数网站按电脑屏幕做，先按 980 排好再缩小，至少版式不乱，用户双指放大去读。meta viewport 是页面对浏览器的声明：“我已经为窄屏做过适配，按设备宽度排就行。”所以它只是一个开关，打开以后页面还得自己有断点，不然就是把电脑版的版式硬塞进 430 宽。</p>
+  <p>表里最后一行说明另一件事：内容比布局视口还宽时，没写 meta 的页面会缩得更小，把整个内容塞进屏幕。写了 <code>initial-scale=1</code> 就不会：实测缩放保持 1，页面能左右拖动，1200 宽的元素露出一截。两种都不好，根子在那个固定 1200 宽的元素。</p>
+  <Note kind="doubt" title="innerWidth 在手机上靠不住">写了 meta viewport、页面里又有一个 1200 宽的元素时，实测 Chrome 的 <code>innerWidth</code> 是 1200，<code>document.documentElement.clientWidth</code> 是 430，(max-width: 640px) 成立。媒体查询按的是 430。脚本里要知道布局有多宽，读 clientWidth 或者直接用 <code>matchMedia</code>，和样式表看的是同一个数。</Note>
+</Section>
+
+<Section id="breaks" title="断点：同一页在每台设备上怎么排" short="断点">
+  <p>这个站的版式只由几条规则决定，宽度一变，规则跟着切换。点“下一步”，用实测的数字看同一页从 iPhone 到 4K 屏的变化：</p>
+  <Anim data={BREAK} label="断点：430 宽时边距 16、目录在上、流程块竖排；641 宽边距跳到 48，正文栏反而窄了 63；834 宽边距和标题连续变化；961 宽目录挪到侧面，正文栏窄了 211；1512 宽正文栏 1104；2400 以上整页放大 1.2 倍" />
+  <Code code={BREAKCSS} lang="text" cap="摘自 base.css 和 lib.css。只有 max-width 一个方向：默认是宽屏的样式，越窄越往下覆盖。" />
+  <Table cap="第 1 章那一页，本机 Chrome 157 实测。“第一节”是正文第一节离页面顶端多远。">
+    <tr><th class="n">宽度</th><th>设备</th><th class="n">两侧边距</th><th class="n">正文栏</th><th>目录</th><th class="n">标题字号</th><th class="n">第一节</th></tr>
+    <tr><td class="n">320</td><td>放大 400% 的笔记本</td><td class="n">16</td><td class="n">288</td><td>正文上面</td><td class="n">30</td><td class="n">1363</td></tr>
+    <tr><td class="n">430</td><td>iPhone 竖屏</td><td class="n">16</td><td class="n">398</td><td>正文上面</td><td class="n">30</td><td class="n">1054</td></tr>
+    <tr><td class="n">640</td><td></td><td class="n">16</td><td class="n">608</td><td>正文上面</td><td class="n">30</td><td class="n">840</td></tr>
+    <tr><td class="n">641</td><td></td><td class="n">48</td><td class="n">545</td><td>正文上面</td><td class="n">30</td><td class="n">932</td></tr>
+    <tr><td class="n">834</td><td>iPad 竖屏</td><td class="n">50</td><td class="n">734</td><td>正文上面</td><td class="n">38.4</td><td class="n">756</td></tr>
+    <tr><td class="n">956</td><td>iPhone 横屏</td><td class="n">57.4</td><td class="n">841</td><td>正文上面</td><td class="n">44.0</td><td class="n">733</td></tr>
+    <tr><td class="n">961</td><td></td><td class="n">57.7</td><td class="n">634</td><td>侧面</td><td class="n">44.2</td><td class="n">651</td></tr>
+    <tr><td class="n">1032</td><td>iPad 13 竖屏</td><td class="n">61.9</td><td class="n">681</td><td>侧面</td><td class="n">46</td><td class="n">653</td></tr>
+    <tr><td class="n">1512</td><td>MacBook Pro 14</td><td class="n">90.7</td><td class="n">1104</td><td>侧面</td><td class="n">46</td><td class="n">591</td></tr>
+  </Table>
+  <p>两处“屏幕宽了 1px，正文栏反而窄了”：641 时窄 63，961 时窄 211。这是断点的本性：样式在一个宽度上整组切换，切换前后各自合理，交界处就会跳。这个站用两种办法把跳动压小：边距和标题字号写成 <code>clamp()</code>，在两个断点之间连续地变，不靠断点；断点只留给“排法必须变”的地方，比如目录放侧面需要 180 + 32 的位置，正文栏太窄就放不下。</p>
+  <p>断点为什么是 960，不是 iPad 的 1024 或 iPhone 横屏的 956？断点按内容定，不按机型定：960 是目录栏加间隙再加一个读得舒服的正文栏的最小宽度。机型年年在变，内容放不下的宽度不变。代价是 iPhone 横屏差 5px 够不着，目录仍在正文上面。第 1 章“流程块的箭头为什么伸出去”一节的 834、956、1032 三种宽度，就落在这两个断点之间。</p>
+  <h3>组件该看自己的宽度：容器查询</h3>
+  <p>媒体查询只知道整个屏幕多宽。同一张“图片加文字”的卡片放进 300 宽的侧栏，屏幕是 1512，(max-width: 640px) 不成立，卡片照样横排，文字挤在剩下的地方。实测给侧栏加 <code>container-type: inline-size</code>，卡片里写 <code>@container (width &lt; 400px)</code>：侧栏里的卡片改成竖排，文字有 298 宽；主栏里那张 1140 宽，仍横排。这个站没有用容器查询，因为每个组件都只出现在正文栏里，正文栏的宽度和屏幕宽度一一对应，媒体查询就够了。组件要被放进不同宽度的地方时，才轮到它。</p>
+</Section>
+
+<Section id="media" title="图片、单位和刘海" short="图片和单位">
+  <h3>srcset：手机不下电脑的图</h3>
+  <p>用 macOS 自带的一张壁纸，生成 400 到 2400 宽的 5 张 JPEG（34 KB 到 615 KB），在几种设备上看浏览器挑了哪一张：</p>
+  <Code code={SRCSET} lang="sh" cap="img 标签上写这两个属性，src 留给不认识 srcset 的浏览器。sizes 大致照这个站的正文栏写。" />
+  <Table cap="本机 Chrome 157 实测：currentSrc 是哪一张，文件多大。">
+    <tr><th>设备</th><th>只写 src（2400 宽）</th><th>srcset，不写 sizes</th><th>srcset 加 sizes</th><th>1x、2x、3x 写法</th></tr>
+    <tr><td>iPhone 430，像素比 3</td><td>615 KB</td><td>1600 宽，290 KB</td><td><b>1200 宽，180 KB</b></td><td>2400 宽，615 KB</td></tr>
+    <tr><td>iPad 834，像素比 2</td><td>615 KB</td><td>2400 宽，615 KB</td><td>1600 宽，290 KB</td><td>1600 宽，290 KB</td></tr>
+    <tr><td>Mac 1512，像素比 2</td><td>615 KB</td><td>2400 宽，615 KB</td><td>2400 宽，615 KB</td><td>1600 宽，290 KB</td></tr>
+    <tr><td>外接显示器 1512，像素比 1</td><td>615 KB</td><td>1600 宽，290 KB</td><td>1200 宽，180 KB</td><td>800 宽，96 KB</td></tr>
+  </Table>
+  <p>iPhone 上，写对 sizes 少下七成。浏览器的算法是：sizes 里第一个成立的条件给出显示宽度（430 宽时是 100vw − 32 = 398），乘上像素比 3 得 1194，挑不小于它的最小一张，1200。不写 sizes 时规范按 100vw 算，430 × 3 = 1290，挑到 1600。为什么要你写 sizes？浏览器挑图时样式表多半还没到，它不知道图片会显示多宽，只能听你说。</p>
+  <p>还有一个实测：Mac 宽度下先挑了 2400 宽那张，把窗口缩到 iPhone 的宽度，Chrome 没有换成小图，也没有再发请求。规范允许浏览器直接用已经下好的高密度图。新开一个页面，它才按新的宽度挑。</p>
+  <h3>vw、vh 和滚动条、地址栏</h3>
+  <p>媒体查询和 vw 都按视口算，而规范写明视口宽度包括滚动条。实测本机 Chrome 1032 宽的窗口，滚动条占 15px：<code>innerWidth</code> 1032，<code>clientWidth</code> 1017，一个 <code>width: 100vw</code> 的元素是 1032 宽，整页多出 15px 的横向滚动。Mac 用触控板时滚动条默认浮在内容上、不占地方，所以在自己的笔记本上测不出来；接上鼠标或者系统设置里选了“始终显示滚动条”，就出现了。要占满一行，写 <code>width: 100%</code>，不写 100vw。</p>
+  <p>高度更麻烦。手机 Safari 的地址栏会随滚动收起、展开，视口高度一直在变。CSS 给了三套单位：<code>svh</code> 按工具栏展开时的小视口算，<code>lvh</code> 按收起时的大视口算，<code>dvh</code> 跟着实时变。规范规定普通的 <code>vh</code> 按大视口算，所以一个 <code>height: 100vh</code> 的首屏，刚打开、地址栏还展开时，底部一截在屏幕外面。要“正好一屏”用 <code>100svh</code> 或 <code>100dvh</code>；dvh 会随滚动变，下面的内容跟着跳，所以不常用来定大块的高度。</p>
+  <h3>刘海和圆角</h3>
+  <p>iPhone 横屏时，屏幕两侧有刘海（或灵动岛）和圆角。按 WebKit 的说明，Safari 默认把页面放在中间的“安全区”里，两侧用 body 或 html 的底色填上，所以这个站横屏时两侧是纸色的空白，内容不会被挡住。要让页面铺满全屏，写 <code>viewport-fit=cover</code>，同时用 <code>env(safe-area-inset-left)</code> 这几个变量给内容让出位置，否则文字会钻到刘海下面。这个站没有写 cover，也就不用管安全区。我没有真机，这一段没实测：横屏时 Safari 实际给页面多宽，可能比 956 窄。</p>
+</Section>
+
+<Section id="touch" title="触屏：手指点得到，没有悬停" short="触屏">
+  <p>手指比鼠标指针粗得多。WCAG 2.2 的 AA 级要求可点的目标至少 24 × 24 CSS 像素，AAA 级要求 44 × 44。小于 24 也行，只要以它为中心画一个 24 的圆，碰不到别的目标（间距例外）；句子里的链接也例外。模拟 iPhone 竖屏，量这个站一页上可点的东西：</p>
+  <Table cap="本机 Chrome 157 实测，430 宽，单位 CSS 像素。">
+    <tr><th>元素</th><th class="n">个数</th><th class="n">高</th><th class="n">宽</th><th>24 × 24</th><th>44 × 44</th></tr>
+    <tr><td>主题按钮</td><td class="n">1</td><td class="n">29</td><td class="n">113</td><td>够</td><td>不够</td></tr>
+    <tr><td>目录项</td><td class="n">11</td><td class="n">28.5</td><td class="n">36–94</td><td>够；左右只隔 2px，但都不小于 24</td><td>不够</td></tr>
+    <tr><td>动画的三个按钮</td><td class="n">12</td><td class="n">28</td><td class="n">52–65</td><td>够</td><td>不够</td></tr>
+    <tr><td>路径里的链接</td><td class="n">2</td><td class="n">16</td><td class="n">42–70</td><td>不够，但按间距例外算过</td><td>不够</td></tr>
+    <tr><td>翻页</td><td class="n">1</td><td class="n">76.8</td><td class="n">191</td><td>够</td><td>够</td></tr>
+  </Table>
+  <p>AA 级都过了，AAA 的 44 只有翻页够。目录项和动画按钮都做到 44 高，手机上目录和按钮区都要变高，第一屏更挤（“断点”一节说过，第一节正文已经在第一屏之外）。这是一个取舍：这个站选了 AA。</p>
+  <p>触屏上也没有悬停。只在悬停时才出现的东西（提示框、二级菜单），手指用户看不到。CSS 能问到输入设备：实测模拟触屏时 <code>(hover: hover)</code> 不成立，<code>(pointer: coarse)</code> 成立。只给鼠标用户的悬停效果包在 <code>@media (hover: hover)</code> 里；关键信息不放在悬停里。注意 hover、pointer 问的是“主要的”输入设备：接了键盘和触控板的 iPad，回答可能和你想的不一样，要问“有没有任何一个设备能悬停”，用 <code>any-hover</code>。</p>
+</Section>
+
+<Section id="tree" title="读屏软件读到的是什么" short="无障碍树">
+  <p>视力障碍的人用 VoiceOver 这类读屏软件，手指在屏幕上划，它一个一个元素读出来。它读的不是像素，是浏览器另建的一棵树。点“下一步”：</p>
+  <Anim data={TREE} label="无障碍树：浏览器从 DOM 建出无障碍树交给读屏软件，每个节点有角色、名字、状态；button 是可聚焦的按钮，div 加 onclick 只是 generic；地标来自 header、main、nav、footer；opacity: 0 的元素仍在树里，这个站的动画在第 1 步就会被读出后面的数字" />
+  <Table cap="本机 Chrome 157，Accessibility.getPartialAXTree 读出的角色和名字，以及能不能用 Tab 聚焦。">
+    <tr><th>HTML</th><th>树里</th><th>Tab 能到</th></tr>
+    <tr><td><code>button</code></td><td>button「文字」</td><td>能</td></tr>
+    <tr><td><code>div</code> 加 onclick</td><td>generic，没有名字</td><td>不能</td></tr>
+    <tr><td><code>a</code> 没有 href</td><td>link</td><td>不能</td></tr>
+    <tr><td><code>input</code> 只有 placeholder</td><td>textbox「占位文字」</td><td>能；开始输入，看得见的提示就没了</td></tr>
+    <tr><td><code>label</code> 包着 input</td><td>textbox「邮箱」</td><td>能</td></tr>
+    <tr><td><code>svg</code> 什么都不写</td><td>image，没有名字</td><td>不能</td></tr>
+    <tr><td><code>svg role="img" aria-label="…"</code></td><td>image「一张图」</td><td>不能</td></tr>
+    <tr><td>img 写了 <code>alt=""</code></td><td>不进树（装饰图）</td><td>不能</td></tr>
+    <tr><td>img 写了 <code>alt="流程图"</code></td><td>image「流程图」</td><td>不能</td></tr>
+    <tr><td><code>display: none</code>、<code>visibility: hidden</code>、<code>inert</code></td><td>不进树</td><td>不能</td></tr>
+    <tr><td><code>aria-hidden="true"</code> 的按钮</td><td>不进树</td><td><b>能</b></td></tr>
+    <tr><td><code>opacity: 0</code>、挪到屏幕外的按钮</td><td>button，照样读</td><td>能</td></tr>
+  </Table>
+  <p>表里的规律：能用对的标签，就不用 ARIA。<code>button</code>、<code>a href</code>、<code>label</code> 自带角色、名字和键盘行为；ARIA 只改树里的样子，不加任何行为（下一节实测）。WAI-ARIA 规范对 aria-hidden 的要求也是这个意思：用它对读屏软件藏起看得见的内容，必须保证读屏用户能得到同样的意思和功能。所以 aria-hidden 只用在纯装饰、或者别处已经有同样信息的地方，而且里面不能有能聚焦的东西：表里那个 aria-hidden 的按钮，Tab 到了，读屏软件却什么也读不出。</p>
+  <p>这个站的示意图都写了 <code>role="img"</code> 和 <code>aria-label</code>，在树里是一张有名字的图片，名字就是那句概括；分步动画是 <code>role="group"</code> 加 aria-label，同样先给一句概括。不过实测 HTTPS 那篇的示意图，Chrome 的树里图下面仍挂着图里的 9 段文字。读屏软件读完概括以后还会不会进去读这些，取决于软件，我没有用 VoiceOver 验证。动画里的问题更确定，见“实际例子”。</p>
+</Section>
+
+<Section id="keys" title="只用键盘能不能用" short="键盘">
+  <p>手不方便用鼠标的人、读屏软件的用户、习惯键盘的人，都靠 Tab 在页面上走。点“下一步”，看在这个站的一页上按 Tab，焦点怎么走：</p>
+  <Anim data={KEYS} label="键盘：Tab 按 DOM 顺序走过顶栏 2 个、路径 2 个、目录 11 个，第 16 下才进正文；每个停靠点都有 focus-visible 的蓝框；button 认 Enter 和空格，span 加 role 都不认；tabindex 正数会打乱顺序" />
+  <Table cap="本机 Chrome 157 实测：聚焦以后按键，click 事件有没有触发。">
+    <tr><th>元素</th><th>Enter</th><th>空格</th></tr>
+    <tr><td><code>button</code></td><td>触发</td><td>触发</td></tr>
+    <tr><td><code>a href</code></td><td>触发</td><td>不触发（空格是滚动页面）</td></tr>
+    <tr><td><code>span role="button" tabindex="0"</code></td><td>不触发</td><td>不触发，页面反而往下滚</td></tr>
+  </Table>
+  <Code code={KEYJS} lang="js" cap="role 和 tabindex 只解决“读屏知道它是按钮”“Tab 到得了”，键盘行为要自己写。用 button 标签，一行都不用写。" />
+  <p>焦点框是另一半。很多站嫌浏览器默认的焦点框难看，写一句 <code>outline: none</code>，键盘用户从此不知道自己在哪：WCAG 2.4.7（AA 级）要求键盘焦点看得见。这个站的写法是 <code>:focus-visible</code> 加 2px 的蓝框：浏览器判断这次聚焦来自键盘时才出框，鼠标点按钮时不出，两边都不打扰。阅读库首页的搜索框是个例外：它聚焦时写了 <code>outline: none</code>，只把 1px 的边框从 <code>--rule</code> 换成 <code>--ink-3</code>。按第 2 章的公式算，这两种颜色之间的对比度是 4.15，变化看得出来，只是线细。</p>
+  <p>Tab 要按 15 下才进正文，WCAG 2.4.1（A 级）管这件事：重复出现在每一页上的内容要有办法跳过。它承认三种做法：页首放一个“跳到正文”的链接，用地标，或者每节开头放标题。这个站有 main 地标和每节的 h2，读屏用户可以按地标、按标题跳，所以算满足；可只用键盘、不用读屏的人没有“按地标跳”这个功能，他们只能按 15 下。“跳到正文”链接平时藏着，Tab 到它才显示，是给他们的。</p>
+</Section>
+
+<Section id="prefs" title="用户自己的设置" short="用户设置">
+  <p>有些人在系统里设了“减少动态效果”（晕动症、前庭功能障碍的人，动画会让他们头晕），有些人把浏览器的默认字号调大，有些人整页放大。页面能不能跟着变：</p>
+  <Table cap="本机 Chrome 157 实测。默认字号用 Page.setFontSizes 改成 24（相当于在浏览器设置里把字号调大）。">
+    <tr><th>用户的设置</th><th>页面怎么知道</th><th>这个站</th></tr>
+    <tr><td>减少动态效果</td><td><code>prefers-reduced-motion: reduce</code></td><td>动画元素的 transition 从 0.8s 变成 0s，直接跳到位</td></tr>
+    <tr><td>深色</td><td><code>prefers-color-scheme: dark</code></td><td>跟着变，还能单独选（见第 2 章“深浅色主题”一节）</td></tr>
+    <tr><td>浏览器默认字号改成 24</td><td>rem、em、不写字号的元素跟着变</td><td><b>正文仍是 16px</b>：body 写的是 <code>16px</code></td></tr>
+    <tr><td>整页放大到 200%</td><td>CSS 像素变大，视口变窄</td><td>跟着变：1512 宽变成 756，960 的断点成立</td></tr>
+  </Table>
+  <Code code={MOTIONCSS} lang="text" cap="系统设置的位置：iOS 在“设置 › 辅助功能 › 动态效果”，macOS 15 及以前在“系统设置 › 辅助功能 › 显示”。" />
+  <p>第三行要细说。实测默认字号从 16 改成 24：写 <code>16px</code> 的段落还是 16px，写 <code>1rem</code> 的变成 24px，没写字号的也是 24px。这个站从 body 起就用 px，所以调默认字号对它没有作用，只能整页放大。放大对多数人够用，Mac 上按 ⌘+ 就是整页放大；只调字号的人（比如在 Chrome 设置里改了“字号”）就看不到变化。字号写成 rem，两种人都照顾到，代价是所有按字号算的间距、断点都要跟着检查一遍。</p>
+  <p>整页放大还会触发断点，这正是 WCAG 1.4.10（Reflow）要的：1280 宽的屏幕放大到 400%，等于 320 个 CSS 像素宽，这时页面只应该需要竖着滚动。实测这个站 320 宽时整页没有横向滚动；10 个表格里有 2 个、5 段代码都在自己的框里横向滑动。数据表格在 WCAG 列举的例外里；代码没有列举，但折行会改变代码的样子，这里选了横向滑动。第 4 章讲动画本身时，会再回到减少动态效果。</p>
+</Section>
+
+<Section id="example" title="实际例子：把这一页查一遍" short="实际例子">
+  <p>拿第 1 章那一页，用上面几节的办法各查一遍。这一章本身用的是同一套外壳，结果一样：</p>
+  <Table cap="本机 Chrome 157 实测，2026-11-12。">
+    <tr><th>怎么查</th><th>结果</th><th>算不算问题</th></tr>
+    <tr><td>320、430、956 宽有没有整页横向滚动</td><td>都没有</td><td>不算</td></tr>
+    <tr><td>iPhone 竖屏的第一屏</td><td>第一节从 1054px 开始，一屏 932 高，第一屏没有正文</td><td>取舍：标题、导语、一句话本来就是要先读的</td></tr>
+    <tr><td>可点目标</td><td>全部过 24 × 24（路径链接按间距例外）</td><td>不算；AAA 的 44 只有翻页过</td></tr>
+    <tr><td>地标</td><td>banner、main、“本文目录”导航、article、“翻页”导航、contentinfo</td><td>不算</td></tr>
+    <tr><td>标题层级</td><td>h1 1 个、h2 11 个、h3 3 个、h4 16 个；卡片标题是 h4，直接跟在 h2 后面</td><td><b>是</b>：按标题浏览时，从 h2 跳到 h4，像是漏了一层</td></tr>
+    <tr><td>动画里读到什么</td><td>第 1 步时，后面各步才显示的 8 个元素都读得到</td><td><b>是</b>：读屏用户提前听到一串没有上下文的数字</td></tr>
+    <tr><td>焦点框</td><td>36 个停靠点都有 2px 的蓝框</td><td>不算</td></tr>
+    <tr><td>Tab 几下进正文</td><td>16 下，没有“跳到正文”</td><td><b>是</b>，对只用键盘的人</td></tr>
+    <tr><td>默认字号调成 24</td><td>正文仍是 16px</td><td><b>是</b>，对只调字号不放大的人</td></tr>
+    <tr><td>减少动态效果</td><td>动画直接跳到位</td><td>不算</td></tr>
+  </Table>
+  <p>四个“是”都不难改，改在组件和样式表里，所有页面一起变：</p>
+  <ul>
+    <li>标题层级：卡片标题从 h4 改成 h3。卡片的外观由 class 决定，标签换了样子不用变。</li>
+    <li>动画：没显示的元素除了 opacity: 0，再加上 <code>aria-hidden</code> 或 <code>visibility: hidden</code>，读屏软件只读当前一步；它们本来就不能聚焦，不会出现“Tab 到一个读不出的东西”。</li>
+    <li>跳到正文：顶栏前面加一个平时藏着、Tab 到才显示的链接，指向正文的第一节。</li>
+    <li>字号：body 的 16px 改成 1rem，其余 px 字号按需要改成 rem。这一条牵动最多，所有版面数值都要重新核对。</li>
+  </ul>
+  <p>这几条我没有在写这一章时顺手改：组件和样式表是全站共用的，改了以后每一页都变，要另外决定、另外检查。这也是查无障碍的常态：问题往往不在某一页，而在大家共用的那一小块。</p>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="加了 meta viewport，就适配手机了">
+      <p>它只让手机按屏幕宽排版，不会替你排。页面里有固定宽度的东西，照样撑出横向滚动：实测写了 meta、有一个 1200 宽的元素，页面就有 1200 宽，用户得左右拖。meta 是开关，断点和不写死宽度才是适配。</p>
+    </Card>
+    <Card term="误区 2" title="断点照着机型定：375、768、1024">
+      <p>机型每年在变，同一个宽度上也不止一种设备。断点该放在内容放不下的地方：这个站的 960 是目录栏、间隙加一个舒服的正文栏的最小宽度。代价是某些机型差几像素落到另一边，比如 956 的 iPhone 横屏。</p>
+    </Card>
+    <Card term="误区 3" title="100vw 就是页面的宽">
+      <p>规范写明视口宽度包括滚动条。实测 1032 宽的窗口，100vw 是 1032，页面内容区只有 1017，多出 15px 的横向滚动。Mac 用触控板时滚动条不占地方，所以在自己的电脑上看不出来。占满一行写 100%。</p>
+    </Card>
+    <Card term="误区 4" title="100vh 就是手机屏幕的高">
+      <p>规范规定 vh 按地址栏收起后的大视口算。刚打开页面、地址栏还展开时，100vh 的首屏底部有一截在屏幕外。用 svh（展开时）或 dvh（实时）。</p>
+    </Card>
+    <Card term="误区 5" title="user-scalable=no 能禁止用户缩放">
+      <p>WebKit 写明 iOS 10 起忽略它，每一页都能双指放大。这本来就是为了视力不好的人：禁止缩放，他们就没法读。别写。</p>
+    </Card>
+    <Card term="误区 6" title="div 加上 onclick 和 role，就是一个按钮">
+      <p>role 只改无障碍树里的角色，不加行为。实测 span 加 role="button" 和 tabindex="0"，Enter、空格都不触发 click，空格反而让页面往下滚。button 标签的键盘行为、禁用状态、表单提交都是自带的。</p>
+    </Card>
+    <Card term="误区 7" title="看不见的东西，读屏软件也读不到">
+      <p>opacity: 0 和挪到屏幕外的元素都还在无障碍树里，照样被读出来，按钮还能 Tab 到。反过来，aria-hidden 只把它从树里拿掉，Tab 照样能到。真要藏起来，用 hidden、display: none 或 inert。</p>
+    </Card>
+    <Card term="误区 8" title="用户调大字号，px 写的字也会跟着变">
+      <p>实测浏览器默认字号改成 24，写 16px 的还是 16px，写 1rem 的变成 24px。整页放大对 px 也有效，但只调字号的人看不到变化。字号用 rem，才两种都照顾到。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
