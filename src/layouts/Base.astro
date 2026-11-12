@@ -6,7 +6,8 @@ import "../../blockchain/shared/base.css";
 import "../styles/components.css";
 import "../styles/lib.css";
 import { url } from "../lib/url.js";
-const { title, desc, bodyClass = "" } = Astro.props;
+// skip：正文元素的 id。给了就在页首放一个“跳到正文”，平时藏在屏幕外，按 Tab 到它才出现（文章和章节页传入；首页只有两个顶栏按钮，不放）
+const { title, desc, bodyClass = "", skip } = Astro.props;
 ---
 <!doctype html>
 <html lang="zh-CN">
@@ -23,6 +24,7 @@ const { title, desc, bodyClass = "" } = Astro.props;
 </script>
 </head>
 <body class={bodyClass}>
+{skip && <a class="skip-link" href={`#${skip}`}>跳到正文</a>}
 <header class="topbar"><div class="wrap">
   <a class="home" href={url("index.html")}>阅读库</a>
   <button type="button" class="theme-toggle" id="theme-toggle">主题：跟随系统</button>

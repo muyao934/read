@@ -27,6 +27,8 @@ function mount(host) {
       if (e.dataset.h !== v.h) { e.innerHTML = v.h; e.dataset.h = v.h; }
       e.style.left = v.x + "%"; e.style.top = v.y + "%";
       e.classList.toggle("hide", !!v.hide);
+      // 还没显示的元素只是透明（opacity: 0），仍在无障碍树里；对读屏也藏起来，只读当前这一步（2026-11-12 前端第 3 章查出）
+      if (v.hide) e.setAttribute("aria-hidden", "true"); else e.removeAttribute("aria-hidden");
     }
     const st = d.s[i];
     for (const id in boxes) { boxes[id].classList.toggle("lit", (st.lit || []).includes(id)); boxes[id].classList.toggle("bad", (st.bad || []).includes(id)); }

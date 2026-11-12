@@ -18,7 +18,7 @@ const sec = (art, id) => (art.match(new RegExp(`<section id="${id}"[\\s\\S]*?</s
 function measure(file) {
   const s = fs.readFileSync(file, "utf8");
   if (s.includes('http-equiv="refresh"')) return null;   // 合并掉的旧章节，跳转页
-  const art = (s.match(/<article class="article">([\s\S]*)<\/article>/) || [, ""])[1];
+  const art = (s.match(/<article class="article"[^>]*>([\s\S]*)<\/article>/) || [, ""])[1];   // 正文栏带 id="main-content"（“跳到正文”的目标）
   return {
     secs: (art.match(/<section\b/g) || []).length,
     anims: (art.match(/class="anim"/g) || []).length,

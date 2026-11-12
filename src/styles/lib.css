@@ -1,6 +1,9 @@
 /* 阅读库自己的样式：首页、标题区、和 base.css 不同的几处。最后加载。
    base.css 是区块链站的原样副本，不在那里改；要和区块链站不同的地方都写在这里。 */
 [hidden] { display: none !important; }
+/* “跳到正文”：平时在屏幕上方外面，按 Tab 聚焦时滑进来，压在顶栏上（顶栏 z-index 20）。2026-11-12 前端第 3 章查出：不用它要按 16 下 Tab 才进正文 */
+.skip-link { position: absolute; left: 16px; top: -60px; z-index: 30; padding: 8px 14px; font-size: 15px; color: var(--trace); background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); }
+.skip-link:focus { top: 8px; }
 /* 长英文单词、网址放不下时才断行，手机上不撑宽页面（2026-11-08 反例测试：h1 里的长单词会撑出横向滚动）；不影响表格最小宽度 */
 body { overflow-wrap: break-word; }
 

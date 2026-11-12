@@ -1,6 +1,7 @@
 ---
 // 知识卡片：term 是英文术语（小标签，垫本文分类的纸色），title 是中文标题；正文写 <p>、<ul>
+// 标题用 h3：卡片直接放在节（h2）下面，用 h4 会跳过一层，读屏按标题浏览时像漏了一级（2026-11-12 前端第 3 章查出）
 const { term, title } = Astro.props;
 if (!title) throw new Error("Card 要有 title");
 ---
-<div class="bit"><div class="bh">{term && <span class="term">{term}</span>}<h4>{title}</h4></div><slot /></div>
+<div class="bit"><div class="bh">{term && <span class="term">{term}</span>}<h3>{title}</h3></div><slot /></div>

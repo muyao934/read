@@ -11,7 +11,8 @@
 .bgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; margin: 16px 0 20px; }
 .bit { background: var(--sheet); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
 .bit .bh { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.bit .bh h4 { font: 700 16.5px/1.5 var(--serif); margin: 0; }
+/* 卡片、对照的标题是 h3（紧跟节标题 h2，不跳级）；选择器要比 base.css 的 .article h3 更具体，外观和原来的 h4 一样 */
+.bit .bh h3 { font: 700 16.5px/1.5 var(--serif); margin: 0; }
 /* 术语标签垫本文分类的纸色（同 KMS 一章垫本章主题的纸色） */
 .bit .term { font: 700 11.5px/1.6 var(--mono); color: var(--ink); background: var(--era-wash, var(--paper)); border: 1px solid var(--era, var(--rule)); border-radius: 3px; padding: 1px 6px; }
 .article .bit p, .article .bit ul, .article .bit ol { margin: 0; font-size: 15px; color: var(--ink-2); }
@@ -21,7 +22,7 @@
 /* ---------- 对照：<Compare items>，一列排，上沿 3px 色线是语气 ---------- */
 .vs { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 16px 0 20px; }
 .vs > div { background: var(--sheet); border: 1px solid var(--rule); border-top: 3px solid var(--c, var(--ink-3)); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
-.vs h4 { margin: 0; font-size: 16.5px; line-height: 1.5; }
+.vs > div > h3 { margin: 0; font-size: 16.5px; line-height: 1.5; }
 .article .vs p { margin: 0; }
 .vs .one { font-size: 16.5px; }
 .article .vs ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; font-size: 15px; color: var(--ink-2); }

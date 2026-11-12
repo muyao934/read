@@ -15,18 +15,18 @@ const BUILD = {
     { id: "b1", h: lbl("函数：props 进<br>HTML 出", "m"), x: 50, y: 40, hide: 1 },
     { id: "b2", h: lbl("检查 props", "m"), x: 50, y: 70, hide: 1 },
     { id: "c1", h: lbl("HTML + 样式表", "m"), x: 83, y: 40, hide: 1 },
-    { id: "c2", h: lbl("脚本 3.5 KB", "m"), x: 83, y: 70, hide: 1 },
+    { id: "c2", h: lbl("脚本 3.6 KB", "m"), x: 83, y: 70, hide: 1 },
   ],
   s: [
     { c: "写一章时，正文里只有组件：Section、Card、Table、Anim 这些。动画的步骤、来源列表这类数据写在文件开头，正文里只写“用哪个组件、给它什么”。",
       lit: ["src"] },
-    { c: "构建时，每个组件就是一个函数：拿到 props，返回一段 HTML。Card 收到 term 和 title，返回一个 div.bit，里面是 span.term 和 h4。样式全在样式表里，章节文件一个 class 都不写。",
+    { c: "构建时，每个组件就是一个函数：拿到 props，返回一段 HTML。Card 收到 term 和 title，返回一个 div.bit，里面是 span.term 和 h3。样式全在样式表里，章节文件一个 class 都不写。",
       set: { a: { x: 50, y: 22, h: chip("Card", "--accent") }, b1: { hide: 0 } }, lit: ["bd"] },
     { c: "组件先检查 props：Flow 只收 2 到 5 项，Anim 的坐标要在 0 到 100 之间，Note 的 kind 只能是四种之一。不对就抛错，整个构建失败，错的页面发布不出去。",
       set: { b2: { hide: 0, h: lbl("Flow 给了 6 项<br>构建失败", "w") } }, bad: ["bd"] },
     { c: "外壳 Article 拿到整章渲染好的 HTML，再查一遍：概念类要有 why、core、how、example、pitfalls、sources 这几节，顺序不能乱；目录从每一节的 data-short 生成。",
       set: { b2: { h: lbl("外壳再查<br>节齐不齐", "g") } }, lit: ["bd"] },
-    { c: "21 页用 1.1 秒建完。读者拿到的是写好的 HTML 和一个样式表：组件在浏览器里已经不存在了，没有 React，没有框架的运行时。每页的脚本一共 3.5 KB，直接写在 HTML 里。",
+    { c: "21 页用 1.1 秒建完。读者拿到的是写好的 HTML 和一个样式表：组件在浏览器里已经不存在了，没有 React，没有框架的运行时。每页的脚本一共 3.6 KB，直接写在 HTML 里。",
       set: { a: { x: 83, y: 22, h: chip("div.bit", "--ok") }, c1: { hide: 0 }, c2: { hide: 0 } }, lit: ["out"] },
     { c: "唯一在浏览器里“活过来”的是分步动画：Anim 在构建时把数据写进 data-anim 属性，2 KB 的动画引擎读出来，建按钮、摆元素。脚本没跑起来的读者，看到的是 label 那一句话。",
       set: { c2: { h: lbl("动画引擎<br>读 data-anim", "g") } }, lit: ["out"] },
@@ -170,9 +170,9 @@ const SOURCES = [
 
 <Section id="how" title="组件怎么变成这个站的页面" short="这个站的组件">
   <p>点“下一步”，跟着一张卡片，从章节文件走到读者的浏览器：</p>
-  <Anim data={BUILD} label="Astro 构建：章节文件里只写组件和数据；构建时每个组件是一个函数，props 进、HTML 出，并先检查 props，不对就构建失败；外壳再查节是否齐全；输出 HTML 和样式表，每页只有 3.5 KB 内联脚本；分步动画由引擎读 data-anim 在浏览器里建起来" />
+  <Anim data={BUILD} label="Astro 构建：章节文件里只写组件和数据；构建时每个组件是一个函数，props 进、HTML 出，并先检查 props，不对就构建失败；外壳再查节是否齐全；输出 HTML 和样式表，每页只有 3.6 KB 内联脚本；分步动画由引擎读 data-anim 在浏览器里建起来" />
   <Code code={FLOWSRC} lang="js" cap="组件里的检查写在 frontmatter（--- 之间），只在构建时执行。读者的浏览器里没有这段代码。" />
-  <p>Card 组件的输出是 <code>&lt;div class="bit"&gt;&lt;div class="bh"&gt;&lt;span class="term"&gt;SVG&lt;/span&gt;&lt;h4&gt;…&lt;/h4&gt;&lt;/div&gt;…&lt;/div&gt;</code>，这一章的每张卡片都是这一段，只有字不同。所以要改卡片的样子，改组件和样式表各一处，所有页面一起变。第 3 章查出卡片标题用 h4 跳过了一层，要改成 h3，也只需改 Card 这一个文件。</p>
+  <p>Card 组件的输出是 <code>&lt;div class="bit"&gt;&lt;div class="bh"&gt;&lt;span class="term"&gt;SVG&lt;/span&gt;&lt;h3&gt;…&lt;/h3&gt;&lt;/div&gt;…&lt;/div&gt;</code>，这一章的每张卡片都是这一段，只有字不同。所以要改卡片，改组件和样式表各一处，所有页面一起变：第 3 章查出卡片标题原来用 h4，跳过了一层，改成 h3 时只动了 Card 组件里的一个标签和样式表里的一个选择器。</p>
   <Table cap="前 15 篇正文用到的组件次数（本机统计），以及构建耗时（本机 astro build 两次）。">
     <tr><th>组件</th><th class="n">次数</th><th>组件</th><th class="n">次数</th></tr>
     <tr><td>Card</td><td class="n">198</td><td>Note</td><td class="n">39</td></tr>
@@ -180,7 +180,7 @@ const SOURCES = [
     <tr><td>Table</td><td class="n">94</td><td>Sources</td><td class="n">15</td></tr>
     <tr><td>Code</td><td class="n">61</td><td>Steps</td><td class="n">4</td></tr>
     <tr><td>Anim</td><td class="n">44</td><td>Diagram、Timeline、Compare</td><td class="n">各 1</td></tr>
-    <tr><td colspan="2">21 页，构建 1.05–1.15 秒</td><td colspan="2">13 个组件文件，一共 155 行</td></tr>
+    <tr><td colspan="2">21 页，构建 1.05–1.15 秒</td><td colspan="2">13 个组件文件，一共 156 行</td></tr>
   </Table>
   <p>“构建时检查”是这个站最受益的一点。在只跑在浏览器里的 React 应用里，“最多 5 项”“坐标在 0 到 100 之间”这类规则写成运行时的检查，要等组件在浏览器里渲染时才报错，可能是在读者的浏览器里；TypeScript 能在编译时查类型，查不了这种规则。这里的检查在 <code>npm run build</code> 时执行，错了就不发布。动画的坐标、流程块的项数、概念类缺了哪一节，都在这一步拦下来。代价是组件不能有任何交互：要交互的部分只能另写脚本，比如分步动画的引擎。</p>
 </Section>
@@ -216,7 +216,7 @@ const SOURCES = [
   <Code code={SSRHTML} lang="js" cap="本机 Node 里 renderToString 的输出，200 段一共 19 KB，用了 3.7 毫秒。" />
   <p>所以 React 文档要求 hydrate 时渲染结果和服务端的完全一致，不一致按 bug 处理。比如组件里用了当前时间、随机数，服务器上算一个值、浏览器里又算一个，就对不上。</p>
   <h3>这个站为什么用 Astro，不用 React</h3>
-  <p>这个站的内容写好就不变，读者只看、不填表、不登录。用 React 的话，每页要多带 61 KB（gzip 后）的运行时，只为激活几个“上一步、下一步”按钮；用 Astro，组件只在构建时跑，页面是纯 HTML，每页的脚本一共 3.5 KB。Astro 也能在某个组件上写 <code>client:load</code>，让它在浏览器里用 React 激活成一个“岛”，页面别处照样不带脚本。这个站没有一个岛：唯一的交互（分步动画）用 2 KB 的原生脚本就够了。</p>
+  <p>这个站的内容写好就不变，读者只看、不填表、不登录。用 React 的话，每页要多带 61 KB（gzip 后）的运行时，只为激活几个“上一步、下一步”按钮；用 Astro，组件只在构建时跑，页面是纯 HTML，每页的脚本一共 3.6 KB。Astro 也能在某个组件上写 <code>client:load</code>，让它在浏览器里用 React 激活成一个“岛”，页面别处照样不带脚本。这个站没有一个岛：唯一的交互（分步动画）用 2 KB 的原生脚本就够了。</p>
   <p>反过来什么时候该用 React：界面的大部分都随用户操作在变，比如编辑器、看板、要登录的后台。那时“描述完整界面、让框架算改动”的好处远大于运行时的那几十 KB。</p>
 </Section>
 
@@ -281,7 +281,7 @@ const SOURCES = [
 <Section id="pitfalls" title="常见误区">
   <Cards>
     <Card term="误区 1" title="组件化就得用 React">
-      <p>组件是“props 进、界面出”的写法，不是某个框架。这个站的 13 个组件只在构建时运行，读者的浏览器里没有任何框架代码，每页只有 3.5 KB 脚本。要不要 React，看界面有多少要随操作变化。</p>
+      <p>组件是“props 进、界面出”的写法，不是某个框架。这个站的 13 个组件只在构建时运行，读者的浏览器里没有任何框架代码，每页只有 3.6 KB 脚本。要不要 React，看界面有多少要随操作变化。</p>
     </Card>
     <Card term="误区 2" title="用数组下标当 key 没关系">
       <p>实测在最前面插一行，下标 key 让 React 改了 1000 处文字；更糟的是输入框里的内容留在原位，挂到了另一行上。用数据自己的 id。</p>

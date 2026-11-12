@@ -10,7 +10,7 @@ for (const i of items) {
 ---
 <div class="vs">{items.map((i) => (
   <div class={TONE[i.tone || ""]}>
-    <h4>{i.title}</h4>
+    <h3>{i.title}</h3>
     {i.one && <p class="one" set:html={i.one} />}
     {i.points && <ul>{i.points.map((p) => <li set:html={p} />)}</ul>}
   </div>

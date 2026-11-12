@@ -32,7 +32,7 @@ for (const req of type.sections) {
 if (ids[ids.length - 1] !== "sources") errs.push("最后一节要是来源（id=\"sources\"）");
 if (errs.length) throw new Error(`${where}：\n  ` + errs.join("\n  "));
 ---
-<Base title={`${meta.title} · 阅读库`} desc={meta.desc} bodyClass={`note-page tinted tint-${tint}`}>
+<Base title={`${meta.title} · 阅读库`} desc={meta.desc} bodyClass={`note-page tinted tint-${tint}`} skip="main-content">
 <main class="wrap">
   <header class="case-head">
     <p class="crumbs">{crumbs.map((c, i) => <Fragment>{i > 0 && " / "}<a href={c.href}>{c.t}</a></Fragment>)}</p>
@@ -48,7 +48,7 @@ if (errs.length) throw new Error(`${where}：\n  ` + errs.join("\n  "));
       <p>本文内容</p>
       <ol>{secs.map((s) => <li><a href={`#${s.id}`}>{s.short}</a></li>)}</ol>
     </nav>
-    <article class="article"><Fragment set:html={html} /></article>
+    <article class="article" id="main-content"><Fragment set:html={html} /></article>
   </div>
 
   {(prev || next) && (
