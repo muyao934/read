@@ -1,0 +1,327 @@
+---
+// 前端与设计 · 第 4 章（概念类）：why → core → how → color → canvas → ease → thread → people → example → pitfalls → sources
+// 2026-11-12 在本机 Chrome 157（headless）里实测：Node 用 --remote-debugging-pipe 驱动；读示意图的显示尺寸和换算比例；
+// 截图数像素看 SVG 的颜色；WAAPI 暂停过渡、逐时刻读值；Page.startScreencast 收合成器的帧看主线程被占住时谁在动；Tracing 量每帧主线程的耗时
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// viewBox：用户单位怎么换成屏幕上的像素；这个站的示意图在各宽度下实测
+const VIEWBOX = {
+  h: 300,
+  b: [["vb", 2, 8, 30, 84, "viewBox 单位"], ["css", 35, 8, 30, 84, "CSS 定的宽"], ["px", 68, 8, 30, 84, "屏幕上"]],
+  it: [
+    { id: "c1", h: chip("0 0 680 190", "--muted", "out"), x: 17, y: 30 },
+    { id: "c2", h: lbl("主文字 14", "m"), x: 17, y: 58 },
+    { id: "c3", h: lbl("线宽 1.4", "m"), x: 17, y: 80 },
+    { id: "s1", h: lbl("显示 777 宽", "m"), x: 50, y: 40, hide: 1 },
+    { id: "s2", h: lbl("正文栏 1104<br>最宽 680×16/14", "m"), x: 50, y: 68, hide: 1 },
+    { id: "p1", h: lbl("× 1.143", "g"), x: 83, y: 40, hide: 1 },
+    { id: "p2", h: lbl("字 16px<br>线 1.6px", "g"), x: 83, y: 68, hide: 1 },
+  ],
+  s: [
+    { c: "HTTPS 那篇的示意图写着 viewBox=\"0 0 680 190\"。图里所有的坐标、字号、线宽都用这套“用户单位”写：图宽 680，主文字 14，线宽 1.4。这时它们还不是像素。", lit: ["vb"] },
+    { c: "图在页面上显示多宽，由 CSS 决定。这个站写的是 width: 100%，再限一个最宽：viewBox 宽 × 16/14，也就是 777px。Mac 上正文栏有 1104 宽，图放大到 777 就停。",
+      set: { s1: { hide: 0 }, s2: { hide: 0 } }, lit: ["css"] },
+    { c: "换算只有一个比例：显示宽 ÷ viewBox 宽 = 777 ÷ 680 = 1.143。所有东西一起乘：14 个单位的字显示成 16px，和正文一样大，16/14 就是这么来的；线宽 1.4 也变成 1.6px。",
+      set: { p1: { hide: 0 }, p2: { hide: 0 } }, lit: ["px"] },
+    { c: "iPad 13 竖屏 1032：正文栏 681，图跟着缩到 647 宽，比例 0.952，字 13.3px。图是矢量的，缩放不会糊，只是字跟着变小。",
+      set: { s1: { h: lbl("显示 647 宽", "m") }, s2: { h: lbl("正文栏 681", "m") }, p1: { h: lbl("× 0.952", "g") }, p2: { h: lbl("字 13.3px", "g") } }, lit: ["css", "px"] },
+    { c: "iPhone 竖屏 430：正文栏 398，按比例字只剩 8px。所以 base.css 给图定了最小 600 宽：图保持 600，比例 0.882，字 12.4px，在框里横向滑动。字读得清，代价是要滑。",
+      set: { s1: { h: lbl("最小 600 宽", "w") }, s2: { h: lbl("框只有 398<br>横向滑动", "w") }, p1: { h: lbl("× 0.882", "g") }, p2: { h: lbl("字 12.4px", "g") } }, bad: ["css"] },
+    { c: "宽高比对不上时，preserveAspectRatio 决定怎么办。200 × 100 的 viewBox 放进 300 × 300 的框：默认 meet，整张图放得下，比例 1.5，上下各空 75；slice 铺满，比例 3，两边各裁掉 150；none 横竖各缩各的（1.5 和 3），字被拉高。",
+      set: { c1: { h: chip("200 × 100", "--doubt") }, s1: { h: lbl("框 300 × 300", "m") }, s2: { h: lbl("meet、slice<br>还是 none", "m") }, p1: { h: lbl("meet × 1.5", "g") }, p2: { h: lbl("slice × 3<br>none 变形", "w") } }, lit: ["vb", "css", "px"] },
+  ],
+};
+
+// 过渡：每一帧怎么算出中间值；这个站动画引擎的曲线，实测
+const EASE = {
+  h: 300,
+  b: [["st", 2, 8, 30, 84, "改了样式"], ["tl", 35, 8, 30, 84, "这一帧"], ["sc", 68, 8, 30, 84, "left 走到"]],
+  it: [
+    { id: "a", h: chip("left 0 → 100", "--muted", "out"), x: 17, y: 30 },
+    { id: "a2", h: lbl("transition:<br>left .8s", "m"), x: 17, y: 64 },
+    { id: "t1", h: lbl("第 0 ms", "m"), x: 50, y: 36, hide: 1 },
+    { id: "t2", h: lbl("时间 0%", "m"), x: 50, y: 66, hide: 1 },
+    { id: "v", h: lbl("0", "m"), x: 83, y: 36, hide: 1 },
+    { id: "dot", h: chip("值", "--accent"), x: 73, y: 72, hide: 1 },
+  ],
+  s: [
+    { c: "脚本把一个元素的 left 从 0 改成 100px。元素写了 transition: left .8s cubic-bezier(.6, .05, .3, 1)，这是这个站动画引擎的写法。浏览器不直接跳到 100，而是建一个过渡，接下来 0.8 秒的每一帧算一个中间值。",
+      set: { t1: { hide: 0 }, t2: { hide: 0 }, v: { hide: 0 }, dot: { hide: 0 } }, lit: ["st"] },
+    { c: "每一帧先算时间进度：已经过了多久 ÷ 0.8 秒；再用缓动曲线把它换成数值的进度。第 200 毫秒，时间过了 25%，数值只走了 10.6%：这条曲线起步很慢。",
+      set: { t1: { h: lbl("第 200 ms", "m") }, t2: { h: lbl("时间 25%", "m") }, v: { h: lbl("10.6", "g") }, dot: { x: 75.3 } }, lit: ["tl", "sc"] },
+    { c: "第 400 毫秒：时间 50%，数值 61.9%。中间这一段最快，240 到 480 毫秒之间走了 65%。",
+      set: { t1: { h: lbl("第 400 ms", "m") }, t2: { h: lbl("时间 50%", "m") }, v: { h: lbl("61.9", "g") }, dot: { x: 86.6 } }, lit: ["tl", "sc"] },
+    { c: "第 600 毫秒：时间 75%，数值 94.4%。最后 200 毫秒只剩 5.6，慢慢停下。",
+      set: { t1: { h: lbl("第 600 ms", "m") }, t2: { h: lbl("时间 75%", "m") }, v: { h: lbl("94.4", "g") }, dot: { x: 93.8 } }, lit: ["tl", "sc"] },
+    { c: "同样 0.8 秒、同一刻，换一条曲线：linear 在第 200 毫秒是 25；默认的 ease 是 40.9，一开始就冲出去；这个站的曲线是 10.6。先慢、再快、再慢，像东西被拿起来、挪过去、放下。",
+      set: { t1: { h: lbl("第 200 ms", "m") }, t2: { h: lbl("linear 25<br>ease 40.9", "m") }, v: { h: lbl("本站 10.6", "g") }, dot: { x: 75.3 } }, lit: ["tl"] },
+    { c: "算出来的值和脚本改样式一样，要走后面的流水线。left 是布局属性，每一帧都要重算样式、重排、重画（第 1 章“改了样式以后”一节）；transform 和 opacity 的过渡可以整个交给合成线程。下一节实测这两种差多少。",
+      set: { t2: { h: lbl("left：每帧<br>都要重排", "w") }, v: { h: lbl("100", "g") }, dot: { x: 96 } }, bad: ["tl"] },
+  ],
+};
+
+// 主线程被占住时：left 动画停住，CSS 的 transform 动画照常；数字来自 screencast 收到的合成器帧
+const THREAD = {
+  h: 300,
+  b: [["mt", 2, 8, 46, 40, "主线程"], ["ct", 2, 52, 46, 40, "合成线程"], ["sc", 52, 8, 46, 84, "屏幕上，每 16.7 ms 一帧"]],
+  it: [
+    { id: "m1", h: lbl("空闲", "m"), x: 25, y: 32 },
+    { id: "c1", h: lbl("把图层拼成一帧", "m"), x: 25, y: 74 },
+    { id: "L", h: chip("left", "--muted", "out"), x: 64, y: 34 },
+    { id: "T", h: chip("transform", "--muted", "out"), x: 64, y: 70 },
+  ],
+  s: [
+    { c: "两个方块做同样的来回动画，都用 CSS 的 animation 写：一个改 left，一个改 transform。屏幕每 16.7 毫秒要一帧新画面，由合成线程把各个图层拼起来交出去。", lit: ["sc"] },
+    { c: "left 是布局属性：每一帧主线程都要重算样式、重排、重画，再把结果交给合成线程。300 个这样的方块，实测每帧主线程花 2.6 毫秒。",
+      set: { m1: { h: lbl("每帧都算<br>2.6 ms", "m") }, L: { x: 72 }, T: { x: 72 } }, lit: ["mt"] },
+    { c: "transform：动画一开始，主线程把整段动画交给合成线程，之后每一帧由合成线程自己算位置、挪图层，不再找主线程。实测 300 个方块 2 秒里，主线程只参与了 4 次。",
+      set: { c1: { h: lbl("自己算位置<br>挪图层", "g") }, L: { x: 78 }, T: { x: 78 } }, lit: ["ct"] },
+    { c: "现在主线程跑一段 1.2 秒的脚本，被占住了。left 那个停在原地：合成线程拿不到新的布局结果，只能一遍遍交出旧画面。实测这 1.2 秒出了 71 帧，它的位置一直是 167。",
+      set: { m1: { h: lbl("被脚本占住<br>1.2 秒", "w") }, L: { h: chip("left 停住", "--warn") }, T: { x: 86 } }, bad: ["mt"] },
+    { c: "transform 那个照常动，71 帧每帧走 2.5px，一帧不少：合成线程不等主线程。同样的 transform 要是写在 requestAnimationFrame 里由脚本每帧去改，实测也停住了：回调要主线程来跑。",
+      set: { T: { x: 76, h: chip("transform", "--ok") } }, lit: ["ct"] },
+    { c: "脚本一结束，left 那个一帧跳了 83px，追上该在的位置。用户看到的是：卡住 1.2 秒，然后猛地一闪。所以页面在干重活时还要动的东西（加载转圈、进度），用 CSS 的 transform 和 opacity 来做。",
+      set: { m1: { h: lbl("空下来", "g") }, L: { x: 74, h: chip("left 跳 83px", "--warn") }, T: { x: 74 } }, lit: ["mt", "sc"] },
+  ],
+};
+
+const DIAGCSS = `/* base.css：图里只用语义类，颜色全是变量，深浅色跟着换 */
+.d-box { fill: var(--sheet); stroke: var(--ink-3); stroke-width: 1.2; }
+.d-line { stroke: var(--ink-3); stroke-width: 1.4; fill: none; }
+.d-t { fill: var(--ink); font-size: 14px; }
+.diagram svg { width: 100%; height: auto; min-width: 600px; }   /* 窄屏在框里滑动 */
+
+/* lib.css：最宽 = viewBox 宽 × 16/14，14 单位的字最大显示成 16px（--vbw 由 Diagram 组件在构建时写入） */
+.diagram svg { max-width: calc(var(--vbw) * 1px * 16 / 14); }`;
+
+const ENGINE = `/* components.css：动画里的元素按画面的百分比定位，换位置时靠 transition 滑过去 */
+.mini .it { position: absolute; transform: translate(-50%, -50%);
+  transition: left .8s cubic-bezier(.6, .05, .3, 1), top .8s cubic-bezier(.6, .05, .3, 1), opacity .5s; }
+
+// anim-engine.js：每一步只改 left、top（百分比）和 class
+e.style.left = v.x + "%"; e.style.top = v.y + "%";`;
+
+const SOURCES = [
+  { title: "SVG 2：Coordinate Systems, Transformations and Units", url: "https://www.w3.org/TR/SVG2/coords.html", by: "W3C", note: "viewBox 把用户坐标里的一个矩形映射到视口；preserveAspectRatio 的 meet、slice、none，默认 xMidYMid meet。" },
+  { title: "SVG 2：Painting（vector-effect）", url: "https://www.w3.org/TR/SVG2/painting.html", by: "W3C", note: "non-scaling-stroke：线宽不随变换缩放。" },
+  { title: "Media Queries Level 5：prefers-color-scheme", url: "https://www.w3.org/TR/mediaqueries-5/", by: "W3C", note: "以“安全动画”模式嵌入的 SVG，prefers-color-scheme 取嵌入它的那个元素用的 color-scheme；iframe 要不要这样还在讨论。" },
+  { title: "SVG Integration", url: "https://www.w3.org/TR/svg-integration/", by: "W3C，2014 年草案", note: "img 和 CSS 背景图引用的 SVG 能播放动画时用“安全动画”模式：不跑脚本，不加载外部资源。" },
+  { title: "HTML Standard：The canvas element", url: "https://html.spec.whatwg.org/multipage/canvas.html", by: "WHATWG", note: "canvas 是依赖分辨率的位图；有更合适的元素时不应该用 canvas。" },
+  { title: "HTML Standard：Update the rendering", url: "https://html.spec.whatwg.org/multipage/webappapis.html", by: "WHATWG", note: "每次更新画面时，先跑动画帧回调（requestAnimationFrame），再重算样式和布局。" },
+  { title: "CSS Transitions Level 1", url: "https://www.w3.org/TR/css-transitions-1/", by: "W3C", note: "计算值在两次样式变化之间改变才开始过渡；上一次不在文档里的元素不开始过渡。" },
+  { title: "CSS Easing Functions Level 1", url: "https://www.w3.org/TR/css-easing-1/", by: "W3C", note: "ease = cubic-bezier(0.25, 0.1, 0.25, 1)，ease-in = (0.42, 0, 1, 1)，ease-out = (0, 0, 0.58, 1)。" },
+  { title: "CSS Transforms Level 1", url: "https://www.w3.org/TR/css-transforms-1/", by: "W3C", note: "translate 的百分比相对于元素自己的参照框（普通元素是边框盒）。" },
+  { title: "MDN：interpolate-size", url: "https://developer.mozilla.org/en-US/docs/Web/CSS/interpolate-size", by: "MDN", note: "允许在长度和 auto 这类内在尺寸之间过渡；“有限可用”，部分主流浏览器不支持。" },
+  { title: "Inside look at modern web browser (part 3)", url: "https://developer.chrome.com/blog/inside-browser-part3", by: "Chrome for Developers", note: "合成不经过主线程，合成线程不用等样式计算和 JavaScript。" },
+  { title: "How to create high-performance CSS animations", url: "https://web.dev/articles/animations-guide", by: "web.dev", note: "动画尽量只用 opacity 和 transform；除非必要，不碰会触发布局或绘制的属性。" },
+  { title: "Understanding SC 2.3.3 Animation from Interactions 和 SC 2.2.2 Pause, Stop, Hide", url: "https://www.w3.org/WAI/WCAG22/Understanding/animation-from-interactions.html", by: "W3C WAI", note: "交互触发的动效能关掉（AAA 级）；自动开始、超过 5 秒、和其他内容同时出现的动态内容要能暂停、停止或隐藏（A 级）。" },
+  { title: "本站实测", note: "2026-11-12 在本机 Chrome 157（headless）里：这个站示意图在各宽度下的尺寸和比例；6 种 SVG 写法在 4 种主题组合下的颜色（截图数像素）；缓动曲线逐时刻的值；主线程被占住时 left、transform、rAF 三种动画的位置（screencast 收到的合成器帧）；300 到 1 万个元素、1000 到 5 万个图形的每帧主线程耗时（跟踪）；这个站分步动画换一步的耗时。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>这个站的图和动画，有几处写法当时有理由，但没讲透：</p>
+  <ul>
+    <li>示意图组件在构建时读出 SVG 的 viewBox 宽度，样式表用它算出图最宽能放多大：“viewBox 宽 × 16/14”。</li>
+    <li>图里不准写颜色，只能用 <code>d-box</code>、<code>d-line</code> 这几个类，“深浅色主题才能自动切换”。</li>
+    <li>第 1 章说动画该用 transform 和 opacity，可这个站自己的分步动画，挪元素用的是 left 和 top。</li>
+    <li>系统设置了“减少动态效果”，分步动画里的元素就不滑了，直接跳到位。</li>
+  </ul>
+  <p>这一章讲背后的机制：SVG 的坐标怎么变成屏幕上的像素，图怎么跟着主题变色，什么时候该用 Canvas；过渡的每一帧怎么算，动画为什么会卡，以及卡在哪个线程上。最后回答第三条：这个站的动画该不该改。数字都在本机 Chrome 157 里实测，其中最关键的一个实验是让主线程停 1.2 秒，看哪种动画还在动。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="SVG" title="用标签写的矢量图">
+      <p>每个形状都是 DOM 里的一个元素，能用 CSS 上色、能响应点击、读屏软件读得到，放多大都不糊。代价是形状一多，样式、布局、绘制都要逐个算。</p>
+    </Card>
+    <Card term="viewBox" title="图自己的坐标系">
+      <p><code>viewBox="0 0 680 190"</code> 说的是：图里的坐标从 (0, 0) 到 (680, 190)。显示多大由 CSS 定，浏览器按比例把整套坐标一起放大或缩小。</p>
+    </Card>
+    <Card term="preserveAspectRatio" title="比例对不上时怎么办">
+      <p>meet（默认）整张放得下、留白；slice 铺满、裁边；none 横竖各缩各的、会变形。</p>
+    </Card>
+    <Card term="Canvas" title="用脚本画的位图">
+      <p>一块像素画布，脚本一笔一笔画上去，画完就只剩像素：没有元素、不能单独上色或点击，读屏软件读不到，屏幕像素比变了得自己重画。好处是画多少东西都只是一个元素。</p>
+    </Card>
+    <Card term="transition · animation" title="过渡和关键帧动画">
+      <p>transition 在一个属性的值变化时，从旧值滑到新值；animation 按 @keyframes 自己播，可以循环。两者都由浏览器每一帧算出中间值。</p>
+    </Card>
+    <Card term="Easing" title="缓动曲线">
+      <p>把“时间过了多少”换成“数值走了多少”。<code>cubic-bezier()</code> 用两个控制点画一条曲线：linear 匀速，ease 一开始就快，这个站用的曲线先慢再快再慢。</p>
+    </Card>
+    <Card term="Compositor Thread" title="合成线程">
+      <p>把页面分成的几个图层拼成一帧交给屏幕。CSS 写的 transform、opacity 动画可以整个交给它，每一帧不用主线程，主线程忙的时候照样动。</p>
+    </Card>
+    <Card term="Frame Budget" title="一帧的预算">
+      <p>屏幕一秒刷新 60 次，每帧 16.7 毫秒。主线程在一帧里要做的样式、布局、绘制加上脚本超过了这个数，那一帧就赶不上，画面就卡。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="how" title="viewBox：坐标怎么变成像素" short="viewBox">
+  <p>点“下一步”，跟着 HTTPS 那篇的一张示意图，看它在 Mac、iPad、iPhone 上各显示多大：</p>
+  <Anim data={VIEWBOX} label="viewBox：图里的坐标用用户单位写，CSS 决定显示宽度，两者之比就是缩放比例；这个站的图最宽 viewBox 宽乘 16/14，字最大 16px；iPad 上字 13.3px；iPhone 上保持最小 600 宽、在框里滑动；宽高比不同时 preserveAspectRatio 决定留白、裁边还是变形" />
+  <Table cap="HTTPS 一篇的示意图（viewBox 680 × 190），本机 Chrome 157 实测。“字”是 14 个单位的主文字在屏幕上的大小。">
+    <tr><th class="n">屏幕宽</th><th class="n">框宽</th><th class="n">图显示宽</th><th class="n">比例</th><th class="n">字</th><th>说明</th></tr>
+    <tr><td class="n">430</td><td class="n">398</td><td class="n">600</td><td class="n">0.882</td><td class="n">12.4</td><td>最小 600 宽，在框里横向滑动</td></tr>
+    <tr><td class="n">834</td><td class="n">734</td><td class="n">700</td><td class="n">1.029</td><td class="n">14.4</td><td>占满框（减去内边距）</td></tr>
+    <tr><td class="n">1032</td><td class="n">681</td><td class="n">647</td><td class="n">0.952</td><td class="n">13.3</td><td>目录挪到侧面，正文栏变窄，图也小了</td></tr>
+    <tr><td class="n">1512</td><td class="n">1104</td><td class="n">777</td><td class="n">1.143</td><td class="n">16.0</td><td>到了最宽，居中</td></tr>
+  </Table>
+  <Code code={DIAGCSS} lang="text" cap="这个站示意图的全部样式。最宽那一行是 2026-11-08 加的：之前图占满正文栏，Mac 上字显示成二十多像素，比正文还大。" />
+  <p>SVG 缩放靠的是这一个比例。它的好处是整张图一起变，相对位置永远对；麻烦也在这里：字和线也跟着变。Mac 上的框宽 1104，去掉内边距和边框还有 1070，不限最宽的话，字就是 1070 ÷ 680 × 14 ≈ 22px。限最宽只能管“别太大”；“别太小”只能靠最小宽度加横向滑动，或者给窄屏另画一张竖着排的图。这个站选了前者，因为一张图画两遍，两遍都要维护。</p>
+  <p>线宽也一样会缩放。要让线宽不随缩放变（比如地图上的边界线，放多大都是 1px），给线写 <code>vector-effect: non-scaling-stroke</code>。实测 200 × 100 的 viewBox 用 none 拉进 300 × 300 的框（横向 1.5 倍、纵向 3 倍），2 个单位粗的横线显示成 6px、竖线 3px，同一张图里粗细不一；加了它的线横竖都是 2px。</p>
+</Section>
+
+<Section id="color" title="让图跟着主题变色" short="图的颜色">
+  <p>同一个黑色方块，用 6 种写法放进页面，在 4 种主题组合下截图，读方块中心的颜色。页面的变量照这个站的写法：浅色时 --ink 是深字色，深色时是浅字色。</p>
+  <Table cap="本机 Chrome 157 实测。“深”是 20,27,38（浅色主题的字色），“浅”是 230,233,238（深色主题的字色）。">
+    <tr><th>写法</th><th>系统浅色</th><th>系统深色</th><th>系统浅色，用户选深色</th><th>系统深色，用户选浅色</th></tr>
+    <tr><td>内联 svg，<code>class</code> 里用 <code>var(--ink)</code></td><td>深</td><td>浅</td><td>浅</td><td>深</td></tr>
+    <tr><td>内联 svg，<code>fill="currentColor"</code></td><td>深</td><td>浅</td><td>浅</td><td>深</td></tr>
+    <tr><td>内联 svg，写死 <code>fill="#141b26"</code></td><td>深</td><td><b>深</b></td><td><b>深</b></td><td>深</td></tr>
+    <tr><td>img 引入，文件里写 prefers-color-scheme</td><td>深</td><td>浅</td><td>浅</td><td>深</td></tr>
+    <tr><td>同上，但页面没写 <code>color-scheme</code></td><td>深</td><td>浅</td><td><b>深</b></td><td><b>浅</b></td></tr>
+    <tr><td>img 引入，文件里用 <code>currentColor</code></td><td>纯黑</td><td>纯黑</td><td>纯黑</td><td>纯黑</td></tr>
+    <tr><td>img 引入，文件里用页面的 <code>var(--ink)</code></td><td>备用色</td><td>备用色</td><td>备用色</td><td>备用色</td></tr>
+  </Table>
+  <p>能跟着变的只有两类。第一类是内联的 SVG，它本来就是页面 DOM 的一部分，页面的 CSS 变量、color 属性都能继承进去，用 class 加变量或者 currentColor 都行；写死的颜色当然不变，深色主题下深字压在深底上，几乎看不见。这个站的示意图就是内联的，图里只用 <code>d-box</code> 这几个类，颜色全在样式表里。</p>
+  <p>第二类意外一些：img 引入的 SVG 文件，里面自己写 <code>@media (prefers-color-scheme: dark)</code>，实测也能跟着用户在这个站选的主题变，哪怕系统是浅色。条件是页面写了 <code>color-scheme</code>：去掉它，img 里的 SVG 就改跟系统设置走了。Media Queries Level 5 规定，以“安全动画”模式嵌入的 SVG（img 和 CSS 背景图就是这种），prefers-color-scheme 取嵌入它的那个元素实际用的 color-scheme。第 2 章说 color-scheme 管输入框、滚动条的颜色，这里它又管住了图片里的配色。</p>
+  <p>img 引入的 SVG 是一个独立的文档，和页面隔开：页面的变量传不进去（实测拿到的是写在 var() 里的备用色），currentColor 是 SVG 自己的默认色，纯黑。它还不跑脚本、不加载外部资源，这是“安全”的意思。所以要随主题变色的图标、示意图，要么内联，要么在文件里自己写深浅两套颜色。</p>
+</Section>
+
+<Section id="canvas" title="SVG、Canvas 还是 HTML" short="画布和 SVG">
+  <p>同样是一堆每帧都在动的小圆点，用 SVG 的 circle 元素画、用 Canvas 画，各跑 2 秒：</p>
+  <Table cap="本机 Chrome 157 实测，每帧用脚本更新所有点的位置。2 秒多一点的时间里约 130 帧就是满帧（每秒 60 多帧）。">
+    <tr><th class="n">点数</th><th class="n">SVG：帧数</th><th class="n">SVG：主线程忙</th><th class="n">Canvas：帧数</th><th class="n">Canvas：主线程忙</th></tr>
+    <tr><td class="n">1000</td><td class="n">134</td><td class="n">284 ms</td><td class="n">131</td><td class="n">95 ms</td></tr>
+    <tr><td class="n">10000</td><td class="n">133</td><td class="n">1305 ms</td><td class="n">131</td><td class="n">275 ms</td></tr>
+    <tr><td class="n">50000</td><td class="n">37</td><td class="n">1956 ms</td><td class="n">130</td><td class="n">647 ms</td></tr>
+  </Table>
+  <p>1000 个点时两者都满帧，SVG 的主线程多忙一些；1 万个时 SVG 主线程已经占了六成多；5 万个时 SVG 一秒只剩十几帧，Canvas 照样满帧。跟踪显示差别在哪：1 万个点时，SVG 2 秒里样式、绘制各花了将近 400 毫秒（每个圆都是一个元素，要匹配样式、记绘制指令），Canvas 的时间全在脚本里，样式、布局都是 0，因为页面上只有一个 canvas 元素。</p>
+  <Table cap="怎么选。">
+    <tr><th></th><th>HTML + CSS</th><th>SVG</th><th>Canvas</th></tr>
+    <tr><td>适合</td><td>文字、卡片、表格、带少量图形的界面</td><td>示意图、图标、图表，几百到几千个形状</td><td>上万个点、粒子、游戏、图像处理</td></tr>
+    <tr><td>放大</td><td>清楚</td><td>清楚</td><td>要按像素比画大一倍、两倍，不然糊</td></tr>
+    <tr><td>点击、悬停</td><td>每个元素都能</td><td>每个形状都能</td><td>自己算鼠标落在哪个图形上</td></tr>
+    <tr><td>读屏软件</td><td>读得到</td><td>读得到（加 role、aria-label）</td><td>读不到，要另外提供文字</td></tr>
+    <tr><td>主题变色</td><td>CSS 变量</td><td>内联时用 CSS 变量</td><td>换主题时用新颜色重画</td></tr>
+  </Table>
+  <p>HTML 规范的说法很直接：有更合适的元素时，不应该用 canvas。这个站的图都是几十个形状，要随主题变色、要能被读出来，所以全用内联 SVG；分步动画里的元素是普通的 HTML，因为里面是要换行、要用正文字体的文字。实测时 Canvas 那一组的画布按 2 倍像素比画（1200 × 800 的位图显示成 600 × 400），否则在 Mac 的屏幕上就是糊的：这是用 Canvas 的人最常忘的一件事。</p>
+</Section>
+
+<Section id="ease" title="过渡：每一帧的值怎么算" short="过渡和缓动">
+  <p>点“下一步”，看一个 0.8 秒的过渡在几个时刻分别走到哪。数字是实测的：用 Web Animations API 把过渡暂停在某一刻，读出那一刻的 left：</p>
+  <Anim data={EASE} label="过渡：改了 left 以后，浏览器每一帧按已过时间算时间进度，再用缓动曲线换成数值进度；这个站的曲线第 200 毫秒只走 10.6%，第 400 毫秒 61.9%，第 600 毫秒 94.4%；同一刻 linear 是 25，ease 是 40.9；left 每帧都要重排" />
+  <Table cap="0.8 秒的过渡，left 从 0 到 100，本机 Chrome 157 实测每一刻的值。">
+    <tr><th>曲线</th><th class="n">80 ms</th><th class="n">200 ms</th><th class="n">320 ms</th><th class="n">400 ms</th><th class="n">480 ms</th><th class="n">600 ms</th><th class="n">720 ms</th></tr>
+    <tr><td><code>linear</code></td><td class="n">10.0</td><td class="n">25.0</td><td class="n">40.0</td><td class="n">50.0</td><td class="n">60.0</td><td class="n">75.0</td><td class="n">90.0</td></tr>
+    <tr><td><code>ease</code>（默认）</td><td class="n">9.5</td><td class="n">40.9</td><td class="n">68.3</td><td class="n">80.2</td><td class="n">88.5</td><td class="n">96.0</td><td class="n">99.4</td></tr>
+    <tr><td><code>ease-out</code></td><td class="n">16.1</td><td class="n">37.8</td><td class="n">57.1</td><td class="n">68.5</td><td class="n">78.5</td><td class="n">90.7</td><td class="n">98.3</td></tr>
+    <tr><td><code>cubic-bezier(.6, .05, .3, 1)</code>（本站）</td><td class="n">1.9</td><td class="n">10.6</td><td class="n">34.9</td><td class="n">61.9</td><td class="n">81.0</td><td class="n">94.4</td><td class="n">99.3</td></tr>
+  </Table>
+  <p>cubic-bezier 的四个数是两个控制点的坐标，横轴是时间、纵轴是进度。这个站的 (.6, .05) 让曲线开头贴着横轴走很久，(.3, 1) 让结尾早早贴近 1：前 200 毫秒和最后 200 毫秒都几乎不动，位移集中在中间。效果是元素“先蓄力、再滑过去、轻轻停下”，眼睛容易跟上它从哪来、到哪去。ease 前半段就走完了八成，适合一点就要有反应的按钮；linear 适合转圈这种没有起止的循环。</p>
+  <h3>为什么过渡没有播</h3>
+  <p>过渡只在“上一次的值”和“这一次的值”不同时才开始。没有上一次的值，就没有过渡。实测几种常见的情况：</p>
+  <Table cap="本机 Chrome 157，getAnimations() 返回的过渡个数。">
+    <tr><th>情况</th><th class="n">过渡</th><th>为什么</th></tr>
+    <tr><td>新建一个元素，加进页面，马上改 left</td><td class="n">0</td><td>规范：上一次样式变化时不在文档里的元素不开始过渡。两次改动在同一帧里，浏览器只算了一次样式</td></tr>
+    <tr><td>同上，中间读一次 offsetWidth</td><td class="n">1</td><td>读布局的值逼浏览器先算一次样式，有了“上一次”</td></tr>
+    <tr><td>display: none 改成 block，同时改 opacity</td><td class="n">0</td><td>display: none 的元素实测也没有可用的“上一次”</td></tr>
+    <tr><td>height: 0 改成 auto</td><td class="n">0</td><td>auto 不是一个能插值的长度</td></tr>
+    <tr><td>同上，加 <code>interpolate-size: allow-keywords</code></td><td class="n">1</td><td>Chrome 157 支持；MDN 标为“有限可用”，不支持的浏览器里直接跳到终点</td></tr>
+    <tr><td>height: 0 改成实际高度（scrollHeight 读出的 66px）</td><td class="n">1</td><td>两个都是长度；内容变了高度得重新读</td></tr>
+  </Table>
+  <p>这个站的动画引擎就躲开了第一种：它在页面加载时先按第 1 步的位置把元素摆好，此后每一步只改已经在页面上的元素，所以每次都有“上一次”。第一次显示时元素不滑进来，直接出现在原位，这也正是想要的。</p>
+</Section>
+
+<Section id="thread" title="动画为什么会卡：主线程和合成线程" short="为什么会卡">
+  <p>第 1 章实测过：已经有 transform 的元素改它的值，下一帧只跑样式和合成，不跑布局和绘制。这一节看它在动画里意味着什么。最有说服力的实验是让主线程停下来：页面跑一段 1.2 秒的死循环，同时用 screencast 收下合成器交出的每一帧，读出两个方块的位置。点“下一步”：</p>
+  <Anim data={THREAD} label="主线程和合成线程：left 动画每帧都要主线程重排；CSS 的 transform 动画交给合成线程；主线程被占住 1.2 秒时 left 动画停在原地、71 帧不动，transform 动画照常；用 requestAnimationFrame 改 transform 也会停；占住结束后 left 一帧跳 83px" />
+  <Table cap="主线程被占住的 1.2 秒里，合成器交出的帧（本机 Chrome 157，screencast，节选）。">
+    <tr><th class="n">帧时间</th><th>主线程</th><th class="n">CSS left</th><th class="n">CSS transform</th><th class="n">rAF 改 transform</th></tr>
+    <tr><td class="n">583</td><td>空闲</td><td class="n">165</td><td class="n">165</td><td class="n">166</td></tr>
+    <tr><td class="n">617</td><td>占住</td><td class="n">167</td><td class="n">170</td><td class="n">169</td></tr>
+    <tr><td class="n">917</td><td>占住</td><td class="n">167</td><td class="n">215</td><td class="n">169</td></tr>
+    <tr><td class="n">1250</td><td>占住</td><td class="n">167</td><td class="n">265</td><td class="n">169</td></tr>
+    <tr><td class="n">1783</td><td>占住</td><td class="n">167</td><td class="n">255</td><td class="n">169</td></tr>
+    <tr><td class="n">1817</td><td>空下来</td><td class="n">253</td><td class="n">250</td><td class="n">252</td></tr>
+  </Table>
+  <p>transform 那一列在占住期间走到 300 又折回来（动画是来回的），另外两列一动不动，空下来的第一帧一下跳到位。“rAF 改 transform”是常见的脚本动画写法：每帧在 requestAnimationFrame 的回调里算位置、写 <code>style.transform</code>。它改的虽然是 transform，回调却要主线程来跑，HTML 规范的“更新画面”步骤里，动画帧回调排在重算样式和布局之前，都在主线程上。所以“transform 不卡”的准确说法是：CSS 的 transition、animation 或 Web Animations API 声明的 transform、opacity 动画，可以整段交给合成线程。</p>
+  <p>主线程不被死循环占住时，差别在于每帧的账。一样的来回动画，元素越来越多：</p>
+  <Table cap="本机 Chrome 157，跟踪 2 秒。“主线程忙”是这 2 秒里主线程上任务的总时长；120 帧是满帧。">
+    <tr><th class="n">元素</th><th>动画属性</th><th class="n">主线程忙</th><th class="n">每帧主线程</th><th class="n">2 秒的帧数</th></tr>
+    <tr><td class="n">300</td><td>left</td><td class="n">312 ms</td><td class="n">2.6 ms</td><td class="n">121</td></tr>
+    <tr><td class="n">300</td><td>transform</td><td class="n">40 ms</td><td>只参与 4 次</td><td class="n">120</td></tr>
+    <tr><td class="n">3000</td><td>left</td><td class="n">1786 ms</td><td class="n">14.4 ms</td><td class="n">120</td></tr>
+    <tr><td class="n">3000</td><td>transform</td><td class="n">45 ms</td><td>只参与 1 次</td><td class="n">120</td></tr>
+    <tr><td class="n">10000</td><td>left</td><td class="n">1924 ms</td><td class="n">61.5 ms</td><td class="n">31</td></tr>
+    <tr><td class="n">10000</td><td>transform</td><td class="n">113 ms</td><td>只参与 1 次</td><td class="n">120</td></tr>
+  </Table>
+  <p>3000 个 left 的那一行最值得看：帧数还是满的，看起来没问题，可每帧主线程要 14.4 毫秒，16.7 的预算只剩 2 毫秒。这时用户一点按钮、页面一跑脚本，就开始掉帧。帧数只告诉你“现在没卡”，每帧的余量才告诉你“离卡还有多远”。transform 那几行，主线程只在动画开始时出场一两次，之后全是合成线程的事。</p>
+  <Note kind="doubt" title="transform 也有代价">交给合成线程的前提是元素有自己的图层。第 1 章实测过，从没有 transform 到有的那一次要重排、重画；每个图层还占显存。几千个元素各自做 transform 动画，在内存紧的手机上可能反而更慢。这一节的实测都在 Mac 上，我没有在 iPhone 上测图层的内存。</Note>
+</Section>
+
+<Section id="people" title="动画和人：时长、减少动态效果" short="动画和人">
+  <p>动画是给人看的，有人看了会不舒服。前庭功能障碍的人看到大幅度的移动、缩放、视差滚动，会头晕、恶心。系统里的“减少动态效果”就是为他们设的，页面用 <code>prefers-reduced-motion: reduce</code> 读到它。</p>
+  <Table cap="WCAG 2.2 里和动画有关的两条。">
+    <tr><th>条款</th><th>级别</th><th>要求</th><th>这个站</th></tr>
+    <tr><td>2.2.2 暂停、停止、隐藏</td><td>A</td><td>自动开始、超过 5 秒、和其他内容同时出现的动态内容，要能暂停、停止或隐藏</td><td>分步动画不会自己开始；“播放”是用户点的，同一个按钮能暂停</td></tr>
+    <tr><td>2.3.3 交互触发的动画</td><td>AAA</td><td>由交互触发的动效能关掉，除非它是功能或信息必需的</td><td>设了减少动态效果，元素直接跳到位（第 3 章“用户设置”一节实测）</td></tr>
+  </Table>
+  <p>减少动态效果不等于“什么都不动”。这个站的做法是去掉滑动的过程、保留每一步的结果：读者照样一步一步看，只是元素不再飞过去。说明文字的切换、方框的高亮都不是“动效”，保留。要注意的是，<code>@media (prefers-reduced-motion)</code> 只管得住 CSS：脚本里用 setInterval、requestAnimationFrame 写的动画，写了 <code>behavior: "smooth"</code> 的平滑滚动，都要脚本自己用 <code>matchMedia("(prefers-reduced-motion: reduce)")</code> 查一遍。</p>
+  <p>时长也有讲究。这个站元素移动用 0.8 秒、淡入淡出 0.5 秒、方框变色 0.4 秒：移动的距离长、眼睛要跟，所以最长；只是变色的，短一点就够。点“播放”以后每步停 3.2 秒，是给读说明文字留的时间；说明长的那一步读不完，可以随时点“暂停”。</p>
+</Section>
+
+<Section id="example" title="实际例子：这个站的动画该不该改用 transform" short="实际例子">
+  <p>回到开头的第三条。分步动画的元素按画面的百分比定位，换一步时改 left、top，靠 transition 滑过去：</p>
+  <Code code={ENGINE} lang="js" cap="摘自 components.css 和 anim-engine.js。transform 已经用来把元素的中心对准坐标点。" />
+  <p>按上一节，left 每帧都要重排。实测在第 1 章那一页点一次“下一步”，录 1 秒的跟踪：</p>
+  <Table cap="本机 Chrome 157，第 1 章那一页的第一个动画，第 2 步到第 3 步（有一个元素横移、两个淡入）。">
+    <tr><th>屏幕</th><th class="n">每帧主线程（中位）</th><th class="n">最长一帧</th><th class="n">布局</th><th>每次布局碰了几个对象</th></tr>
+    <tr><td>Mac 1512</td><td class="n">1.09 ms</td><td class="n">4.5 ms</td><td class="n">49 次，共 5.1 ms</td><td>第一次 21 个，之后每次 9 个；全页 1341 个</td></tr>
+    <tr><td>iPhone 430</td><td class="n">1.03 ms</td><td class="n">3.1 ms</td><td class="n">49 次，共 4.5 ms</td><td>同上</td></tr>
+  </Table>
+  <p>每帧约 1 毫秒，最慢的一帧也只有 4.5，离 16.7 很远；布局只碰动画画面里那几个绝对定位的元素，不碰正文。（iPhone 宽度第一次测时有一帧 35 毫秒，重测两次都没再出现，表里是重测的数。）所以按现在的用法，不值得改。改用 transform 还有一个实际的麻烦：translate 的百分比相对的是元素自己的大小，不是画面的大小，“x: 38%”没法直接写成 transform，得用脚本按画面宽度算出像素，窗口一变还要重算，代码会比现在复杂。</p>
+  <p>什么时候该改：如果以后的动画要在页面跑重活的同时动（比如边加载数据边播放），上一节的实验说明 left 会停住、然后跳。那时就该把移动换成 transform。现在点“下一步”时页面是空闲的，这个风险不存在。</p>
+  <Flow items={[
+    { t: "先量", d: "跟踪看每帧主线程多少毫秒" },
+    { t: "离预算远", d: "1 ms 对 16.7 ms：不改", kind: "ok" },
+    { t: "要和重活并行", d: "改 CSS 的 transform、opacity", kind: "tip" },
+    { t: "用脚本逐帧算", d: "rAF 也在主线程，同样会停", kind: "warn" },
+  ]} />
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="SVG 是矢量的，放多大都好">
+      <p>图不糊，可字和线跟着一起放大：这个站的图在 Mac 上不限宽，字会显示成 22px，比正文还大。图要限最宽，让主文字不超过正文；窄屏要么限最小宽度、横向滑动，要么另画一张。</p>
+    </Card>
+    <Card term="误区 2" title="SVG 里写死颜色，深色主题也能看">
+      <p>实测写死 #141b26 的方块，在深色主题下还是深色，压在深底上几乎看不见。内联 SVG 用 class 加 CSS 变量，或者 currentColor。</p>
+    </Card>
+    <Card term="误区 3" title="img 引入的 SVG 也能用页面的变量和颜色">
+      <p>img 里的 SVG 是隔开的独立文档：实测页面变量传不进去，拿到的是备用色；currentColor 是纯黑。它能做的是在文件里自己写 prefers-color-scheme，而且页面要写 color-scheme 才跟得上用户选的主题。</p>
+    </Card>
+    <Card term="误区 4" title="Canvas 一定比 SVG 快">
+      <p>1000 个点时两者都满帧，差别只在 5 万个这种量级。Canvas 换来的速度要付出可访问性、点击判断、按像素比重画、换主题重画的代价。几百个形状的图，SVG 更省事。</p>
+    </Card>
+    <Card term="误区 5" title="改了 class，过渡就会播">
+      <p>新加进页面的元素马上改值、从 display: none 变出来的元素，实测都不播：没有“上一次的值”。先让浏览器算一次样式（读一次布局的值），或者用 @starting-style 给一个起点：实测 Chrome 157 里新加的元素有了它，就从起点过渡过来。</p>
+    </Card>
+    <Card term="误区 6" title="height 可以从 0 过渡到 auto">
+      <p>auto 不是长度，实测不播，直接跳。可以过渡到 scrollHeight 读出的像素值；interpolate-size 能让 auto 参与插值，但 MDN 标为有限可用，不支持的浏览器里还是跳。</p>
+    </Card>
+    <Card term="误区 7" title="用 transform 做动画就不会卡">
+      <p>只有 CSS 声明的 transform、opacity 动画能交给合成线程。实测在 requestAnimationFrame 里每帧改 transform，主线程一被占住就和 left 一样停住。第一次加 transform 还要重排，图层多了占内存。</p>
+    </Card>
+    <Card term="误区 8" title="帧数满了，动画就没问题">
+      <p>3000 个元素做 left 动画，实测仍是满帧，可每帧主线程花 14.4 毫秒，预算只剩 2 毫秒，用户一操作就掉帧。看跟踪里每帧主线程花了多少，而不只看帧数。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
