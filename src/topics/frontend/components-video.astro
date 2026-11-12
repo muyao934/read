@@ -1,0 +1,312 @@
+---
+// 前端与设计 · 第 5 章（概念类）：why → core → how → react → where → video → frame → example → pitfalls → sources
+// 2026-11-12 实测：本站 astro build 的耗时和每页带的脚本；React 19.2.7 在本机 Chrome 157 里改列表时的 DOM 变动（MutationObserver）；
+// 静态页、浏览器渲染、服务端渲染加 hydrate 的显示和可交互时间；Remotion 4.0.484 在本机 M3 Max 上的渲染耗时、并发、帧的位置（抽帧数像素）
+import { Section, Note, Cards, Card, Flow, Table, Code, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 组件怎么变成这个站的页面：构建时运行、检查、输出 HTML；浏览器里只剩动画引擎
+const BUILD = {
+  h: 300,
+  b: [["src", 2, 8, 30, 84, "章节文件"], ["bd", 35, 8, 30, 84, "构建时"], ["out", 68, 8, 30, 84, "读者拿到"]],
+  it: [
+    { id: "a", h: chip("Card", "--muted", "out"), x: 17, y: 30 },
+    { id: "a2", h: lbl("term、title<br>和一段正文", "m"), x: 17, y: 60 },
+    { id: "b1", h: lbl("函数：props 进<br>HTML 出", "m"), x: 50, y: 40, hide: 1 },
+    { id: "b2", h: lbl("检查 props", "m"), x: 50, y: 70, hide: 1 },
+    { id: "c1", h: lbl("HTML + 样式表", "m"), x: 83, y: 40, hide: 1 },
+    { id: "c2", h: lbl("脚本 3.5 KB", "m"), x: 83, y: 70, hide: 1 },
+  ],
+  s: [
+    { c: "写一章时，正文里只有组件：Section、Card、Table、Anim 这些。动画的步骤、来源列表这类数据写在文件开头，正文里只写“用哪个组件、给它什么”。",
+      lit: ["src"] },
+    { c: "构建时，每个组件就是一个函数：拿到 props，返回一段 HTML。Card 收到 term 和 title，返回一个 div.bit，里面是 span.term 和 h4。样式全在样式表里，章节文件一个 class 都不写。",
+      set: { a: { x: 50, y: 22, h: chip("Card", "--accent") }, b1: { hide: 0 } }, lit: ["bd"] },
+    { c: "组件先检查 props：Flow 只收 2 到 5 项，Anim 的坐标要在 0 到 100 之间，Note 的 kind 只能是四种之一。不对就抛错，整个构建失败，错的页面发布不出去。",
+      set: { b2: { hide: 0, h: lbl("Flow 给了 6 项<br>构建失败", "w") } }, bad: ["bd"] },
+    { c: "外壳 Article 拿到整章渲染好的 HTML，再查一遍：概念类要有 why、core、how、example、pitfalls、sources 这几节，顺序不能乱；目录从每一节的 data-short 生成。",
+      set: { b2: { h: lbl("外壳再查<br>节齐不齐", "g") } }, lit: ["bd"] },
+    { c: "21 页用 1.1 秒建完。读者拿到的是写好的 HTML 和一个样式表：组件在浏览器里已经不存在了，没有 React，没有框架的运行时。每页的脚本一共 3.5 KB，直接写在 HTML 里。",
+      set: { a: { x: 83, y: 22, h: chip("div.bit", "--ok") }, c1: { hide: 0 }, c2: { hide: 0 } }, lit: ["out"] },
+    { c: "唯一在浏览器里“活过来”的是分步动画：Anim 在构建时把数据写进 data-anim 属性，2 KB 的动画引擎读出来，建按钮、摆元素。脚本没跑起来的读者，看到的是 label 那一句话。",
+      set: { c2: { h: lbl("动画引擎<br>读 data-anim", "g") } }, lit: ["out"] },
+  ],
+};
+
+// React 怎么更新页面：渲染出新树、和上一次比、只改有差别的 DOM；key 决定“谁是谁”
+const REACT = {
+  h: 300,
+  b: [["st", 2, 8, 30, 84, "状态"], ["vd", 35, 8, 30, 84, "渲染：新的树"], ["dom", 68, 8, 30, 84, "提交：改 DOM"]],
+  it: [
+    { id: "s", h: chip("rows：1000 行", "--muted", "out"), x: 17, y: 30 },
+    { id: "s2", h: lbl("setRows(…)", "m"), x: 17, y: 62, hide: 1 },
+    { id: "v1", h: lbl("组件函数<br>再跑一遍", "m"), x: 50, y: 40, hide: 1 },
+    { id: "v2", h: lbl("和上一次比", "m"), x: 50, y: 70, hide: 1 },
+    { id: "d1", h: lbl("改 1 处", "g"), x: 83, y: 50, hide: 1 },
+  ],
+  s: [
+    { c: "一个 1000 行的列表，数据存在 state 里。组件是一个函数：rows.map 出 1000 个 li，返回一棵描述“页面该长什么样”的对象树。它还不是 DOM，只是普通的 JS 对象。",
+      lit: ["st"] },
+    { c: "把第 500 行改个字：调用 setRows，换一份新数组。React 再调用一次组件函数，1000 行全部重新算一遍，得到一棵新树。这一步叫渲染，不碰页面。",
+      set: { s2: { hide: 0 }, v1: { hide: 0 } }, lit: ["st", "vd"] },
+    { c: "拿新树和上一次的比：同一个 key 的 li，只有第 500 行的文字不一样。提交阶段只改这一处。实测用 MutationObserver 数页面上的变动：1 处，一段文字。",
+      set: { v2: { hide: 0 }, d1: { hide: 0 } }, lit: ["vd", "dom"] },
+    { c: "换一份内容完全一样的新数组：组件照样重跑，比下来没有差别，实测 DOM 改了 0 处。组件函数重跑，不等于页面重画。",
+      set: { s2: { h: lbl("新数组<br>内容一样", "m") }, d1: { h: lbl("改 0 处", "g") } }, lit: ["vd"] },
+    { c: "在最前面插一行。每行用自己的 id 当 key：React 认出原来那 1000 行都还在，只是往后挪了一位。实测只插入了 1 个节点。",
+      set: { s2: { h: lbl("最前面插一行<br>key = id", "m") }, d1: { h: lbl("插 1 个", "g") } }, lit: ["dom"] },
+    { c: "改用数组下标当 key：插入以后，下标 0 的 li 文字从“第 0 行”变成“新的一行”，下标 1 的变成“第 0 行”……React 以为每一行都改了字。实测改了 1000 处，再在末尾插 1 个。",
+      set: { s2: { h: lbl("最前面插一行<br>key = 下标", "w") }, d1: { h: lbl("改 1000 处<br>插 1 个", "w") } }, bad: ["vd", "dom"] },
+  ],
+};
+
+// Remotion 怎么出片：组件按帧号渲染，无头浏览器逐帧截图，FFmpeg 编码
+const REMOTION = {
+  h: 300,
+  b: [["cp", 2, 8, 30, 84, "组件"], ["br", 35, 8, 30, 84, "无头浏览器"], ["ff", 68, 8, 30, 84, "FFmpeg"]],
+  it: [
+    { id: "c", h: chip("1280 × 720", "--muted", "out"), x: 17, y: 30 },
+    { id: "c2", h: lbl("30 帧/秒<br>共 576 帧", "m"), x: 17, y: 62 },
+    { id: "t", h: lbl("4 个标签页", "m"), x: 50, y: 34, hide: 1 },
+    { id: "f", h: chip("第 300 帧", "--accent"), x: 50, y: 60, hide: 1 },
+    { id: "s", h: lbl("截图 24 ms", "m"), x: 50, y: 82, hide: 1 },
+    { id: "o", h: lbl("H.264<br>6.6 秒出片", "g"), x: 83, y: 50, hide: 1 },
+  ],
+  s: [
+    { c: "一个 Composition 定下视频的规格：1280 × 720，每秒 30 帧，一共 576 帧。画面是一个普通的 React 组件，组件里用 useCurrentFrame() 拿到“现在是第几帧”。",
+      lit: ["cp"] },
+    { c: "remotion render 先把组件和它用到的代码打包成一个网页，再启动 Chrome Headless Shell（Remotion 自己下载的无头浏览器），开几个标签页。并发写 4，就是 4 个标签页同时干活。",
+      set: { t: { hide: 0 } }, lit: ["br"] },
+    { c: "每个标签页领一段帧。要第 300 帧时，把帧号设成 300，React 重新渲染组件：useCurrentFrame() 返回 300，组件按它算出每个元素在哪、透明度多少。",
+      set: { f: { hide: 0 } }, lit: ["cp", "br"] },
+    { c: "渲染好以后截一张图。组件如果用 delayRender() 说了要等字体、图片或数据，就先等它，默认最多 30 秒。实测这一段的画面，每帧截图平均 24 毫秒。",
+      set: { s: { hide: 0 } }, lit: ["br"] },
+    { c: "截好的图交给 FFmpeg 编码成 H.264，编码和后面的截图同时进行；所有帧都拼好、配上音轨，得到一个 MP4。实测 576 帧（19.2 秒的视频）一共 6.6 秒，文件 1.27 MB。",
+      set: { o: { hide: 0 } }, lit: ["ff"] },
+    { c: "几个标签页各干各的，不按顺序，也不共享状态，所以一帧的画面只能由帧号算出来。CSS 动画跟的是真实时间：实测同一段 CSS 动画，并发 1 渲染出来走到了 1000，并发 4 只走到 303。",
+      set: { f: { h: chip("CSS 动画", "--warn") }, o: { h: lbl("并发 1：1000<br>并发 4：303", "w") } }, bad: ["br"] },
+  ],
+};
+
+const FLOWSRC = `// Flow.astro 的前半段，构建时执行：先查 props，不对就让整个构建失败
+const { items } = Astro.props;
+if (!Array.isArray(items) || items.length < 2 || items.length > 5)
+  throw new Error("Flow 要有 2–5 项（iPad 竖屏上 6 项会太窄），多了改用 Steps");
+for (const i of items)
+  if (!((i.kind || "") in KIND)) throw new Error(\`Flow 的 kind 只能是 tip / doubt / warn / ok，不能是 \${i.kind}\`);`;
+
+const SSRHTML = `<main><p>第 <!-- -->0<!-- --> 段：这一段是正文……</p><p>第 <!-- -->1<!-- --> 段：……</p>…
+// renderToString 的输出：JSX 里“第 {i} 段”是三段文字，HTML 会把它们连成一段，
+// 所以 React 在中间插了注释当分隔，hydrate 时才对得上每一段文字归谁`;
+
+const STEPS = `const STEP = 96, MOVE = 24;                       // 每步 3.2 秒，移动 0.8 秒（每秒 30 帧）
+const ease = Easing.bezier(0.6, 0.05, 0.3, 1);      // 和网页上 transition 用的同一条曲线
+
+export const Steps = () => {
+  const frame = useCurrentFrame();                  // 第几帧：渲染时由 Remotion 给
+  const k = Math.min(Math.floor(frame / STEP), d.s.length - 1);   // 第几步
+  const t = frame - k * STEP;                       // 这一步开始后的第几帧
+  const now = stateAt(d, k), before = stateAt(d, k - 1);         // 同动画引擎的 show()：从第 0 步累加
+  const p = interpolate(t, [0, MOVE], [0, 1], { extrapolateRight: "clamp", easing: ease });
+  // 每个元素：x = before.x + (now.x - before.x) × p；透明度同理。JSX 从略
+};`;
+
+const SOURCES = [
+  { title: "React：Render and Commit", url: "https://react.dev/learn/render-and-commit", by: "React 文档", note: "触发、渲染、提交三步；重新渲染时算出哪些属性变了，只有前后有差别才改 DOM。" },
+  { title: "React：Rendering Lists", url: "https://react.dev/learn/rendering-lists", by: "React 文档", note: "key 在兄弟节点之间要唯一；用下标当 key 常常导致难以察觉的 bug，插入、删除、重排时顺序会变。" },
+  { title: "React：Keeping Components Pure", url: "https://react.dev/learn/keeping-components-pure", by: "React 文档", note: "同样的输入，同样的输出；渲染时不改动渲染前就存在的对象和变量。" },
+  { title: "React：hydrateRoot", url: "https://react.dev/reference/react-dom/client/hydrateRoot", by: "React 文档", note: "在 react-dom/server 生成的 HTML 上接管页面；渲染结果要和服务端的完全一致，不一致按 bug 处理。" },
+  { title: "Astro：Islands architecture", url: "https://docs.astro.build/en/concepts/islands/", by: "Astro 文档", note: "默认去掉所有客户端 JavaScript；交互的“岛”各自激活，client:load、client:idle、client:visible 决定什么时候。" },
+  { title: "Astro：Scripts and event handling", url: "https://docs.astro.build/en/guides/client-side-scripts/", by: "Astro 文档", note: "处理过的脚本自动变成 type=\"module\"，足够小就直接内联进 HTML；is:inline 原样输出。" },
+  { title: "Astro：On-demand rendering", url: "https://docs.astro.build/en/guides/on-demand-rendering/", by: "Astro 文档", note: "默认在构建时预渲染成静态页；要按请求渲染，得加适配器。" },
+  { title: "Remotion：The fundamentals", url: "https://www.remotion.dev/docs/the-fundamentals", by: "Remotion 文档", note: "视频是随时间变化的图像；宽、高、帧数、帧率四个属性；useCurrentFrame()。" },
+  { title: "Remotion：Flickering", url: "https://www.remotion.dev/docs/flickering", by: "Remotion 文档", note: "渲染时开多个标签页加速，标签页之间不共享状态，不由 useCurrentFrame() 驱动的动画（比如 CSS 过渡）会出问题。" },
+  { title: "Remotion：Concurrency 和 Parallel encoding", url: "https://www.remotion.dev/docs/terminology/concurrency", by: "Remotion 文档", note: "每个 Chrome 标签页渲染网页再截图；最多到 CPU 线程数；Chromium 渲染后面的帧时，FFmpeg 同时编码前面的帧。" },
+  { title: "Remotion：delayRender()", url: "https://www.remotion.dev/docs/delay-render", by: "Remotion 文档", note: "暂停渲染，等异步任务完成；30 秒内不 continueRender() 就超时失败。" },
+  { title: "Remotion：Chrome Headless Shell", url: "https://www.remotion.dev/docs/miscellaneous/chrome-headless-shell", by: "Remotion 文档", note: "默认下载 Chrome Headless Shell；Chrome 把无头模式拆了出去；不要用 browserExecutable 换成不兼容的 Chrome，完整版 Chrome 的结果可能更不确定。" },
+  { title: "Remotion Company Licensing", url: "https://www.remotion.dev/license", by: "Remotion", note: "个人和最多 3 人的公司免费；不符合免费条件的要买公司许可。" },
+  { title: "本站实测", note: "2026-11-12：本站 astro build 两次；React 19.2.7 打包（esbuild，生产模式）后在本机 Chrome 157 里改列表、数 DOM 变动；同样的 200 段文字三种生成方式的显示和可交互时间（脚本故意晚 300 毫秒）；Remotion 4.0.484 在本机 M3 Max（14 核）上用 Chrome Headless Shell 149 渲染，并发 1 到 14，抽帧数像素读方块的位置。" },
+];
+---
+<Section id="why" title="为什么要懂">
+  <p>搭这个阅读库时，要求是“像 React 那样的组件”：新页面不用逐个调样式，写的时候只管内容。最后用的是 Astro，不是 React。这一章从这个选择出发，回答几个问题：</p>
+  <ul>
+    <li>组件到底是什么？这个站的 Card、Anim 和 React 的组件是一回事吗？</li>
+    <li>React 改一行数据，页面是怎么跟着变的？为什么列表要写 key？</li>
+    <li>页面可以在构建时、在服务器上、在浏览器里生成，差别在哪？这个站为什么不用 React？</li>
+    <li>Remotion 说能“用 React 写视频”，一个网页组件怎么变成 MP4？</li>
+  </ul>
+  <p>数字都是实测的：这个站自己构建一次；React 19 在本机 Chrome 里改列表时动了几处 DOM；同样的内容三种生成方式各多久能看、多久能点；Remotion 4 在本机 M3 Max 上渲染视频的耗时，以及一段 CSS 动画在视频里跑到了哪。最后把第 4 章的一个分步动画，用同一份数据做成了一段视频。</p>
+</Section>
+
+<Section id="core" title="核心概念">
+  <Cards>
+    <Card term="Component" title="组件：输入数据，输出界面">
+      <p>一个函数，接收 props，返回一段界面。写一次，到处用；样式和结构只在组件里改一处。这个站有 13 个组件，前 15 篇里 Card 用了 198 次。</p>
+    </Card>
+    <Card term="Props · State" title="外面给的、自己记的">
+      <p>props 是调用的人传进来的，组件只读不改；state 是组件自己记住的，改了它，React 就重新渲染这个组件。这个站的组件只在构建时跑一次，所以只有 props，没有 state。</p>
+    </Card>
+    <Card term="Render · Commit" title="渲染和提交">
+      <p>React 更新分两步：渲染是再调用一次组件函数，算出新的界面描述；提交是和上一次比，只把有差别的地方改到 DOM 上。</p>
+    </Card>
+    <Card term="key" title="列表里谁是谁">
+      <p>比较列表时，React 靠 key 认出“这一项还是上次那一项”。key 要稳定、在兄弟之间唯一，用数据自己的 id，不用数组下标。</p>
+    </Card>
+    <Card term="SSG · SSR · CSR" title="页面在哪里生成">
+      <p>构建时生成（静态站，这个站就是）、每次请求时在服务器上生成、在浏览器里用脚本生成。越往后，读者越要等脚本下载和执行。</p>
+    </Card>
+    <Card term="Hydration" title="激活：给现成的 HTML 接上事件">
+      <p>服务器先给 HTML，页面马上能看；浏览器再下载同样的组件代码跑一遍，把事件接到现成的元素上。接上之前，按钮看得见、点不动。</p>
+    </Card>
+    <Card term="Islands" title="Astro 的岛">
+      <p>页面默认是不带脚本的 HTML，只有标了 <code>client:*</code> 的组件才在浏览器里激活，各激活各的。这个站一个岛都没有，分步动画是一段普通的脚本。</p>
+    </Card>
+    <Card term="Composition · useCurrentFrame" title="Remotion 的视频和帧">
+      <p>Composition 定下宽、高、帧率、帧数；画面是 React 组件，用 <code>useCurrentFrame()</code> 拿到当前是第几帧，按它算出画面。视频就是“第 n 帧长什么样”的函数。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="how" title="组件怎么变成这个站的页面" short="这个站的组件">
+  <p>点“下一步”，跟着一张卡片，从章节文件走到读者的浏览器：</p>
+  <Anim data={BUILD} label="Astro 构建：章节文件里只写组件和数据；构建时每个组件是一个函数，props 进、HTML 出，并先检查 props，不对就构建失败；外壳再查节是否齐全；输出 HTML 和样式表，每页只有 3.5 KB 内联脚本；分步动画由引擎读 data-anim 在浏览器里建起来" />
+  <Code code={FLOWSRC} lang="js" cap="组件里的检查写在 frontmatter（--- 之间），只在构建时执行。读者的浏览器里没有这段代码。" />
+  <p>Card 组件的输出是 <code>&lt;div class="bit"&gt;&lt;div class="bh"&gt;&lt;span class="term"&gt;SVG&lt;/span&gt;&lt;h4&gt;…&lt;/h4&gt;&lt;/div&gt;…&lt;/div&gt;</code>，这一章的每张卡片都是这一段，只有字不同。所以要改卡片的样子，改组件和样式表各一处，所有页面一起变。第 3 章查出卡片标题用 h4 跳过了一层，要改成 h3，也只需改 Card 这一个文件。</p>
+  <Table cap="前 15 篇正文用到的组件次数（本机统计），以及构建耗时（本机 astro build 两次）。">
+    <tr><th>组件</th><th class="n">次数</th><th>组件</th><th class="n">次数</th></tr>
+    <tr><td>Card</td><td class="n">198</td><td>Note</td><td class="n">39</td></tr>
+    <tr><td>Section</td><td class="n">150</td><td>Flow</td><td class="n">15</td></tr>
+    <tr><td>Table</td><td class="n">94</td><td>Sources</td><td class="n">15</td></tr>
+    <tr><td>Code</td><td class="n">61</td><td>Steps</td><td class="n">4</td></tr>
+    <tr><td>Anim</td><td class="n">44</td><td>Diagram、Timeline、Compare</td><td class="n">各 1</td></tr>
+    <tr><td colspan="2">21 页，构建 1.05–1.15 秒</td><td colspan="2">13 个组件文件，一共 155 行</td></tr>
+  </Table>
+  <p>“构建时检查”是这个站最受益的一点。在只跑在浏览器里的 React 应用里，“最多 5 项”“坐标在 0 到 100 之间”这类规则写成运行时的检查，要等组件在浏览器里渲染时才报错，可能是在读者的浏览器里；TypeScript 能在编译时查类型，查不了这种规则。这里的检查在 <code>npm run build</code> 时执行，错了就不发布。动画的坐标、流程块的项数、概念类缺了哪一节，都在这一步拦下来。代价是组件不能有任何交互：要交互的部分只能另写脚本，比如分步动画的引擎。</p>
+</Section>
+
+<Section id="react" title="React 怎么更新页面" short="React 更新">
+  <p>这个站的组件只跑一次，React 的组件要一直活着：数据一变就重新渲染。点“下一步”，看一个 1000 行的列表改一行时发生了什么。数字是在本机 Chrome 里用 MutationObserver 数出来的页面变动：</p>
+  <Anim data={REACT} label="React 更新：改 state 后组件函数重跑，得到新的对象树；和上一次比较，只提交有差别的地方，改一行只动 1 处 DOM，内容不变的新数组动 0 处；有 key 时在最前面插一行只插 1 个节点，用下标当 key 要改 1000 处" />
+  <Table cap="React 19.2.7（生产模式）在本机 Chrome 157 里实测，1000 行的列表。">
+    <tr><th>操作</th><th>key 用 id</th><th>key 用下标</th></tr>
+    <tr><td>改第 500 行的字</td><td>改 1 处文字</td><td>改 1 处文字</td></tr>
+    <tr><td>换一份内容一样的新数组</td><td>0 处</td><td>0 处</td></tr>
+    <tr><td>在最前面插一行</td><td>插 1 个节点</td><td><b>改 1000 处文字，插 1 个节点</b></td></tr>
+  </Table>
+  <p>下标当 key 不只是慢。每行里有一个输入框，用户在“交房租”那一行写了“备注：周五前”，然后在最前面插一行：</p>
+  <Table cap="本机实测。输入框是非受控的，内容由 DOM 自己记着。">
+    <tr><th>key</th><th>插入以后，备注在哪一行</th></tr>
+    <tr><td>用 id</td><td>交房租（对）</td></tr>
+    <tr><td>用下标</td><td><b>买菜</b>：DOM 里的输入框还在原来的第 2 个位置，可那个位置现在显示的是“买菜”</td></tr>
+  </Table>
+  <p>React 文档的说法是“用下标当 key 常常导致难以察觉的 bug”。原因就在比较的方式：React 只比“同一个 key 的那一项”。key 是下标时，“第 2 个”永远是“第 2 个”，React 只改它的文字，DOM 元素本身和里面记着的东西（输入框的内容、焦点、滚动位置、动画状态）原地不动，就挂到了别的数据上。</p>
+  <p>反过来，“组件函数重跑”本身很便宜：换一份内容一样的数组，1000 行全部重新算了一遍，提交时一处都没改。React 的设计就是让你每次都描述“完整的界面应该长什么样”，由它去算最小的改动。这也是为什么组件函数必须是纯的：同样的 props 和 state，要返回同样的结果，渲染时不能去改外面的变量。后面 Remotion 能逐帧渲染，靠的就是这一点。</p>
+</Section>
+
+<Section id="where" title="页面在哪里生成：构建时、服务器上、浏览器里" short="在哪里生成">
+  <p>同样一页 200 段文字加一个按钮，三种做法：构建时就写成 HTML（静态）；服务器给一份没有内容的 HTML 和 React 的脚本，在浏览器里画出来（CSR）；服务器给一份 React 生成的完整 HTML，浏览器再下载脚本激活（SSR 加 hydrate）。脚本故意晚 300 毫秒到，模拟网络：</p>
+  <Table cap="本机 Chrome 157 实测，每种 3 次取中位数，单位毫秒。“4 倍 CPU 减速”模拟手机。脚本是 React 加 react-dom，压缩后 194 KB，gzip 后 61 KB。">
+    <tr><th>做法</th><th class="n">第一次显示</th><th class="n">按钮能点</th><th class="n">4 倍减速：显示</th><th class="n">4 倍减速：能点</th></tr>
+    <tr><td>静态 HTML，不带脚本</td><td class="n">36</td><td class="n">—</td><td class="n">64</td><td class="n">—</td></tr>
+    <tr><td>浏览器里渲染（CSR）</td><td class="n">344</td><td class="n">338</td><td class="n">412</td><td class="n">401</td></tr>
+    <tr><td>服务端渲染 + hydrate（SSR）</td><td class="n">32</td><td class="n">340</td><td class="n">60</td><td class="n">382</td></tr>
+  </Table>
+  <p>CSR 的第一次显示要等脚本下载完、React 跑完，所以晚了 300 多毫秒，网络越慢差得越多。SSR 和静态页一样快地出字，可按钮到 340 毫秒才接上事件：这 300 多毫秒里页面看起来能用、其实点了没反应。hydrate 能这样“接上”，是因为浏览器拿到的 HTML 和 React 在浏览器里算出来的一模一样，React 只是一个一个对上去。为了对得上，服务端的输出里还藏着标记：</p>
+  <Code code={SSRHTML} lang="js" cap="本机 Node 里 renderToString 的输出，200 段一共 19 KB，用了 3.7 毫秒。" />
+  <p>所以 React 文档要求 hydrate 时渲染结果和服务端的完全一致，不一致按 bug 处理。比如组件里用了当前时间、随机数，服务器上算一个值、浏览器里又算一个，就对不上。</p>
+  <h3>这个站为什么用 Astro，不用 React</h3>
+  <p>这个站的内容写好就不变，读者只看、不填表、不登录。用 React 的话，每页要多带 61 KB（gzip 后）的运行时，只为激活几个“上一步、下一步”按钮；用 Astro，组件只在构建时跑，页面是纯 HTML，每页的脚本一共 3.5 KB。Astro 也能在某个组件上写 <code>client:load</code>，让它在浏览器里用 React 激活成一个“岛”，页面别处照样不带脚本。这个站没有一个岛：唯一的交互（分步动画）用 2 KB 的原生脚本就够了。</p>
+  <p>反过来什么时候该用 React：界面的大部分都随用户操作在变，比如编辑器、看板、要登录的后台。那时“描述完整界面、让框架算改动”的好处远大于运行时的那几十 KB。</p>
+</Section>
+
+<Section id="video" title="用组件做视频：Remotion 怎么出片" short="Remotion">
+  <p>Remotion 把“组件是函数”推到了头：视频的每一帧，就是用帧号调用一次组件得到的画面。点“下一步”，看它怎么把一个组件渲染成 MP4：</p>
+  <Anim data={REMOTION} label="Remotion 渲染：Composition 定下尺寸、帧率和帧数；打包成网页，用 Chrome Headless Shell 开多个标签页；每帧设好帧号让 React 渲染组件，等 delayRender 后截图；FFmpeg 边截边编码成 MP4；标签页不按顺序、不共享状态，所以 CSS 动画的结果随并发数变" />
+  <p>渲染要多久，取决于每一帧截图要多久、能同时开几个标签页。拿一个重的画面（每帧 1500 个带阴影的方块，位置随帧号变，300 帧），在本机 M3 Max（14 核）上渲染：</p>
+  <Table cap="Remotion 4.0.484 实测。“每帧截图”是 Remotion 日志里的平均值。">
+    <tr><th>浏览器</th><th class="n">并发</th><th class="n">总耗时</th><th class="n">每帧截图</th></tr>
+    <tr><td>Chrome Headless Shell 149（默认）</td><td class="n">1</td><td class="n">20.1 秒</td><td class="n">35 ms</td></tr>
+    <tr><td></td><td class="n">2</td><td class="n">13.9 秒</td><td class="n">45 ms</td></tr>
+    <tr><td></td><td class="n">4</td><td class="n">11.7 秒</td><td class="n">64 ms</td></tr>
+    <tr><td></td><td class="n">8</td><td class="n">11.1 秒</td><td class="n">111 ms</td></tr>
+    <tr><td></td><td class="n">14</td><td class="n">11.1 秒</td><td class="n">186 ms</td></tr>
+    <tr><td>本机完整版 Chrome 157</td><td class="n">1</td><td class="n">305.1 秒</td><td class="n">984 ms</td></tr>
+    <tr><td></td><td class="n">4</td><td class="n">338.0 秒</td><td>—</td></tr>
+  </Table>
+  <p>并发从 1 到 4，总时间从 20 秒降到 12 秒；再往上不降了，每帧截图反而越来越慢：标签页多了，大家在抢同一个浏览器的绘制和截图。最合适的并发数要按自己的画面试，不是越大越好。</p>
+  <p>最后两行是我一开始犯的错：为了省一次下载，用 <code>--browser-executable</code> 指向了本机的 Chrome，结果每帧截图要将近 1 秒，开并发反而更慢。Remotion 的文档写明不要这样做：Chrome 把原来的无头模式拆了出去，单独做成 Headless Shell，用完整版 Chrome 渲染，结果还可能更不确定。换回默认的 Headless Shell（下载 93.5 MB），同样的 300 帧快了 15 倍。</p>
+  <Note kind="doubt" title="本机环境">Remotion 在本机提示“macOS 版本低于 15（Sequoia），渲染等功能可能不正常”。本机是 macOS 14，这一章的渲染都成功了，但结果不能代表它支持的所有环境。许可证也要看一眼：Remotion 对个人和最多 3 人的公司免费，更大的公司要买公司许可。</Note>
+</Section>
+
+<Section id="frame" title="每一帧只能由帧号决定" short="只看帧号">
+  <p>网页上的动画跟着时间走：过渡开始以后，浏览器每一帧看“过了多久”，算出中间值（第 4 章“过渡”一节）。视频不能这样：渲染一帧要多久不固定，几个标签页同时渲染不同的帧，第 300 帧可能比第 10 帧先渲染好。一个画面里放两个方块，一个用 <code>useCurrentFrame()</code> 加 <code>interpolate()</code> 算位置，一个用 CSS 的 <code>animation</code>，3 秒从 0 走到 1000：</p>
+  <Table cap="本机实测，Chrome Headless Shell。“单独截一帧”用 remotion still；后两列是渲染出的 MP4 用 FFmpeg 抽帧后数像素读出的位置。">
+    <tr><th class="n">帧</th><th class="n">按帧号算</th><th class="n">CSS 动画：单独截一帧</th><th class="n">CSS 动画：并发 1 的视频</th><th class="n">CSS 动画：并发 4 的视频</th></tr>
+    <tr><td class="n">0</td><td class="n">0</td><td class="n">8</td><td class="n">9</td><td class="n">8</td></tr>
+    <tr><td class="n">30</td><td class="n">218</td><td class="n">8</td><td class="n">392</td><td class="n">109</td></tr>
+    <tr><td class="n">60</td><td class="n">892</td><td class="n">8</td><td class="n">734</td><td class="n">206</td></tr>
+    <tr><td class="n">89</td><td class="n">1000</td><td class="n">—</td><td class="n">1000</td><td class="n">303</td></tr>
+  </Table>
+  <p>按帧号算的那一列，不管怎么渲染都一样。CSS 动画那几列跟的是“标签页打开以后过了多少真实时间”：单独截一帧时，页面一打开就截，它永远在起点附近；并发 1 时一个标签页从头渲染到尾，90 帧恰好花了 3 秒左右，它碰巧走完了；并发 4 时每个标签页只渲染四分之一的帧，花的时间短，它只走到 303。同一份代码，渲染的方式一变，视频就不一样。Remotion 文档说的“闪烁”就是这么来的。</p>
+  <p>同样的道理管住了所有“不由帧号决定”的东西：</p>
+  <Flow items={[
+    { t: "CSS 动画、过渡", d: "改用 interpolate(frame, …)", kind: "warn" },
+    { t: "Math.random()", d: "每个标签页各算一个，用带种子的随机数", kind: "warn" },
+    { t: "图片、字体、数据", d: "没加载完就截图：用 delayRender() 等", kind: "doubt" },
+    { t: "只看帧号", d: "第 n 帧永远是同一个画面", kind: "ok" },
+  ]} />
+  <p>这和上一节 React 对组件的要求是同一件事：组件要是纯函数，同样的输入给同样的输出。在网页上，不纯的组件偶尔出个怪 bug；在 Remotion 里，帧号就是唯一的输入，不纯就直接表现成画面在跳。</p>
+</Section>
+
+<Section id="example" title="实际例子：把第 4 章的动画做成视频" short="实际例子">
+  <p>这个站的分步动画是“数据加引擎”：每个动画只是一份数据（区域框、元素、每一步改什么），由动画引擎在浏览器里播。既然画面完全由数据决定，同一份数据换一个“引擎”，就能做成视频。拿第 4 章“主线程和合成线程”那个动画，把它的数据原样复制进一个 Remotion 项目，写一个组件：</p>
+  <Code code={STEPS} lang="js" cap="Steps.tsx 的核心。整个文件 59 行，其中 12 行是从 components.css 抄来的动画样式。" />
+  <p>网页版和视频版的区别只有一处：“现在是第几步、这一步过了多久”从哪来。网页上是读者点按钮，过渡交给浏览器的 transition；视频里是帧号，每 96 帧（3.2 秒，和网页上“播放”的间隔一样）换一步，前 24 帧（0.8 秒）用同一条缓动曲线挪过去。算每一步状态的 <code>stateAt</code> 和动画引擎的 <code>show()</code> 是同一个逻辑：从第 0 步累加到第 k 步。</p>
+  <Table cap="本机实测，Chrome Headless Shell，并发 4。">
+    <tr><th>视频</th><th class="n">帧数</th><th class="n">时长</th><th class="n">渲染耗时</th><th class="n">每帧截图</th><th class="n">文件</th></tr>
+    <tr><td>第 4 章的动画（6 步）</td><td class="n">576</td><td class="n">19.2 秒</td><td class="n">6.6 秒</td><td class="n">24 ms</td><td class="n">1.27 MB</td></tr>
+    <tr><td>对照：1500 个方块一直在动</td><td class="n">300</td><td class="n">10 秒</td><td class="n">11.7 秒</td><td class="n">64 ms</td><td class="n">41.3 MB</td></tr>
+  </Table>
+  <p>两段视频的大小差了 30 多倍，时长却是前者长：H.264 存的主要是相邻帧之间的变化，分步动画大部分时间画面不动，只有换步的 0.8 秒在变，几乎不占地方；1500 个方块每帧都在挪、颜色都在变，每帧都要存很多东西。做讲解视频时，画面越“安静”，文件越小。</p>
+  <p>做的过程中出过两个问题。一是一开始没换浏览器，渲染慢了 15 倍（上一节）。二是样式：网页上的颜色是 CSS 变量，跟着页面的主题走；视频里没有这个站的样式表，只能把浅色主题的颜色值和动画的样式抄进组件，尺寸按 1280 宽放大一倍。数据能原样复用，样式要跟着“画布”重新定。</p>
+  <Flow items={[
+    { t: "同一份数据", d: "区域框、元素、每一步" },
+    { t: "网页引擎", d: "按钮换步，transition 插值", kind: "tip" },
+    { t: "Remotion 组件", d: "帧号换步，interpolate 插值", kind: "tip" },
+    { t: "MP4", d: "576 帧，6.6 秒，1.27 MB", kind: "ok" },
+  ]} />
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="组件化就得用 React">
+      <p>组件是“props 进、界面出”的写法，不是某个框架。这个站的 13 个组件只在构建时运行，读者的浏览器里没有任何框架代码，每页只有 3.5 KB 脚本。要不要 React，看界面有多少要随操作变化。</p>
+    </Card>
+    <Card term="误区 2" title="用数组下标当 key 没关系">
+      <p>实测在最前面插一行，下标 key 让 React 改了 1000 处文字；更糟的是输入框里的内容留在原位，挂到了另一行上。用数据自己的 id。</p>
+    </Card>
+    <Card term="误区 3" title="state 一变，React 就重画整个页面">
+      <p>组件函数会重跑，但提交时只改有差别的地方：改一行动 1 处 DOM，换一份内容一样的数组动 0 处。真正贵的是函数里的计算，不是“重渲染”这个词。</p>
+    </Card>
+    <Card term="误区 4" title="服务端渲染了，页面一出来就能用">
+      <p>实测 SSR 在 32 毫秒出字，按钮到 340 毫秒才接上事件，中间这段点了没反应。脚本越大、手机越慢，这段越长。</p>
+    </Card>
+    <Card term="误区 5" title="浏览器里渲染和静态页一样快">
+      <p>CSR 要等脚本下载、执行完才出字：实测静态页 36 毫秒，CSR 344 毫秒，差的就是脚本那一程。内容不随操作变的页面，用不着在浏览器里生成。</p>
+    </Card>
+    <Card term="误区 6" title="Remotion 里照样能用 CSS 动画">
+      <p>CSS 动画跟真实时间走，渲染时的时间和视频里的时间是两回事。实测同一段 CSS 动画，并发 1 的视频里走到 1000，并发 4 只到 303，单独截一帧永远在起点。所有变化都从 useCurrentFrame() 算。</p>
+    </Card>
+    <Card term="误区 7" title="渲染并发开得越大越快">
+      <p>实测 300 帧的重画面，并发 4 是 11.7 秒，并发 14 还是 11.1 秒，每帧截图从 64 毫秒涨到 186 毫秒：标签页在抢同一个浏览器。按自己的画面试几个值。</p>
+    </Card>
+    <Card term="误区 8" title="用本机装的 Chrome 渲染也一样">
+      <p>实测本机完整版 Chrome 每帧截图 984 毫秒，Remotion 默认的 Headless Shell 只要 35 毫秒，差了将近 30 倍。文档也写明不要用 browserExecutable 换掉它，完整版的结果还可能不确定。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
