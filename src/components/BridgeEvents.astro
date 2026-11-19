@@ -61,16 +61,18 @@ const tip = (e) => `${e.date}　${e.name}　${fmtLoss(e.loss)}`;
           <p class="meta">{list.length} 起 · 合计 {fmtLoss(sumLoss(list))} · {c.status === "written" ? "已写" : "待写"}</p>
         </div>
       </div>
-      <ol class="ledger">{list.slice().reverse().map((e, k) => (
-        <li>
-          <div class="row">
-            <span class="r-no">{String(list.length - k).padStart(2, "0")}</span>
-            <span class="r-date">{e.date}</span>
-            <span class="r-main"><span class="r-name">{e.name}</span></span>
-            <span class={`r-loss${e.loss == null ? " none" : ""}`}>{fmtLoss(e.loss)}</span>
-          </div>
-        </li>
-      ))}</ol>
+      <ol class="ledger">{list.slice().reverse().map((e, k) => {
+        // 整行是链接，指向写了这起事件的那一章；章还没写的用 .row.todo（名字灰、悬停不下划线、不可点）
+        const inner = <Fragment>
+          <span class="r-no">{String(list.length - k).padStart(2, "0")}</span>
+          <span class="r-date">{e.date}</span>
+          <span class="r-main"><span class="r-name">{e.name}</span></span>
+          <span class={`r-loss${e.loss == null ? " none" : ""}`}>{fmtLoss(e.loss)}</span>
+        </Fragment>;
+        return <li>{c.status === "written"
+          ? <a class="row" href={c.href}>{inner}</a>
+          : <div class="row todo">{inner}</div>}</li>;
+      })}</ol>
     </section>;
   })}
 </div>

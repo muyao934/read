@@ -60,8 +60,9 @@ body.lib-home .topbar::after { background: linear-gradient(90deg, var(--e5) 0 25
 .inc .era-head h3 a { color: inherit; text-decoration: none; }
 .inc .era-head h3 a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .topic-home .inc .row { grid-template-columns: 44px 108px minmax(0, 1fr) 150px; }
-.inc .row { cursor: default; padding-top: 10px; padding-bottom: 10px; }
-.inc .row:hover { background: none; }
+.inc .row { padding-top: 10px; padding-bottom: 10px; }
+/* 已写的章：整行是链接，悬停垫本专题的纸色（.row.todo 的灰名字和“悬停不下划线”在下面的专题首页一节） */
+.inc a.row:hover { background: var(--era-wash); }
 .inc .r-loss { font-size: 15px; }
 @media (max-width: 760px) {
   .topic-home .inc .row { grid-template-columns: 34px minmax(0, 1fr); grid-template-areas: "no date" "no main" "no loss"; }
