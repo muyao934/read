@@ -41,6 +41,32 @@ body.lib-home .topbar::after { background: linear-gradient(90deg, var(--e5) 0 25
   .lib-home .row, .topic-home .row { grid-template-columns: 34px minmax(0, 1fr); grid-template-areas: "no date" "no main"; }
 }
 
+/* ---------- 跨链桥被盗专题首页的事件视图（BridgeEvents 组件） ---------- */
+/* 时间轴：照大事记首页的泳道，但构建时画好。窄屏在框里横向滑动（.diagram .scroll 的默认行为） */
+.lanes { margin: 20px 0 28px; }
+.lanes svg { min-width: 640px; }
+/* 点是链接：悬停和聚焦时放大一点并加粗描边，键盘 Tab 能逐个走 */
+.lanes a circle { transition: r 80ms ease-out; }
+.lanes a:hover circle, .lanes a:focus-visible circle { stroke-width: 2.5; }
+.lanes a:focus-visible { outline: none; }
+.lanes a:focus-visible circle { stroke: var(--trace); }
+/* 已经写了的那一章，点带一圈底色 */
+.lanes a.m circle { stroke-width: 2; }
+
+/* 按章分组的事件表：事件行有金额列，要把被盗站的四列找回来（专题首页默认是三列） */
+.inc { margin: 8px 0 0; }
+.inc .era { padding: 28px 0 4px; }
+.inc .era-head h3 { font-size: 21px; }
+.inc .era-head h3 a { color: inherit; text-decoration: none; }
+.inc .era-head h3 a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.topic-home .inc .row { grid-template-columns: 44px 108px minmax(0, 1fr) 150px; }
+.inc .row { cursor: default; padding-top: 10px; padding-bottom: 10px; }
+.inc .row:hover { background: none; }
+.inc .r-loss { font-size: 15px; }
+@media (max-width: 760px) {
+  .topic-home .inc .row { grid-template-columns: 34px minmax(0, 1fr); grid-template-areas: "no date" "no main" "no loss"; }
+}
+
 /* ========== 专题首页（topics/<id>.html）：同首页的章节行 ========== */
 .hero .crumbs { margin: 0 0 14px; }
 /* 待写的章节不能点：名字用次要色，悬停不变色 */

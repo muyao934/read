@@ -1,0 +1,76 @@
+---
+// 跨链桥被盗专题首页的事件视图（照区块链大事记首页的泳道，但构建时就画好，不依赖 JS）：
+//   上半：时间轴。一行一类原因（= 一章），横轴是时间，一个点一起事件。
+//        点的大小按损失开平方，红点是有金额的损失、灰点是金额未公开；带圈的点所在的章已经写了。
+//        每个点是一个 <a>，<title> 给出日期、名字、金额——悬停能看到，键盘 Tab 也能逐个走。
+//   下半：按章分组的事件表，一行一起（照各站首页的 .era / .ledger / .row）。
+// 数据在 src/lib/bridge-hacks.js，章节目录在 src/lib/topics.js，这里只负责排版。
+import { EVENTS, T0, T1, frac, fmtLoss, ofChapter, sumLoss } from "../lib/bridge-hacks.js";
+import { url } from "../lib/url.js";
+
+const { chapters } = Astro.props;
+const lanes = chapters.filter((c) => ofChapter(c.n).length);
+
+// viewBox：按桌面宽度取 960，窄屏在框里横向滑动（最小宽度由 lib.css 给）
+const W = 960, PAD = { l: 76, r: 14, t: 12, b: 28 }, LH = 30;
+const H = PAD.t + LH * lanes.length + PAD.b;
+const pw = W - PAD.l - PAD.r;
+const X = (d) => PAD.l + frac(d) * pw;
+const years = [];
+for (let y = 2021; y <= 2027; y++) years.push([y, PAD.l + ((Date.UTC(y, 0, 1) - T0) / (T1 - T0)) * pw]);
+// 点的半径：按损失开平方，封顶 9；金额未公开的用最小的点
+const R = (loss) => (loss == null ? 3 : Math.min(9, 3 + Math.sqrt(loss / 1e6) * 1.15));
+// 点指向哪里：章已经写了就去那一章，没写就跳到下面事件表里这一章那一段
+const href = (c) => (c.status === "written" ? c.href : url(`topics/bridge-hacks.html#ch-${c.n}`));
+const tip = (e) => `${e.date}　${e.name}　${fmtLoss(e.loss)}`;
+---
+<figure class="diagram lanes" style={`--vbw:${W}`}>
+  <div class="scroll">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${EVENTS.length} 起跨链桥被盗事件按原因和时间的分布，一行一类原因，一个点一起事件`}>
+      {lanes.map((c, i) => (
+        <rect class={`d-box soft${i % 2 ? " dash" : ""}`} x={PAD.l} y={PAD.t + LH * i + 1} width={pw} height={LH - 2} rx="2"/>
+      ))}
+      {years.map(([y, x]) => <line class="d-line soft" x1={x} x2={x} y1={PAD.t} y2={H - PAD.b}/>)}
+      {years.map(([y, x]) => y < 2027 && <text class="d-t s m" x={x + 3} y={H - 10}>{y}</text>)}
+      {lanes.map((c, i) => {
+        const cy = PAD.t + LH * i + LH / 2;
+        return <Fragment>
+          <text class="d-t s" x={PAD.l - 8} y={cy + 4} text-anchor="end">{c.lane}</text>
+          <line class="d-line soft" x1={PAD.l} x2={W - PAD.r} y1={cy} y2={cy}/>
+          {ofChapter(c.n).map((e) => (
+            <a href={href(c)} class={c.status === "written" ? "m" : undefined}>
+              <title>{tip(e)}</title>
+              <circle class={e.loss == null ? "d-box soft" : "d-box atk"} cx={X(e.date)} cy={cy} r={R(e.loss)}/>
+            </a>
+          ))}
+        </Fragment>;
+      })}
+    </svg>
+  </div>
+  <figcaption>一行是一类原因，横轴是时间，一个点是一起事件。点越大损失越大（按金额开平方），灰点的金额未公开。悬停或用 Tab 键逐个查看，点击打开所在的章；还没写的章会跳到下面的事件表。</figcaption>
+</figure>
+
+<div class="inc">
+  {lanes.map((c) => {
+    const list = ofChapter(c.n);
+    return <section class={`era tint-e5`} id={`ch-${c.n}`}>
+      <div class="era-head">
+        <p class="yrs">第 {String(c.n).padStart(2, "0")} 章</p>
+        <div>
+          <h3>{c.href ? <a href={c.href}>{c.title}</a> : c.title}</h3>
+          <p class="meta">{list.length} 起 · 合计 {fmtLoss(sumLoss(list))} · {c.status === "written" ? "已写" : "待写"}</p>
+        </div>
+      </div>
+      <ol class="ledger">{list.slice().reverse().map((e, k) => (
+        <li>
+          <div class="row">
+            <span class="r-no">{String(list.length - k).padStart(2, "0")}</span>
+            <span class="r-date">{e.date}</span>
+            <span class="r-main"><span class="r-name">{e.name}</span></span>
+            <span class={`r-loss${e.loss == null ? " none" : ""}`}>{fmtLoss(e.loss)}</span>
+          </div>
+        </li>
+      ))}</ol>
+    </section>;
+  })}
+</div>
