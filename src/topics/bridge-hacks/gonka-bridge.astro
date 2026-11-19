@@ -1,0 +1,364 @@
+---
+// 2026-11-19 Gonka 跨链桥被盗（概念类）：why → core → design → how → verify → example → fix → lessons → pitfalls → sources
+// 事实来源：以太坊链上数据、Gonka 链 DKG 记录、已验证的合约源码、官方仓库提交。分析过程见“怎么核实的”一节。
+import { Section, Note, Cards, Card, Flow, Steps, Table, Code, Timeline, Diagram, Anim, Sources } from "../../components/index.js";
+import { chip, lbl } from "../../lib/anim.js";
+
+// 一、正常一轮：Gonka 链造出新锁芯，谁都能去以太坊装，但要带上一轮签的交接单
+const NORMAL = {
+  h: 300,
+  b: [["gonka", 2, 8, 42, 84, "Gonka 链（19 个节点）"], ["eth", 56, 8, 42, 84, "以太坊桥合约"]],
+  it: [
+    { id: "key", h: chip("新锁芯", "--accent"), x: 23, y: 30 },
+    { id: "tick", h: chip("交接单", "--ok", "out"), x: 23, y: 52, hide: 1 },
+    { id: "stored", h: lbl("记下这一轮的锁芯", "m"), x: 77, y: 52, hide: 1 },
+    { id: "cmd", h: chip("提款命令", "--accent"), x: 23, y: 74, hide: 1 },
+    { id: "ok", h: lbl("通过，放款", "g"), x: 77, y: 74, hide: 1 },
+  ],
+  s: [
+    { c: "Gonka 链上 19 个节点合作造出这一轮的“锁芯”：一把 BLS 门限签名的群公钥。谁都没拿到完整钥匙，每人只有自己那几片碎片。", lit: ["gonka"] },
+    { c: "新锁芯要装到以太坊的桥合约上。规矩是：必须带一份“上一轮锁芯给新锁芯签的交接单”。", set: { tick: { hide: 0 } }, lit: ["gonka"] },
+    { c: "提交这笔交易的人是谁，合约不管：submitGroupKey 是 public，没有 onlyOwner。平时也由不同地址提交。合约只验交接单。", set: { key: { x: 50 }, tick: { x: 50 } }, lit: ["eth"] },
+    { c: "交接单验过，合约记下这一轮的锁芯，存进 epochGroupKeys[epochId]。", set: { key: { x: 77, h: chip("本轮锁芯", "--accent") }, tick: { hide: 1 }, stored: { hide: 0 } }, lit: ["eth"] },
+    { c: "之后要提款，得出示一份这把锁芯签过的提款命令。消息里绑了 epoch 号、两条链的链 ID、请求 ID、收款人、桥合约地址、代币、金额。", set: { cmd: { hide: 0 } }, lit: ["gonka"] },
+    { c: "合约做配对检查，再查防重放表，通过就放款。这些检查一个都不缺——本案里它们也都正常工作了。", set: { cmd: { x: 50 }, ok: { hide: 0 } }, lit: ["eth"] },
+    { c: "所以这座桥的安全，全押在“Gonka 链造锁芯的那个过程是否可信”上。合约只是忠实地执行它收到的结果。", lit: ["gonka", "eth"] },
+  ],
+};
+
+// 二、零份额陷阱：给 12 个人各发一张空白卡片，让他们连举手都举不了
+const TRAP = {
+  h: 320,
+  b: [["atk", 2, 8, 30, 84, "攻击者（发牌人 5）"], ["honest", 36, 8, 30, 84, "12 个诚实节点"], ["chain", 70, 8, 28, 84, "Gonka 链"]],
+  it: [
+    { id: "curve", h: lbl("一条曲线<br>12 处 = 0", "w"), x: 17, y: 26 },
+    { id: "card", h: chip("空白卡片", "--warn"), x: 51, y: 26, hide: 1 },
+    { id: "stamp", h: lbl("盖不出章<br>举手无效", "w"), x: 51, y: 52, hide: 1 },
+    { id: "absent", h: lbl("记作缺席", "m"), x: 84, y: 26, hide: 1 },
+    { id: "vote", h: lbl("剩 7 票<br>51 = 门槛", "g"), x: 84, y: 52, hide: 1 },
+    { id: "bad", h: chip("恶意钥匙", "--warn"), x: 84, y: 76, hide: 1 },
+  ],
+  s: [
+    { c: "攻击者在上一轮（epoch 461）就加入了节点名单，但按兵不动：那一轮它没交发牌人的那份数据，所以被判无效。", lit: ["atk"] },
+    { c: "到 epoch 462 它动手了。每个节点都要当一次“发牌人”，心里有一条曲线，发给第 n 个人的碎片就是曲线在 x = n 处的值。它交的那条曲线，在 12 个位置上恰好等于零。", lit: ["atk"] },
+    { c: "这 12 个位置分属 12 个不同的节点，一人正好一个。随机的曲线几乎不可能这样——是解方程算出来的。", set: { card: { hide: 0 } }, lit: ["atk", "honest"] },
+    { c: "拿到零的节点等于收到一张空白卡片。它当然能看出不对，但要提交“我验证过了 / 我投诉谁”这份报告，必须用自己手上的碎片签个名。", set: { stamp: { hide: 0 } }, bad: ["honest"] },
+    { c: "碎片是 0，签出来的签名就是椭圆曲线上的“零”（无穷远点），等于一张空白签名。链上的校验代码明确拒收空白签名，整份报告被退回。", bad: ["honest"] },
+    { c: "于是这 12 个节点在链上看起来是“缺席”，不是“受害者”。链上数据印证得一字不差：没能提交报告的，正好就是这 12 个。", set: { absent: { hide: 0 } }, bad: ["honest"], lit: ["chain"] },
+    { c: "剩下 7 个节点（含攻击者自己）的碎片合计 51 片。而判定“某个发牌人是否可信”的门槛是总数的一半加一，也就是 51。", set: { vote: { hide: 0 } }, lit: ["chain"] },
+    { c: "攻击者这个发牌人拿到的票正好 51：自己 4 片，其余 6 个节点 47 片。一片余量都没有，但够了。", lit: ["chain"] },
+    { c: "链照常判定：19 个发牌人全部有效、零投诉、DKG 完成。那条恶意曲线被算进了正式的群公钥。36 秒后，池子空了。", set: { bad: { hide: 0 } }, bad: ["chain"] },
+  ],
+};
+
+// 三、36 秒：拿到钥匙之后，没有任何一道闸挡着
+const DRAIN = {
+  h: 320,
+  b: [["pool", 2, 8, 30, 84, "桥的资金池"], ["atk", 36, 8, 30, 84, "攻击者地址"], ["guard", 70, 8, 28, 84, "本该有的闸"]],
+  it: [
+    { id: "bal", h: lbl("884,151 USDT<br>648 USDC", "m"), x: 17, y: 28 },
+    { id: "t0", h: chip("装新锁芯", "--warn"), x: 51, y: 20 },
+    { id: "t1", h: chip("提 USDT", "--warn"), x: 51, y: 40, hide: 1 },
+    { id: "t2", h: chip("提 USDC", "--warn"), x: 51, y: 58, hide: 1 },
+    { id: "t3", h: chip("铸 WGNK", "--warn"), x: 51, y: 76, hide: 1 },
+    { id: "none", h: lbl("限额：无<br>延迟：无<br>暂停：无", "w"), x: 84, y: 30, hide: 1 },
+    { id: "empty", h: lbl("池子见底", "w"), x: 17, y: 58, hide: 1 },
+  ],
+  s: [
+    { c: "18:00:59（UTC）。攻击者自己发出那笔 submitGroupKey，把 epoch 462 的群公钥装进合约。这把钥匙是 Gonka 链真造出来的，合约验过交接单，正常通过。", lit: ["atk"] },
+    { c: "18:01:35，36 秒之后，第一笔提款：884,150.874884 USDT 转进自己地址。签名是提前备好的——钥匙刚上链就用。", set: { t1: { hide: 0 } }, bad: ["pool"] },
+    { c: "18:01:59，第二笔：647.736653 USDC。", set: { t2: { hide: 0 } }, bad: ["pool"] },
+    { c: "18:02:11，第三笔换了函数：mintWithSignature 凭空铸出 2,200 万枚 WGNK。桥合约自己就是 WGNK 的代币合约，铸币不需要池子里有抵押。", set: { t3: { hide: 0 }, empty: { hide: 0 } }, bad: ["pool"] },
+    { c: "整个过程里，以太坊一侧没有任何东西试图拦一下：没有单笔限额、没有每日限额、没有大额延迟、没有给 owner 的暂停开关。", set: { none: { hide: 0 } }, bad: ["guard"] },
+    { c: "对比一下平时：11 月 13 日那一轮的正常提款，收款人全是同一个运营地址，单笔 1,000 到 400,000 USDT。“突然有个新地址把池子一次提干”这件事，本身就该触发告警。", lit: ["pool"] },
+  ],
+};
+
+// 桥合约：换锁芯的函数（节选，去掉注释和校验语句之间的空行）
+const SUBMIT = `function submitGroupKey(
+    uint64 epochId,
+    bytes calldata groupPublicKey,
+    bytes calldata validationSig
+) public onlyNormalOperation {              // 没有 onlyOwner：任何地址都能调
+    require(epochId > 1, "Epoch 1 must be set via Admin");
+    if (epochId != epochMeta.latestEpochId + 1) revert InvalidEpochSequence();
+    require(groupPublicKey.length == 256, "Invalid group key length");
+    GroupKey memory newGroupKeyStruct = _bytesToGroupKey(groupPublicKey);
+    GroupKey memory prevGroupKeyStruct = epochGroupKeys[epochId - 1];
+    require(!_isGroupKeyEmpty(prevGroupKeyStruct), "Previous epoch not found");
+    // 唯一的门槛：上一轮的群公钥，对“这把新公钥”签过字
+    require(_verifyTransitionSignature(prevGroupKeyStruct, newGroupKeyStruct,
+        validationSig, epochId - 1), "Invalid transition signature");
+    epochGroupKeys[epochId] = newGroupKeyStruct;`;
+
+// Gonka 链：判定一个发牌人是否可信
+const QUORUM = `quorumSlots := effectiveTotalSlots/2 + 1        // 100/2 + 1 = 51
+
+var validVotingSlots uint64
+validVotingSlots = dealerOwnSlots              // 自己那几片，默认算自己可信
+for verifierIndex, verification := range epochBLSData.VerificationSubmissions {
+    if verification == nil || len(verification.DealerValidity) == 0 {
+        continue                               // 交不上报告的，直接跳过，不算反对票
+    }
+    ...
+    validVotingSlots += verifierSlots
+}
+dealerIsValid := effectiveTotalSlots > 0 && validVotingSlots >= quorumSlots`;
+
+// 我的核对脚本输出（py_ecc 把 Gonka 的 96 字节压缩 G2 点转成合约用的 256 字节格式再逐字节比）
+const CMP = `epoch 462 tx 0xa6b23e579b004e47657fd8f963a1f5732c5063a7d6eb7f9d7b185cd05d487178
+  calldata epochId 462 keylen 256 siglen 128 from 0x6650a1cb...
+  eth key (256B)   : 00000000000000000000000000000000176823fe534bd413c57f7f255ccfece67af21012 ...
+  gonka key→uncomp : 00000000000000000000000000000000176823fe534bd413c57f7f255ccfece67af21012 ...
+  group key 相同   : True | 在 G2 子群: True
+  validation sig 相同: True | 在 G1 子群: True
+  gonka chain: participants 19 dealers 19 valid 19 complaints 0 phase DKG_PHASE_SIGNED`;
+
+// 扫描每个发牌人的曲线在哪些位置等于零
+const SCAN = `dealer  4 gonka16dgkvx7mh609ntkzknckwaskgq9lcdp86j0skk 零份额 slot：无
+dealer  5 gonka18x6wprs8c4x7awjgvn5t0e04fscrrash8rvmw4 零份额 slot：[29, 37, 46, 50, 51, 57, 61, 79, 83, 84, 85, 92]
+dealer  6 gonka1ajmhqgvkf76hss5xe35kcnntqqhs7r8jz8s939 零份额 slot：无
+...（其余 18 个发牌人都是“无”）
+Σ C0 == group key: True
+
+陷阱打中的参与者下标 : [4, 6, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18]
+没能提交验证的下标   : [4, 6, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18]
+两者相同             : True
+提交了验证的 slot 合计: 51  门限 t+1 = 51  总 slot 100`;
+
+// 官方应急补丁里的测试（节选）
+const FIXTEST = `func TestVerifyShareAgainstCommitments_RejectsZeroShareTrap(t *testing.T) {
+	// f(x) = (x - 30)(x + 7) = -210 - 23x + x^2 has root at slotIndex=29 (x=30)
+	...
+	zeroShare := new(fr.Element).SetZero()
+	validBlst, err := blsManager.verifyShareAgainstCommitmentsBlst(zeroShare, 29, commitments)
+	assert.NoError(t, err)
+	assert.False(t, validBlst, "zero share at trap slot must be rejected by blst verifier")`;
+
+const SOURCES = [
+  { title: "BridgeContract.sol（桥合约源码）", url: "https://github.com/gonka-ai/gonka/blob/main/proposals/ethereum-bridge-contact/contracts/BridgeContract.sol", by: "gonka-ai/gonka", note: "submitGroupKey、withdraw、mintWithSignature、_verifyTransitionSignature、_verifyBLSSignature。" },
+  { title: "桥合约在以太坊上的地址与交易", url: "https://eth.blockscout.com/address/0x972a7A92D92796a98801A8818bcF91f1648f2F68", by: "Blockscout（已验证源码）", note: "部署于 2026-05-13；同时是 WGNK 的 ERC-20 合约；攻击的 5 笔交易。" },
+  { title: "phase_transitions.go：发牌人有效性的共识门槛", url: "https://github.com/gonka-ai/gonka/blob/main/inference-chain/x/bls/keeper/phase_transitions.go", by: "gonka-ai/gonka", note: "DetermineValidDealersWithConsensus：quorumSlots = effectiveTotalSlots/2 + 1；交不上报告的验证者被 continue 跳过。" },
+  { title: "bls_crypto.go：链上校验部分签名", url: "https://github.com/gonka-ai/gonka/blob/main/inference-chain/x/bls/keeper/bls_crypto.go", by: "gonka-ai/gonka", note: "verifyBLSPartialSignatureBlst 用 SigValidate(true) 拒收无穷远点，这是“空白卡片让人失声”的直接原因。" },
+  { title: "verifier.go：节点怎么生成有效性证明", url: "https://github.com/gonka-ai/gonka/blob/main/decentralized-api/internal/bls/verifier.go", by: "gonka-ai/gonka", note: "buildDealerValidityProofs 用自己的份额对 BuildDealerValidityProofHash 签名。" },
+  { title: "threshold_signing.go：签名门限 t+1", url: "https://github.com/gonka-ai/gonka/blob/main/inference-chain/x/bls/keeper/threshold_signing.go", by: "gonka-ai/gonka", note: "checkThresholdAndAggregate：threshold = TSlotsDegree + 1 = 51。" },
+  { title: "官方应急提交 urgent(blocker): freeze", url: "https://github.com/gonka-ai/gonka/commit/6d7c96e35e3d875657be8f62efa8f48c5a515845", by: "gonka-ai/gonka，2026-11-19 00:02 UTC", note: "RejectsZeroShareTrap 测试（根在 slot 29）、零份额发牌人降级为无效、emergency_freeze.go 冻结两个钱包并关闭 IBC。" },
+  { title: "EIP-2537: Precompile for BLS12-381 curve operations", url: "https://eips.ethereum.org/EIPS/eip-2537", by: "Ethereum", note: "合约做 BLS 配对检查用的预编译；群公钥 256 字节、签名 128 字节的未压缩编码格式。" },
+  { title: "本篇的链上核对", note: "2026-11-19 用公共 RPC 取 epoch 460–462 的 submitGroupKey calldata 和桥合约日志，用 Gonka 节点 API 的 /inference/bls/v1/epoch_data/{460,461,462,463} 取 DKG 记录，用 py_ecc 做点格式转换与零份额扫描。脚本和原始数据见“怎么核实的”一节。" },
+  { title: "新闻报道（金额口径对照）", url: "https://www.cryptotimes.io/2026/11/19/gonkas-ethereum-bridge-reportedly-hit-in-1-05m-exploit-involving-wgnk-minting/", by: "Crypto Times、crypto.news、TokenPost、吴说区块链", note: "各家报 105 万至 106 万美元；本篇的数量以链上日志为准，和新闻的差异写在“损失到底多少”一节。" },
+];
+---
+<Section id="why" title="为什么值得细看这一起">
+  <p>2026 年 11 月 18 日，Gonka 的以太坊跨链桥被提走约 88.5 万美元稳定币，另外凭空铸出 2,200 万枚 WGNK。金额在跨链桥事故里排不上号，但它值得单独写一篇，有三个原因。</p>
+  <ul>
+    <li><b>新闻的说法和链上的事实不一致。</b>多家媒体引用安全机构，说“攻击者更换了桥的签名密钥”“拿到了 BLS group key”。把链上数据和 Gonka 链自己的记录逐字节比过之后，结论是：那把钥匙<b>不是伪造的，也不是偷来的</b>，是 Gonka 链自己正正当当造出来的那一把。以太坊合约的每一项校验都正常工作了。</li>
+    <li><b>它示范了一种少见的攻击面</b>：不去打合约，也不去偷私钥，而是<b>在“一群人合作造钥匙”的那个过程里下毒</b>，让多数诚实节点连“我反对”都说不出口。</li>
+    <li><b>它是一面镜子。</b>如果你正在做桥，这起事故会逼你回答两个问题：我们那套多方签名，某个参与者故意发一份非法数据时会怎样？钥匙万一真的出问题，目标链一侧还有第二道闸吗（Gonka 这边一道都没有，所以 36 秒就被提干）。</li>
+  </ul>
+  <p>这一篇的事实来自以太坊链上数据、Gonka 链的 DKG 记录、公开可验证的合约源码和官方仓库的提交，不依赖新闻；核实办法写在“怎么核实的”一节。官方复盘截至成文时还没有发布，所以有一处关键环节我只能给出两种可能，写在“还没搞清的地方”。</p>
+</Section>
+
+<Section id="core" title="先把名词讲清楚" short="名词">
+  <p>这起事故绕不开几个密码学名词。每个都配一个类比，后面讲机制时会反复用到。</p>
+  <Cards>
+    <Card term="Threshold Signature" title="门限签名：凑够人数才能签">
+      <p>一把“钥匙”被切成若干片分给一群人，凑够规定的片数才能签出一个有效签名；少一片都签不出来。签完以后链上看到的就是<b>一个普通签名</b>，看不出背后有几个人参与。</p>
+      <p>类比：19 个股东合管一个保险柜，钥匙切成 100 片，凑够 51 片才能开。Gonka 用的是 BLS12-381 曲线上的门限签名，以太坊这边靠 EIP-2537 预编译来验。</p>
+    </Card>
+    <Card term="DKG" title="DKG：这群人合作造出那把钥匙">
+      <p>全称 distributed key generation，分布式密钥生成。关键在于<b>完整的钥匙从来没有在任何一台机器上存在过</b>：每个人只拿到属于自己的碎片，把碎片凑起来才等于那把钥匙。所以没有“保管私钥的那台服务器”可偷。</p>
+      <p>类比：不是老板打一把钥匙再分发给 19 个人，而是 19 个人各带一块材料到场，现场合铸出一把，铸完谁也没见过整把钥匙长什么样。Gonka 链上约一天跑一次 DKG，换一轮钥匙。</p>
+    </Card>
+    <Card term="Dealer" title="发牌人：每个人都要给所有人发碎片">
+      <p>DKG 里每个参与者都要扮演一次“发牌人”：心里想一条曲线（数学上是一个多项式），然后给第 n 个人发“这条曲线在 x = n 处的值”。每人收到 19 份（来自 19 个发牌人），叠加起来才是自己真正的钥匙碎片。</p>
+      <p>类比：19 个人每人发一副牌给其他 18 人。你手里最后有 19 张牌，叠起来才是属于你的那几片钥匙。<b>只要有一个发牌人作恶，就能定点影响某些人手里的牌。</b></p>
+    </Card>
+    <Card term="Share" title="份额：曲线上属于你的那个点">
+      <p>发牌人发给你的那个数值。你只知道曲线上自己这一个点，推不出整条曲线——这正是门限签名的安全基础：想还原整条 50 次曲线，要 51 个点。</p>
+      <p>类比：一条暗号曲线，每人只被告知曲线上属于自己的那一个点。</p>
+    </Card>
+    <Card term="Commitment" title="承诺：曲线的公开指纹">
+      <p>发牌人要公开一组数据，相当于自己那条曲线的“指纹”。别人能用它验证“你发给我的点确实落在你声称的那条曲线上”，但从指纹倒推不出曲线本身。<b>本篇的分析就是靠这组公开数据做出来的</b>：它能算出“这个发牌人发给任意一个位置的值是不是零”。</p>
+      <p>类比：公开一张曲线的模糊照片。能核对某个点在不在线上，但看不出具体数值。</p>
+    </Card>
+    <Card term="Slot · Epoch" title="碎片编号和换钥匙的轮次">
+      <p><b>slot</b> 是钥匙碎片的编号，Gonka 一共 100 片，按各节点的权重分配：权重大的节点分到的片数多。<b>epoch</b> 是换钥匙的轮次，约一天一轮，这次出事的是第 462 轮。每一轮的群公钥都单独记在以太坊合约的 <code>epochGroupKeys</code> 里。</p>
+      <p>类比：slot 是股份，epoch 是“保险柜每天换一次锁芯”。</p>
+    </Card>
+    <Card term="Point at Infinity" title="无穷远点：椭圆曲线上的“零”">
+      <p>椭圆曲线运算里的单位元，作用相当于数字 0。用 0 当私钥去签名，签出来的就是无穷远点。它在数学上是合法的曲线元素，但作为签名毫无意义——任何人都能造出来，证明不了任何事。所以正经的实现都会<b>明确拒收</b>它。</p>
+      <p>类比：一张空白卡片。这次事故的全部关键，就在这张空白卡片上。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="design" title="这座桥本来怎么运作" short="桥的设计">
+  <p>桥合约在以太坊上的地址是 <code>0x972a7A92D92796a98801A8818bcF91f1648f2F68</code>，源码已验证，合约名 <code>BridgeContract</code>，2026 年 5 月 13 日部署。它同时就是 WGNK（Wrapped Gonka）这个代币的 ERC-20 合约——这一点后面会变得重要。</p>
+  <p>点“下一步”，看正常一轮是怎么走的：</p>
+  <Anim data={NORMAL} label="正常一轮：Gonka 链上 19 个节点合作造出新的群公钥，任何地址都可以把它提交到以太坊桥合约，但必须带上一轮群公钥签的交接单；之后的提款要出示这把钥匙签过的命令" />
+  <p>换锁芯那个函数是这样写的：</p>
+  <Code code={SUBMIT} lang="js" cap={"节选自 BridgeContract.sol。<b>submitGroupKey 是 public，没有 onlyOwner</b>：谁来提交这笔交易都行，合约只认“上一轮的钥匙给新钥匙签过字”。这不是漏洞，是刻意的设计——钥匙是链上的共识产物，提交只是一次搬运。"} />
+  <Table cap="桥在以太坊一侧的校验项，以及它有没有第二道闸。">
+    <tr><th>环节</th><th>合约里有什么</th><th>本案表现</th></tr>
+    <tr><td>提款签名</td><td>BLS 配对检查，消息里绑了 epoch 号、Gonka 链 ID、请求 ID、以太坊链 ID、操作类型、收款人、桥合约地址、代币地址、金额</td><td>校验正常，签名是真的</td></tr>
+    <tr><td>防重放</td><td><code>processedRequests[epochId][requestId]</code></td><td>正常，攻击没走重放</td></tr>
+    <tr><td>换钥匙</td><td>要上一轮钥匙签的交接单，epoch 号必须连续递增</td><td>正常，交接单是真的</td></tr>
+    <tr><td>单笔限额</td><td class="n">没有</td><td>一次提走池子里几乎全部 USDT</td></tr>
+    <tr><td>每日限额</td><td class="n">没有</td><td>三笔连发，没有累计约束</td></tr>
+    <tr><td>大额延迟 / 挑战期</td><td class="n">没有</td><td>确认即到账，没有人来得及反应</td></tr>
+    <tr><td>暂停开关</td><td>只有“30 天没有新 epoch”才能由任何人触发转入管理态</td><td>用不上，事发时钥匙是新的</td></tr>
+    <tr><td>两条链储备对账</td><td class="n">没有</td><td>铸出 2,200 万 WGNK 不需要任何抵押证明</td></tr>
+  </Table>
+  <Note kind="doubt" title="桥合约自己就是代币合约">这个设计省了一次外部调用，但代价是：拿到有效签名以后，<code>mintWithSignature</code> 可以凭空铸币，<b>完全不受池子里有多少资产的约束</b>。提 USDT 会被“池子里够不够”限制，铸 WGNK 不会。所以攻击者三笔里有一笔是铸币。</Note>
+</Section>
+
+<Section id="how" title="怎么被攻破的：零份额陷阱" short="怎么被攻破">
+  <p>以太坊一侧既然都正常，问题就只能在 Gonka 链这一侧——那把钥匙是怎么造出来的。点“下一步”，跟着攻击走一遍：</p>
+  <Anim data={TRAP} label="零份额陷阱：攻击者作为发牌人提交一条在 12 个位置恰好等于零的曲线，这 12 个位置分属 12 个不同节点；收到零的节点签不出有效签名，连验证报告都提交不上，在链上表现为缺席；剩下 7 个节点的碎片正好等于判定门槛，于是恶意曲线被算进正式的群公钥" />
+  <p>整条链路上最反直觉的一步是第四步：<b>受害者连“我反对”都说不出口</b>。原因在代码里。节点要提交“我验证完了，这些发牌人我认可”这份报告时，得给每个认可的发牌人附一份“有效性证明”，而这份证明<b>是用自己手上的份额签出来的</b>。份额是 0，签名就是无穷远点；链上校验明确拒收无穷远点，于是整份报告被退回。</p>
+  <p>更要命的是共识那段代码怎么对待“没交报告的人”：</p>
+  <Code code={QUORUM} lang="js" cap={"节选自 Gonka 链 x/bls/keeper/phase_transitions.go 的 DetermineValidDealersWithConsensus。<b>交不上报告的验证者被直接 continue 跳过，不算反对票。</b>于是“被攻击到失声”和“缺席”在这里没有区别。"} />
+  <Flow items={[
+    { t: "下毒", d: "一条在 12 个位置为零的曲线", kind: "warn" },
+    { t: "失声", d: "12 个节点交不上报告", kind: "warn" },
+    { t: "跳过", d: "缺席不算反对票", kind: "doubt" },
+    { t: "刚够", d: "剩下 7 个正好 51 片" },
+    { t: "出钥匙", d: "恶意曲线进入群公钥", kind: "warn" },
+  ]} />
+  <p>攻击者还很有耐心：它在上一轮（epoch 461）就已经在节点名单里，但那一轮<b>没有提交发牌人数据</b>，所以链上记它无效，什么也没发生。第 460 轮它还不在名单里。新加入、空转一轮、第二轮动手。</p>
+</Section>
+
+<Section id="verify" title="怎么核实的" short="怎么核实">
+  <p>这一节是方法，不是结论——如果你想自己复核，或者想用同样的办法检查自己的桥，可以照着做。</p>
+  <Steps items={[
+    { t: "把以太坊上的钥匙和 Gonka 链上的记录逐字节比", d: "从公共 RPC 取 <code>submitGroupKey</code> 三轮（460、461、462）的 calldata，再从 Gonka 节点 API 的 <code>/inference/bls/v1/epoch_data/{n}</code> 取同一轮的 <code>group_public_key</code>。两边编码不同：链上是 96 字节压缩 G2 点，合约要 256 字节未压缩（EIP-2537 格式），用 py_ecc 转换后再比。" },
+    { t: "结论：钥匙是真的", d: "三轮全部逐字节一致，签名也都在正确的子群里。所以“伪造钥匙”“偷到钥匙”都不成立，只能是 DKG 本身出了问题。" },
+    { t: "用公开的承诺扫描零份额", d: "每个发牌人的承诺是一组 51 个 G2 点。按 Horner 法算 <code>F(x) = ΣC_j·x^j</code>（x = slot + 1），<b>F(x) 等于无穷远点，就说明这个发牌人发给该位置的份额恰好是零</b>。对 19 个发牌人 × 100 个位置全扫一遍。" },
+    { t: "把扫描结果和链上的“谁没交报告”对照", d: "这一步是全篇的关键证据：两个名单完全重合。再把剩下节点的碎片数加起来，和代码里的门槛对比。" },
+    { t: "回到源码确认机制", d: "读 <code>verifier.go</code> 看证明是怎么生成的、<code>bls_crypto.go</code> 看链上怎么校验、<code>phase_transitions.go</code> 看门槛怎么算。有了这三处，前面的数字才有解释。" },
+  ]} />
+  <Code code={CMP} lang="text" cap="第一步的输出（epoch 462）。以太坊 calldata 里的群公钥和 Gonka 链记录的那一把完全相同；发出这笔交易的是攻击者地址，但钥匙本身是链上共识的产物。" />
+  <Code code={SCAN} lang="text" cap="第三步和第四步的输出。19 个发牌人里只有下标 5 的那条曲线有零份额，而且正好打中 12 个不同节点；“被打中的人”和“没交报告的人”两个名单一模一样。" />
+  <Note kind="tip" title="这套办法可以直接用在你自己的桥上">只要你的 DKG 把发牌人的承诺公开在链上，这段扫描就能跑：把每个发牌人的曲线在所有参与者位置上求值，看有没有等于零（或等于无穷远点）的。正常情况下一个都不该有。把它做成每轮 DKG 之后的自动检查，这类攻击在造出钥匙之前就会被拦下。</Note>
+</Section>
+
+<Section id="example" title="36 秒：拿到钥匙之后发生了什么" short="36 秒">
+  <p>钥匙上链到第一笔提款，只隔 36 秒——签名是提前备好的。点“下一步”：</p>
+  <Anim data={DRAIN} label="攻击者先提交 epoch 462 的群公钥，36 秒后提走 884,150.87 USDT，再提 647.74 USDC，最后凭空铸出 2,200 万 WGNK；以太坊一侧没有限额、延迟或暂停开关来拦住任何一笔" />
+  <Table cap={"攻击者地址 <code>0x6650a1cb0c3b970a0e4ced26984fe06db7844d80</code> 的全部交易，都直接调桥合约。时间是 UTC。"}>
+    <tr><th>区块</th><th>时间</th><th>调用</th><th>内容</th></tr>
+    <tr><td class="n">26443607</td><td>18:00:59</td><td><code>submitGroupKey</code></td><td>提交 epoch 462 群公钥</td></tr>
+    <tr><td class="n">26443610</td><td>18:01:35</td><td><code>withdraw</code></td><td>884,150.874884 USDT → 自己</td></tr>
+    <tr><td class="n">26443612</td><td>18:01:59</td><td><code>withdraw</code></td><td>647.736653 USDC → 自己</td></tr>
+    <tr><td class="n">26443613</td><td>18:02:11</td><td><code>mintWithSignature</code></td><td>凭空铸 22,000,000 WGNK → 自己</td></tr>
+    <tr><td class="n">26443631</td><td>约 18:06</td><td><code>transfer</code></td><td>转出 WGNK，随后经 Uniswap 换成别的资产</td></tr>
+  </Table>
+  <Timeline legend={{ warn: "攻击", tip: "应对" }} items={[
+    { date: "11-16 20:21", text: "epoch 460 的群公钥上链，提交者是另一个地址（<code>0xe3a362f7…</code>）——平时就由不同地址提交。" },
+    { date: "11-17 18:46", text: "epoch 461 的群公钥上链，提交者又换了一个（<code>0xa84b8214…</code>）。攻击者此时已在节点名单里，但那一轮没交发牌人数据。" },
+    { date: "11-18 07:17", text: "官方发布 v0.2.17，大改“桥的请求要多少权重才算通过”那一片代码。距离事发约 11 小时。" },
+    { date: "11-18 18:00:59", text: "攻击者提交 epoch 462 群公钥。<b>这把钥匙是 Gonka 链真造出来的</b>，合约验过交接单，正常通过。", kind: "warn", key: true },
+    { date: "11-18 18:02:11", text: "三笔提款和铸币在 72 秒内完成，池子见底。", kind: "warn", key: true },
+    { date: "11-19 00:02", text: "官方提交 <code>urgent(blocker): freeze</code>：在出块逻辑里冻结两个 Gonka 钱包、关闭全链 IBC 转账，并补上拒收零份额的测试。距第一笔攻击约 6 小时。", kind: "tip", key: true },
+    { date: "成文时", text: "epoch 463 的 DKG 数据查询返回“不存在”，即没有再产生新一轮钥匙，桥的提款通道实际停在 462。", kind: "tip" },
+  ]} />
+  <Note kind="info" title="损失到底多少">链上日志给出的确数是 884,150.874884 USDT、647.736653 USDC，合计约 88.5 万美元；另有 2,200 万枚 WGNK。WGNK 当时约 0.0337 美元，<b>名义</b>约 74 万美元，但 WGNK 流通盘才约 2,081 万枚——铸出量超过了原有流通量，实际能卖出的远少于名义值。各家媒体报的“105 万至 106 万美元”，是 88.5 万稳定币加上约 17.2 万美元的 WGNK 变现额。谈这类事故时，<b>凭空铸出的名义金额和实际变现金额要分开写</b>，否则数字会差好几倍。</Note>
+</Section>
+
+<Section id="fix" title="官方怎么修的" short="怎么修的">
+  <p>事发约 6 小时后，官方仓库出现一条提交，标题就叫 <code>urgent(blocker): freeze</code>（紧急：冻结），5 个文件 330 行。它同时做了三件事。</p>
+  <Cards>
+    <Card term="堵住陷阱" title="份额为零的发牌人直接判为无效">
+      <p>新增两个测试：一个要求“份额为零时，份额校验必须返回不通过”；另一个要求“生成有效性证明时，遇到零份额的发牌人应当把它降级为无效并记进投诉证据，而不是让签名变成无穷远点、把自己卡死”。</p>
+      <p>第二条正是对症下药：原来的行为是<b>受害者自己失声</b>，改完变成<b>受害者指控对方</b>。</p>
+    </Card>
+    <Card term="自证手法" title="测试用的曲线，根正好在第 29 号位置">
+      <p>测试里构造的曲线是 <code>f(x) = (x - 30)(x + 7)</code>，注释写明“has root at slotIndex=29”。而我在链上扫出来的 12 个陷阱位置，<b>第一个就是 29</b>。等于官方用自己的测试确认了这个手法。</p>
+    </Card>
+    <Card term="止损" title="在出块逻辑里硬编码冻结两个钱包">
+      <p>新增的 <code>emergency_freeze.go</code> 直接改写了出块的提案环节：凡是包含这两个 Gonka 地址的交易（除了往社区池存款），整个区块一律拒绝；同时<b>关闭全链的 IBC 转账</b>。代码注释写明这两个钱包“仍持有 epoch 462 那次放款”。</p>
+      <p>这是很重的手段——相当于在交通规则里写死“这两辆车不准上路”。它能止损，但也说明当时没有别的闸可用。</p>
+    </Card>
+  </Cards>
+  <Code code={FIXTEST} lang="js" cap="官方应急提交里的测试节选。注释里的 slotIndex=29 和链上扫出的第一个陷阱位置完全对上。" />
+  <p>这套 BLS / DKG 代码此前已经修过几轮：2026 年 9 月修过“<code>MsgSubmitDealerPart</code> 没校验 ECIES 密文长度”，10 月加过“BLS 签名守卫”，10 月底还更新过 HackerOne 报告相关的文档。<b>同一个模块反复出安全补丁，本身就是一个信号</b>：这类“多方合作造钥匙”的代码，边界情况特别多。</p>
+</Section>
+
+<Section id="lessons" title="如果你在做桥，该改什么" short="该改什么">
+  <p>按从“这一类攻击”到“任何一类攻击”的顺序排，前三条针对 DKG，后三条针对所有桥。</p>
+  <Steps items={[
+    { t: "每一份份额都要校验“非零、非无穷远”", d: "零在数学上是合法的域元素，正常的随机曲线几乎不可能产生它，但它一路走到签名就变成无穷远点，被下游拒收。<b>攻击者可以用它定点让某个参与者“静默掉线”。</b>发牌人生成份额时要查，验证方收到份额时也要查。" },
+    { t: "“验证失败”和“交不上报告”必须分开", d: "受害者要能提交一份“我投诉发牌人 X”的声明，而且这份声明<b>不能依赖它手上那份被下毒的份额</b>。否则就会出现本案的局面：被攻击的人在链上看起来是缺席者。官方补丁正是这么改的。" },
+    { t: "共识里“没表态”不等于“赞成”", d: "本案的共识代码把交不上报告的验证者直接跳过，不算反对票，于是 12 个节点的 48.49% 权重凭空消失。更稳的做法是：参与率低于某个线就<b>中止这一轮</b>，不要在多数人没表态的情况下照常出钥匙。" },
+    { t: "门槛要留余量，并且监控余量", d: "这一轮判定恶意发牌人“可信”的票数正好 51，门槛也正好 51，<b>一片余量都没有</b>，链却照常放行。应该监控“余量还剩多少”，并在余量过小时告警。19 个节点里 12 个交不上报告，这件事本身就该触发中止。" },
+    { t: "新参与者要有观察期和权重上限", d: "攻击者上一轮加入、这一轮就能左右整轮 DKG。给新节点设几轮观察期、限制单个新节点的权重，能把这类攻击的准备成本抬高很多。" },
+    { t: "目标链一侧必须有独立的第二道闸", d: "单笔限额、每日累计限额、大额提款延迟、储备对账（桥里锁了多少、对面铸了多少，两边要相等）、给安全委员会的暂停开关。这座桥一个都没有，所以 36 秒就被提干。<b>这是本案最值得记住的一条：合约“完全按代码正确执行”，不等于桥是安全的。</b>" },
+  ]} />
+  <Diagram cap="两道闸的关系：钥匙这一侧管“命令是不是真的”，资金这一侧管“就算命令是真的，一次能走多少、多久之后才走”。本案第一道闸被绕过，第二道闸根本不存在。">
+    <svg viewBox="0 0 680 210" role="img" aria-label="提款命令先过签名验证这道闸，再过限额与延迟这道闸，最后才放款；本案第二道闸缺失">
+      <defs><marker id="gate-ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="d-head" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+      <rect class="d-box" x="10" y="60" width="140" height="66" rx="4"/>
+      <text class="d-t b" x="80" y="88" text-anchor="middle">提款命令</text>
+      <text class="d-t s m" x="80" y="110" text-anchor="middle">带一份签名</text>
+      <rect class="d-box" x="200" y="60" width="150" height="66" rx="4"/>
+      <text class="d-t b" x="275" y="88" text-anchor="middle">第一道闸</text>
+      <text class="d-t s m" x="275" y="110" text-anchor="middle">签名是不是真的</text>
+      <rect class="d-box atk dash" x="400" y="60" width="150" height="66" rx="4"/>
+      <text class="d-t b atk" x="475" y="88" text-anchor="middle">第二道闸</text>
+      <text class="d-t s atk" x="475" y="110" text-anchor="middle">本案不存在</text>
+      <rect class="d-box soft" x="600" y="60" width="70" height="66" rx="4"/>
+      <text class="d-t b" x="635" y="97" text-anchor="middle">放款</text>
+      <line class="d-line" x1="152" y1="93" x2="198" y2="93" marker-end="url(#gate-ar)"/>
+      <line class="d-line" x1="352" y1="93" x2="398" y2="93" marker-end="url(#gate-ar)"/>
+      <line class="d-line atk" x1="552" y1="93" x2="598" y2="93" marker-end="url(#gate-ar)"/>
+      <text class="d-t s" x="275" y="40" text-anchor="middle">被 DKG 下毒绕过</text>
+      <text class="d-t s atk" x="475" y="40" text-anchor="middle">限额 · 延迟 · 对账 · 暂停</text>
+      <text class="d-t s m" x="340" y="175" text-anchor="middle">第一道闸管“命令真不真”，第二道闸管“真的命令一次能走多少”</text>
+    </svg>
+  </Diagram>
+</Section>
+
+<Section id="pitfalls" title="常见误区">
+  <Cards>
+    <Card term="误区 1" title="“攻击者偷到了桥的签名私钥”">
+      <p>多家媒体这样写，但链上数据不支持。门限签名的设计里<b>根本没有一把完整的私钥可偷</b>：钥匙只以碎片形式分散在各节点手上。实际发生的是攻击者作为合法参与者，在造钥匙的过程里下毒。把这类事故一律归到“私钥失守”，会让人去加固错误的地方（比如把密钥搬进 HSM），而真正该补的是 DKG 的份额校验。</p>
+    </Card>
+    <Card term="误区 2" title="“合约被攻破了”">
+      <p>以太坊合约的每一项校验都按代码正确执行了：签名验过、链 ID 绑了、防重放查了、交接单核了。它收到的是一把<b>货真价实</b>的新钥匙。审计一份合约、确认它“逻辑正确”，覆盖不到“喂给它的共识结果是不是可信”这一层。</p>
+    </Card>
+    <Card term="误区 3" title="“换钥匙的函数不该让任何人都能调”">
+      <p>看到 <code>submitGroupKey</code> 没有 <code>onlyOwner</code>，第一反应往往是这里有问题。但它要求必须带上一轮钥匙签的交接单，提交者是谁并不影响安全性；加上 <code>onlyOwner</code> 反而会多出一个“运营地址掉线钥匙就换不了”的单点。<b>本案里这个设计没有被绕过。</b>找错地方会让你错过真正的根因。</p>
+    </Card>
+    <Card term="误区 4" title="“节点数够多就安全”">
+      <p>19 个节点，门槛过半，听起来很稳。但这一轮里 12 个节点被定点打成“失声”，剩下 7 个刚好凑够门槛。<b>衡量安全性要看“最坏情况下还剩多少有效参与者”，而不是名单上有多少个</b>。另外要问：一个参与者故意发非法数据时，系统会判它有罪，还是让受害者掉线？</p>
+    </Card>
+    <Card term="误区 5" title="“凭空铸出 2,200 万枚，就是损失 2,200 万枚的钱”">
+      <p>铸出量超过了原有流通盘，市场根本吃不下。名义金额和实际变现金额在这类事故里常差好几倍。写复盘、算损失时两个数字都要给，并说明口径。</p>
+    </Card>
+    <Card term="误区 6" title="“金额小的事故不值得研究”">
+      <p>这起只有约 105 万美元，但手法是全新的，而且<b>同样的陷阱对任何用 DKG 门限签名的桥都成立</b>，不管它托管了多少钱。按金额筛选事故，会漏掉正在成形的新手法——等到它被用在大桥上，就来不及了。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="open" title="还没搞清的地方" short="还没搞清">
+  <p>按项目的习惯，把握不住的地方要明确写出来，不猜。</p>
+  <Cards>
+    <Card term="关键缺口" title="攻击者怎么独自签出那几笔提款命令">
+      <p>上面的证据解释了“恶意钥匙怎么被造出来、怎么上链”，但<b>没有完全解释签名这一步</b>。按 <code>threshold_signing.go</code>，要签出一个有效签名仍需凑满 51 片碎片的部分签名，而攻击者自己只有 4 片。两种可能，现有数据分不出来：</p>
+      <ul>
+        <li>它控制了那 7 个提交者里的多个身份（一人扮多个节点）；</li>
+        <li>提款请求在 Gonka 链一侧被伪造成了“合法请求”，诚实节点按共识自动签了名。旁证是 v0.2.17 在事发前约 11 小时大改了“桥请求要多少权重才算通过”那一片代码。</li>
+      </ul>
+      <p>等官方复盘。</p>
+    </Card>
+    <Card term="没有找到" title="审计报告、官方公告、资金去向">
+      <p>没有找到这座桥的公开审计报告（仓库里有 HackerOne 报告相关的文档提交，但内容不公开）。官方博客或社交媒体的说明，成文时也没有找到——本篇关于官方动作的部分，全部来自仓库提交。被盗资金经 Uniswap 和多个钱包转移，最终去向未公开。</p>
+    </Card>
+  </Cards>
+</Section>
+
+<Section id="sources" title="来源">
+  <Sources items={SOURCES} />
+</Section>
+
